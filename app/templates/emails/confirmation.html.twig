@@ -1,0 +1,13 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}E-Mail Bestätigung{% endblock %}
+
+{% block content %}
+<p>Hallo {{ user.firstName }},</p>
+
+<p>bitte bestätige deine E-Mail-Adresse durch Klick auf den folgenden Button:</p>
+
+<a href="{{ signedUrl }}" class="button">E-Mail bestätigen</a>
+
+<p>Der Link ist 24 Stunden gültig.</p>
+{% endblock %}

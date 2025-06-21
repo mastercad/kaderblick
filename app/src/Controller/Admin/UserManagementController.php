@@ -1,0 +1,171 @@
+<?php
+
+namespace App\Controller\Admin;
+
+use App\Entity\User;
+use App\Entity\Player;
+use App\Entity\Coach;
+use App\Entity\Club;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\JsonResponse;
+
+#[Route('/admin/users', name: 'admin_users_')]
+#[IsGranted('ROLE_ADMIN')]
+class UserManagementController extends AbstractController
+{
+    public function __construct(
+        private EntityManagerInterface $em,
+        private RequestStack $requestStack
+    ) {}
+
+    #[Route('', name: 'index', methods: ['GET'])]
+    public function index(): Response
+    {
+        $users = $this->em->getRepository(User::class)->findBy([], ['lastName' => 'ASC', 'firstName' => 'ASC']);
+        
+        return $this->render('admin/users/index.html.twig', [
+            'users' => $users
+        ]);
+    }
+
+    #[Route('/{id}/assign', name: 'assign', methods: ['GET'])]
+    public function assignForm(User $user): Response
+    {
+        $players = $this->em->getRepository(Player::class)->findAll();
+        $coaches = $this->em->getRepository(Coach::class)->findAll();
+        $clubs = $this->em->getRepository(Club::class)->findAll();
+        
+        // Flash Messages von vorherigen Status-Änderungen löschen
+        /** @var Session $session */
+        $session = $this->requestStack->getSession();
+        $session->getFlashBag()->clear();
+
+        return $this->render('admin/users/assign.html.twig', [
+            'user' => $user,
+            'players' => $players,
+            'coaches' => $coaches,
+            'clubs' => $clubs,
+            'currentAssignment' => $this->getCurrentAssignment($user)
+        ]);
+    }
+
+    #[Route('/{id}/assign', name: 'assign_post', methods: ['POST'])]
+    public function handleAssign(Request $request, User $user): Response
+    {
+        try {
+            // Wenn Club ausgewählt wurde, alle anderen Zuordnungen entfernen
+            if ($request->request->get('club_id')) {
+                $user->setPlayer(null)->setCoach(null);
+                $club = $this->em->getRepository(Club::class)->find($request->request->get('club_id'));
+                $user->setClub($club); // Hier wird null gesetzt wenn keine ID übergeben wurde
+            } else {
+                $user->setClub(null);
+                
+                // Player setzen oder entfernen
+                $player = $request->request->get('player_id') 
+                    ? $this->em->getRepository(Player::class)->find($request->request->get('player_id'))
+                    : null;
+                $user->setPlayer($player);
+                
+                // Coach setzen oder entfernen
+                $coach = $request->request->get('coach_id')
+                    ? $this->em->getRepository(Coach::class)->find($request->request->get('coach_id'))
+                    : null;
+                $user->setCoach($coach);
+            }
+
+            $this->em->persist($user);
+            $this->em->flush();
+
+            $this->addFlash('success', 'Zuordnungen erfolgreich aktualisiert.');
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'Fehler bei der Zuordnung: ' . $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_users_assign', ['id' => $user->getId()]);
+    }
+
+    #[Route('/{id}/toggle-status', name: 'toggle_status', methods: ['GET'])]
+    public function toggleStatus(User $user): Response
+    {
+        $user->setIsEnabled(!$user->isEnabled());
+        $this->em->flush();
+
+        $this->addFlash(
+            'success',
+            sprintf(
+                'Benutzer %s wurde erfolgreich %s.',
+                $user->getEmail(),
+                $user->isEnabled() ? 'aktiviert' : 'deaktiviert'
+            )
+        );
+
+        return $this->redirectToRoute('admin_users_index');
+    }
+
+    #[Route('/search/{type}', name: 'search', methods: ['GET'])]
+    public function search(string $type, Request $request): JsonResponse
+    {
+        $term = $request->query->get('term');
+        if (empty($term)) {
+            return $this->json([]);
+        }
+
+        $qb = match($type) {
+            'player' => $this->em->getRepository(Player::class)->createQueryBuilder('p')
+                ->where('p.firstName LIKE :term OR p.lastName LIKE :term OR p.email LIKE :term')
+                ->setParameter('term', '%' . $term . '%')
+                ->orderBy('p.lastName', 'ASC')
+                ->setMaxResults(10),
+            
+            'coach' => $this->em->getRepository(Coach::class)->createQueryBuilder('c')
+                ->where('c.firstName LIKE :term OR c.lastName LIKE :term OR c.email LIKE :term')
+                ->setParameter('term', '%' . $term . '%')
+                ->orderBy('c.lastName', 'ASC')
+                ->setMaxResults(10),
+            
+            'club' => $this->em->getRepository(Club::class)->createQueryBuilder('c')
+                ->where('c.name LIKE :term')
+                ->setParameter('term', '%' . $term . '%')
+                ->orderBy('c.name', 'ASC')
+                ->setMaxResults(10),
+            
+            default => throw $this->createNotFoundException('Invalid search type')
+        };
+
+        $results = $qb->getQuery()->getResult();
+        
+        $formatted = array_map(function($item) use ($type) {
+            return [
+                'id' => $item->getId(),
+                'text' => match($type) {
+                    'player', 'coach' => $item->getFullName() . ($item->getEmail() ? ' (' . $item->getEmail() . ')' : ''),
+                    'club' => $item->getName(),
+                    default => ''
+                }
+            ];
+        }, $results);
+
+        return $this->json(['results' => $formatted]);
+    }
+
+    private function getCurrentAssignment(User $user): array
+    {
+        if ($user->getPlayer()) {
+            return ['type' => 'player', 'entity' => $user->getPlayer()];
+        }
+        if ($user->getCoach()) {
+            return ['type' => 'coach', 'entity' => $user->getCoach()];
+        }
+        if ($user->getClub()) {
+            return ['type' => 'club', 'entity' => $user->getClub()];
+        }
+        return ['type' => null, 'entity' => null];
+    }
+}

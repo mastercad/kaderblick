@@ -1,0 +1,107 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Benutzer zuordnen{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <h1>Zuordnung für {{ user.email }}</h1>
+
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <form method="post">
+            <div class="form-group">
+                <h3>Spieler Zuordnung</h3>
+                <select id="player_id" name="player_id" class="form-control">
+                    <option value="">Keine Zuordnung</option>
+                    {% if user.player %}
+                        <option value="{{ user.player.id }}" selected>
+                            {{ user.player.fullName }}{% if user.player.email %} ({{ user.player.email }}){% endif %}
+                        </option>
+                    {% endif %}
+                </select>
+            </div>
+
+            <div class="form-group mt-3">
+                <h3>Trainer Zuordnung</h3>
+                <select id="coach_id" name="coach_id" class="form-control">
+                    <option value="">Keine Zuordnung</option>
+                    {% if user.coach %}
+                        <option value="{{ user.coach.id }}" selected>
+                            {{ user.coach.fullName }}{% if user.coach.email %} ({{ user.coach.email }}){% endif %}
+                        </option>
+                    {% endif %}
+                </select>
+            </div>
+
+            <div class="form-group mt-3">
+                <h3>Vereins Zuordnung</h3>
+                <p class="text-warning">Achtung: Bei Auswahl eines Vereins werden Spieler- und Trainer-Zuordnungen entfernt!</p>
+                <select id="club_id" name="club_id" class="form-control">
+                    <option value="">Keine Zuordnung</option>
+                    {% if user.club %}
+                        <option value="{{ user.club.id }}" selected>{{ user.club.name }}</option>
+                    {% endif %}
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3">Zuordnungen speichern</button>
+        </form>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            function initSelect2(elementId, searchType, placeholder) {
+                $(elementId).select2({
+                    ajax: {
+                        url: "{{ path('admin_users_search', {'type': 'REPLACE_TYPE'}) }}".replace('REPLACE_TYPE', searchType),
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return {
+                                term: params.term || ''
+                            };
+                        },
+                        processResults: function (data) {
+                            return {
+                                results: data.results || []
+                            };
+                        }
+                    },
+                    minimumInputLength: 2,
+                    placeholder: placeholder,
+                    width: '100%',
+                    allowClear: true
+                }).on('select2:unselecting', function() {
+                    $(this).val('').trigger('change');
+                });
+
+                var $emptyOption = new Option('Keine Zuordnung', '', true, false);
+                $(elementId).append($emptyOption).trigger('change');
+            }
+
+            initSelect2('#player_id', 'player', 'Spieler suchen...');
+            initSelect2('#coach_id', 'coach', 'Trainer suchen...');
+            initSelect2('#club_id', 'club', 'Verein suchen...');
+        });
+    </script>
+{% endblock %}

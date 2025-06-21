@@ -1,0 +1,5 @@
+framework:
+    mailer:
+#        dsn: 'smtp://%env(resolve:MAILER_USER)%:%env(resolve:MAILER_PASSWORD)%@%env(MAILER_SERVER)%:%env(MAILER_PORT)%'
+        transports:
+            main: '%env(MAILER_DSN)%'

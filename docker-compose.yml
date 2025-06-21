@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  api:
+    build: ./.docker/api
+    container_name: fussballmanager_api
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./app:/var/www/symfony
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=mysql://symfony:symfony@db:3306/symfony
+      - APP_SECRET=${APP_SECRET}
+      - JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+      - JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+      - JWT_PASSPHRASE=${JWT_PASSPHRASE}
+    networks:
+      - app-network
+
+  db:
+    image: mariadb:10.11
+    container_name: fussballmanager_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: symfony
+      MYSQL_USER: symfony
+      MYSQL_PASSWORD: symfony
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  vue-frontend:
+    build: ./.docker/frontend
+    container_name: fussballmanager_frontend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - api
+    networks:
+      - app-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "8081:80"
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+
+networks:
+  app-network:
+    driver: bridge

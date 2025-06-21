@@ -1,0 +1,10 @@
+# Read the documentation at https://github.com/thephpleague/flysystem-bundle/blob/master/docs/1-getting-started.md
+flysystem:
+    storages:
+        gdrive.storage:
+            adapter: 'google_drive'
+            options:
+                clientId: '%env(GOOGLE_CLIENT_ID)%'
+                clientSecret: '%env(GOOGLE_CLIENT_SECRET)%'
+                refreshToken: '%env(GOOGLE_REFRESH_TOKEN)%'
+                folderId: 'root'

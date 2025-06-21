@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #1a4789;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 5px;
+        }
+        .feature-box {
+            background-color: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #1a4789;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #666666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Willkommen im Verein!</h1>
+        </div>
+        <div class="content">
+            <p>Hallo {{ name }},</p>
+            
+            <p>herzlich willkommen in unserem Fußballverein! Wir freuen uns sehr, dich als neues Mitglied begrüßen zu dürfen.</p>
+            
+            <div class="feature-box">
+                <h3>🎯 Deine nächsten Schritte:</h3>
+                <ul>
+                    <li>Vervollständige dein Profil</li>
+                    <li>Entdecke unsere Teams</li>
+                    <li>Schau dir den Trainingsplan an</li>
+                </ul>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="{{ path('home') }}" class="button">Zum Dashboard</a>
+            </div>
+
+            <div class="feature-box">
+                <h3>📱 Bleib in Kontakt:</h3>
+                <ul>
+                    <li>Website: {{ website_url }}</li>
+                    <li>E-Mail: {{ contact_email }}</li>
+                    <li>Telefon: {{ phone_number }}</li>
+                </ul>
+            </div>
+
+            <p>Wir wünschen dir viel Spaß und Erfolg in unserem Verein!</p>
+            
+            <p>Sportliche Grüße<br>Dein Vereinsteam</p>
+        </div>
+        <div class="footer">
+            <p>Diese E-Mail wurde automatisch generiert. Bitte antworte nicht darauf.</p>
+            <p>&copy; {{ "now"|date("Y") }} Fußballverein. Alle Rechte vorbehalten.</p>
+        </div>
+    </div>
+</body>
+</html>

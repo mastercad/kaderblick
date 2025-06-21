@@ -1,0 +1,20 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}Neuer Termin: {{ event.title }}{% endblock %}
+
+{% block content %}
+<p>Hallo,</p>
+
+<p>ein neuer Termin wurde erstellt:</p>
+
+<h2>{{ event.title }}</h2>
+<p><strong>Datum:</strong> {{ event.startDate|date('d.m.Y H:i') }}{% if event.endDate %} - {{ event.endDate|date('d.m.Y H:i') }}{% endif %}</p>
+{% if event.location %}
+<p><strong>Ort:</strong> {{ event.location.name }}</p>
+{% endif %}
+{% if event.description %}
+<p><strong>Beschreibung:</strong><br>{{ event.description }}</p>
+{% endif %}
+
+<a href="{{ url('calendar_index') }}" class="button">Zum Kalender</a>
+{% endblock %}

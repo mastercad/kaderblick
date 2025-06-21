@@ -1,0 +1,469 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ entityNamePlural }} Übersicht{% endblock %}
+
+{% block body %}
+<h1>
+  Übersicht aller {{ entityNamePlural }}
+  <button class="btn btn-success" id="add_entry" alt="add new Entry" type="button">
+    <i class="fa fa-plus"></i>
+  </button> 
+</h1>
+
+<table class="table">
+  <thead id="entry_list_header">
+  </thead>
+  <tbody id="entry_list">
+  </tbody>
+</table>
+
+<div class="modal fade" id="add_entry_modal" tabindex="-1" aria-labelledby="add_entry_modal_label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="entry_form">
+        <div class="modal-header">
+          <h5 class="modal-title" id="add_entry_modal_label">Neuen {{ entityName }} Eintrag anlegen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        </div>
+        <div class="modal-body" id="edit_form_field_list">
+          <div class="mb-3">
+            <label for="name" class="form-label">Name *</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="address" class="form-label">Adresse</label>
+            <input type="text" class="form-control" id="address" name="address">
+          </div>
+          <div class="mb-3">
+            <label for="city" class="form-label">Stadt</label>
+            <input type="text" class="form-control" id="city" name="city">
+          </div>
+          <div class="mb-3">
+            <label for="capacity" class="form-label">Kapazität</label>
+            <input type="number" class="form-control" id="capacity" name="capacity" min="0">
+          </div>
+        </div>
+        <div id="edit_modal_error_container">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+          <button type="submit" class="btn btn-primary">Speichern</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="delete_entry_modal" tabindex="-1" aria-labelledby="delete_entry_modal_label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="add_entry_modal_label">Neuen {{ entityName }} Eintrag anlegen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+      </div>
+      <div class="modal-body" id="edit_form_field_list">
+        <div class="warning">
+          <p>Wollen Sie diesen Eintrag wirklich löschen?</p>
+          <p>Dies kann nicht rückgängig gemacht werden!</p>
+        </div>
+      </div>
+      <div id="edit_modal_error_container">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+        <button type="button" class="btn btn-primary" id="delete_entry_modal_button">Löschen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  function initOptionButtons() {
+    const optionButtons = document.querySelectorAll('.option-button');
+
+    optionButtons.forEach(button => {
+      button.addEventListener('click', async function() {
+        const entity = this.dataset.entity;
+        const id = this.dataset.id;
+        const data = this.dataset.data ? JSON.parse(this.dataset.data) : {};
+
+        if (this.classList.contains('delete')) {
+          openDeleteModal(entity, id);
+        } else {
+          openEditModal(entity, id, data);
+        }
+      });
+    });
+  }
+  
+  async function loadList() {
+      const currentPath = window.location.pathname;
+      const res = await fetch(`${currentPath}/list`);
+
+      if (res.ok) {
+        const data = await res.json();
+
+        const listHeader = document.getElementById('entry_list_header');
+        listHeader.innerHTML = '';
+        const headerTr = document.createElement('tr');
+
+        const firstRow = data[0];
+        const relationDefinition = data['relations'];
+        const columns = Object.keys(firstRow)
+
+        columns.forEach(column => {
+          const th = document.createElement('th');
+          th.textContent = column;
+          headerTr.appendChild(th);
+        });
+
+        listHeader.appendChild(headerTr);
+
+        const list = document.getElementById('entry_list');
+        list.innerHTML = '';
+
+        Object.keys(data)
+          .filter(key => /^\d+$/.test(key))
+          .forEach(key => {
+            row = data[key];
+            const tr = document.createElement('tr');
+            
+            // Über die Werte im Objekt iterieren
+            Object.entries(row).forEach(([entryKey, entryValue]) => {
+              const td = document.createElement('td');
+              td.innerHTML = retrieveEntityValue(relationDefinition, entryKey, entryValue);
+              tr.appendChild(td);
+            });
+
+            const optionsRow = document.createElement('td');
+            optionsRow.innerHTML = `
+              <div class="option-buttons-container">
+                <button type="button" class="btn btn-primary option-button edit" data-id="${row.id}" data-data='${JSON.stringify(row)}'><i class="fa fa-edit" alt="Edit"></i></button>
+                <button type="button" class="btn btn-danger option-button delete" data-id="${row.id}"><i class="fa fa-trash-alt" alt="Delete"></i></button>
+              </div>`;
+
+            tr.appendChild(optionsRow);
+            
+            list.appendChild(tr);
+          })
+      }
+
+      initOptionButtons();
+  }
+
+  function retrieveEntityValue(relationDefinition, entryKey, entry) {
+    const type = typeof entry;
+    
+    if (relationDefinition[entryKey] !== undefined
+      && relationDefinition[entryKey]['label_fields'] !== undefined
+    ) {
+      let label = '';
+      console.info("BAUE LABEL FÜR " + entryKey);
+      Object.entries(entry).forEach(([objKey, obj]) => {
+        label += getValue(obj, relationDefinition[entryKey]['label_fields']) + "<br />";
+      });
+
+      return label;
+    }
+
+    // guess the right label value
+    switch(type) {
+      case 'object':
+        if (entry === null) return '';
+        if (Array.isArray(entry)) {
+          return entry.map(item => item.label || item.name || item.id).join(', ');
+        }
+        return entry.label || (entry.firstName && entry.lastName) ? entry.firstName + " " + entry.lastName : false || entry.name || entry.id || JSON.stringify(entry);
+      case 'number':
+        return entry.toString();
+      case 'string':
+        return entry;
+    }
+
+    return entry;
+  }
+
+  function getValue(obj, keyDef) {
+    if (Array.isArray(keyDef)) {
+      // Mehrere Pfade, diese holen und mit Leerzeichen verbinden
+      return keyDef.map(path => getValueByPath(obj, path)).filter(v => v !== undefined).join(' ');
+    } else if (typeof keyDef === 'string') {
+      return getValueByPath(obj, keyDef);
+    }
+    return undefined;
+  }
+
+  function getValueByPath(obj, path) {
+    const keys = path.split('.');
+    let current = obj;
+    for (const key of keys) {
+      if (current == null) return undefined; // Falls null oder undefined
+      current = current[key];
+    }
+    return current;
+  }
+
+
+  openEditModal = async function(entity, id, data) {
+    const currentPath = window.location.pathname;
+    const res = await fetch(`${currentPath}/api/schema/{{ entityName }}`);
+    const schema = await res.json();
+
+    const container = document.getElementById('edit_form_field_list');
+    container.innerHTML = '';
+
+    for (const [field, info] of Object.entries(schema)) {
+      let input;
+
+      if (info.type === 'relation') {
+
+        console.info("Habe für " + field + " eine Relation gefunden");
+
+        input = document.createElement('select');
+        input.classList.add('form-select');
+        input.name = field;
+    
+        if (info.multiple) {
+          input.multiple = true;
+        }
+
+        if (info.choices.length !== 0) {
+          console.info("Habe bereits Choices für " + field + " gefunden: " + info.choices);
+        }
+
+        for (const choice of info.choices) {
+          const option = document.createElement('option');
+          option.value = choice.id;
+          option.text = choice.label;
+
+          if (info.multiple && Array.isArray(data[field])) {
+            if (data[field].some(selected => selected.id == choice.id)) {
+              option.selected = true;
+            }
+          } else if (!info.multiple && data[field] && data[field].id == choice.id) {
+            option.selected = true;
+          }
+
+          input.appendChild(option);
+        }
+      } else if (info.type === 'checkbox') {
+        input = document.createElement('input');
+        input.type = info.type;
+        input.classList.add('form-check-input');
+        input.id = field;
+        input.name = field;
+        input.checked = data[field] !== undefined && data[field] === true ? 'checked' : '';
+      } else {
+        input = document.createElement('input');
+        input.type = info.type
+        input.classList.add('form-control');
+        input.name = field;
+        const value = data[field] !== undefined ? data[field] : '';
+        input.value = info.type == 'date' || info.type == 'datetime-local' && value && value.length ? convertToISODate(value, info.type) : value;
+      }
+
+      const label = document.createElement('label');
+      label.textContent = field.charAt(0).toUpperCase() + field.slice(1);
+      label.class = 'form-label';
+      label.htmlFor = input.name;
+
+      const wrapper = document.createElement('div');
+      wrapper.classList.add('mb-3');
+      wrapper.appendChild(label);
+      wrapper.appendChild(input);
+
+      container.appendChild(wrapper);
+    }
+
+    // Submit handler
+    const form = document.getElementById('entry_form');
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const json = formDataToTypedJSON(formData, schema);
+      const method = id > 0 ? 'PUT' : 'POST';
+      const url = id > 0 ? `${currentPath}/${id}` : currentPath;
+
+      json["goals"] = undefined;
+      json['id'] = parseInt(id)
+
+      await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(json),
+      })
+      .then(response => {
+        return response.json().then(data => {
+          if (!response.ok) {
+            throw new Error(data.error || 'Unbekannter Fehler');
+          }
+          return data;
+        });
+      })
+      .then(data => {
+          document.getElementById('entry_form').reset();
+          bootstrap.Modal.getInstance(document.getElementById('add_entry_modal')).hide();
+          document.getElementById('edit_modal_error_container').innerHTML = '';
+          loadList();
+      })
+      .catch(error => {
+        document.getElementById('edit_modal_error_container').innerHTML = `<div class="alert alert-danger">Fehler beim Speichern: ${error.message}</div>`;
+        alert('Fehler beim Speichern');
+      });
+    };
+
+    const modal = document.getElementById('add_entry_modal');
+
+    if (!modal.dataset.focusBound) {
+      modal.addEventListener('shown.bs.modal', function () {
+        setTimeout(() => {
+          const firstInput = modal.querySelector('input, select, textarea');
+          if (firstInput) {
+            firstInput.focus();
+          }
+        }, 0);
+      });
+      modal.dataset.focusBound = "true";
+    }
+    
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+  }
+
+  openDeleteModal = async function(entity, id) {   
+    // Submit handler
+    const button = document.getElementById('delete_entry_modal_button');
+    button.onclick = async (e) => {
+      e.preventDefault();
+
+      const currentPath = window.location.pathname;
+      await fetch(`${currentPath}/${id}`, {  // Relative URL mit ./
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: '',
+      })
+      .then(response => {
+        if (response.status === 204) {
+          return response;
+        }
+
+        throw new Error(data.error || 'Unbekannter Fehler');
+      })
+      .then(data => {
+          bootstrap.Modal.getInstance(document.getElementById('delete_entry_modal')).hide();
+          loadList();
+      })
+      .catch(error => {
+        document.getElementById('edit_modal_error_container').innerHTML = `<div class="alert alert-danger">Fehler beim Löschen: ${error.message}</div>`;
+        alert('Fehler beim Löschen');
+      });
+    };
+
+    new bootstrap.Modal(document.getElementById('delete_entry_modal')).show();
+  }
+
+  function formDataToTypedJSON(formData, schema) {
+    const json = {};
+    const form = document.getElementById('entry_form');
+
+    for (const [key, value] of formData.entries()) {
+      const info = schema[key];
+      const inputElement = form.elements[key];
+
+      const valueAsNumber = (inputElement && 'valueAsNumber' in inputElement)
+        ? inputElement.valueAsNumber
+        : undefined;
+
+      console.log(key);
+      console.log("RawValue: " + value);
+      console.log(info);
+
+      if (!info) {
+        json[key] = value;
+        continue;
+      }
+
+      if (info.type === 'relation' && info.multiple) {
+        json[key] = formData.getAll(key);
+      } else if (info.type === 'checkbox') {
+        json[key] = value === 'on' || value === 'true';
+      } else if (info.type === 'number') {
+        json[key] = parseFloat(value);
+      } else if (info.type === 'date') {
+//        json[key] = valueAsNumber;
+        json[key] = value;
+      } else {
+        json[key] = value;
+      }
+      
+      for (const key in schema) {
+        const info = schema[key];
+        if (info.type === 'checkbox' && !formData.has(key)) {
+          json[key] = false;
+        }
+      }
+
+      console.log(json[key]);
+    }
+
+    return json;
+  }
+    
+  function castValue(value, type) {
+    if (value === null || value === '') return null;
+    switch(type) {
+      case 'number':
+        const num = Number(value);
+        return isNaN(num) ? null : num;
+      case 'boolean':
+        return value === 'true' || value === '1' || value === true || value === 'on';
+      case 'date':
+      case 'datetime':
+        // Optional: hier kann man Date-Parsing machen oder ISO-Strings verwenden
+        return value;
+      default:
+        return value;
+    }
+  }
+  
+  function convertToISODate(dateStr, type = 'date') {
+    console.log("HABE DATE: " + dateStr + " vom Typ: " + type);
+    if (!dateStr || typeof dateStr !== 'string') return '';
+    
+    try {
+        if (type === 'datetime-local') {
+            const parts = dateStr.split(' ');
+            if (parts.length !== 2) return dateStr;
+            
+            const [datePart, timePart] = parts;
+            const [day, month, year] = datePart.split('.');
+            
+            if (!day || !month || !year || !timePart) return dateStr;
+            
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${timePart}`;
+        } else {
+            const parts = dateStr.split('.');
+            if (parts.length !== 3) return dateStr;
+            
+            const [day, month, year] = parts;
+            if (!day || !month || !year) return dateStr;
+            
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+    } catch (e) {
+        console.warn('Date conversion failed for:', dateStr);
+        return dateStr;
+    }
+  }
+
+  document.getElementById('add_entry').addEventListener('click', () => {
+    openEditModal('{{ entityName | lower }}', 0, []);
+  });
+
+  loadList();
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,66 @@
+name: Deploy to Alfahosting
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Build Docker image
+        run: |
+          docker build -t kaderblick .
+          docker save kaderblick > image.tar
+          
+      - name: Deploy to Alfahosting
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.PLESK_USERNAME }}
+          password: ${{ secrets.PLESK_PASSWORD }}
+          source: "image.tar,docker-compose.yml"
+          target: "/var/www/vhosts/kaderblick/docker/"
+          
+      - name: Execute deployment commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.PLESK_USERNAME }}
+          password: ${{ secrets.PLESK_PASSWORD }}
+          script: |
+            cd /var/www/vhosts/kaderblick/docker/
+            
+            # Erst Secrets und Keys wiederherstellen
+            mkdir -p config/secrets/prod
+            echo "${{ secrets.PROD_DECRYPT_KEY }}" > config/secrets/prod/prod.decrypt.private.php
+            
+            # JWT Keys automatisch generieren, wenn sie nicht existieren
+            if [ ! -f config/jwt/private.pem ]; then
+                mkdir -p config/jwt
+                openssl genpkey -out config/jwt/private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -pass pass:${JWT_PASSPHRASE}
+                openssl pkey -in config/jwt/private.pem -out config/jwt/public.pem -pubout -passin pass:${JWT_PASSPHRASE}
+                chmod 600 config/jwt/*.pem
+            fi
+            
+            # Dann Container starten mit neuem APP_SECRET
+            docker-compose up -d \
+              -e APP_SECRET=${{ secrets.APP_SECRET }} \
+              -e APP_ENV=prod
+            
+            # Rest des Deployments...
+            docker load < image.tar
+            docker-compose down
+            
+            docker-compose up -d
+            
+            # Warte kurz bis Container hochgefahren ist
+            sleep 10
+            
+            # Nur noch Symfony Setup ausführen
+            docker exec kaderblick php bin/console secrets:generate-keys
+            docker exec kaderblick php bin/console cache:clear
+            docker exec kaderblick php bin/console cache:warmup
+            docker exec kaderblick php bin/console doctrine:migrations:migrate --no-interaction

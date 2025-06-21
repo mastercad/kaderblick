@@ -1,0 +1,359 @@
+{# templates/base.html.twig #}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Mein Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    {% block stylesheets %}{% endblock %}
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="{{ path('home') }}">Fußballverein</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                {# Öffentliche Endpunkte #}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        Öffentlich
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ path('calendar_index') }}">Kalender</a></li>
+                        <li><a class="dropdown-item" href="{{ path('api_teams_index') }}">Teams</a></li>
+                        <li><a class="dropdown-item" href="{{ path('api_games_index') }}">Spiele</a></li>
+                        <li><a class="dropdown-item" href="{{ path('api_locations_index') }}">Spielstätten</a></li>
+                    </ul>
+                </li>
+
+                {# Spieler-Endpunkte #}
+                {% if is_granted('ROLE_PLAYER') %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            Spieler
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ path('api_players_index') }}">Spielerprofil</a></li>
+                            <li><a class="dropdown-item" href="{{ path('api_game_events_index') }}">Spielereignisse</a></li>
+                        </ul>
+                    </li>
+                {% endif %}
+
+                {# Trainer-Endpunkte #}
+                {% if is_granted('ROLE_COACH') %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            Trainer
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ path('api_teams_index') }}">Mannschaften</a></li>
+                            <li><a class="dropdown-item" href="{{ path('api_players_index') }}">Spieler</a></li>
+                            <li><a class="dropdown-item" href="{{ path('api_game_events_index') }}">Spielereignisse</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ path('api_game_event_types_index') }}">Ereignistypen</a></li>
+                        </ul>
+                    </li>
+                {% endif %}
+
+                {# Admin-Endpunkte #}
+                {% if is_granted('ROLE_ADMIN') %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            Administration
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header">Stammdaten</h6></li>
+                            <li><a class="dropdown-item" href="{{ path('api_age_groups_index') }}">Altersgruppen</a></li>
+                            <li><a class="dropdown-item" href="{{ path('api_positions_index') }}">Positionen</a></li>
+                            <li><a class="dropdown-item" href="{{ path('api_strong_feet_index') }}">Füße</a></li>
+                            <li><a class="dropdown-item" href="{{ path('api_surface_types_index') }}">Beläge</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Verwaltung</h6></li>
+                            <li><a class="dropdown-item" href="{{ path('api_clubs_index') }}">Vereine</a></li>
+                            <li><a class="dropdown-item" href="{{ path('api_coaches_index') }}">Trainer</a></li>
+                            <li><a class="dropdown-item" href="{{ path('api_locations_index') }}">Spielstätten</a></li>
+                            <li><a class="dropdown-item" href="{{ path('api_teams_index') }}">Teams</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Zuweisungen</h6></li>
+                            <li><a class="dropdown-item" href="{{ path('admin_users_index') }}">Benutzer</a></li>
+                            <li><a class="dropdown-item" href="{{ path('api_player_team_assignments_index') }}">Spieler zu Team</a></li>
+                            <li><a class="dropdown-item" href="{{ path('api_player_club_assignments_index') }}">Spieler zu Verein</a></li>
+                            <li><a class="dropdown-item" href="{{ path('api_coach_team_assignments_index') }}">Coach zu Team</a></li>
+                            <li><a class="dropdown-item" href="{{ path('api_coach_club_assignments_index') }}">Coach zu Verein</a></li>
+                            <li><a class="dropdown-item" href="{{ path('videos_upload_form') }}">Videos</a></li>
+                        </ul>
+                    </li>
+                {% endif %}
+            </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <button id="button_register" class="btn btn-outline-light mx-2" data-bs-toggle="modal" data-bs-target="#auth_modal">
+                        Anmelden
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button id="button_logout" class="btn btn-outline-danger mx-2 d-none">
+                        Abmelden
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    {% block body %}{% endblock %}
+    
+    <div id="modalContainer"></div>
+    
+    <div class="modal fade" id="auth_modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <ul class="nav nav-tabs" id="authTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login"
+                      type="button" role="tab">Login</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register"
+                      type="button" role="tab">Registrieren</button>
+            </li>
+          </ul>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="tab-content">
+            <!-- Login Tab -->
+            <div class="tab-pane fade show active" id="login" role="tabpanel">
+              <form id="loginForm">
+                <div class="mb-3">
+                  <label for="loginEmail" class="form-label">E-Mail</label>
+                  <input type="email" class="form-control" id="loginEmail" required>
+                </div>
+                <div class="mb-3">
+                  <label for="loginPassword" class="form-label">Passwort</label>
+                  <input type="password" class="form-control" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Login</button>
+              </form>
+            </div>
+
+            <!-- Register Tab -->
+            <div class="tab-pane fade" id="register" role="tabpanel">
+              <form id="registerForm">
+                <div class="mb-3">
+                  <label for="registerName" class="form-label">Name</label>
+                  <input type="text" class="form-control" id="registerName" required>
+                </div>
+                <div class="mb-3">
+                  <label for="registerEmail" class="form-label">E-Mail</label>
+                  <input type="email" class="form-control" id="registerEmail" required>
+                </div>
+                <div class="mb-3">
+                  <label for="registerPassword" class="form-label">Passwort</label>
+                  <input type="password" class="form-control" id="registerPassword" required>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Registrieren</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer d-block text-center">
+          <div id="authMessage" class="text-muted small"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+
+    function isLoggedIn() {
+      return fetch('{{ path('api_about_me' )}}')
+      .then(response => {
+        if (response.status === 200) {
+          return response.json();
+        } else {
+          throw new Error('Not logged in');
+        }
+      })
+      .then(user => {
+        return true;
+      })
+      .catch(error => {
+        return false;
+      });
+    }
+
+    function updateNavbar() {
+      isLoggedIn().then(loggedIn => {
+        if (loggedIn) {
+          document.getElementById('button_logout').classList.remove('d-none'); 
+          document.getElementById('button_register').classList.add('d-none');
+        } else {
+          document.getElementById('button_logout').classList.add('d-none'); 
+          document.getElementById('button_register').classList.remove('d-none');
+        }
+      });
+    }
+
+    function handleLoginSuccess(token) {
+      updateNavbar();
+
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('auth_modal')).hide()
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Flash Message Handling
+      {% for message in app.flashes('verification_success') %}
+          const modalHtml = `
+              <div class="modal" id="successModal" tabindex="-1">
+                  <div class="modal-dialog">
+                      <div class="modal-content">
+                          <div class="modal-header">
+                              <h5 class="modal-title">Account aktiviert</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body">
+                              <p>{{ message }}</p>
+                          </div>
+                          <div class="modal-footer">
+                              <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          `;
+          document.getElementById('modalContainer').innerHTML = modalHtml;
+          const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+          successModal.show();
+      {% endfor %}
+
+      // Rest des existierenden Codes
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      const authMessage = document.getElementById('authMessage');
+
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        const res = await fetch('{{ path('api_login') }}', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ email: email, password: password })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          authMessage.textContent = 'Login erfolgreich!';
+          handleLoginSuccess(data.token);
+        } else {
+          authMessage.textContent = data.message || 'Login fehlgeschlagen';
+        }
+      });
+
+      registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+        const name = document.getElementById('registerName').value;
+
+        const res = await fetch('{{ path('api_register') }}', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ email: email, name: name, password: password })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          authMessage.textContent = 'Registrierung erfolgreich! Bitte E-Mail bestätigen.';
+        } else {
+          authMessage.textContent = data.message || 'Registrierung fehlgeschlagen';
+        }
+      });
+
+      document.getElementById('button_logout').addEventListener('click', () => {
+        return fetch('{{ path('api_logout' )}}')
+        .then(response => {
+          if (response.status === 200) {
+            location.href ='/';
+            return response.json();
+          } else {
+            console.error(response);
+            throw new Error('Not logged out');
+          }
+        })
+        .then(user => {
+          console.log('Logged out');
+          console.log(user);
+          return true;
+        })
+        .catch(error => {
+          console.log('Not logged out');
+          console.error(error);
+          return false;
+        });
+
+        updateNavbar();
+      });
+      
+      updateNavbar();
+    });
+
+    async function fetchWithRefresh(url, options = {}) {
+      let accessToken = localStorage.getItem('access_token');
+
+      let response = await fetch(url, {
+        ...options,
+        headers: {
+          ...(options.headers || { 'Content-Type': 'application/json' }),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(json),
+      });
+
+      if (response.status === 401) {
+        const refreshResponse = await fetch('/api/token/refresh', {
+          method: 'POST',
+          credentials: 'include',
+        });
+
+        if (refreshResponse.ok) {
+          const data = await refreshResponse.json();
+          localStorage.setItem('access_token', data.token);
+
+          return fetch(url, {
+            ...options,
+            headers: {
+              ...(options.headers || {}),
+              'Authorization': 'Bearer ' + data.token,
+              'Content-Type': 'application/json',
+            },
+          });
+        } else {
+          alert('Session abgelaufen, bitte neu anmelden.');
+          localStorage.removeItem('access_token');
+          window.location.href = '/';
+          return;
+        }
+      }
+
+      return response;
+    }
+  </script>
+  {% block javascripts %}{% endblock %}
+</body>
+</html>
+

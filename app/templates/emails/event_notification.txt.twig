@@ -1,0 +1,22 @@
+{% extends 'emails/base.txt.twig' %}
+
+{% block title %}Neuer Termin: {{ event.title }}{% endblock %}
+
+{% block content %}
+Hallo,
+
+ein neuer Termin wurde erstellt:
+
+{{ event.title }}
+
+Datum: {{ event.startDate|date('d.m.Y H:i') }}{% if event.endDate %} - {{ event.endDate|date('d.m.Y H:i') }}{% endif %}
+{% if event.location %}
+Ort: {{ event.location.name }}
+{% endif %}
+{% if event.description %}
+Beschreibung:
+{{ event.description }}
+{% endif %}
+
+Zum Kalender: {{ url('calendar_index') }}
+{% endblock %}

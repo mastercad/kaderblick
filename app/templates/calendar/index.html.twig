@@ -1,0 +1,592 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.css' rel='stylesheet' />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .fc-event {
+            opacity: 0.85;
+            transition: opacity 0.2s;
+        }
+        .fc-event:hover {
+            opacity: 1;
+        }
+        .fc-timeGridDay-view .fc-event {
+            border-radius: 3px;
+            margin: 1px 0;
+        }
+    </style>
+{% endblock %}
+
+{% block title %}
+Event Kalender
+{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col-md-4">
+        <!-- Filter vor der Event-Liste -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">Filter nach Typ</h5>
+            </div>
+            <div class="card-body p-2">
+                <div class="d-flex flex-wrap gap-2">
+                    {% for type in eventTypes %}
+                        <div class="form-check">
+                            <input class="form-check-input event-type-filter" 
+                                   type="checkbox" 
+                                   value="{{ type.id }}" 
+                                   id="type{{ type.id }}" 
+                                   checked
+                                   data-color="{{ type.color }}">
+                            <label class="form-check-label" for="type{{ type.id }}"
+                                   style="color: {{ type.color }}">
+                                {{ type.name }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Anstehende Termine</h5>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newEventModal">
+                        <i class="fas fa-plus"></i> Neuer Termin
+                    </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for event in upcomingEvents %}
+                        <div class="list-group-item list-group-item-action" role="button" 
+                             data-event='{{ {
+                                id: event.id,
+                                title: event.title,
+                                description: event.description,
+                                start: event.startDate|date('c'),
+                                end: event.endDate ? event.endDate|date('c') : null,
+                                type: event.type ? { id: event.type.id, name: event.type.name, color: event.type.color } : null,
+                                location: event.location ? { id: event.location.id, name: event.location.name } : null
+                             }|json_encode|e('html_attr') }}'>
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ event.title }}</h6>
+                                <small>{{ event.startDate|date('d.m.Y H:i') }}</small>
+                            </div>
+                            <p class="mb-1">{{ event.description }}</p>
+                            {% if event.location %}
+                                <small>
+                                    <i class="fas fa-map-marker-alt"></i> 
+                                    {{ event.location.name }}
+                                </small>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <div id="calendar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if is_granted('ROLE_ADMIN') %}
+    <!-- Modal für neuen Termin -->
+    <div class="modal fade" id="newEventModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Neuer Termin</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="newEventForm" data-event-id="">
+                        <div class="mb-3">
+                            <label for="eventTitle" class="form-label">Titel</label>
+                            <input type="text" class="form-control" id="eventTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventType" class="form-label">Art</label>
+                            <select class="form-select" id="eventType" required>
+                                {% for type in eventTypes %}
+                                    <option value="{{ type.id }}" data-color="{{ type.color }}">{{ type.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventStart" class="form-label">Start</label>
+                            <input type="datetime-local" class="form-control" id="eventStart" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="eventEnd" class="form-label">Ende (optional)</label>
+                            <input type="datetime-local" class="form-control" id="eventEnd">
+                        </div>
+
+                        {# Spiel-spezifische Felder #}
+                        <div id="gameFields" style="display: none;">
+                            <h3>Spieldetails</h3>
+                            <div class="mb-3">
+                                <label>Heimmannschaft</label>
+                                <select name="homeTeamId" id="homeTeam" class="form-control game-field">
+                                    <option value="">Bitte wählen...</option>
+                                    {% for team in teams %}
+                                        <option value="{{ team.id }}">{{ team.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label>Auswärtsmannschaft</label>
+                                <select name="awayTeamId" id="awayTeam" class="form-control game-field">
+                                    <option value="">Bitte wählen...</option>
+                                    {% for team in teams %}
+                                        <option value="{{ team.id }}">{{ team.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label>Spieltyp</label>
+                                <select name="gameType" id="gameType" class="form-control game-field">
+                                    <option value="">Bitte wählen...</option>
+                                    {% for type in gameTypes %}
+                                        <option value="{{ type.id }}">{{ type.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Ort</label>
+                            <select id="eventLocation" name="eventLocation" class="form-control">
+                                <option value="">kein Ort ausgewählt</option>
+                                {% if locations %}
+                                    {% for location in locations %}
+                                        <option value="{{ location.id }}" selected>
+                                            {{ location.name }}
+                                        </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="eventDescription" class="form-label">Beschreibung</label>
+                            <textarea class="form-control" id="eventDescription" rows="3"></textarea>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="sendNotification">
+                            <label class="form-check-label" for="sendNotification">
+                                Benachrichtigung an alle Mitglieder senden
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="button" class="btn btn-primary" id="saveEvent">Speichern</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+{# Event-Details Modal hinzufügen #}
+<div class="modal fade" id="eventDetailsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventDetailsTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Termin:</strong> <span id="eventDetailsDate"></span></p>
+                <div id="eventDetailsLocationContainer">
+                    <p><strong>Ort:</strong> <span id="eventDetailsLocation"></span></p>
+                </div>
+                <p><strong>Beschreibung:</strong></p>
+                <p id="eventDetailsDescription"></p>
+            </div>
+            {% if is_granted('ROLE_ADMIN') %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="deleteEvent">Löschen</button>
+                <button type="button" class="btn btn-primary" id="editEvent">Bearbeiten</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/de.js'></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const eventType = document.getElementById('eventType');
+        const gameFields = document.getElementById('gameFields');
+        const gameFieldInputs = gameFields.querySelectorAll('select');
+
+        const eventTypeFilters = document.querySelectorAll('.event-type-filter');
+        const editModal = document.getElementById('newEventModal')
+
+        const calendarGameEventTypeId = '{{ calendarGameEventTypeId }}';
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'de',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: '{{ path('calendar_events') }}',
+            editable: {{ is_granted('ROLE_ADMIN') ? 'true' : 'false' }},
+            eventDidMount: function(info) {
+                // Zeige Events farbig an basierend auf EventType
+                if (info.event.extendedProps.type) {
+                    info.el.style.backgroundColor = info.event.extendedProps.type.color;
+                }
+                // Setze das Ende auf 23:59:59 wenn kein Ende definiert ist
+                if (!info.event.end) {
+                    const endDate = new Date(info.event.start);
+                    endDate.setHours(23, 59, 59);
+                    info.event.setEnd(endDate);
+                }
+                // Tooltip mit Details
+                new bootstrap.Tooltip(info.el, {
+                    title: `${info.event.title}\n${info.event.extendedProps.location?.name || ''}\n${info.event.extendedProps.description || ''}`,
+                    placement: 'top',
+                    html: true
+                });
+            },
+            eventDrop: async function(info) {
+                try {
+                    const response = await fetch(`/calendar/event/${info.event.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token('update-event') }}'
+                        },
+                        body: JSON.stringify({
+                            id: info.event.id,
+                            startDate: info.event.start.toISOString(),
+                            endDate: info.event.end?.toISOString()
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        info.revert();
+                        alert('Fehler beim Aktualisieren des Termins');
+                    } else {
+                        await updateUpcomingEvents();
+                    }
+                } catch (error) {
+                    info.revert();
+                    alert('Fehler beim Aktualisieren des Termins');
+                }
+            },
+            slotMinTime: '06:00:00', // Tag beginnt um 6 Uhr
+            slotMaxTime: '24:00:00', // Tag endet um 24 Uhr
+            slotDuration: '00:30:00', // 30-Minuten-Slots
+            allDaySlot: false, // Keine Ganztages-Zeile
+            expandRows: true, // Höhe an verfügbaren Platz anpassen
+            dateClick: function(info) {
+                // Öffne Tagesansicht bei Klick auf einen Tag
+                calendar.changeView('timeGridDay', info.dateStr);
+            },
+            eventClick: function(info) {
+                // Event-Details anzeigen
+                showEventDetails(info.event);
+            }
+        });
+        calendar.render();
+
+        // Funktion zum Formatieren des Datums ohne Sekunden
+        function formatDateTime(date) {
+            return new Date(date).toLocaleString('de-DE', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        }
+
+        // Event Handler für den Speichern-Button
+        document.getElementById('saveEvent')?.addEventListener('click', async function() {
+            const calendarEventTypeId = document.getElementById('eventType').value;
+            const formData = {
+                title: document.getElementById('eventTitle').value,
+                typeId: calendarGameEventTypeId,
+                startDate: document.getElementById('eventStart').value,
+                endDate: document.getElementById('eventEnd').value || null,
+                locationId: document.getElementById('eventLocation').value || null,
+                description: document.getElementById('eventDescription').value,
+                sendNotification: document.getElementById('sendNotification').checked
+            };
+
+            if (calendarGameEventTypeId == calendarEventTypeId) {
+                formData['awayTeamId'] = document.getElementById('awayTeam').value,
+                formData['homeTeamId'] = document.getElementById('homeTeam').value,
+                formData['gameTypeId'] = document.getElementById('gameType').value
+            }
+
+            const currentEventId = document.getElementById('newEventForm').dataset.eventId;
+            const method = currentEventId ? 'PUT' : 'POST';
+            const url = currentEventId 
+                ? `/calendar/event/${currentEventId}`
+                : '{{ path('calendar_event_create') }}';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token('update-event') }}'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    calendar.refetchEvents();
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('newEventModal'));
+                    modal.hide();
+                    document.getElementById('newEventForm').reset();
+                    document.getElementById('newEventForm').dataset.eventId = '';
+                    await updateUpcomingEvents();
+                } else {
+                    alert('Fehler beim Speichern: ' + (result.error || 'Unbekannter Fehler'));
+                }
+            } catch (error) {
+                alert('Fehler beim Speichern');
+                console.error(error);
+            }
+        });
+
+        // Funktion zum Aktualisieren der Event-Liste
+        async function updateUpcomingEvents() {
+            const response = await fetch('{{ path('calendar_upcoming') }}');
+            const events = await response.json();
+            const listGroup = document.querySelector('.list-group');
+            listGroup.innerHTML = events.map(event => `
+                <div class="list-group-item list-group-item-action" role="button"
+                     data-event='${JSON.stringify({
+                        id: event.id,
+                        title: event.title,
+                        description: event.description,
+                        start: event.startDate,
+                        end: event.endDate,
+                        type: event.type,
+                        location: event.location
+                    })}'>
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">${event.title}</h6>
+                        <small>${formatDateTime(event.startDate)}</small>
+                    </div>
+                    <p class="mb-1">${event.description || ''}</p>
+                    ${event.location ? `<small><i class="fas fa-map-marker-alt"></i> ${event.location.name}</small>` : ''}
+                </div>
+            `).join('');
+
+            // Event-Handler nach Update neu hinzufügen
+            document.querySelectorAll('.list-group-item-action').forEach(item => {
+                item.addEventListener('click', function() {
+                    const eventData = JSON.parse(this.dataset.event);
+                    showEventDetails({
+                        id: eventData.id,
+                        title: eventData.title,
+                        start: new Date(eventData.start),
+                        end: eventData.end ? new Date(eventData.end) : null,
+                        extendedProps: {
+                            description: eventData.description,
+                            type: eventData.type,
+                            location: eventData.location
+                        }
+                    });
+                });
+            });
+
+            // Nach dem Update die Filter erneut anwenden
+            updateEventVisibility();
+        }
+
+        // Event-Details Modal
+        function showEventDetails(event) {
+            const modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
+            document.getElementById('eventDetailsTitle').textContent = event.title;
+            document.getElementById('eventDetailsDate').textContent = 
+                `${formatDateTime(event.start)}${event.end ? ' - ' + formatDateTime(event.end) : ''}`;
+            document.getElementById('eventDetailsDescription').textContent = event.extendedProps.description || '';
+            if (event.extendedProps.location) {
+                document.getElementById('eventDetailsLocation').textContent = event.extendedProps.location.name;
+                document.getElementById('eventDetailsLocationContainer').style.display = 'block';
+            } else {
+                document.getElementById('eventDetailsLocationContainer').style.display = 'none';
+            }
+
+            // Event-Type Farbe im Modal anzeigen
+            if (event.extendedProps.type) {
+                document.getElementById('eventDetailsTitle').style.color = event.extendedProps.type.color;
+            }
+
+            // Tooltip für Details
+            new bootstrap.Tooltip(document.getElementById('eventDetailsDate'), {
+                title: 'Klicken Sie zum Bearbeiten',
+                placement: 'top',
+                enabled: {{ is_granted('ROLE_ADMIN') ? 'true' : 'false' }}
+            });
+
+            // Event-Buttons für Admins
+            document.getElementById('editEvent')?.addEventListener('click', () => {
+                console.info(event);
+                document.getElementById('newEventForm').dataset.eventId = event.id;
+                document.getElementById('eventTitle').value = event.title;
+                document.getElementById('eventType').value = event.extendedProps.type?.id;
+                document.getElementById('eventStart').value = event.start.toISOString().slice(0, 16);
+                if (event.end) {
+                    document.getElementById('eventEnd').value = event.end.toISOString().slice(0, 16);
+                }
+                document.getElementById('eventLocation').value = event.extendedProps.location?.id || '';
+                document.getElementById('eventDescription').value = event.extendedProps.description || '';
+                document.getElementById('homeTeam').value = event.extendedProps.game?.homeTeam?.id;
+                document.getElementById('awayTeam').value = event.extendedProps.game?.awayTeam?.id;
+                document.getElementById('gameType').value = event.extendedProps.game?.gameType?.id;
+                
+                modal.hide();
+                new bootstrap.Modal(document.getElementById('newEventModal')).show();
+            }, { once: true }); // Wichtig: Event-Listener nur einmal ausführen!
+
+            document.getElementById('deleteEvent')?.addEventListener('click', async () => {
+                if (confirm('Möchten Sie diesen Termin wirklich löschen?')) {
+                    try {
+                        const response = await fetch(`/calendar/event/${event.id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token('delete-event') }}'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            calendar.getEventById(event.id).remove();
+                            modal.hide();
+                            updateUpcomingEvents();
+                        }
+                    } catch (error) {
+                        alert('Fehler beim Löschen des Termins');
+                    }
+                }
+            });
+
+            modal.show();
+        }
+        
+        const updateEventVisibility = () => {
+            const selectedTypes = Array.from(eventTypeFilters)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+
+            // Kalender Events filtern
+            calendar.getEvents().forEach(event => {
+                const typeId = event.extendedProps.type?.id?.toString();
+                const visible = selectedTypes.includes(typeId);
+                event.setProp('display', visible ? 'auto' : 'none');
+            });
+
+            // Upcoming Events filtern
+            document.querySelectorAll('.list-group-item-action').forEach(item => {
+                const eventData = JSON.parse(item.dataset.event);
+                const typeId = eventData.type?.id?.toString();
+                const visible = selectedTypes.includes(typeId);
+                item.style.display = visible ? 'block' : 'none';
+            });
+        };
+
+        eventTypeFilters.forEach(checkbox => {
+            checkbox.addEventListener('change', updateEventVisibility);
+        });
+
+        // Event-Handler für Upcoming Events
+        document.querySelectorAll('.list-group-item-action').forEach(item => {
+            item.addEventListener('click', function() {
+                const eventData = JSON.parse(this.dataset.event);
+                showEventDetails({
+                    id: eventData.id,
+                    title: eventData.title,
+                    start: new Date(eventData.start),
+                    end: eventData.end ? new Date(eventData.end) : null,
+                    extendedProps: {
+                        description: eventData.description,
+                        type: eventData.type,
+                        location: eventData.location
+                    }
+                });
+            });
+        });
+
+        eventType.addEventListener('change', function() {
+            const isGame = this.options[this.selectedIndex].value == calendarGameEventTypeId;
+            gameFields.style.display = isGame ? 'block' : 'none';
+            gameFieldInputs.forEach(input => input.required = isGame);
+        });
+
+        function initSelect2(elementId, searchType, placeholder) {
+            $(elementId).select2({
+                ajax: {
+                    url: "{{ path('calendar_search_locations') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            term: params.term || ''
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.map(function(location) {
+                                return {
+                                    id: location.id,
+                                    text: location.name + ', ' + location.city,
+                                };
+                            })
+                        };
+                    },
+                    cache: true
+                },
+                dropdownParent: $("#newEventModal"),
+                minimumInputLength: 2,
+                placeholder: placeholder,
+                width: '100%',
+                allowClear: true
+            }).on('select2:unselecting', function() {
+                $(this).val('').trigger('change');
+            });
+
+            var $emptyOption = new Option('Keine Zuordnung', '', true, false);
+            $(elementId).append($emptyOption).trigger('change');
+        }
+
+        initSelect2('#eventLocation', 'location', 'Ort suchen...');
+
+        editModal.addEventListener('shown.bs.modal', function (event) {
+            const isGame = eventType.options[eventType.selectedIndex].value == calendarGameEventTypeId;
+            gameFields.style.display = isGame ? 'block' : 'none';
+            gameFieldInputs.forEach(input => input.required = isGame);
+        })
+    });
+    </script>
+{% endblock %}

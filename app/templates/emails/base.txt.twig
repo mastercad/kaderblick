@@ -1,0 +1,11 @@
+{% block title %}{% endblock %}
+
+-------------------------------------------
+
+{% block content %}{% endblock %}
+
+-------------------------------------------
+{{ website_name ?? 'Fußballverein' }} - {{ current_year ?? 'now'|date('Y') }}
+{% if unsubscribe_url is defined %}
+Vom Newsletter abmelden: {{ unsubscribe_url }}
+{% endif %}

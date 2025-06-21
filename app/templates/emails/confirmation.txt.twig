@@ -1,0 +1,13 @@
+{% extends 'emails/base.txt.twig' %}
+
+{% block title %}E-Mail Bestätigung{% endblock %}
+
+{% block content %}
+Hallo {{ user.firstName }},
+
+bitte bestätige deine E-Mail-Adresse durch Klick auf den folgenden Link:
+
+{{ signedUrl }}
+
+Der Link ist 24 Stunden gültig.
+{% endblock %}
