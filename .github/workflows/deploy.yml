@@ -31,6 +31,8 @@ jobs:
             # Secrets und Keys einrichten
             mkdir -p app/config/secrets/prod
             echo "${{ secrets.PROD_DECRYPT_KEY }}" > app/config/secrets/prod/prod.decrypt.private.php
+
+            echo "APP_SECRET=${{ secrets.APP_SECRET }}" > app/config/secrets/prod/.env
             
             # Container neustarten als root
             APP_SECRET=${{ secrets.APP_SECRET }} docker compose up -d
