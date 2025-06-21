@@ -33,5 +33,5 @@ jobs:
             echo "${{ secrets.PROD_DECRYPT_KEY }}" > app/config/secrets/prod/prod.decrypt.private.php
             
             # Container neustarten
-            docker-compose down
-            docker-compose up -d
+            docker compose down
+            docker compose up -d
