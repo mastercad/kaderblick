@@ -16,6 +16,7 @@ services:
   db:
     image: mariadb:10.11
     restart: unless-stopped
+    container_name: kaderblick-db
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: symfony
