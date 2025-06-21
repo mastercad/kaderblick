@@ -17,7 +17,7 @@ jobs:
           username: ${{ secrets.PLESK_USERNAME }}
           password: ${{ secrets.PLESK_PASSWORD }}
           source: "docker-compose.yml,.docker/,app/"
-          target: "/var/www/vhosts/kaderblick"
+          target: "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
           
       - name: Execute deployment commands
         uses: appleboy/ssh-action@master
@@ -26,7 +26,7 @@ jobs:
           username: ${{ secrets.PLESK_USERNAME }}
           password: ${{ secrets.PLESK_PASSWORD }}
           script: |
-            cd /var/www/vhosts/kaderblick
+            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
             
             # Secrets und Keys einrichten
             mkdir -p app/config/secrets/prod
