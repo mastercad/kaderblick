@@ -10,22 +10,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Prepare target directory
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.PLESK_USERNAME }}
-          password: ${{ secrets.PLESK_PASSWORD }}
-          script: |
-            rm -rf /var/www/vhosts/kaderblick/*
-            n
-      - name: Deploy files to Alfahosting
+      - name: Build Docker image
+        run: |
+          docker build -t kaderblick .
+          docker save kaderblick > image.tar
+          
+      - name: Deploy to Alfahosting
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.PLESK_USERNAME }}
           password: ${{ secrets.PLESK_PASSWORD }}
-          source: "."
+          source: "docker-compose.yml,image.tar,.docker/"
           target: "/var/www/vhosts/kaderblick"
           
       - name: Execute deployment commands
@@ -36,31 +32,12 @@ jobs:
           password: ${{ secrets.PLESK_PASSWORD }}
           script: |
             cd /var/www/vhosts/kaderblick
-            
-            # Verzeichnisstruktur erstellen
-            mkdir -p app/config/secrets/prod app/config/jwt
+            docker load < image.tar
             
             # Secrets und Keys einrichten
-            echo "${{ secrets.PROD_DECRYPT_KEY }}" > app/config/secrets/prod/prod.decrypt.private.php
-            
-            # JWT Keys automatisch generieren wenn nicht vorhanden
-            if [ ! -f app/config/jwt/private.pem ]; then
-                openssl genpkey -out app/config/jwt/private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -pass pass:${JWT_PASSPHRASE}
-                openssl pkey -in app/config/jwt/private.pem -out app/config/jwt/public.pem -pubout -passin pass:${JWT_PASSPHRASE}
-                chmod 600 app/config/jwt/*.pem
-            fi
+            mkdir -p config/secrets/prod
+            echo "${{ secrets.PROD_DECRYPT_KEY }}" > config/secrets/prod/prod.decrypt.private.php
             
             # Container neustarten mit Umgebungsvariablen
             docker-compose down
-            docker-compose up -d \
-              -e APP_SECRET=${{ secrets.APP_SECRET }} \
-              -e APP_ENV=prod \
-              -e JWT_PASSPHRASE=${{ secrets.JWT_PASSPHRASE }}
-            
-            # Warte kurz bis Container hochgefahren ist
-            sleep 10
-            
-            # Symfony Setup
-            docker-compose exec -T api php bin/console cache:clear
-            docker-compose exec -T api php bin/console cache:warmup
-            docker-compose exec -T api php bin/console doctrine:migrations:migrate --no-interaction
+            docker-compose up -d
