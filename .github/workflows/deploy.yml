@@ -65,16 +65,23 @@ jobs:
             set -e
             cd "${{ steps.release.outputs.dir }}"
             
-            # Build und Test
-            docker compose -p staging up -d --build
+            # Alte Staging-Container stoppen und entfernen
+            docker compose -p staging down --remove-orphans
+            
+            # Build und Test mit uniquen Container-Namen
+            docker compose -p staging up -d --build --force-recreate
             docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
             docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
             
+            # Vor Aktivierung alte Production-Container stoppen
+            docker compose -p production down --remove-orphans
+            
             # Aktivierung
-            ln -sfn "${{ steps.release.outputs.dir }}" /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
-            docker compose down
-            docker compose -p production up -d
+            ln -sfn "${{ steps.release.outputs.dir }}" /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
+            
+            # Neue Production starten
+            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
+            docker compose -p production up -d --force-recreate
             
             # Cleanup
-            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/releases
-            ls -t | tail -n +4 | xargs rm -rf
+            cd ../releases && ls -t | tail -n +4 | xargs rm -rf
