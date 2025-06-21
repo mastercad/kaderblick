@@ -67,6 +67,8 @@ jobs:
             
             # Alte Staging-Container stoppen und entfernen
             docker compose -p staging down --remove-orphans
+
+            docker volume inspect kaderblick-db-data || docker volume create kaderblick-db-data
             
             # Build und Test mit uniquen Container-Namen
             PMA_PORT=18081 API_PORT=18000 VUE_PORT=18080 docker compose -p staging up -d --build --force-recreate
@@ -78,8 +80,6 @@ jobs:
 
             # Aktivierung
             ln -sfn "${{ steps.release.outputs.dir }}" /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
-
-            docker volume inspect kaderblick-db-data || docker volume create kaderblick-db-data
 
             # Neue Production starten
             cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
