@@ -19,6 +19,21 @@ jobs:
           source: "docker-compose.yml,.docker/,app/"
           target: "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
           
+      - name: Prepare environment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.PLESK_USERNAME }}
+          password: ${{ secrets.PLESK_PASSWORD  
+          script: |
+            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app
+            cp .env.dist .env
+            echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> .env            
+            
+            mkdir -p app/config/secrets/prod
+            echo "<?php return '${{ secrets.PROD_DECRYPT_KEY }}'; ?>" > app/config/secrets/prod/prod.decrypt.private.php
+
+
       - name: Start environment
         uses: appleboy/ssh-action@master
         with:
@@ -26,13 +41,6 @@ jobs:
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
-            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
-            cp .env.dist .env
-            echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> .env
-            
-            # Secrets und Keys einrichten
-            mkdir -p app/config/secrets/prod
-            echo "<?php return '${{ secrets.PROD_DECRYPT_KEY }}'; ?>" > app/config/secrets/prod/prod.decrypt.private.php
 
             docker compose up -d
 
