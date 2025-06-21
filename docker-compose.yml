@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
   api:
     build: ./.docker/api
-    container_name: fussballmanager_api
+    container_name: kaderblick_api
     restart: unless-stopped
     ports:
       - "8000:80"
@@ -18,11 +16,11 @@ services:
       - JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
       - JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
     networks:
-      - app-network
+      - kaderblick-network
 
   db:
     image: mariadb:10.11
-    container_name: fussballmanager_db
+    container_name: kaderblick_db
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
@@ -36,7 +34,7 @@ services:
 
   vue-frontend:
     build: ./.docker/frontend
-    container_name: fussballmanager_frontend
+    container_name: kaderblick_frontend
     ports:
       - "8080:8080"
     volumes:
@@ -44,10 +42,11 @@ services:
     depends_on:
       - api
     networks:
-      - app-network
+      - kaderblick-network
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
+    container_name: kaderblick_phpmyadmin
     restart: always
     depends_on:
       - db
@@ -57,11 +56,11 @@ services:
     ports:
       - "8081:80"
     networks:
-      - app-network
+      - kaderblick-network
 
 volumes:
   db_data:
 
 networks:
-  app-network:
+  kaderblick-network:
     driver: bridge

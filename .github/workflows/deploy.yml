@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Deploy files to Alfahosting
+      - name: Deploy files to Alfahosting 
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -34,3 +34,6 @@ jobs:
             
             # Container neustarten als root
             APP_SECRET=${{ secrets.APP_SECRET }} docker compose up -d
+
+            docker compose exec -T api composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --ignore-platform-reqs --no-progress --no-scripts
+            docker compose exec -T api bin/console doctrine:migrations:migrate --allow-no-migration --env=prod
