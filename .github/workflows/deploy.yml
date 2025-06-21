@@ -29,15 +29,19 @@ jobs:
             set -e
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
             
-            # Vorbereitung
-            mkdir -p "$RELEASE_DIR"
+            # Komplette Verzeichnisstruktur anlegen
+            mkdir -p "$RELEASE_DIR/app/config/secrets"
+            mkdir -p "$RELEASE_DIR/app/config/jwt"
             
             # Backup wichtiger Dateien
             if [ -d "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de" ]; then
-              cp -r /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app/config/secrets "$RELEASE_DIR/app/config/"
-              cp -r /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app/config/jwt "$RELEASE_DIR/app/config/"
+              cp -r /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app/config/secrets/* "$RELEASE_DIR/app/config/secrets/"
+              cp -r /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app/config/jwt/* "$RELEASE_DIR/app/config/jwt/"
               cp /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app/.env.local "$RELEASE_DIR/app/"
             fi
+            
+            # Berechtigungen setzen
+            chmod -R 755 "$RELEASE_DIR"
 
       - name: Copy files
         uses: appleboy/scp-action@master
