@@ -28,19 +28,20 @@ jobs:
           script: |
             set -e
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
+            CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
             
-            # Komplette Verzeichnisstruktur anlegen
-            mkdir -p "$RELEASE_DIR/app/config/secrets"
+            # Nur prod secrets und jwt kopieren
+            mkdir -p "$RELEASE_DIR/app/config/secrets/prod"
             mkdir -p "$RELEASE_DIR/app/config/jwt"
             
-            # Backup wichtiger Dateien
-            if [ -d "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de" ]; then
-              cp -r /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app/config/secrets/* "$RELEASE_DIR/app/config/secrets/"
-              cp -r /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app/config/jwt/* "$RELEASE_DIR/app/config/jwt/"
-              cp /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app/.env.local "$RELEASE_DIR/app/"
+            if [ -d "$CURRENT_DIR" ]; then
+              [ -d "$CURRENT_DIR/app/config/secrets/prod" ] && \
+                cp -r "$CURRENT_DIR/app/config/secrets/prod/"* "$RELEASE_DIR/app/config/secrets/prod/"
+              
+              [ -d "$CURRENT_DIR/app/config/jwt" ] && \
+                cp -r "$CURRENT_DIR/app/config/jwt/"* "$RELEASE_DIR/app/config/jwt/"
             fi
             
-            # Berechtigungen setzen
             chmod -R 755 "$RELEASE_DIR"
 
       - name: Copy files
