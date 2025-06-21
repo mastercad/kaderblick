@@ -19,12 +19,12 @@ jobs:
           source: "docker-compose.yml,.docker/,app/"
           target: "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
           
-      - name: Execute deployment commands
+      - name: Start environment
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.PLESK_USERNAME }}
-          password: ${{ secrets.PLESK_PASSWORD }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
           script: |
             cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
             
@@ -32,5 +32,5 @@ jobs:
             mkdir -p app/config/secrets/prod
             echo "${{ secrets.PROD_DECRYPT_KEY }}" > app/config/secrets/prod/prod.decrypt.private.php
             
-            # Container neustarten nur mit APP_SECRET
+            # Container neustarten als root
             APP_SECRET=${{ secrets.APP_SECRET }} docker compose up -d
