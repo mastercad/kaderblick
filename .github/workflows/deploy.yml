@@ -80,10 +80,12 @@ jobs:
 
             # Aktivierung
             ln -sfn "${{ steps.release.outputs.dir }}" /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
+            
+            chown -r kaderblick-ftp-admin:psacln /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
 
             # Neue Production starten
             cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
             docker compose -p production up -d --force-recreate
-            
+
             # Cleanup
             cd ../releases && ls -t | tail -n +4 | xargs rm -rf
