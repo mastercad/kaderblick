@@ -45,7 +45,8 @@
         "symfonycasts/reset-password-bundle": "^1.23",
         "league/flysystem-bundle": "^3.4",
         "masbug/flysystem-google-drive-ext": "^2.4",
-        "google/apiclient": "^2.0"
+        "google/apiclient": "^2.0",
+        "symfony/monolog-bundle": "^3.10"
     },
     "autoload": {
         "psr-4": {
