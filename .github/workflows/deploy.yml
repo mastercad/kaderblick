@@ -63,8 +63,9 @@ jobs:
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
             set -e
+            RELEASE_DIR="${{ steps.release.outputs.dir }}"
             CURRENT_DIR=/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
-            cd "${{ steps.release.outputs.dir }}"
+            cd "$RELEASE_DIR"
 
             # erstelle im bedarfsfall netzwerk
             docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
@@ -132,7 +133,7 @@ jobs:
 
             # Aktivierung
             echo "Verlinke aktuellen Release ordner mit current"
-            ln -sfn "${{ steps.release.outputs.dir }}" $CURRENT_DIR
+            ln -sfn "$RELEASE_DIR" "$CURRENT_DIR"
             
             echo "Setze Rechte für current"
             chown -R kaderblick-ftp-admin:psacln $CURRENT_DIR/
