@@ -24,7 +24,7 @@ services:
       MYSQL_USER: symfony
       MYSQL_PASSWORD: symfony
     volumes:
-      - db_data:/var/lib/mysql
+      - kaderblick-db-data:/var/lib/mysql
 
   vue-frontend:
     build: ./.docker/frontend
@@ -47,4 +47,5 @@ services:
       - "${PMA_PORT:-8081}:80"
 
 volumes:
-  db_data:
+  kaderblick-db-data:
+    external: true
