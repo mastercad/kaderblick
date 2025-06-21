@@ -69,7 +69,7 @@ jobs:
             docker compose -p staging down --remove-orphans
             
             # Build und Test mit uniquen Container-Namen
-            PMA_PORT=18081 docker compose -p staging up -d --build --force-recreate
+            PMA_PORT=18081 API_PORT=18000 VUE_PORT=18080 docker compose -p staging up -d --build --force-recreate
             docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
             docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
             
