@@ -10,87 +10,68 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Clean target directory
+      - name: Prepare new release
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
+          username: ${{ secrets.PLESK_USERNAME }}
+          password: ${{ secrets.PLESK_PASSWORD }}
           script: |
-            # Backup wichtiger Dateien
-            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
-            if [ -f app/.env.local ]; then
-              cp app/.env.local app/.env.local.backup
+            # Vorbereitung des Release-Verzeichnisses
+            RELEASE_DIR="/var/www/vhosts/byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)"
+            mkdir -p $RELEASE_DIR
+            
+            # Symlink für aktuelle Version
+            CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
+            
+            # Kopiere wichtige Konfigurationen vom aktuellen Release
+            if [ -d "$CURRENT_DIR" ]; then
+              cp -r $CURRENT_DIR/app/.env* $RELEASE_DIR/
+              cp -r $CURRENT_DIR/app/config/secrets $RELEASE_DIR/config/
+              cp -r $CURRENT_DIR/app/config/jwt $RELEASE_DIR/config/
             fi
             
-            # Bereinigen des Zielverzeichnisses, aber .env und andere wichtige Dateien behalten
-            rm -rf app/src/* app/config/* app/migrations/* app/templates/*
-            rm -rf app/vendor/* app/var/cache/* app/var/log/*
-            
-            # Stoppen und Entfernen der Docker Container
-            docker compose down
-      
-      - name: Deploy fresh files
+            echo $RELEASE_DIR > /tmp/current_release
+
+      - name: Deploy to new directory
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.PLESK_USERNAME }}
           password: ${{ secrets.PLESK_PASSWORD }}
           source: "docker-compose.yml,.docker/,app/"
-          target: "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
+          target: "/tmp/current_release"
           
-      - name: Prepare environment
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.PLESK_USERNAME }}
-          password: ${{ secrets.PLESK_PASSWORD }}
-          script: |
-            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app
-            cp .env.dist .env
-            echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> .env            
-            
-            mkdir -p config/secrets/prod
-            echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > config/secrets/prod/prod.decrypt.private.php
-
-      - name: Start environment
+      - name: Build and test new release
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
-            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
-
-            # Start containers
-            docker compose up -d
-
-            # Install dependencies
-            if ! docker compose exec -T api composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-progress; then
-              echo "Composer install failed"
+            RELEASE_DIR=$(cat /tmp/current_release)
+            cd $RELEASE_DIR
+            
+            # Build in isolation
+            docker compose -p staging up -d --build
+            
+            # Konfiguration und Tests
+            docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
+            docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
+            
+            # Wenn alles erfolgreich, dann Symlink aktualisieren
+            if [ $? -eq 0 ]; then
+              ln -sfn $RELEASE_DIR /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
+              
+              # Alte Container stoppen und neue starten
+              docker compose down
+              docker compose -p production up -d
+              
+              # Alte Releases aufräumen (behalte die letzten 3)
+              cd /var/www/vhosts/byte-artist.de/releases
+              ls -t | tail -n +4 | xargs rm -rf
+            else
+              docker compose -p staging down
+              rm -rf $RELEASE_DIR
               exit 1
             fi
-
-            # Decrypt secrets
-            if ! docker compose exec -T api bin/console secrets:decrypt-to-local --force --env=prod; then
-              echo "Secrets decrypt failed"
-              exit 1
-            fi
-
-            # Run migrations with debug output
-            if ! docker compose exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod --verbose; then
-              echo "Migrations failed - checking schema validity"
-              docker compose exec -T api bin/console doctrine:schema:validate --env=prod
-              exit 1
-            fi
-
-            # Generate JWT keys if needed
-            if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
-              if ! docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite; then
-                echo "JWT key generation failed"
-                exit 1
-              fi
-            fi
-
-            # Fix permissions
-            docker compose exec -T api chown -R www-data:www-data /var/www/symfony/var
