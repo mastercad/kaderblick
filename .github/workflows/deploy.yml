@@ -12,7 +12,7 @@ jobs:
       
       - name: Generate release directory name
         id: release
-        run: echo "dir=/var/www/vhosts/byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
+        run: echo "dir=/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
       
       - name: Prepare files
         run: |
@@ -75,5 +75,5 @@ jobs:
             docker compose -p production up -d
             
             # Cleanup
-            cd /var/www/vhosts/byte-artist.de/releases
+            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/releases
             ls -t | tail -n +4 | xargs rm -rf
