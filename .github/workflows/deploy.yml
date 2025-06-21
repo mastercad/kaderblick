@@ -78,7 +78,9 @@ jobs:
 
             # Aktivierung
             ln -sfn "${{ steps.release.outputs.dir }}" /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
-            
+
+            docker volume inspect kaderblick-db-data || docker volume create kaderblick-db-data
+
             # Neue Production starten
             cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
             docker compose -p production up -d --force-recreate
