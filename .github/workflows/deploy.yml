@@ -30,9 +30,8 @@ jobs:
             cp .env.dist .env
             echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> .env            
             
-            mkdir -p app/config/secrets/prod
-            echo "<?php return '${{ secrets.PROD_DECRYPT_KEY }}'; ?>" > app/config/secrets/prod/prod.decrypt.private.php
-
+            mkdir -p config/secrets/prod
+            echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > config/secrets/prod/prod.decrypt.private.php
 
       - name: Start environment
         uses: appleboy/ssh-action@master
@@ -43,14 +42,34 @@ jobs:
           script: |
             cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
 
+            # Start containers
             docker compose up -d
 
-            docker compose exec -T api composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-progress 
-            docker compose exec -T api bin/console doctrine:migrations:migrate --allow-no-migration --env=prod
-            docker compose exec -T api bin/console secrets:decrypt-to-local --force --env=prod
-
-            if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
-              docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
+            # Install dependencies
+            if ! docker compose exec -T api composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-progress; then
+              echo "Composer install failed"
+              exit 1
             fi
 
+            # Decrypt secrets
+            if ! docker compose exec -T api bin/console secrets:decrypt-to-local --force --env=prod; then
+              echo "Secrets decrypt failed"
+              exit 1
+            fi
+
+            # Run migrations
+            if ! docker compose exec -T api bin/console doctrine:migrations:migrate --allow-no-migration --env=prod; then
+              echo "Migrations failed"
+              exit 1
+            fi
+
+            # Generate JWT keys if needed
+            if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
+              if ! docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite; then
+                echo "JWT key generation failed"
+                exit 1
+              fi
+            fi
+
+            # Fix permissions
             docker compose exec -T api chown -R www-data:www-data /var/www/symfony/var
