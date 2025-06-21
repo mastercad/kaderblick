@@ -46,7 +46,7 @@ services:
       PMA_HOST: db
       MYSQL_ROOT_PASSWORD: root
     ports:
-      - "8081:80"
+      - "${PMA_PORT:-8081}:80"
 
 volumes:
   db_data:
