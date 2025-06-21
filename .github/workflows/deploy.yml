@@ -27,15 +27,21 @@ jobs:
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
             cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
+            cp .env.dist .env
+            echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> .env
             
             # Secrets und Keys einrichten
             mkdir -p app/config/secrets/prod
             echo "${{ secrets.PROD_DECRYPT_KEY }}" > app/config/secrets/prod/prod.decrypt.private.php
 
-            echo "APP_SECRET=${{ secrets.APP_SECRET }}" > app/config/secrets/prod/.env
-            
             # Container neustarten als root
-            APP_SECRET=${{ secrets.APP_SECRET }} docker compose up -d
+            docker compose up -d
 
-            APP_SECRET=${{ secrets.APP_SECRET }} docker compose exec -T api composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --ignore-platform-reqs --no-progress --no-scripts
-            APP_SECRET=${{ secrets.APP_SECRET }} docker compose exec -T api bin/console doctrine:migrations:migrate --allow-no-migration --env=prod
+            docker compose exec -T api composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --ignore-platform-reqs --no-progress --no-scripts
+            docker compose exec -T api bin/console doctrine:migrations:migrate --allow-no-migration --env=prod
+
+            docker compose exec -T api bin/console secrets:decrypt-to-local --force --env=prod
+
+            if [ ! -f app/config/jwt/private.pem ]; then
+              docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
+            fi
