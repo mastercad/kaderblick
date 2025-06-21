@@ -32,6 +32,7 @@ jobs:
             mkdir -p app/config/secrets/prod
             echo "${{ secrets.PROD_DECRYPT_KEY }}" > app/config/secrets/prod/prod.decrypt.private.php
             
-            # Container neustarten
-            docker compose down
-            docker compose up -d
+            cp .env.dist .env
+
+            # Container neustarten nur mit APP_SECRET
+            APP_SECRET=${{ secrets.APP_SECRET }} docker compose up -d

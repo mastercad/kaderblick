@@ -12,11 +12,11 @@ services:
     depends_on:
       - db
     environment:
+      - APP_ENV=prod
       - DATABASE_URL=mysql://symfony:symfony@db:3306/symfony
       - APP_SECRET=${APP_SECRET}
       - JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
       - JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
-      - JWT_PASSPHRASE=${JWT_PASSPHRASE}
     networks:
       - app-network
 
