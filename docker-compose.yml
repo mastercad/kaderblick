@@ -30,7 +30,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     networks:
-      - app-network
+      - kaderblick-network
 
   vue-frontend:
     build: ./.docker/frontend
