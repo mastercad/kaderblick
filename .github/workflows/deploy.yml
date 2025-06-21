@@ -65,6 +65,10 @@ jobs:
             set -e
             cd "${{ steps.release.outputs.dir }}"
 
+            # erstelle im bedarfsfall netzwerk
+            docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
+
+            # baue und starte im bedarfsfall db container
             if docker ps --filter "name=kaderblick-db" --filter "status=running" | grep -q kaderblick-db; then
               echo "DB Container läuft"
             else
