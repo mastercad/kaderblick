@@ -41,6 +41,7 @@ jobs:
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
+            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
 
             docker compose up -d
 
