@@ -43,6 +43,7 @@ jobs:
             fi
             
             chmod -R 755 "$RELEASE_DIR"
+            chown -R kaderblick-ftp-admin:psacln "$RELEASE_DIR"
 
       - name: Copy files
         uses: appleboy/scp-action@master
