@@ -88,12 +88,17 @@ jobs:
             #            mkdir -p "$RELEASE_DIR/app/config/secrets/prod"
             #            mkdir -p "$RELEASE_DIR/app/config/jwt"
             
+            # ich bin mir ehrlich gesagt gerade gar nicht mehr sicher, ob das hier noch so sinn macht, die kommen ja immer mit dem branch aktuell rein
             if [ -d "$CURRENT_DIR" ]; then
-              [ -d "$CURRENT_DIR/app/config/secrets/prod" ] && \
-                cp -r "$CURRENT_DIR/app/config/secrets/prod/"* "$RELEASE_DIR/app/config/secrets/prod/"
-              
-              [ -d "$CURRENT_DIR/app/config/jwt" ] && \
-                cp -r "$CURRENT_DIR/app/config/jwt/"* "$RELEASE_DIR/app/config/jwt/"
+              if [ -d "$CURRENT_DIR/app/config/secrets/prod" ]; then
+                mkdir -p "$RELEASE_DIR/app/config/secrets/prod"
+                cp -r "$CURRENT_DIR/app/config/secrets/prod/"* "$RELEASE_DIR/app/config/secrets/prod/" 2>/dev/null || true
+              fi
+
+              if [ -d "$CURRENT_DIR/app/config/jwt" ]; then
+                mkdir -p "$RELEASE_DIR/app/config/jwt"
+                cp -r "$CURRENT_DIR/app/config/jwt/"* "$RELEASE_DIR/app/config/jwt/" 2>/dev/null || true
+              fi
             fi
             
             chmod -R 755 "$RELEASE_DIR"
