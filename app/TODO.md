@@ -12,6 +12,11 @@ for problems with apache and auth header, add in vhost file:
 SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
 ```
 
+# Deployment
+- datenbank musste zentralisiert und ausgelagert werden, da auf einem volume keine 2 datenbanken laufen können, das gab konflikte was dafür sorgte dass eine der beiden db dauernd neu startete
+- will ich api und vue neu bauen oder starten und in der docker-compose steht auch die db, wird die automatisch mit gestartet, weil sie als abhängigkeit da drin stand, getrennt ist es sauberer
+
+
 # Aufgaben
 - Schema inhalt der entities über ein command generieren und in einem ordner ablegen um performance zu sparen, die daten müssen nicht jedes mal neu ausgelesen werden. man könnte das ganze eventuell in einem post install / post update composer command aufrufen. hierbei ist aber zu bedenken, dass das durchaus zu fehlern führen kann, wenn keine datenbank vorhanden ist, aber composer install ausgeführt werden soll. man kann es aber auch ein script schreiben, was sich um das setup der app kümmert. dort drin könnte man das command ebenfalls aufrufen. es ist nicht so tragisch, aber bei jeder neuen migration der db sollten auch diese schema dateien dann neu generiert werden. aktuell passiert das on-the-fly
 ✅ - in der view für die liste von locations kann man die location editieren und löschen. hierbei muss ein modal angezeigt werden um den user zu bestätigen, dass er wirklich löschen will. 
