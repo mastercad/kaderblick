@@ -20,10 +20,13 @@ jobs:
           username: ${{ secrets.PLESK_USERNAME }}
           password: ${{ secrets.PLESK_PASSWORD }}
           script: |
+            set -e 
             RELEASE_DIR="/var/www/vhosts/byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)"
-            echo "::set-output name=release_dir::$RELEASE_DIR"
-            echo "release_dir=$RELEASE_DIR" >> $GITHUB_OUTPUT
-            mkdir -p $RELEASE_DIR/app
+            
+            # Korrektes Setzen des Outputs
+            echo "release_dir=$RELEASE_DIR" >> $GITHUB_OUTPUT || exit 1
+            
+            mkdir -p "$RELEASE_DIR/app" || exit 1
             
             # Aktuelle Konfiguration sichern falls vorhanden
             CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
@@ -58,6 +61,7 @@ jobs:
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
+            set -e 
             RELEASE_DIR=${{ needs.prepare.outputs.release_dir }}
             cd $RELEASE_DIR
             
