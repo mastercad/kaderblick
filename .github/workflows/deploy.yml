@@ -10,14 +10,23 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
+      - name: Prepare target directory
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.PLESK_USERNAME }}
+          password: ${{ secrets.PLESK_PASSWORD }}
+          script: |
+            rm -rf /var/www/vhosts/kaderblick/*
+            n
       - name: Deploy files to Alfahosting
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.PLESK_USERNAME }}
           password: ${{ secrets.PLESK_PASSWORD }}
-          source: "docker-compose.yml,.docker/,app/"
-          target: "/var/www/vhosts/kaderblick/docker/"
+          source: "."
+          target: "/var/www/vhosts/kaderblick"
           
       - name: Execute deployment commands
         uses: appleboy/ssh-action@master
@@ -26,15 +35,16 @@ jobs:
           username: ${{ secrets.PLESK_USERNAME }}
           password: ${{ secrets.PLESK_PASSWORD }}
           script: |
-            cd /var/www/vhosts/kaderblick/docker/
+            cd /var/www/vhosts/kaderblick
+            
+            # Verzeichnisstruktur erstellen
+            mkdir -p app/config/secrets/prod app/config/jwt
             
             # Secrets und Keys einrichten
-            mkdir -p app/config/secrets/prod
             echo "${{ secrets.PROD_DECRYPT_KEY }}" > app/config/secrets/prod/prod.decrypt.private.php
             
             # JWT Keys automatisch generieren wenn nicht vorhanden
             if [ ! -f app/config/jwt/private.pem ]; then
-                mkdir -p app/config/jwt
                 openssl genpkey -out app/config/jwt/private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -pass pass:${JWT_PASSPHRASE}
                 openssl pkey -in app/config/jwt/private.pem -out app/config/jwt/public.pem -pubout -passin pass:${JWT_PASSPHRASE}
                 chmod 600 app/config/jwt/*.pem
