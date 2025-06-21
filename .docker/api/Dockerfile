@@ -32,13 +32,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/symfony
 
-# Copy application source code
-COPY . /var/www/symfony
-
-# Create directories for secrets and JWT
-RUN mkdir -p config/secrets/prod
-RUN mkdir -p config/jwt
-RUN chmod -R 777 config/secrets config/jwt
+# Nur die notwendigen Verzeichnisse erstellen
+RUN mkdir -p config/secrets/prod \
+    && mkdir -p config/jwt \
+    && mkdir -p var/cache \
+    && mkdir -p var/log \
+    && chmod -R 777 config/secrets config/jwt var
 
 # Install PHP dependencies via Composer
 #RUN composer install --no-interaction --optimize-autoloader --no-dev

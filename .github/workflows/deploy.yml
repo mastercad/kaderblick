@@ -45,11 +45,12 @@ jobs:
 
             docker compose up -d
 
-            docker compose exec -T api composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --ignore-platform-reqs --no-progress --no-scripts
+            docker compose exec -T api composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-progress 
             docker compose exec -T api bin/console doctrine:migrations:migrate --allow-no-migration --env=prod
-
             docker compose exec -T api bin/console secrets:decrypt-to-local --force --env=prod
 
             if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
               docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
             fi
+
+            docker compose exec -T api chown -R www-data:www-data /var/www/symfony/var
