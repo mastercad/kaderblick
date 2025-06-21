@@ -125,8 +125,6 @@ jobs:
             echo "Starte migrations"
             docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
 
-            docker compose -p staging exec -T api bin/console 
-            
             # Vor Aktivierung alte Production-Container stoppen
             echo "Stoppe aktuelle production"
             docker compose -p production down --remove-orphans api vue-frontend
@@ -136,7 +134,7 @@ jobs:
             ln -sfn "$RELEASE_DIR" "$CURRENT_DIR"
             
             echo "Setze Rechte für current"
-            chown -R kaderblick-ftp-admin:psacln $CURRENT_DIR/
+            chmod -R 777 $CURRENT_DIR/app/var
 
             # Neue Production starten
             echo "gehe in current"
