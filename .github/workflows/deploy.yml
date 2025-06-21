@@ -24,7 +24,7 @@ jobs:
         with:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.PLESK_USERNAME }}
-          password: ${{ secrets.PLESK_PASSWORD  
+          password: ${{ secrets.PLESK_PASSWORD }}
           script: |
             cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app
             cp .env.dist .env
