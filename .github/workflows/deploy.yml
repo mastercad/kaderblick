@@ -57,9 +57,10 @@ jobs:
               exit 1
             fi
 
-            # Run migrations
-            if ! docker compose exec -T api bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --env=prod; then
-              echo "Migrations failed"
+            # Run migrations with debug output
+            if ! docker compose exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod --verbose; then
+              echo "Migrations failed - checking schema validity"
+              docker compose exec -T api bin/console doctrine:schema:validate --env=prod
               exit 1
             fi
 
