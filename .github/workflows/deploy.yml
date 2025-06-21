@@ -10,7 +10,27 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Deploy files to Alfahosting 
+      - name: Clean target directory
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.PLESK_USERNAME }}
+          password: ${{ secrets.PLESK_PASSWORD }}
+          script: |
+            # Backup wichtiger Dateien
+            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
+            if [ -f app/.env.local ]; then
+              cp app/.env.local app/.env.local.backup
+            fi
+            
+            # Bereinigen des Zielverzeichnisses, aber .env und andere wichtige Dateien behalten
+            rm -rf app/src/* app/config/* app/migrations/* app/templates/*
+            rm -rf app/vendor/* app/var/cache/* app/var/log/*
+            
+            # Stoppen und Entfernen der Docker Container
+            docker compose down
+      
+      - name: Deploy fresh files
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
