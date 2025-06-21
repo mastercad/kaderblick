@@ -73,23 +73,32 @@ jobs:
             fi
             
             # Alte Staging-Container stoppen und entfernen
+            echo "Stoppe und entferne alten staging"
             docker compose -p staging down --remove-orphans api vue-frontend
 
             # Build und Test mit uniquen Container-Namen
+            echo "Starte neuen Staging für vorbereitungen"
             PMA_PORT=18081 API_PORT=18000 VUE_PORT=18080 docker compose -p staging up -d --build --force-recreate api vue-frontend
+            echo "Starte composer install"
             docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
+            echo "Starte migrations"
             docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
             
             # Vor Aktivierung alte Production-Container stoppen
+            echo "Stoppe aktuelle production"
             docker compose -p production down --remove-orphans api vue-frontend
 
             # Aktivierung
+            echo "Verlinke aktuellen Release ordner mit current"
             ln -sfn "${{ steps.release.outputs.dir }}" /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
             
+            echo "Setze Rechte für current"
             chown -r kaderblick-ftp-admin:psacln /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
 
             # Neue Production starten
+            echo "geht in current"
             cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
+            echo "starte production"
             docker compose -p production up -d --force-recreate api vue-frontend
 
             # Cleanup
