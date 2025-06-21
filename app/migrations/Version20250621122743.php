@@ -218,11 +218,13 @@ final class Version20250621122743 extends AbstractMigration
                 note LONGTEXT DEFAULT NULL,
                 INDEX IDX_FDC6C6E899E6F5DF (player_id),
                 INDEX IDX_FDC6C6E871F7E88B (event_id),
-                PRIMARY KEY(id),
-                CONSTRAINT FK_FDC6C6E899E6F5DF FOREIGN KEY (player_id) REFERENCES players (id),
-                CONSTRAINT FK_FDC6C6E871F7E88B FOREIGN KEY (event_id) REFERENCES calendar_events (id)
+                PRIMARY KEY(id)
             ) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB
         SQL);
+
+        $this->addSql('ALTER TABLE participations ADD FOREIGN KEY (player_id) REFERENCES players (id)');
+        $this->addSql('ALTER TABLE participations ADD FOREIGN KEY (event_id) REFERENCES calendar_events (id)');
+
         $this->abortIf(
             !$this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\MariaDb1010Platform,
             "Migration can only be executed safely on '\Doctrine\DBAL\Platforms\MariaDb1010Platform'."
