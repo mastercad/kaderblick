@@ -21,6 +21,7 @@ jobs:
           password: ${{ secrets.PLESK_PASSWORD }}
           script: |
             RELEASE_DIR="/var/www/vhosts/byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)"
+            echo "::set-output name=release_dir::$RELEASE_DIR"
             echo "release_dir=$RELEASE_DIR" >> $GITHUB_OUTPUT
             mkdir -p $RELEASE_DIR/app
             
