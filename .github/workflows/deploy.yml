@@ -32,9 +32,8 @@ jobs:
             
             # Secrets und Keys einrichten
             mkdir -p app/config/secrets/prod
-            echo "${{ secrets.PROD_DECRYPT_KEY }}" > app/config/secrets/prod/prod.decrypt.private.php
+            echo "<?php return '${{ secrets.PROD_DECRYPT_KEY }}'; ?>" > app/config/secrets/prod/prod.decrypt.private.php
 
-            # Container neustarten als root
             docker compose up -d
 
             docker compose exec -T api composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --ignore-platform-reqs --no-progress --no-scripts
@@ -42,6 +41,6 @@ jobs:
 
             docker compose exec -T api bin/console secrets:decrypt-to-local --force --env=prod
 
-            if [ ! -f app/config/jwt/private.pem ]; then
+            if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
               docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
             fi
