@@ -5,42 +5,50 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-deploy:
+  prepare:
     runs-on: ubuntu-latest
+    outputs:
+      release_dir: ${{ steps.set_dir.outputs.release_dir }}
     steps:
       - uses: actions/checkout@v3
       
-      - name: Prepare new release
+      - name: Prepare deployment directories
+        id: set_dir
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.PLESK_USERNAME }}
           password: ${{ secrets.PLESK_PASSWORD }}
           script: |
-            # Vorbereitung des Release-Verzeichnisses
             RELEASE_DIR="/var/www/vhosts/byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)"
-            mkdir -p $RELEASE_DIR
+            echo "release_dir=$RELEASE_DIR" >> $GITHUB_OUTPUT
+            mkdir -p $RELEASE_DIR/app
             
-            # Symlink für aktuelle Version
+            # Aktuelle Konfiguration sichern falls vorhanden
             CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
-            
-            # Kopiere wichtige Konfigurationen vom aktuellen Release
             if [ -d "$CURRENT_DIR" ]; then
-              cp -r $CURRENT_DIR/app/.env* $RELEASE_DIR/
-              cp -r $CURRENT_DIR/app/config/secrets $RELEASE_DIR/config/
-              cp -r $CURRENT_DIR/app/config/jwt $RELEASE_DIR/config/
+              [ -f $CURRENT_DIR/app/.env.local ] && cp $CURRENT_DIR/app/.env.local $RELEASE_DIR/app/
+              [ -d $CURRENT_DIR/app/config/secrets ] && cp -r $CURRENT_DIR/app/config/secrets $RELEASE_DIR/app/config/
+              [ -d $CURRENT_DIR/app/config/jwt ] && cp -r $CURRENT_DIR/app/config/jwt $RELEASE_DIR/app/config/
             fi
             
-            echo $RELEASE_DIR > /tmp/current_release
+            chmod -R 755 $RELEASE_DIR
 
-      - name: Deploy to new directory
+  deploy:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy application files
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.PLESK_USERNAME }}
           password: ${{ secrets.PLESK_PASSWORD }}
           source: "docker-compose.yml,.docker/,app/"
-          target: "/tmp/current_release"
+          target: ${{ needs.prepare.outputs.release_dir }}
+          strip_components: 0
           
       - name: Build and test new release
         uses: appleboy/ssh-action@master
@@ -49,7 +57,7 @@ jobs:
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
-            RELEASE_DIR=$(cat /tmp/current_release)
+            RELEASE_DIR=${{ needs.prepare.outputs.release_dir }}
             cd $RELEASE_DIR
             
             # Build in isolation
