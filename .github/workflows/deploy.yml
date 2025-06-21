@@ -58,7 +58,7 @@ jobs:
             fi
 
             # Run migrations
-            if ! docker compose exec -T api bin/console doctrine:migrations:migrate --allow-no-migration --env=prod; then
+            if ! docker compose exec -T api bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --env=prod; then
               echo "Migrations failed"
               exit 1
             fi
