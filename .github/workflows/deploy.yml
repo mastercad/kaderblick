@@ -5,86 +5,70 @@ on:
     branches: [ main ]
 
 jobs:
-  prepare:
-    runs-on: ubuntu-latest
-    outputs:
-      release_dir: ${{ steps.set_dir.outputs.release_dir }}
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Prepare deployment directories
-        id: set_dir
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.PLESK_USERNAME }}
-          password: ${{ secrets.PLESK_PASSWORD }}
-          script: |
-            set -e 
-            RELEASE_DIR="/var/www/vhosts/byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)"
-            
-            # Korrektes Setzen des Outputs
-            echo "release_dir=$RELEASE_DIR" >> $GITHUB_OUTPUT || exit 1
-            
-            mkdir -p "$RELEASE_DIR/app" || exit 1
-            
-            # Aktuelle Konfiguration sichern falls vorhanden
-            CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
-            if [ -d "$CURRENT_DIR" ]; then
-              [ -f $CURRENT_DIR/app/.env.local ] && cp $CURRENT_DIR/app/.env.local $RELEASE_DIR/app/
-              [ -d $CURRENT_DIR/app/config/secrets ] && cp -r $CURRENT_DIR/app/config/secrets $RELEASE_DIR/app/config/
-              [ -d $CURRENT_DIR/app/config/jwt ] && cp -r $CURRENT_DIR/app/config/jwt $RELEASE_DIR/app/config/
-            fi
-            
-            chmod -R 755 $RELEASE_DIR
-
   deploy:
-    needs: prepare
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       
-      - name: Deploy application files
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.PLESK_USERNAME }}
-          password: ${{ secrets.PLESK_PASSWORD }}
-          source: "docker-compose.yml,.docker/,app/"
-          target: ${{ needs.prepare.outputs.release_dir }}
-          strip_components: 0
+      - name: Generate release directory name
+        id: release
+        run: echo "dir=/var/www/vhosts/byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
+      
+      - name: Prepare files
+        run: |
+          mkdir -p build
+          cp -r docker-compose.yml .docker app build/
           
-      - name: Build and test new release
+      - name: Deploy and switch
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
-            set -e 
-            RELEASE_DIR=${{ needs.prepare.outputs.release_dir }}
-            cd $RELEASE_DIR
+            set -e
+            RELEASE_DIR="${{ steps.release.outputs.dir }}"
             
-            # Build in isolation
+            # Vorbereitung
+            mkdir -p "$RELEASE_DIR"
+            
+            # Backup wichtiger Dateien
+            if [ -d "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de" ]; then
+              cp -r /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app/config/secrets "$RELEASE_DIR/app/config/"
+              cp -r /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app/config/jwt "$RELEASE_DIR/app/config/"
+              cp /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app/.env.local "$RELEASE_DIR/app/"
+            fi
+
+      - name: Copy files
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.PLESK_USERNAME }}
+          password: ${{ secrets.PLESK_PASSWORD }}
+          source: "build/*"
+          target: "${{ steps.release.outputs.dir }}"
+          strip_components: 1
+
+      - name: Activate release
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            cd "${{ steps.release.outputs.dir }}"
+            
+            # Build und Test
             docker compose -p staging up -d --build
-            
-            # Konfiguration und Tests
             docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
             docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
             
-            # Wenn alles erfolgreich, dann Symlink aktualisieren
-            if [ $? -eq 0 ]; then
-              ln -sfn $RELEASE_DIR /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
-              
-              # Alte Container stoppen und neue starten
-              docker compose down
-              docker compose -p production up -d
-              
-              # Alte Releases aufräumen (behalte die letzten 3)
-              cd /var/www/vhosts/byte-artist.de/releases
-              ls -t | tail -n +4 | xargs rm -rf
-            else
-              docker compose -p staging down
-              rm -rf $RELEASE_DIR
-              exit 1
-            fi
+            # Aktivierung
+            ln -sfn "${{ steps.release.outputs.dir }}" /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
+            docker compose down
+            docker compose -p production up -d
+            
+            # Cleanup
+            cd /var/www/vhosts/byte-artist.de/releases
+            ls -t | tail -n +4 | xargs rm -rf
