@@ -14,8 +14,8 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.PLESK_USERNAME }}
-          password: ${{ secrets.PLESK_PASSWORD }}
+          username: ${{ secrets.ROOT_USERN }}
+          password: ${{ secrets.ROOT_PASSWORD }}
           script: |
             # Backup wichtiger Dateien
             cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
