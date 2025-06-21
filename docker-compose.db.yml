@@ -1,0 +1,22 @@
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    container_name: kaderblick-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: symfony
+      MYSQL_USER: symfony
+      MYSQL_PASSWORD: symfony
+    volumes:
+      - kaderblick-db-data:/var/lib/mysql
+    networks:
+      - kaderblick-net
+
+volumes:
+  kaderblick-db-data:
+    external: true
+    
+networks:
+  kaderblick-net:
+    external: true

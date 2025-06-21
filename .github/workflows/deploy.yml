@@ -69,7 +69,7 @@ jobs:
               echo "DB Container läuft"
             else
               docker volume inspect kaderblick-db-data || docker volume create kaderblick-db-data
-              docker compose -p production up -d --build --force-recreate db
+              docker compose -f docker-compose.db.yml -p production up -d --build --force-recreate db
             fi
             
             # Alte Staging-Container stoppen und entfernen

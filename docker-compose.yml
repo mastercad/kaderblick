@@ -8,22 +8,10 @@ services:
       - "${API_PORT:-8000}:80"
     volumes:
       - ./app:/var/www/symfony
-    depends_on:
-      - db
     environment:
       - DATABASE_URL=mysql://symfony:symfony@db:3306/symfony
-
-  db:
-    image: mariadb:10.11
-    restart: unless-stopped
-    container_name: kaderblick-db
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: symfony
-      MYSQL_USER: symfony
-      MYSQL_PASSWORD: symfony
-    volumes:
-      - kaderblick-db-data:/var/lib/mysql
+    networks:
+      - kaderblick-net
 
   vue-frontend:
     build: ./.docker/frontend
@@ -31,20 +19,7 @@ services:
       - "${VUE_PORT:-8080}:8080"
     volumes:
       - ./frontend:/app
-    depends_on:
-      - api
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    restart: always
-    depends_on:
-      - db
-    environment:
-      PMA_HOST: db
-      MYSQL_ROOT_PASSWORD: root
-    ports:
-      - "${PMA_PORT:-8081}:80"
-
-volumes:
-  kaderblick-db-data:
+networks:
+  kaderblick-net:
     external: true
