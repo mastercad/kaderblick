@@ -97,7 +97,7 @@ jobs:
             ln -sfn "${{ steps.release.outputs.dir }}" /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
             
             echo "Setze Rechte für current"
-            chown -r kaderblick-ftp-admin:psacln /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
+            chown -R kaderblick-ftp-admin:psacln /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
 
             # Neue Production starten
             echo "geht in current"
