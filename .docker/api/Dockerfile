@@ -39,6 +39,11 @@ RUN mkdir -p config/secrets/prod \
     && mkdir -p var/log \
     && chmod -R 777 config/secrets config/jwt var
 
+# Verzeichnisse mit korrekten Rechten erstellen
+RUN mkdir -p var/log \
+    && chown -R www-data:www-data var/log \
+    && chmod -R 775 var/log
+
 # Install PHP dependencies via Composer
 #RUN composer install --no-interaction --optimize-autoloader --no-dev
 
