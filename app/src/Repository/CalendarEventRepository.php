@@ -3,12 +3,15 @@
 namespace App\Repository;
 
 use App\Entity\CalendarEvent;
+use App\Entity\CalendarEventType;
 use App\Entity\Game;
+use App\Entity\Location;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use DateTime;
+use Symfony\Component\Security\Core\User\UserInterface;
 
-class CalendarEventRepository extends ServiceEntityRepository
+class CalendarEventRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
     {
@@ -17,23 +20,71 @@ class CalendarEventRepository extends ServiceEntityRepository
 
     public function findUpcoming(): array
     {
-        return $this->createQueryBuilder('e')
-            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent = e')
-            ->where('e.startDate >= :now')
+        return $this->createQueryBuilder('ce')
+            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent = ce')
+            ->where('ce.startDate >= :now')
             ->setParameter('now', new DateTime())
-            ->orderBy('e.startDate', 'ASC')
+            ->orderBy('ce.startDate', 'ASC')
             ->getQuery()
             ->getResult();
     }
 
     public function findBetweenDates(DateTime $start, DateTime $end): array
     {
-        return $this->createQueryBuilder('e')
-            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent = e')
-            ->where('e.startDate BETWEEN :start AND :end')
+        return $this->createQueryBuilder('ce')
+            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent = ce')
+            ->where('ce.startDate BETWEEN :start AND :end')
             ->setParameter('start', $start)
             ->setParameter('end', $end)
-            ->orderBy('e.startDate', 'ASC')
+            ->orderBy('ce.startDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function fetchFullList(?UserInterface $user = null): array
+    {
+        return $this->createQueryBuilder('ce')
+            ->select('ce', 'cet', 'l', 'g')
+            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent IS NOT NULL AND g.calendarEvent = ce')
+            ->leftJoin(Location::class, 'l', 'WITH', 'ce.location = l AND g.location = l')
+            ->leftJoin(CalendarEventType::class, 'cet', 'WITH', 'ce.calendarEventType = cet')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function fetchOptimizedList(?UserInterface $user = null): array
+    {
+        return $this->createQueryBuilder('ce')
+            ->select('ce', 'cet', 'l', 'g')
+            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent = ce')
+            ->leftJoin(Location::class, 'l', 'WITH', 'ce.location = l')
+            ->leftJoin(CalendarEventType::class, 'cet', 'WITH', 'ce.calendarEventType = cet')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
+    {
+        return $this->createQueryBuilder('ce')
+            ->select('ce', 'cet', 'l', 'g')
+            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent = ce')
+            ->leftJoin(Location::class, 'l', 'WITH', 'ce.location = l')
+            ->leftJoin(CalendarEventType::class, 'cet', 'WITH', 'ce.calendarEventType = cet')
+            ->where('t.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
+    {
+        return $this->createQueryBuilder('ce')
+            ->select('ce', 'cet', 'l', 'g')
+            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent = ce')
+            ->leftJoin(Location::class, 'l', 'WITH', 'ce.location = l')
+            ->leftJoin(CalendarEventType::class, 'cet', 'WITH', 'ce.calendarEventType = cet')
+            ->where('t.id = :id')
+            ->setParameter('id', $id)
             ->getQuery()
             ->getResult();
     }

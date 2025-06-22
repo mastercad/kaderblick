@@ -103,10 +103,10 @@ abstract class ApiController extends AbstractController
             $repo = $this->em->getRepository($targetClass);
             $entities = $repo->fetchFullList();
 
-            $choices = array_map(fn($entity) => [
+            $choices = array_map(fn($entity) => ($entity instanceof $targetClass) ? [
                 'id' => $entity->getId(),
                 'label' => (string) $entity,
-            ], $entities);
+            ] : [], $entities);
 
             $schema[$field] = [
                 'multiple' => in_array($assoc['type'], [4, 8]),

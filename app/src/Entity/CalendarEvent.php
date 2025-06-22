@@ -15,7 +15,7 @@ class CalendarEvent
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['calendar_event:read'])]
+    #[Groups(['calendar_event:read', 'game:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -156,5 +156,10 @@ class CalendarEvent
     {
         $this->game = $game;
         return $this;
+    }
+
+    public function __toString(): string
+    {
+        return $this->title ?? "UNKNOWN CALENDAR EVENT";
     }
 }

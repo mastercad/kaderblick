@@ -31,6 +31,8 @@ class CoachFixtures extends Fixture implements DependentFixtureInterface
 
     public function load(ObjectManager $manager): void
     {
+        return;
+
         // Beispiel: Lizenzen schon in DB oder per Fixture vorab angelegt
         // Hier Beispielhafte Abfrage (du kannst das anders lösen)
         $licenseA = $manager->getRepository(CoachLicense::class)->findOneBy(['name' => 'UEFA A']);
@@ -85,7 +87,7 @@ class CoachFixtures extends Fixture implements DependentFixtureInterface
         $manager->flush();
         $manager->clear();
 
-        $this->generateFakeData($manager);
+//        $this->generateFakeData($manager);
     }
 
     private function generateFakeData(ObjectManager $manager): void

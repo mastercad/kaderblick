@@ -35,6 +35,8 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
 
     public function load(ObjectManager $manager): void
     {
+        return;
+
         $rightFoot = $manager->getRepository(StrongFoot::class)->findOneBy(['code' => 'Rechts']);
         $bothFoot = $manager->getRepository(StrongFoot::class)->findOneBy(['code'=> 'Beidfüßig']);
 

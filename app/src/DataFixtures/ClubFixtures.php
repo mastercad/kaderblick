@@ -54,7 +54,7 @@ class ClubFixtures extends Fixture implements DependentFixtureInterface
         $manager->flush();
         $manager->clear();
 
-        $this->createFakeData($manager);
+//        $this->createFakeData($manager);
     }
 
     private function createFakeData($manager): void
