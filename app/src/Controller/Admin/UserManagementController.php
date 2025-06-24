@@ -14,6 +14,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 
 #[Route('/admin/users', name: 'admin_users_')]
 #[IsGranted('ROLE_ADMIN')]
@@ -21,7 +22,8 @@ class UserManagementController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $em,
-        private RequestStack $requestStack
+        private RequestStack $requestStack,
+        private RoleHierarchyInterface $roleHierarchy
     ) {}
 
     #[Route('', name: 'index', methods: ['GET'])]
@@ -32,6 +34,56 @@ class UserManagementController extends AbstractController
         return $this->render('admin/users/index.html.twig', [
             'users' => $users
         ]);
+    }
+    #[Route('/{id}/roles', name: 'edit_roles', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function editRoles(User $user): Response
+    {
+        // Verfügbare Rollen definieren
+        $availableRoles = [
+            'ROLE_USER' => 'Benutzer',
+            'ROLE_ADMIN' => 'Administrator',
+            'ROLE_SUPER_ADMIN' => 'Super Administrator'
+        ];
+
+        return $this->render('admin/users/roles.html.twig', [
+            'user' => $user,
+            'available_roles' => $availableRoles,
+            'current_roles' => $user->getRoles()
+        ]);
+    }
+
+    #[Route('/{id}/roles', name: 'update_roles', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function updateRoles(Request $request, User $user): Response
+    {
+        // Prüfen ob der aktuelle Benutzer die Berechtigung hat, diese Rolle zu vergeben
+        $currentUser = $this->getUser();
+        $selectedRoles = $request->request->all('roles', []);
+        
+        // Sicherstellen dass ROLE_USER immer gesetzt ist
+        if (!in_array('ROLE_USER', $selectedRoles)) {
+            $selectedRoles[] = 'ROLE_USER';
+        }
+
+        // Prüfen ob der aktuelle Benutzer die ausgewählten Rollen vergeben darf
+        $userRoles = $this->roleHierarchy->getReachableRoleNames($currentUser->getRoles());
+        foreach ($selectedRoles as $role) {
+            if (!in_array($role, $userRoles)) {
+                $this->addFlash('error', 'Sie haben nicht die Berechtigung, diese Rolle zu vergeben: ' . $role);
+                return $this->redirectToRoute('admin_users_edit_roles', ['id' => $user->getId()]);
+            }
+        }
+
+        try {
+            $user->setRoles($selectedRoles);
+            $this->em->flush();
+            $this->addFlash('success', 'Benutzerrollen wurden erfolgreich aktualisiert.');
+        } catch (\Exception $e) {
+            $this->addFlash('error', 'Fehler beim Aktualisieren der Rollen: ' . $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_users_edit_roles', ['id' => $user->getId()]);
     }
 
     #[Route('/{id}/assign', name: 'assign', methods: ['GET'])]

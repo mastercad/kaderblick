@@ -14,6 +14,7 @@
                     <th>Status</th>
                     <th>Zuordnung</th>
                     <th>Aktionen</th>
+                    <th>Rollen</th>
                 </tr>
             </thead>
             <tbody>
@@ -66,6 +67,11 @@
                                     <i class="fas fa-ban"></i> Deaktivieren
                                 </a>
                             {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ path('admin_users_edit_roles', {id: user.id}) }}" class="btn btn-info btn-sm">
+                                Rollen bearbeiten
+                            </a>
                         </td>
                     </tr>
                 {% endfor %}

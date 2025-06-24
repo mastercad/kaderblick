@@ -7,13 +7,17 @@ use App\Entity\User;
 use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 class PlayerRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
-    public function __construct(ManagerRegistry $registry)
+    private RoleHierarchyInterface $roleHierarchy;
+
+    public function __construct(ManagerRegistry $registry, RoleHierarchyInterface $roleHierarchy)
     {
         parent::__construct($registry, Player::class);
+        $this->roleHierarchy = $roleHierarchy;
     }
 
     /**
@@ -23,7 +27,8 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
     {
         $qb = $this->createQueryBuilder('p');
 
-        if ($user && !in_array('ROLE_ADMIN', $user->getRoles())) {
+        $reachableRoles = $this->roleHierarchy->getReachableRoleNames($user->getRoles());
+        if ($user && !in_array('ROLE_ADMIN', $reachableRoles)) {
             if ($user->getClub()) {
                 $qb->join('p.playerClubAssignments', 'pca')
                    ->andWhere('pca.club = :club')

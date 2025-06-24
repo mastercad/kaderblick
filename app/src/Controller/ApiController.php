@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -75,7 +76,7 @@ abstract class ApiController extends AbstractController
     }
     
     #[Route('/api/schema/{entity}', name: 'api_entity_schema')]
-    public function getSchema(string $entity): JsonResponse
+    public function getSchema(string $entity, UserInterface $user): JsonResponse
     {
         $entityClass = 'App\\Entity\\'.$entity;
 
@@ -102,7 +103,7 @@ abstract class ApiController extends AbstractController
         foreach ($meta->associationMappings as $field => $assoc) {
             $targetClass = $assoc['targetEntity'];
             $repo = $this->em->getRepository($targetClass);
-            $entities = $repo->fetchFullList();
+            $entities = $repo->fetchFullList($user);
 
             $choices = array_map(fn($entity) => ($entity instanceof $targetClass) ? [
                 'id' => $entity->getId(),

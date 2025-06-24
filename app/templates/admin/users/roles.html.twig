@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Benutzerrollen bearbeiten{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <h1>Benutzerrollen für {{ user.email }}</h1>
+
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="alert alert-{{ label }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        <form method="post">
+            <div class="form-group">
+                {% for role, label in available_roles %}
+                    <div class="form-check">
+                        <input type="checkbox" 
+                               class="form-check-input" 
+                               name="roles[]" 
+                               value="{{ role }}" 
+                               id="role_{{ role }}"
+                               {% if role in current_roles %}checked{% endif %}
+                               {% if role == 'ROLE_USER' %}disabled{% endif %}>
+                        <label class="form-check-label" for="role_{{ role }}">
+                            {{ label }}
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3">Rollen speichern</button>
+            <a href="{{ path('admin_users_index') }}" class="btn btn-secondary mt-3">Zurück</a>
+        </form>
+    </div>
+{% endblock %}
