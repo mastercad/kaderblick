@@ -1,118 +1,152 @@
-name: Deploy to Alfahosting
+name: Deploy to AlfahostingMore actions
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Clean target directory
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.PLESK_USERNAME }}
-          password: ${{ secrets.PLESK_PASSWORD }}
-          port: 22
-          script: |
-            set -e
-            echo "Starting cleanup..."
-            
-            TARGET_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
-            if [ ! -d "$TARGET_DIR" ]; then
-              echo "Target directory does not exist!"
-              exit 1
-            fi
-            
-            cd "$TARGET_DIR"
-            
-            # Backup wichtiger Dateien
-            if [ -f app/.env.local ]; then
-              cp app/.env.local app/.env.local.backup
-              echo "Backup of .env.local created"
-            fi
-            
-            # Bereinigen mit Überprüfung
-            for dir in src config migrations templates vendor var/cache var/log; do
-              if [ -d "app/$dir" ]; then
-                rm -rf "app/$dir"/*
-                echo "Cleaned app/$dir"
-              fi
-            done
-            
-            # Docker compose check und shutdown
-            if command -v docker compose &> /dev/null; then
-              docker compose down || echo "Docker compose down failed, continuing..."
-            else
-              echo "Docker compose not found, skipping container shutdown"
-            fi
-            
-            echo "Cleanup completed successfully"
-      
-      - name: Deploy fresh files
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.PLESK_USERNAME }}
-          password: ${{ secrets.PLESK_PASSWORD }}
-          source: "docker-compose.yml,.docker/,app/"
-          target: "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
-          
-      - name: Prepare environment
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.PLESK_USERNAME }}
-          password: ${{ secrets.PLESK_PASSWORD }}
-          script: |
-            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/app
-            cp .env.dist .env
-            echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> .env            
-            
-            mkdir -p config/secrets/prod
-            echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > config/secrets/prod/prod.decrypt.private.php
 
-      - name: Start environment
+      - name: Generate release directory name
+        id: release
+        run: echo "dir=/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
+
+      - name: Prepare files
+        run: |
+          mkdir -p build
+          cp -r docker-compose.yml docker-compose.db.yml .docker app build/
+          
+      - name: Deploy and switch
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
-            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
-
-            # Start containers
-            docker compose up -d
-
-            # Install dependencies
-            if ! docker compose exec -T api composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-progress; then
-              echo "Composer install failed"
-              exit 1
+            set -e
+            RELEASE_DIR="${{ steps.release.outputs.dir }}"
+            CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
+            
+            # Nur prod secrets und jwt kopieren
+            mkdir -p "$RELEASE_DIR/app/config/secrets/prod"
+            mkdir -p "$RELEASE_DIR/app/config/jwt"
+            
+            if [ -d "$CURRENT_DIR" ]; then
+              [ -d "$CURRENT_DIR/app/config/secrets/prod" ] && \
+                cp -r "$CURRENT_DIR/app/config/secrets/prod/"* "$RELEASE_DIR/app/config/secrets/prod/"
+              
+              [ -d "$CURRENT_DIR/app/config/jwt" ] && \
+                cp -r "$CURRENT_DIR/app/config/jwt/"* "$RELEASE_DIR/app/config/jwt/"
             fi
+            
+            chmod -R 755 "$RELEASE_DIR"
+            chown -R kaderblick-ftp-admin:psacln "$RELEASE_DIR"
 
-            # Decrypt secrets
-            if ! docker compose exec -T api bin/console secrets:decrypt-to-local --force --env=prod; then
-              echo "Secrets decrypt failed"
-              exit 1
+      - name: Copy files
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.PLESK_USERNAME }}
+          password: ${{ secrets.PLESK_PASSWORD }}
+          source: "build/*"
+          target: "${{ steps.release.outputs.dir }}"
+          strip_components: 1
+
+      - name: Activate release
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            RELEASE_DIR="${{ steps.release.outputs.dir }}"
+            CURRENT_DIR=/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
+            cd "$RELEASE_DIR"
+
+            # erstelle im bedarfsfall netzwerk
+            docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
+
+            # baue und starte im bedarfsfall db container
+            if docker ps --filter "name=kaderblick-db" --filter "status=running" | grep -q kaderblick-db; then
+              echo "DB Container läuft"
+            else
+              docker volume inspect kaderblick-db-data || docker volume create kaderblick-db-data
+              docker compose -f docker-compose.db.yml -p production up -d --build --force-recreate db
             fi
+            
+            # Alte Staging-Container stoppen und entfernen
+            echo "Stoppe und entferne alten staging"
+            docker compose -p staging down --remove-orphans api vue-frontend
+            
+            cp app/.env.dist app/.env
+            echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> app/.env
 
-            # Run migrations with debug output
-            if ! docker compose exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod --verbose; then
-              echo "Migrations failed - checking schema validity"
-              docker compose exec -T api bin/console doctrine:schema:validate --env=prod
-              exit 1
-            fi
+            # Nur prod secrets und jwt kopieren
+            #            mkdir -p "$RELEASE_DIR/app/config/secrets/prod"
+            #            mkdir -p "$RELEASE_DIR/app/config/jwt"
+            
+            # ich bin mir ehrlich gesagt gerade gar nicht mehr sicher, ob das hier noch so sinn macht, die kommen ja immer mit dem branch aktuell rein
+            if [ -d "$CURRENT_DIR" ]; then
+              if [ -d "$CURRENT_DIR/app/config/secrets/prod" ]; then
+                mkdir -p "$RELEASE_DIR/app/config/secrets/prod"
+                cp -r "$CURRENT_DIR/app/config/secrets/prod/"* "$RELEASE_DIR/app/config/secrets/prod/" 2>/dev/null || true
+              fi
 
-            # Generate JWT keys if needed
-            if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
-              if ! docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite; then
-                echo "JWT key generation failed"
-                exit 1
+              if [ -d "$CURRENT_DIR/app/config/jwt" ]; then
+                mkdir -p "$RELEASE_DIR/app/config/jwt"
+                cp -r "$CURRENT_DIR/app/config/jwt/"* "$RELEASE_DIR/app/config/jwt/" 2>/dev/null || true
               fi
             fi
+            
+            chmod -R 755 "$RELEASE_DIR"
 
-            # Fix permissions
-            docker compose exec -T api chown -R www-data:www-data /var/www/symfony/var
+            mkdir -p app/config/secrets/prod
+            echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > app/config/secrets/prod/prod.decrypt.private.php
+
+            # Build und Test mit uniquen Container-Namen
+            echo "Starte neuen Staging für vorbereitungen"
+            PMA_PORT=18081 API_PORT=18000 VUE_PORT=18080 docker compose -p staging up -d --build --force-recreate api vue-frontend
+            
+            echo "Starte composer install"
+            docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
+
+            echo "Decrypt secrets"
+            docker compose -p staging exec -T api bin/console secrets:decrypt-to-local --force --env=prod
+
+            echo "Erstelle jwt, wenn nötig"
+            if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
+              docker compose -p staging exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
+            fi
+
+            echo "Starte migrations"
+            docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
+
+
+
+            # Vor Aktivierung alte Production-Container stoppen
+            echo "Stoppe aktuelle production"
+            docker compose -p production down --remove-orphans api vue-frontend
+
+            # Aktivierung
+            echo "Verlinke aktuellen Release ordner mit current"
+            ln -sfn "$RELEASE_DIR" "$CURRENT_DIR"
+            
+            echo "Setze Rechte für current"
+            chmod -R 777 $CURRENT_DIR/app/var
+
+            # Neue Production starten
+            echo "gehe in current"
+            cd $CURRENT_DIR
+
+            echo "starte production"
+            docker compose -p production up -d --force-recreate api vue-frontend
+
+            docker compose -p staging down api vue-frontend
+            docker compose -p staging rm api vue-frontend
+
+            # Cleanup
+            cd ../releases && ls -t | tail -n +4 | xargs rm -rf
