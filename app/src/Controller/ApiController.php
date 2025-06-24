@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Repository\AbstractApiRepositoryInterface;
+use App\Repository\OptimizedRepositoryInterface;
 use App\Service\EntitySchemaService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\MissingIdentifierField;
@@ -125,7 +126,7 @@ abstract class ApiController extends AbstractController
     {
         $entries = [];
         $repository = $this->em->getRepository($this->entityClass);
-        if (class_implements($repository, AbstractApiRepositoryInterface::class)) {
+        if (class_implements($repository, OptimizedRepositoryInterface::class)) {
             $entries = $repository->fetchFullList($this->getUser());
         } else {
             $entries = $this->em->getRepository($this->entityClass)

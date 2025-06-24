@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Team;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -14,9 +15,12 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
         parent::__construct($registry, Team::class);
     }
 
+    /**
+     * @param User $user
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
-        return $this->createQueryBuilder('t')
+        $qb = $this->createQueryBuilder('t')
             ->select('t', 'ag', 'l', 'pta', 'p', 'cta', 'c', 'cl')
             ->leftJoin('t.ageGroup', 'ag')
             ->leftJoin('t.league', 'l')
@@ -25,9 +29,26 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
             ->leftJoin('t.coachTeamAssignments', 'cta', 'WITH', 'cta.team = t')
             ->leftJoin('cta.coach', 'c', 'WITH', 'cta.coach = c')
             ->leftJoin('pta.player', 'p', 'WITH', 'pta.player = p')
-            ->orderBy('t.name', 'ASC')
-            ->getQuery()
-            ->getResult();
+            ->orderBy('t.name', 'ASC');
+
+        if ($user && !in_array('ROLE_ADMIN', $user->getRoles())) {
+            if ($user->getClub()) {
+                $qb->andWhere('cl = :club')
+                   ->setParameter('club', $user->getClub());
+            } 
+            
+            if ($user->getCoach()) {
+                $qb->andWhere('c = :coach')
+                   ->setParameter('coach', $user->getCoach());
+            }
+            
+            if ($user->getPlayer()) {
+                $qb->andWhere('p = :player')
+                   ->setParameter('player', $user->getPlayer());
+            }
+        }
+
+        return $qb->getQuery()->getResult();
     }
 
     public function fetchOptimizedList(?UserInterface $user = null): array

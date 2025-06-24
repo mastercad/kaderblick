@@ -33,7 +33,7 @@
                 </li>
 
                 {# Spieler-Endpunkte #}
-                {% if is_granted('ROLE_PLAYER') %}
+                {% if is_granted('ROLE_PLAYER') OR is_granted('ROLE_ADMIN') %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             Spieler
@@ -46,7 +46,7 @@
                 {% endif %}
 
                 {# Trainer-Endpunkte #}
-                {% if is_granted('ROLE_COACH') %}
+                {% if is_granted('ROLE_COACH' OR is_granted('ROLE_ADMIN') ) %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             Trainer
