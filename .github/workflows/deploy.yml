@@ -16,19 +16,41 @@ jobs:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.PLESK_USERNAME }}
           password: ${{ secrets.PLESK_PASSWORD }}
+          port: 22
           script: |
-            # Backup wichtiger Dateien
-            cd /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de
-            if [ -f app/.env.local ]; then
-              cp app/.env.local app/.env.local.backup
+            set -e
+            echo "Starting cleanup..."
+            
+            TARGET_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
+            if [ ! -d "$TARGET_DIR" ]; then
+              echo "Target directory does not exist!"
+              exit 1
             fi
             
-            # Bereinigen des Zielverzeichnisses, aber .env und andere wichtige Dateien behalten
-            rm -rf app/src/* app/config/* app/migrations/* app/templates/*
-            rm -rf app/vendor/* app/var/cache/* app/var/log/*
+            cd "$TARGET_DIR"
             
-            # Stoppen und Entfernen der Docker Container
-            docker compose down
+            # Backup wichtiger Dateien
+            if [ -f app/.env.local ]; then
+              cp app/.env.local app/.env.local.backup
+              echo "Backup of .env.local created"
+            fi
+            
+            # Bereinigen mit Überprüfung
+            for dir in src config migrations templates vendor var/cache var/log; do
+              if [ -d "app/$dir" ]; then
+                rm -rf "app/$dir"/*
+                echo "Cleaned app/$dir"
+              fi
+            done
+            
+            # Docker compose check und shutdown
+            if command -v docker compose &> /dev/null; then
+              docker compose down || echo "Docker compose down failed, continuing..."
+            else
+              echo "Docker compose not found, skipping container shutdown"
+            fi
+            
+            echo "Cleanup completed successfully"
       
       - name: Deploy fresh files
         uses: appleboy/scp-action@master
