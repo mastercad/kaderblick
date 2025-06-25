@@ -70,6 +70,7 @@ class Game
     private ?Location $location = null;
 
     #[Groups(['game:read', 'game:write'])]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     #[ORM\ManyToOne(targetEntity: CalendarEvent::class, inversedBy: "games", cascade: ['persist', 'remove'])]
     private ?CalendarEvent $calendarEvent;
 

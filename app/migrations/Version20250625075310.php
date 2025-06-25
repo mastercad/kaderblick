@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20250625071845 extends AbstractMigration
+final class Version20250625075310 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -63,6 +63,9 @@ final class Version20250625071845 extends AbstractMigration
             ALTER TABLE game DROP INDEX UNIQ_232B318C7495C8E3, ADD INDEX IDX_232B318C7495C8E3 (calendar_event_id)
         SQL);
         $this->addSql(<<<'SQL'
+            ALTER TABLE game CHANGE calendar_event_id calendar_event_id INT NOT NULL
+        SQL);
+        $this->addSql(<<<'SQL'
             ALTER TABLE game ADD CONSTRAINT FK_232B318C9C4C13F6 FOREIGN KEY (home_team_id) REFERENCES team (id)
         SQL);
         $this->addSql(<<<'SQL'
@@ -75,7 +78,7 @@ final class Version20250625071845 extends AbstractMigration
             ALTER TABLE game ADD CONSTRAINT FK_232B318C64D218E FOREIGN KEY (location_id) REFERENCES location (id)
         SQL);
         $this->addSql(<<<'SQL'
-            ALTER TABLE game ADD CONSTRAINT FK_232B318C7495C8E3 FOREIGN KEY (calendar_event_id) REFERENCES calendar_events (id)
+            ALTER TABLE game ADD CONSTRAINT FK_232B318C7495C8E3 FOREIGN KEY (calendar_event_id) REFERENCES calendar_events (id) ON DELETE CASCADE
         SQL);
         $this->addSql(<<<'SQL'
             ALTER TABLE game_events ADD CONSTRAINT FK_2EB2FA82E48FD905 FOREIGN KEY (game_id) REFERENCES game (id)
@@ -321,6 +324,9 @@ final class Version20250625071845 extends AbstractMigration
         SQL);
         $this->addSql(<<<'SQL'
             ALTER TABLE game DROP FOREIGN KEY FK_232B318C7495C8E3
+        SQL);
+        $this->addSql(<<<'SQL'
+            ALTER TABLE game CHANGE calendar_event_id calendar_event_id INT DEFAULT NULL
         SQL);
         $this->addSql(<<<'SQL'
             ALTER TABLE substitution DROP FOREIGN KEY FK_C7C90AE0E48FD905
