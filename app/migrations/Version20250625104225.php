@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20250625080310 extends AbstractMigration
+final class Version20250625104225 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -21,13 +21,16 @@ final class Version20250625080310 extends AbstractMigration
     {
         // this up() migration is auto-generated, please modify it to your needs
         $this->addSql(<<<'SQL'
+            DROP INDEX IDX_F9E14F16C54C8C93 ON calendar_events
+        SQL);
+        $this->addSql(<<<'SQL'
+            ALTER TABLE calendar_events DROP type_id
+        SQL);
+        $this->addSql(<<<'SQL'
             ALTER TABLE calendar_events ADD CONSTRAINT FK_F9E14F167F4F5D85 FOREIGN KEY (calendar_event_type_id) REFERENCES calendar_event_types (id)
         SQL);
         $this->addSql(<<<'SQL'
             ALTER TABLE calendar_events ADD CONSTRAINT FK_F9E14F1664D218E FOREIGN KEY (location_id) REFERENCES location (id)
-        SQL);
-        $this->addSql(<<<'SQL'
-            ALTER TABLE calendar_events ADD CONSTRAINT FK_F9E14F16C54C8C93 FOREIGN KEY (type_id) REFERENCES calendar_event_types (id)
         SQL);
         $this->addSql(<<<'SQL'
             ALTER TABLE clubs ADD CONSTRAINT FK_A5BD312364D218E FOREIGN KEY (location_id) REFERENCES location (id)
@@ -362,7 +365,10 @@ final class Version20250625080310 extends AbstractMigration
             ALTER TABLE calendar_events DROP FOREIGN KEY FK_F9E14F1664D218E
         SQL);
         $this->addSql(<<<'SQL'
-            ALTER TABLE calendar_events DROP FOREIGN KEY FK_F9E14F16C54C8C93
+            ALTER TABLE calendar_events ADD type_id INT DEFAULT NULL
+        SQL);
+        $this->addSql(<<<'SQL'
+            CREATE INDEX IDX_F9E14F16C54C8C93 ON calendar_events (type_id)
         SQL);
         $this->addSql(<<<'SQL'
             ALTER TABLE coach_team_assignment DROP FOREIGN KEY FK_B102227D3C105691

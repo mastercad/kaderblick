@@ -44,10 +44,6 @@ class CalendarEvent
     #[Groups(['calendar_event:read'])]
     private ?Location $location = null;
 
-    #[ORM\ManyToOne]
-    #[Groups(['calendar_event:read'])]
-    private ?CalendarEventType $type = null;
-
     #[Groups(['calendar_event:read'])]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     #[ORM\OneToMany(targetEntity: Game::class, mappedBy: "calendarEvent", cascade: ['persist', 'remove'])]
@@ -141,17 +137,6 @@ class CalendarEvent
     public function setNotificationSent(bool $notificationSent): self
     {
         $this->notificationSent = $notificationSent;
-        return $this;
-    }
-
-    public function getType(): ?CalendarEventType
-    {
-        return $this->type;
-    }
-
-    public function setType(?CalendarEventType $type): self
-    {
-        $this->type = $type;
         return $this;
     }
 
