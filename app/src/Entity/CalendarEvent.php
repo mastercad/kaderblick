@@ -7,6 +7,8 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use App\Repository\CalendarEventRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: CalendarEventRepository::class)]
 #[ORM\Table(name: 'calendar_events')]
@@ -47,8 +49,13 @@ class CalendarEvent
     private ?CalendarEventType $type = null;
 
     #[Groups(['calendar_event:read'])]
-    #[ORM\ManyToOne(targetEntity: Game::class, inversedBy: "calendarEvents")]
-    private ?Game $game = null;
+    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: "calendarEvent")]
+    private Collection $games;
+
+    public function __construct()
+    {
+        $this->games = new ArrayCollection();
+    }
 
 
     #[ORM\Column]

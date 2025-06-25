@@ -21,7 +21,7 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
     public function findUpcoming(): array
     {
         return $this->createQueryBuilder('ce')
-            ->leftJoin(Game::class, 'g', 'WITH', 'ce.game = g')
+            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent = ce')
             ->where('ce.startDate >= :now')
             ->setParameter('now', new DateTime())
             ->orderBy('ce.startDate', 'ASC')
@@ -32,7 +32,7 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
     public function findBetweenDates(DateTime $start, DateTime $end): array
     {
         return $this->createQueryBuilder('ce')
-            ->leftJoin(Game::class, 'g', 'WITH', 'ce.game = g')
+            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent = ce')
             ->where('ce.startDate BETWEEN :start AND :end')
             ->setParameter('start', $start)
             ->setParameter('end', $end)
@@ -45,7 +45,7 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
     {
         return $this->createQueryBuilder('ce')
             ->select('ce', 'cet', 'l', 'g')
-            ->leftJoin(Game::class, 'g', 'WITH', 'ce.game IS NOT NULL AND ce.game = g')
+            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent IS NOT NULL AND g.calendarEvent = ce')
             ->leftJoin(Location::class, 'l', 'WITH', 'ce.location = l AND g.location = l')
             ->leftJoin(CalendarEventType::class, 'cet', 'WITH', 'ce.calendarEventType = cet')
             ->getQuery()
@@ -56,7 +56,7 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
     {
         return $this->createQueryBuilder('ce')
             ->select('ce', 'cet', 'l', 'g')
-            ->leftJoin(Game::class, 'g', 'WITH', 'ce.game IS NOT NULL AND ce.game = g')
+            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent = ce')
             ->leftJoin(Location::class, 'l', 'WITH', 'ce.location = l')
             ->leftJoin(CalendarEventType::class, 'cet', 'WITH', 'ce.calendarEventType = cet')
             ->getQuery()
@@ -67,7 +67,7 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
     {
         return $this->createQueryBuilder('ce')
             ->select('ce', 'cet', 'l', 'g')
-            ->leftJoin(Game::class, 'g', 'WITH', 'ce.game IS NOT NULL AND ce.game = g')
+            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent = ce')
             ->leftJoin(Location::class, 'l', 'WITH', 'ce.location = l')
             ->leftJoin(CalendarEventType::class, 'cet', 'WITH', 'ce.calendarEventType = cet')
             ->where('t.id = :id')
@@ -80,7 +80,7 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
     {
         return $this->createQueryBuilder('ce')
             ->select('ce', 'cet', 'l', 'g')
-            ->leftJoin(Game::class, 'g', 'WITH', 'ce.game IS NOT NULL AND ce.game = g')
+            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent = ce')
             ->leftJoin(Location::class, 'l', 'WITH', 'ce.location = l')
             ->leftJoin(CalendarEventType::class, 'cet', 'WITH', 'ce.calendarEventType = cet')
             ->where('t.id = :id')
