@@ -223,7 +223,7 @@ class CalendarController extends AbstractController
                 $game->setCalendarEvent($calendarEvent);
                 $this->entityManager->persist($game);
             }
-            $game()->setGameType($gameType);
+            $game->setGameType($gameType);
         }
 
         $this->entityManager->persist($calendarEvent);
