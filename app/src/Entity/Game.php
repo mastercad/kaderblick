@@ -70,7 +70,7 @@ class Game
     private ?Location $location = null;
 
     #[Groups(['game:read', 'game:write'])]
-    #[ORM\ManyToOne(targetEntity: CalendarEvent::class, inversedBy: "games", onDelete: "CASCADE")]
+    #[ORM\ManyToOne(targetEntity: CalendarEvent::class, inversedBy: "games", cascade: ['persist', 'remove'])]
     private ?CalendarEvent $calendarEvent;
 
     public function __construct()
