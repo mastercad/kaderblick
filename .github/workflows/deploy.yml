@@ -69,6 +69,8 @@ jobs:
 
             # erstelle im bedarfsfall netzwerk
             docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
+            
+            docker volume inspect kaderblick-data >/dev/null 2>&1 || docker volume create kaderblick-data
 
             # baue und starte im bedarfsfall db container
             if docker ps --filter "name=kaderblick-db" --filter "status=running" | grep -q kaderblick-db; then
@@ -124,8 +126,6 @@ jobs:
 
             echo "Starte migrations"
             docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
-
-
 
             # Vor Aktivierung alte Production-Container stoppen
             echo "Stoppe aktuelle production"

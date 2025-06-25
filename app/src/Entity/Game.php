@@ -70,14 +70,15 @@ class Game
     private ?Location $location = null;
 
     #[Groups(['game:read', 'game:write'])]
-    #[ORM\OneToOne(targetEntity: CalendarEvent::class, inversedBy: 'game')]
-    private ?CalendarEvent $calendarEvent;
+    #[ORM\OneToMany(targetEntity: CalendarEvent::class, mappedBy: "game")]
+    private Collection $calendarEvents;
 
     public function __construct()
     {
         $this->goals = new ArrayCollection();
         $this->gameEvents = new ArrayCollection();
         $this->substitutions = new ArrayCollection();
+        $this->calendarEvents = new ArrayCollection();
     }
 
     public function getId(): int
@@ -85,14 +86,14 @@ class Game
         return $this->id;
     }
 
-    public function getCalendarEvent(): ?CalendarEvent
+    public function getCalendarEvents(): Collection
     {
-        return $this->calendarEvent;
+        return $this->calendarEvents;
     }
 
-    public function setCalendarEvent(CalendarEvent $calendarEvent): self
+    public function setCalendarEvents(Collection $calendarEvents): self
     {
-        $this->calendarEvent = $calendarEvent;
+        $this->calendarEvents = $calendarEvents;
         return $this;
     }
 

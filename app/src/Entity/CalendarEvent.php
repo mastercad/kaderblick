@@ -47,7 +47,7 @@ class CalendarEvent
     private ?CalendarEventType $type = null;
 
     #[Groups(['calendar_event:read'])]
-    #[ORM\OneToOne(targetEntity: Game::class, mappedBy: 'calendarEvent')]
+    #[ORM\ManyToOne(targetEntity: Game::class, inversedBy: "calendarEvents")]
     private ?Game $game = null;
 
 
