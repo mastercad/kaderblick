@@ -49,7 +49,8 @@ class CalendarEvent
     private ?CalendarEventType $type = null;
 
     #[Groups(['calendar_event:read'])]
-    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: "calendarEvent")]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: "calendarEvent", cascade: ['persist', 'remove'])]
     private Collection $games;
 
     public function __construct()
@@ -154,14 +155,36 @@ class CalendarEvent
         return $this;
     }
 
-    public function getGame(): ?Game
+    public function getGames(): Collection
     {
-        return $this->game;
+        return $this->games;
     }
 
-    public function setGame(?Game $game): self
+    public function setGame(Collection $games): self
     {
-        $this->game = $game;
+        $this->games = $games;
+        return $this;
+    }
+
+    public function addGame(Game $game): self
+    {
+        if (!$this->games->contains($game)) {
+            $this->games[] = $game;
+            $game->setCalendarEvent($this);
+        }
+
+        return $this;
+    }
+
+    public function removeGame(Game $game): self
+    {
+        if ($this->games->contains($game)) {
+            $this->games->removeElement($game);
+            if ($game->getCalendarEvent() === $this) {
+                $game->setCalendarEvent(null);
+            }
+        }
+
         return $this;
     }
 
