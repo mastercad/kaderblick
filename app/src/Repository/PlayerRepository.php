@@ -47,7 +47,7 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
                 $qb->join('p.playerTeamAssignments', 'pta')
                    ->join('pta.team', 't')
                    ->andWhere('pta.player = :player')
-                   ->setParameter('player', $user->getCoach());
+                   ->setParameter('player', $user->getPlayer());
             }
         }
 
