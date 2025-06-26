@@ -14,7 +14,7 @@ class EmailVerificationService
         private EntityManagerInterface $entityManager,
         private MailerInterface $mailer,
         private UrlGeneratorInterface $urlGenerator,
-        private string $emailFrom = 'noreply@fussballverein.de'
+        private string $emailFrom = 'noreply@kaderblick.byte-artist.de'
     ) {}
 
     public function sendEmailChangeVerification(User $user): void

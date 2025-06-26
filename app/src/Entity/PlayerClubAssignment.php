@@ -107,7 +107,7 @@ class PlayerClubAssignment
         return sprintf(
             '%s bei %s (seit %s%s)', 
             $this->player?->getFullName() ?? 'Unbekannter Spieler',
-            $this->club?->getName() ?? 'Unbekanntes Verein',
+            $this->club?->getName() ?? 'Unbekannter Verein',
             $this->startDate?->format('d.m.Y') ?? 'unbekannt',
             $end
         );
