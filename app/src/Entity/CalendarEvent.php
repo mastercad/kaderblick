@@ -7,8 +7,6 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use App\Repository\CalendarEventRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: CalendarEventRepository::class)]
 #[ORM\Table(name: 'calendar_events')]
@@ -45,14 +43,8 @@ class CalendarEvent
     private ?Location $location = null;
 
     #[Groups(['calendar_event:read'])]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: "calendarEvent", cascade: ['persist', 'remove'])]
-    private Collection $games;
-
-    public function __construct()
-    {
-        $this->games = new ArrayCollection();
-    }
+    #[ORM\OneToOne(targetEntity: Game::class, mappedBy: "calendarEvent", cascade: ['persist', 'remove'])]
+    private ?Game $game = null;
 
 
     #[ORM\Column]
@@ -140,36 +132,14 @@ class CalendarEvent
         return $this;
     }
 
-    public function getGames(): Collection
+    public function getGame(): ?Game
     {
-        return $this->games;
+        return $this->game;
     }
 
-    public function setGame(Collection $games): self
+    public function setGame(?Game $game): self
     {
-        $this->games = $games;
-        return $this;
-    }
-
-    public function addGame(Game $game): self
-    {
-        if (!$this->games->contains($game)) {
-            $this->games[] = $game;
-            $game->setCalendarEvent($this);
-        }
-
-        return $this;
-    }
-
-    public function removeGame(Game $game): self
-    {
-        if ($this->games->contains($game)) {
-            $this->games->removeElement($game);
-            if ($game->getCalendarEvent() === $this) {
-                $game->setCalendarEvent(null);
-            }
-        }
-
+        $this->game = $game;
         return $this;
     }
 

@@ -33,6 +33,10 @@ class AuthController extends AbstractController
             return new JsonResponse(['error' => 'Invalid credentials'], 401);
         }
 
+        if (!$user->isVerified()) {
+            return new JsonResponse(['error'=> 'User not verified'], 401);
+        }
+
         $accessToken = $JWTManager->create($user);
         $refreshToken = $refreshTokenService->createRefreshToken($user);
 

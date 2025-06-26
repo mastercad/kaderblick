@@ -55,7 +55,6 @@ class CalendarController extends AbstractController
 
         $formattedEvents = array_map(function($calendarEvent) {
             $endDate = $calendarEvent->getEndDate() ?: (clone $calendarEvent->getStartDate())->setTime(23, 59, 59);
-            $game = $this->entityManager->getRepository(Game::class)->findOneBy(['calendarEvent' => $calendarEvent]);
             
             return [
                 'id' => $calendarEvent->getId(),
@@ -63,18 +62,18 @@ class CalendarController extends AbstractController
                 'start' => $calendarEvent->getStartDate()->format('Y-m-d\TH:i:s'),
                 'end' => $endDate->format('Y-m-d\TH:i:s'),
                 'description' => $calendarEvent->getDescription(),
-                'game' => $game instanceof Game ? [
+                'game' => $calendarEvent->getGame() ? [
                     'homeTeam' => [
-                        'id' => $game->getHomeTeam()->getId(),
-                        'name' => $game->getHomeTeam()->getName()
+                        'id' => $calendarEvent->getGame()->getHomeTeam()->getId(),
+                        'name' => $calendarEvent->getGame()->getHomeTeam()->getName()
                     ],
                     'awayTeam' => [
-                        'id' => $game->getAwayTeam()->getId(),
-                        'name' => $game->getAwayTeam()->getName()
+                        'id' => $calendarEvent->getGame()->getAwayTeam()->getId(),
+                        'name' => $calendarEvent->getGame()->getAwayTeam()->getName()
                     ],
                     'gameType' => [
-                        'id' => $game->getGameType()->getId(),
-                        'name' => $game->getGameType()->getName()
+                        'id' => $calendarEvent->getGame()->getGameType()->getId(),
+                        'name' => $calendarEvent->getGame()->getGameType()->getName()
                     ]
                 ] : null,
                 'type' => $calendarEvent->getEventType() ? [
@@ -113,24 +112,6 @@ class CalendarController extends AbstractController
         
         $calendarEvent = new CalendarEvent();
         $this->updateEventFromData($calendarEvent, $data);
-
-        $calendarEventType = $this->entityManager->getRepository(CalendarEventType::class)->find($data['typeId'] ?? null);
-        
-        if ($calendarEventType instanceof CalendarEventType && $calendarEventType->getName() === 'Spiel') {
-            $game = new Game();
-            $game->setCalendarEvent($calendarEvent);
-            
-            $game->setDate(new DateTimeImmutable($data['startDate']));
-            $game->setHomeTeam($this->entityManager->getReference(Team::class, $data['homeTeamId']));
-            $game->setAwayTeam($this->entityManager->getReference(Team::class, $data['awayTeamId']));
-            $game->setGameType($this->entityManager->getReference(GameType::class, $data['gameTypeId']));
-            $game->setLocation($this->entityManager->getReference(Location::class, $data['locationId']));
-            
-            $this->entityManager->persist($game);
-        }
-        
-        $this->entityManager->persist($calendarEvent);
-        $this->entityManager->flush();
         
         return $this->json(['success' => true]);
     }
@@ -186,47 +167,45 @@ class CalendarController extends AbstractController
         }
 
         if (isset($data['locationId'])) {
-            $location = $this->entityManager->getReference(Location::class, $data['locationId']);
+            $location = $this->entityManager->getReference(Location::class, (int) $data['locationId']);
             $calendarEvent->setLocation($location);
         }
 
         if (isset($data['homeTeamId'])) {
-            $game = $this->entityManager->getRepository(Game::class)->findOneBy(['calendarEvent' => $calendarEvent]);
-            $homeTeam = $this->entityManager->getReference(Team::class, $data['homeTeamId']);
-            if (! $game instanceof Game) {
+            $homeTeam = $this->entityManager->getReference(Team::class, (int) $data['homeTeamId']);
+            if (null === $calendarEvent->getGame()) {
                 $game = new Game();
-                $calendarEvent->addGame($game);
+                $calendarEvent->setGame($game);
                 $game->setCalendarEvent($calendarEvent);
                 $this->entityManager->persist($game);
             }
-            $game->setHomeTeam($homeTeam);
+            $calendarEvent->getGame()->setHomeTeam($homeTeam);
         }
         
         if (isset($data['awayTeamId'])) {
-            $game = $this->entityManager->getRepository(Game::class)->findOneBy(['calendarEvent' => $calendarEvent]);
-            $awayTeam = $this->entityManager->getReference(Team::class, $data['awayTeamId']);
-            if (! $game instanceof Game) {
+            $awayTeam = $this->entityManager->getReference(Team::class, (int) $data['awayTeamId']);
+            if (null === $calendarEvent->getGame()) {
                 $game = new Game();
-                $calendarEvent->addGame($game);
+                $calendarEvent->setGame($game);
                 $game->setCalendarEvent($calendarEvent);
                 $this->entityManager->persist($game);
             }
-            $game->setAwayTeam($awayTeam);
+            $calendarEvent->getGame()->setAwayTeam($awayTeam);
         }
         
         if (isset($data['gameTypeId'])) {
-            $game = $this->entityManager->getRepository(Game::class)->findOneBy(['calendarEvent' => $calendarEvent]);
-            $gameType = $this->entityManager->getReference(GameType::class, $data['gameTypeId']);
-            if (! $game instanceof Game) {
+            $gameType = $this->entityManager->getReference(GameType::class, (int) $data['gameTypeId']);
+            if (null === $calendarEvent->getGame()) {
                 $game = new Game();
-                $calendarEvent->addGame($game);
+                $calendarEvent->setGame($game);
                 $game->setCalendarEvent($calendarEvent);
                 $this->entityManager->persist($game);
             }
-            $game->setGameType($gameType);
+            $calendarEvent->getGame()->setGameType($gameType);
         }
 
         $this->entityManager->persist($calendarEvent);
+        $this->entityManager->flush();
     }
 
     private function loadEventRecipients(CalendarEvent $calendarEvent): array

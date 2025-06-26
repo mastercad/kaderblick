@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>E-Mail-Adresse bestätigen</title>
+</head>
+<body>
+    <h1>Hallo {{ user.name }}!</h1>
+    
+    <p>Bitte bestätigen Sie Ihre neue E-Mail-Adresse durch Klick auf den folgenden Link:</p>
+    
+    <p><a href="{{ verificationUrl }}">E-Mail-Adresse bestätigen</a></p>
+    
+    <p>Der Link ist 24 Stunden gültig.</p>
+    
+    <p>Falls Sie diese Änderung nicht angefordert haben, können Sie diese E-Mail ignorieren.</p>
+</body>
+</html>

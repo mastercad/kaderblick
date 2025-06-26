@@ -41,6 +41,10 @@ class GamesController extends ApiController
             'entityName' => 'Substitution',
             'type'=> 4,
         ],
+        'calendarEvents' => [
+            'entityName' => 'CalendarEvent',
+            'type' => 1,
+        ]
     ];
     protected array  $relationEntries  = [];
     protected string $urlPart          = 'games';

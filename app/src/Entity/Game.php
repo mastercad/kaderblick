@@ -12,7 +12,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 use App\Repository\GameRepository;
 
 #[ORM\Entity(repositoryClass: GameRepository::class)]
-#[ORM\Table(name: 'game')]
+#[ORM\Table(name: 'games')]
 #[ORM\HasLifecycleCallbacks]
 class Game
 {
@@ -70,8 +70,7 @@ class Game
     private ?Location $location = null;
 
     #[Groups(['game:read', 'game:write'])]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    #[ORM\ManyToOne(targetEntity: CalendarEvent::class, inversedBy: "games", cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(targetEntity: CalendarEvent::class, inversedBy: "game", cascade: ['persist', 'remove'])]
     private ?CalendarEvent $calendarEvent;
 
     public function __construct()

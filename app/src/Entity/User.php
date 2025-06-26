@@ -64,6 +64,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\JoinColumn(nullable: true)]
     private ?Club $club = null;
 
+    #[ORM\Column(type: 'float', nullable: true)]
+    private ?float $height = null;
+
+    #[ORM\Column(type: 'float', nullable: true)]
+    private ?float $weight = null;
+
+    #[ORM\Column(type: 'float', nullable: true)]
+    private ?float $shoeSize = null;
+
+    #[ORM\Column(length: 3, nullable: true)]
+    private ?string $shirtSize = null;
+
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $pantsSize = null;
+
+    #[ORM\Column(length: 180, nullable: true)]
+    private ?string $newEmail = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $emailVerificationToken = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTime $emailVerificationTokenExpiresAt = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -235,6 +259,94 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             throw new \InvalidArgumentException('Ein Benutzer kann nicht gleichzeitig Vereinsmitglied und Spieler/Trainer sein.');
         }
         $this->club = $club;
+        return $this;
+    }
+
+    public function getHeight(): ?float
+    {
+        return $this->height;
+    }
+
+    public function setHeight(?float $height): self
+    {
+        $this->height = $height;
+        return $this;
+    }
+
+    public function getWeight(): ?float
+    {
+        return $this->weight;
+    }
+
+    public function setWeight(?float $weight): self
+    {
+        $this->weight = $weight;
+        return $this;
+    }
+
+    public function getShoeSize(): ?float
+    {
+        return $this->shoeSize;
+    }
+
+    public function setShoeSize(?float $shoeSize): self
+    {
+        $this->shoeSize = $shoeSize;
+        return $this;
+    }
+
+    public function getShirtSize(): ?string
+    {
+        return $this->shirtSize;
+    }
+
+    public function setShirtSize(?string $shirtSize): self
+    {
+        $this->shirtSize = $shirtSize;
+        return $this;
+    }
+
+    public function getPantsSize(): ?string
+    {
+        return $this->pantsSize;
+    }
+
+    public function setPantsSize(?string $pantsSize): self
+    {
+        $this->pantsSize = $pantsSize;
+        return $this;
+    }
+
+    public function getNewEmail(): ?string
+    {
+        return $this->newEmail;
+    }
+
+    public function setNewEmail(?string $newEmail): self
+    {
+        $this->newEmail = $newEmail;
+        return $this;
+    }
+
+    public function getEmailVerificationToken(): ?string
+    {
+        return $this->emailVerificationToken;
+    }
+
+    public function setEmailVerificationToken(?string $token): self
+    {
+        $this->emailVerificationToken = $token;
+        return $this;
+    }
+
+    public function getEmailVerificationTokenExpiresAt(): ?\DateTime
+    {
+        return $this->emailVerificationTokenExpiresAt;
+    }
+
+    public function setEmailVerificationTokenExpiresAt(?\DateTime $expiresAt): self
+    {
+        $this->emailVerificationTokenExpiresAt = $expiresAt;
         return $this;
     }
 
