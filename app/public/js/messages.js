@@ -92,7 +92,7 @@ async function loadUsers() {
         const groupMembersSelect = document.getElementById('groupMembers');
         groupMembersSelect.innerHTML = '';
         data.users.forEach(user => {
-            const option = new Option(`${user.fullName} (${user.email})`, user.id);
+            const option = new Option("${user.fullName} (${user.email})", user.id);
             groupMembersSelect.appendChild(option);
         });
 
