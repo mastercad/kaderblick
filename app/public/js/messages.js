@@ -85,8 +85,14 @@ async function loadUsers() {
         recipientSelect.innerHTML = '';
         data.users.forEach(user => {
             console.info(user);
-            const option = new Option("${user.fullName} (${user.email})", user.id);
+            /*
+            const option = new Option(`${user.fullName} (${user.email})`, user.id);
             recipientSelect.appendChild(option);
+            */
+            const opt = document.createElement("option");
+            opt.value = user.id;
+            opt.textContent = `${user.fullName} (${user.email})`;
+            recipientSelect.appendChild(opt);
         });
         
         // Gruppen-Mitglieder Select
@@ -94,7 +100,7 @@ async function loadUsers() {
         groupMembersSelect.innerHTML = '';
         data.users.forEach(user => {
             console.info(user);
-            const option = new Option("${user.fullName} (${user.email})", user.id);
+            const option = new Option(`${user.fullName} (${user.email})`, user.id);
             groupMembersSelect.appendChild(option);
         });
 
