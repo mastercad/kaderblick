@@ -14,6 +14,8 @@ jobs:
 
           cp app/.env.dist app/.env
 
+          sed -i 's/^APP_ENV=.*/APP_ENV=test/' app/.env
+
           docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
           
           docker volume inspect kaderblick-data >/dev/null 2>&1 || docker volume create kaderblick-data
@@ -34,9 +36,9 @@ jobs:
 
           # ich bin mir ehrlich gesagt gerade gar nicht mehr sicher, ob das hier noch so sinn macht, die kommen ja immer mit dem branch aktuell rein
           if [ -d "$CURRENT_DIR" ]; then
-            if [ -d "$CURRENT_DIR/app/config/secrets/testing" ]; then
-              mkdir -p "$RELEASE_DIR/app/config/secrets/testing"
-              cp -r "$CURRENT_DIR/app/config/secrets/testing/"* "$RELEASE_DIR/app/config/secrets/testing/" 2>/dev/null || true
+            if [ -d "$CURRENT_DIR/app/config/secrets/test" ]; then
+              mkdir -p "$RELEASE_DIR/app/config/secrets/test"
+              cp -r "$CURRENT_DIR/app/config/secrets/test/"* "$RELEASE_DIR/app/config/secrets/test/" 2>/dev/null || true
             fi
 
             if [ -d "$CURRENT_DIR/app/config/jwt" ]; then
@@ -45,11 +47,11 @@ jobs:
             fi
           fi
 
-          mkdir -p app/config/secrets/testing
-          echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > app/config/secrets/testing/testing.decrypt.private.php
+          mkdir -p app/config/secrets/test
+          echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > app/config/secrets/test/test.decrypt.private.php
 
           echo "Decrypt secrets"
-          docker compose exec -T api bin/console secrets:decrypt-to-local --force
+          docker compose exec -T api bin/console secrets:decrypt-to-local --env=test --force
 
           echo "Erstelle jwt, wenn nötig"
           if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
