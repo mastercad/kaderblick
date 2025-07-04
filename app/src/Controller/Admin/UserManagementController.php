@@ -2,19 +2,20 @@
 
 namespace App\Controller\Admin;
 
-use App\Entity\User;
-use App\Entity\Player;
-use App\Entity\Coach;
 use App\Entity\Club;
+use App\Entity\Coach;
+use App\Entity\Player;
+use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/users', name: 'admin_users_')]
 #[IsGranted('ROLE_ADMIN')]
@@ -24,17 +25,19 @@ class UserManagementController extends AbstractController
         private EntityManagerInterface $em,
         private RequestStack $requestStack,
         private RoleHierarchyInterface $roleHierarchy
-    ) {}
+    ) {
+    }
 
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(): Response
     {
         $users = $this->em->getRepository(User::class)->findBy([], ['lastName' => 'ASC', 'firstName' => 'ASC']);
-        
+
         return $this->render('admin/users/index.html.twig', [
             'users' => $users
         ]);
     }
+
     #[Route('/{id}/roles', name: 'edit_roles', methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN')]
     public function editRoles(User $user): Response
@@ -60,7 +63,7 @@ class UserManagementController extends AbstractController
         // Prüfen ob der aktuelle Benutzer die Berechtigung hat, diese Rolle zu vergeben
         $currentUser = $this->getUser();
         $selectedRoles = $request->request->all('roles', []);
-        
+
         // Sicherstellen dass ROLE_USER immer gesetzt ist
         if (!in_array('ROLE_USER', $selectedRoles)) {
             $selectedRoles[] = 'ROLE_USER';
@@ -71,6 +74,7 @@ class UserManagementController extends AbstractController
         foreach ($selectedRoles as $role) {
             if (!in_array($role, $userRoles)) {
                 $this->addFlash('error', 'Sie haben nicht die Berechtigung, diese Rolle zu vergeben: ' . $role);
+
                 return $this->redirectToRoute('admin_users_edit_roles', ['id' => $user->getId()]);
             }
         }
@@ -79,7 +83,7 @@ class UserManagementController extends AbstractController
             $user->setRoles($selectedRoles);
             $this->em->flush();
             $this->addFlash('success', 'Benutzerrollen wurden erfolgreich aktualisiert.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->addFlash('error', 'Fehler beim Aktualisieren der Rollen: ' . $e->getMessage());
         }
 
@@ -92,7 +96,7 @@ class UserManagementController extends AbstractController
         $players = $this->em->getRepository(Player::class)->findAll();
         $coaches = $this->em->getRepository(Coach::class)->findAll();
         $clubs = $this->em->getRepository(Club::class)->findAll();
-        
+
         // Flash Messages von vorherigen Status-Änderungen löschen
         /** @var Session $session */
         $session = $this->requestStack->getSession();
@@ -118,13 +122,13 @@ class UserManagementController extends AbstractController
                 $user->setClub($club); // Hier wird null gesetzt wenn keine ID übergeben wurde
             } else {
                 $user->setClub(null);
-                
+
                 // Player setzen oder entfernen
-                $player = $request->request->get('player_id') 
+                $player = $request->request->get('player_id')
                     ? $this->em->getRepository(Player::class)->find($request->request->get('player_id'))
                     : null;
                 $user->setPlayer($player);
-                
+
                 // Coach setzen oder entfernen
                 $coach = $request->request->get('coach_id')
                     ? $this->em->getRepository(Coach::class)->find($request->request->get('coach_id'))
@@ -136,7 +140,7 @@ class UserManagementController extends AbstractController
             $this->em->flush();
 
             $this->addFlash('success', 'Zuordnungen erfolgreich aktualisiert.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->addFlash('error', 'Fehler bei der Zuordnung: ' . $e->getMessage());
         }
 
@@ -155,7 +159,7 @@ class UserManagementController extends AbstractController
                 'Benutzer %s wurde erfolgreich %s.',
                 $user->getEmail(),
                 $user->isEnabled() ? 'aktiviert' : 'deaktiviert'
-            )
+            ),
         );
 
         return $this->redirectToRoute('admin_users_index');
@@ -169,38 +173,38 @@ class UserManagementController extends AbstractController
             return $this->json([]);
         }
 
-        $qb = match($type) {
+        $qb = match ($type) {
             'player' => $this->em->getRepository(Player::class)->createQueryBuilder('p')
                 ->where('p.firstName LIKE :term OR p.lastName LIKE :term OR p.email LIKE :term')
                 ->setParameter('term', '%' . $term . '%')
                 ->orderBy('p.lastName', 'ASC')
                 ->setMaxResults(10),
-            
+
             'coach' => $this->em->getRepository(Coach::class)->createQueryBuilder('c')
                 ->where('c.firstName LIKE :term OR c.lastName LIKE :term OR c.email LIKE :term')
                 ->setParameter('term', '%' . $term . '%')
                 ->orderBy('c.lastName', 'ASC')
                 ->setMaxResults(10),
-            
+
             'club' => $this->em->getRepository(Club::class)->createQueryBuilder('c')
                 ->where('c.name LIKE :term')
                 ->setParameter('term', '%' . $term . '%')
                 ->orderBy('c.name', 'ASC')
                 ->setMaxResults(10),
-            
-            default => throw $this->createNotFoundException('Invalid search type')
+
+            default => throw $this->createNotFoundException('Invalid search type'),
         };
 
         $results = $qb->getQuery()->getResult();
-        
-        $formatted = array_map(function($item) use ($type) {
+
+        $formatted = array_map(function ($item) use ($type) {
             return [
                 'id' => $item->getId(),
-                'text' => match($type) {
+                'text' => match ($type) {
                     'player', 'coach' => $item->getFullName() . ($item->getEmail() ? ' (' . $item->getEmail() . ')' : ''),
                     'club' => $item->getName(),
                     default => ''
-                }
+                },
             ];
         }, $results);
 
@@ -218,6 +222,7 @@ class UserManagementController extends AbstractController
         if ($user->getClub()) {
             return ['type' => 'club', 'entity' => $user->getClub()];
         }
+
         return ['type' => null, 'entity' => null];
     }
 }

@@ -2,17 +2,17 @@
 
 namespace App\Entity;
 
+use App\Repository\CoachNationalityAssignmentRepository;
 use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\CoachNationalityAssignmentRepository;
 
 #[ORM\Entity(repositoryClass: CoachNationalityAssignmentRepository::class)]
 class CoachNationalityAssignment
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: "integer")]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Coach::class, inversedBy: 'coachNationalityAssignments')]
@@ -31,14 +31,14 @@ class CoachNationalityAssignment
     #[ORM\Column(type: 'date', nullable: true)]
     private ?DateTimeInterface $endDate = null;
 
-    #[ORM\Column(type: "boolean", options: ["default" => true])]
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $active = true; // Falls mal aus historischen Gründen etwas deaktiviert werden soll
 
     public function getId(): ?int
     {
         return $this->id;
     }
-    
+
     public function getCoach(): ?Coach
     {
         return $this->coach;
@@ -47,6 +47,7 @@ class CoachNationalityAssignment
     public function setCoach(?Coach $coach): self
     {
         $this->coach = $coach;
+
         return $this;
     }
 
@@ -58,6 +59,7 @@ class CoachNationalityAssignment
     public function setNationality(?Nationality $nationality): self
     {
         $this->nationality = $nationality;
+
         return $this;
     }
 
@@ -69,6 +71,7 @@ class CoachNationalityAssignment
     public function setStartDate(DateTimeInterface $startDate): self
     {
         $this->startDate = $startDate;
+
         return $this;
     }
 
@@ -80,6 +83,7 @@ class CoachNationalityAssignment
     public function setEndDate(?DateTimeInterface $endDate): self
     {
         $this->endDate = $endDate;
+
         return $this;
     }
 
@@ -91,6 +95,7 @@ class CoachNationalityAssignment
     public function setActive(bool $active): self
     {
         $this->active = $active;
+
         return $this;
     }
 }

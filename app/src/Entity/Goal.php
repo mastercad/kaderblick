@@ -2,9 +2,9 @@
 
 namespace App\Entity;
 
+use App\Repository\GoalRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\GoalRepository;
 
 #[ORM\Entity(repositoryClass: GoalRepository::class)]
 #[ORM\Table(name: 'goals')]
@@ -53,6 +53,7 @@ class Goal
     public function setScorer(?Player $scorer): self
     {
         $this->scorer = $scorer;
+
         return $this;
     }
 
@@ -64,6 +65,7 @@ class Goal
     public function setGame(?Game $game): self
     {
         $this->game = $game;
+
         return $this;
     }
 
@@ -75,6 +77,7 @@ class Goal
     public function setMinuten(int $minute): self
     {
         $this->minute = $minute;
+
         return $this;
     }
 
@@ -86,6 +89,7 @@ class Goal
     public function setAssistBy(?Player $assistBy): self
     {
         $this->assistBy = $assistBy;
+
         return $this;
     }
 
@@ -97,6 +101,7 @@ class Goal
     public function setOwnGoal(bool $ownGoal): self
     {
         $this->ownGoal = $ownGoal;
+
         return $this;
     }
 
@@ -108,6 +113,7 @@ class Goal
     public function setPenalty(bool $penalty): self
     {
         $this->penalty = $penalty;
+
         return $this;
     }
 }

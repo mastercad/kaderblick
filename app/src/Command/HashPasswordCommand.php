@@ -26,7 +26,7 @@ class HashPasswordCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io     = new SymfonyStyle($input, $output);
+        $io = new SymfonyStyle($input, $output);
         /** @var QuestionHelper $helper */
         $helper = $this->getHelper('question');
 
@@ -38,6 +38,7 @@ class HashPasswordCommand extends Command
 
         if (!$plainPassword) {
             $io->error('Password cannot be empty.');
+
             return Command::FAILURE;
         }
 
@@ -46,7 +47,7 @@ class HashPasswordCommand extends Command
 
         $hash = $this->passwordHasher->hashPassword($user, $plainPassword);
 
-        $io->success("Hashed password:");
+        $io->success('Hashed password:');
         $io->writeln($hash);
 
         return Command::SUCCESS;

@@ -2,18 +2,18 @@
 
 namespace App\Entity;
 
+use App\Repository\PlayerClubAssignmentRepository;
 use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\PlayerClubAssignmentRepository;
 
 #[ORM\Entity(repositoryClass: PlayerClubAssignmentRepository::class)]
 class PlayerClubAssignment
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: "integer")]
+    #[ORM\Column(type: 'integer')]
     #[Groups(['player_club_assignment:read', 'player_club_assignment:write', 'club:read', 'player:read'])]
     private ?int $id = null;
 
@@ -27,7 +27,7 @@ class PlayerClubAssignment
     #[ORM\JoinColumn(nullable: false)]
     private ?Club $club = null;
 
-    #[ORM\Column(type: "date", nullable: true)]
+    #[ORM\Column(type: 'date', nullable: true)]
     #[Groups(['player_club_assignment:read', 'player_club_assignment:write', 'club:read'])]
     #[Context(normalizationContext: ['datetime_format' => 'd.m.Y'])]
     private DateTimeInterface $startDate;
@@ -38,7 +38,7 @@ class PlayerClubAssignment
     private ?DateTimeInterface $endDate = null;
 
     #[Groups(['player_club_assignment:read', 'player_club_assignment:write'])]
-    #[ORM\Column(type: "boolean", options: ["default" => true])]
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $active = true;
 
     public function getId(): ?int
@@ -54,6 +54,7 @@ class PlayerClubAssignment
     public function setPlayer(?Player $player): self
     {
         $this->player = $player;
+
         return $this;
     }
 
@@ -65,6 +66,7 @@ class PlayerClubAssignment
     public function setClub(?Club $club): self
     {
         $this->club = $club;
+
         return $this;
     }
 
@@ -76,6 +78,7 @@ class PlayerClubAssignment
     public function setStartDate(DateTimeInterface $startDate): self
     {
         $this->startDate = $startDate;
+
         return $this;
     }
 
@@ -87,6 +90,7 @@ class PlayerClubAssignment
     public function setEndDate(?DateTimeInterface $endDate): self
     {
         $this->endDate = $endDate;
+
         return $this;
     }
 
@@ -98,14 +102,16 @@ class PlayerClubAssignment
     public function setActive(bool $active): self
     {
         $this->active = $active;
+
         return $this;
     }
 
-    public function __toString(): string 
+    public function __toString(): string
     {
         $end = $this->endDate ? ' bis ' . $this->endDate->format('d.m.Y') : '';
+
         return sprintf(
-            '%s bei %s (seit %s%s)', 
+            '%s bei %s (seit %s%s)',
             $this->player?->getFullName() ?? 'Unbekannter Spieler',
             $this->club?->getName() ?? 'Unbekannter Verein',
             $this->startDate?->format('d.m.Y') ?? 'unbekannt',

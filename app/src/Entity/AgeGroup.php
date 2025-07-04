@@ -2,54 +2,53 @@
 
 namespace App\Entity;
 
+use App\Repository\AgeGroupRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\AgeGroupRepository;
 
 /**
- * id	name	    max_age	min_age	active
- * 1	U13	        13	    0	    true
- * 2	U15	        15	    14	    true
- * 3	U17	        17	    16	    true
- * 4	U19	        19	    18	    true
- * 5	Senioren	NULL	20	    true
+ * id   name        max_age min_age active
+ * 1    U13         13      0       true
+ * 2    U15         15      14      true
+ * 3    U17         17      16      true
+ * 4    U19         19      18      true
+ * 5    Senioren    NULL    20      true.
  */
-
 #[ORM\Entity(repositoryClass: AgeGroupRepository::class)]
-#[ORM\Table(name: "age_groups")]
+#[ORM\Table(name: 'age_groups')]
 class AgeGroup
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: "integer")]
+    #[ORM\Column(type: 'integer')]
     #[Groups(['age_group:read', 'team:read', 'club:read'])]
     private ?int $id = null;
 
-    #[ORM\Column(type: "string", length: 50, unique: true)]
+    #[ORM\Column(type: 'string', length: 50, unique: true)]
     #[Groups(['age_group:read', 'age_group:write', 'team:read', 'club:read'])]
     private string $code; // z.B. "A-Junioren", "U17"
 
-    #[ORM\Column(type: "string", length: 100)]
+    #[ORM\Column(type: 'string', length: 100)]
     #[Groups(['age_group:read', 'age_group:write', 'team:read', 'club:read'])]
     private ?string $name = null; // z.B. "A-Junioren"
 
-    #[ORM\Column(type: "string", length: 100)]
+    #[ORM\Column(type: 'string', length: 100)]
     #[Groups(['age_group:read', 'age_group:write', 'team:read'])]
     private string $englishName; // z.B. "U17"
 
-    #[ORM\Column(type: "integer")]
+    #[ORM\Column(type: 'integer')]
     #[Groups(['age_group:read', 'age_group:write', 'team:read'])]
     private int $minAge; // z.B. 16
 
-    #[ORM\Column(type: "integer")]
+    #[ORM\Column(type: 'integer')]
     #[Groups(['age_group:read', 'age_group:write', 'team:read'])]
     private int $maxAge; // z.B. 17
 
-    #[ORM\Column(type: "string", length: 5)]
+    #[ORM\Column(type: 'string', length: 5)]
     #[Groups(['age_group:read', 'age_group:write', 'team:read'])]
     private string $referenceDate; // z.B. "01-01" (Monat-Tag, als String)
 
-    #[ORM\Column(type: "text", nullable: true)]
+    #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['age_group:read', 'age_group:write', 'team:read'])]
     private ?string $description = null;
 
@@ -66,6 +65,7 @@ class AgeGroup
     public function setCode(string $code): self
     {
         $this->code = $code;
+
         return $this;
     }
 
@@ -77,6 +77,7 @@ class AgeGroup
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -88,6 +89,7 @@ class AgeGroup
     public function setEnglishName(string $englishName): self
     {
         $this->englishName = $englishName;
+
         return $this;
     }
 
@@ -99,6 +101,7 @@ class AgeGroup
     public function setMinAge(int $minAge): self
     {
         $this->minAge = $minAge;
+
         return $this;
     }
 
@@ -110,6 +113,7 @@ class AgeGroup
     public function setMaxAge(int $maxAge): self
     {
         $this->maxAge = $maxAge;
+
         return $this;
     }
 
@@ -121,6 +125,7 @@ class AgeGroup
     public function setReferenceDate(string $referenceDate): self
     {
         $this->referenceDate = $referenceDate;
+
         return $this;
     }
 
@@ -132,6 +137,7 @@ class AgeGroup
     public function setDescription(?string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 

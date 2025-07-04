@@ -2,12 +2,12 @@
 
 namespace App\Entity;
 
+use App\Repository\CalendarEventTypeRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\CalendarEventTypeRepository;
 
 #[ORM\Entity(repositoryClass: CalendarEventTypeRepository::class)]
-#[ORM\Table(name: 'calendar_event_types')]  // Tabellenname anpassen
+#[ORM\Table(name: 'calendar_event_types')] // Tabellenname anpassen
 class CalendarEventType
 {
     #[ORM\Id]
@@ -37,6 +37,7 @@ class CalendarEventType
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -48,6 +49,7 @@ class CalendarEventType
     public function setColor(string $color): self
     {
         $this->color = $color;
+
         return $this;
     }
 }

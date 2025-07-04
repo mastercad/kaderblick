@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Repository\CoachRepository;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -10,7 +11,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
-use App\Repository\CoachRepository;
 
 #[ORM\Entity(repositoryClass: CoachRepository::class)]
 class Coach
@@ -76,6 +76,7 @@ class Coach
     public function setFirstName(string $firstName): self
     {
         $this->firstName = $firstName;
+
         return $this;
     }
 
@@ -87,6 +88,7 @@ class Coach
     public function setLastName(string $lastName): self
     {
         $this->lastName = $lastName;
+
         return $this;
     }
 
@@ -98,6 +100,7 @@ class Coach
     public function setBirthdate(DateTimeInterface $birthdate): self
     {
         $this->birthdate = $birthdate;
+
         return $this;
     }
 
@@ -109,6 +112,7 @@ class Coach
     public function setEmail(?string $email): self
     {
         $this->email = $email;
+
         return $this;
     }
 
@@ -123,6 +127,7 @@ class Coach
             $this->coachTeamAssignments->add($assignment);
             $assignment->setCoach($this);
         }
+
         return $this;
     }
 
@@ -133,6 +138,7 @@ class Coach
                 $coachTeamAssignment->setCoach(null);
             }
         }
+
         return $this;
     }
 
@@ -147,6 +153,7 @@ class Coach
             $this->coachClubAssignments->add($coachClubAssignment);
             $coachClubAssignment->setCoach($this);
         }
+
         return $this;
     }
 
@@ -157,6 +164,7 @@ class Coach
                 $coachClubAssignment->setCoach(null);
             }
         }
+
         return $this;
     }
 
@@ -171,6 +179,7 @@ class Coach
             $this->coachNationalityAssignments->add($coachNationalityAssignment);
             $coachNationalityAssignment->setCoach($this);
         }
+
         return $this;
     }
 
@@ -181,6 +190,7 @@ class Coach
                 $coachNationalityAssignment->setCoach(null);
             }
         }
+
         return $this;
     }
 
@@ -197,6 +207,7 @@ class Coach
             $this->coachLicenseAssignments->add($coachLicenseAssignment);
             $coachLicenseAssignment->setCoach($this);
         }
+
         return $this;
     }
 
@@ -207,24 +218,25 @@ class Coach
                 $coachLicenseAssignment->setCoach(null);
             }
         }
+
         return $this;
     }
-    
+
     public function getActiveCoachLicenseAssignments(): Collection
     {
         $today = new DateTimeImmutable();
-    
+
         return $this->coachLicenseAssignments->filter(function (CoachLicenseAssignment $assignment) use ($today) {
             return
-                $assignment->getCoach()?->getId() === $this->getId() &&
-                $assignment->getStartDate() <= $today &&
-                ($assignment->getEndDate() === null || $assignment->getEndDate() >= $today);
+                $assignment->getCoach()?->getId() === $this->getId()
+                && $assignment->getStartDate() <= $today
+                && (null === $assignment->getEndDate() || $assignment->getEndDate() >= $today);
         });
     }
 
     public function getFullName(): string
     {
-        return $this->firstName . ' '. $this->lastName;
+        return $this->firstName . ' ' . $this->lastName;
     }
 
     public function __toString(): string

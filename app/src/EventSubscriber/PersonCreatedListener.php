@@ -2,8 +2,8 @@
 
 namespace App\EventSubscriber;
 
-use App\Entity\Player;
 use App\Entity\Coach;
+use App\Entity\Player;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\Event\PostPersistEventArgs;

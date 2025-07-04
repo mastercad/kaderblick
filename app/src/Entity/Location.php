@@ -2,10 +2,10 @@
 
 namespace App\Entity;
 
+use App\Repository\LocationRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\LocationRepository;
 
 #[ORM\Entity(repositoryClass: LocationRepository::class)]
 #[ORM\UniqueConstraint(name: 'unique_location_name', columns: ['name'])]
@@ -68,6 +68,7 @@ class Location
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -79,6 +80,7 @@ class Location
     public function setAddress(?string $address): self
     {
         $this->address = $address;
+
         return $this;
     }
 
@@ -90,6 +92,7 @@ class Location
     public function setCity(?string $city): self
     {
         $this->city = $city;
+
         return $this;
     }
 
@@ -101,6 +104,7 @@ class Location
     public function setCapacity(?int $capacity): self
     {
         $this->capacity = $capacity;
+
         return $this;
     }
 
@@ -112,6 +116,7 @@ class Location
     public function setSurfaceType(?SurfaceType $surfaceType): self
     {
         $this->surfaceType = $surfaceType;
+
         return $this;
     }
 
@@ -123,6 +128,7 @@ class Location
     public function setHasFloodlight(?bool $hasFloodlight): self
     {
         $this->hasFloodlight = $hasFloodlight;
+
         return $this;
     }
 
@@ -134,6 +140,7 @@ class Location
     public function setFacilities(?string $facilities): self
     {
         $this->facilities = $facilities;
+
         return $this;
     }
 
@@ -145,6 +152,7 @@ class Location
     public function setLatitude(?float $latitude): self
     {
         $this->latitude = $latitude;
+
         return $this;
     }
 
@@ -156,6 +164,7 @@ class Location
     public function setLongitude(?float $longitude): self
     {
         $this->longitude = $longitude;
+
         return $this;
     }
 

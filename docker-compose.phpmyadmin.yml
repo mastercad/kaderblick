@@ -1,0 +1,17 @@
+name: ${COMPOSE_PROJECT_NAME:-kaderblick}
+
+services:
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "${PMA_PORT:-8081}:80"
+    networks:
+      - kaderblick-net
+
+networks:
+  kaderblick-net:
+    external: true

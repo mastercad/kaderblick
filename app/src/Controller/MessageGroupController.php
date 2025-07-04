@@ -14,8 +14,9 @@ use Symfony\Component\Routing\Annotation\Route;
 class MessageGroupController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
-    ) {}
+        private EntityManagerInterface $entityManager,
+    ) {
+    }
 
     #[Route('', name: 'api_message_groups_index', methods: ['GET'])]
     public function index(): JsonResponse
@@ -24,11 +25,11 @@ class MessageGroupController extends AbstractController
             ->findBy(['owner' => $this->getUser()]);
 
         return $this->json([
-            'groups' => array_map(fn(MessageGroup $group) => [
+            'groups' => array_map(fn (MessageGroup $group) => [
                 'id' => $group->getId(),
                 'name' => $group->getName(),
-                'memberCount' => $group->getMembers()->count()
-            ], $groups)
+                'memberCount' => $group->getMembers()->count(),
+            ], $groups),
         ]);
     }
 
@@ -36,7 +37,7 @@ class MessageGroupController extends AbstractController
     public function create(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        
+
         $group = new MessageGroup();
         $group->setName($data['name']);
         $group->setOwner($this->getUser());
@@ -63,7 +64,7 @@ class MessageGroupController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true);
-        
+
         if (isset($data['name'])) {
             $group->setName($data['name']);
         }

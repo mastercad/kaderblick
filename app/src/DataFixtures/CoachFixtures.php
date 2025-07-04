@@ -10,10 +10,10 @@ use App\Entity\CoachLicenseAssignment;
 use App\Entity\CoachTeamAssignment;
 use App\Entity\CoachTeamAssignmentType;
 use App\Entity\Team;
-use Doctrine\Bundle\FixturesBundle\Fixture;
-use Doctrine\Persistence\ObjectManager;
 use DateTime;
+use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
+use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 use RuntimeException;
 
@@ -37,7 +37,7 @@ class CoachFixtures extends Fixture implements DependentFixtureInterface
         // Hier Beispielhafte Abfrage (du kannst das anders lösen)
         $licenseA = $manager->getRepository(CoachLicense::class)->findOneBy(['name' => 'UEFA A']);
         $licenseB = $manager->getRepository(CoachLicense::class)->findOneBy(['name' => 'UEFA B']);
-        
+
         if (!$licenseA || !$licenseB) {
             throw new RuntimeException('Benötigte Lizenzen (UEFA A und B) sind nicht vorhanden. Bitte zuerst CoachLicenseFixtures laden.');
         }
@@ -87,7 +87,7 @@ class CoachFixtures extends Fixture implements DependentFixtureInterface
         $manager->flush();
         $manager->clear();
 
-//        $this->generateFakeData($manager);
+        //        $this->generateFakeData($manager);
     }
 
     private function generateFakeData(ObjectManager $manager): void
@@ -104,7 +104,7 @@ class CoachFixtures extends Fixture implements DependentFixtureInterface
         shuffle($teams);
         shuffle($coachTeamAssignmentTypes);
 
-        for ($i = 0; $i < $coachCount; $i++) {
+        for ($i = 0; $i < $coachCount; ++$i) {
             $coachEntity = new Coach();
             $coachEntity->setFirstName($faker->firstName);
             $coachEntity->setLastName($faker->lastName);

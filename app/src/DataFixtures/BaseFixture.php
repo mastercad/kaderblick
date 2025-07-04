@@ -16,7 +16,7 @@ abstract class BaseFixture extends Fixture
     {
         $this->manager = $manager;
         $this->faker = Factory::create('de_DE');
-        
+
         $this->loadData($manager);
     }
 
@@ -24,7 +24,7 @@ abstract class BaseFixture extends Fixture
 
     protected function createMany(string $className, int $count, callable $factory): void
     {
-        for ($i = 0; $i < $count; $i++) {
+        for ($i = 0; $i < $count; ++$i) {
             $entity = new $className();
             $factory($entity, $i);
             $this->manager->persist($entity);

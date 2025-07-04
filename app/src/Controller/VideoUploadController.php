@@ -3,15 +3,15 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Service\GoogleDriveService;
 use App\Service\EmailNotificationService;
+use App\Service\GoogleDriveService;
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/api/videos', name: 'videos_')]
@@ -20,26 +20,28 @@ class VideoUploadController extends AbstractController
     public function __construct(
         private readonly GoogleDriveService $googleDriveService,
         private readonly EmailNotificationService $emailService
-    ) {}
+    ) {
+    }
 
     #[Route('/upload', name: 'upload', methods: ['POST'])]
     public function upload(Request $request): JsonResponse
     {
         /** @var UploadedFile $videoFile */
         $videoFile = $request->files->get('video');
-        
+
         if (!$videoFile) {
             return new JsonResponse(['error' => 'No video file provided'], 400);
         }
 
         try {
             $fileId = $this->googleDriveService->uploadVideo($videoFile, $_ENV['GOOGLE_FOLDER_ID']);
+
             return new JsonResponse([
                 'success' => true,
                 'fileId' => $fileId,
                 'url' => "https://drive.google.com/file/d/{$fileId}/view"
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], 500);
         }
     }
@@ -66,18 +68,19 @@ class VideoUploadController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $gameName = $data['gameName'] ?? null;
         $force = $data['force'] ?? false;
-        
+
         if (!$gameName) {
             return new JsonResponse(['error' => 'Game name required'], 400);
         }
 
         try {
             $folderId = $this->googleDriveService->createGameFolder($gameName, $force);
+
             return new JsonResponse([
                 'folderId' => $folderId,
-                'message' => "Folder " . ($force ? "created/updated" : "created") . " successfully"
+                'message' => 'Folder ' . ($force ? 'created/updated' : 'created') . ' successfully'
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], 500);
         }
     }
@@ -89,18 +92,19 @@ class VideoUploadController extends AbstractController
         $parentFolderId = $data['parentFolderId'] ?? null;
         $deviceName = $data['deviceName'] ?? null;
         $force = $data['force'] ?? false;
-        
+
         if (!$parentFolderId || !$deviceName) {
             return new JsonResponse(['error' => 'Parent folder ID and device name required'], 400);
         }
 
         try {
             $folderId = $this->googleDriveService->createDeviceFolder($parentFolderId, $deviceName, $force);
+
             return new JsonResponse([
                 'folderId' => $folderId,
-                'message' => "Device folder " . ($force ? "created/updated" : "created") . " successfully"
+                'message' => 'Device folder ' . ($force ? 'created/updated' : 'created') . ' successfully'
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], 500);
         }
     }
@@ -111,7 +115,7 @@ class VideoUploadController extends AbstractController
         /** @var UploadedFile $video */
         $video = $request->files->get('video');
         $folderId = $request->request->get('folderId');
-        
+
         if (!$video || !$folderId) {
             return new JsonResponse(['error' => 'Invalid request data'], 400);
         }
@@ -127,8 +131,7 @@ class VideoUploadController extends AbstractController
                 'name' => $video->getClientOriginalName(),
                 'url' => "https://drive.google.com/file/d/{$fileId}/view"
             ]);
-
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
@@ -142,28 +145,28 @@ class VideoUploadController extends AbstractController
         /** @var UploadedFile $video */
         $video = $request->files->get('video');
         $folderId = $request->request->get('folderId');
-        $force = $request->request->get('force') === 'true';
-        
+        $force = 'true' === $request->request->get('force');
+
         if (!$video || !$folderId) {
             return new JsonResponse(['error' => 'Invalid request data'], 400);
         }
 
         try {
             $fileId = $this->googleDriveService->chunkedUploadVideo(
-                $video, 
+                $video,
                 $folderId,
-                function($progress) {
+                function ($progress) {
                     return new JsonResponse(['progress' => $progress]);
                 }
             );
-            
+
             return new JsonResponse([
                 'success' => true,
                 'fileId' => $fileId,
                 'name' => $video->getClientOriginalName(),
                 'url' => "https://drive.google.com/file/d/{$fileId}/view"
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
@@ -177,7 +180,7 @@ class VideoUploadController extends AbstractController
         $folderId = $request->request->get('folderId');
         $notifyEmails = json_decode($request->request->get('notifyEmails', '[]'), true);
         $uploadedFiles = json_decode($request->request->get('uploadedFiles', '[]'), true);
-        
+
         if (!$folderId || empty($notifyEmails) || empty($uploadedFiles)) {
             return new JsonResponse(['error' => 'Folder ID, emails and uploaded files required'], 400);
         }
@@ -185,12 +188,12 @@ class VideoUploadController extends AbstractController
         try {
             $folderUrl = $this->googleDriveService->getFolderUrl($folderId);
             $this->emailService->sendUploadNotification($notifyEmails, $folderUrl, $uploadedFiles);
-            
+
             return new JsonResponse([
                 'success' => true,
                 'message' => 'Notification sent'
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()

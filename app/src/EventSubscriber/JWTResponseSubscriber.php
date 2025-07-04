@@ -12,8 +12,9 @@ use Symfony\Component\HttpKernel\Event\ResponseEvent;
 class JWTResponseSubscriber
 {
     public function __construct(
-        private ParameterBagInterface $parameterBag
-    ) {}
+        private ParameterBagInterface $parameterBag,
+    ) {
+    }
 
     public function onKernelResponse(ResponseEvent $event): void
     {
@@ -25,7 +26,7 @@ class JWTResponseSubscriber
 
         $newJwt = $request->attributes->get('new_jwt_token');
 
-        $ttl = (int)$this->parameterBag->get('lexik_jwt_authentication.token_ttl');
+        $ttl = (int) $this->parameterBag->get('lexik_jwt_authentication.token_ttl');
         $expires = (new DateTime())->modify("+{$ttl} seconds");
 
         $cookie = Cookie::create(

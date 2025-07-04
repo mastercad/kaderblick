@@ -2,11 +2,11 @@
 
 namespace App\Entity;
 
+use App\Repository\GameTypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\GameTypeRepository;
 
 #[ORM\Entity(repositoryClass: GameTypeRepository::class)]
 class GameType
@@ -42,6 +42,7 @@ class GameType
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -53,6 +54,7 @@ class GameType
     public function setDescription(?string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -72,6 +74,7 @@ class GameType
             $this->games[] = $game;
             $game->setGameType($this);
         }
+
         return $this;
     }
 
@@ -83,6 +86,7 @@ class GameType
                 $game->setGameType(null);
             }
         }
+
         return $this;
     }
 

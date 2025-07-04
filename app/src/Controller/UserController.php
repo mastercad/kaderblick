@@ -12,8 +12,9 @@ use Symfony\Component\Routing\Annotation\Route;
 class UserController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
-    ) {}
+        private EntityManagerInterface $entityManager,
+    ) {
+    }
 
     #[Route('', name: 'list', methods: ['GET'])]
     public function listUsers(): JsonResponse
@@ -30,7 +31,7 @@ class UserController extends AbstractController
             ->getResult();
 
         return $this->json([
-            'users' => array_map(fn(User $user) => [
+            'users' => array_map(fn (User $user) => [
                 'id' => $user->getId(),
                 'fullName' => $user->getFullName(),
                 'email' => $user->getEmail()

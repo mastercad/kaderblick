@@ -6,8 +6,8 @@ use App\Repository\SurfaceTypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: SurfaceTypeRepository::class)]
 #[ORM\UniqueConstraint(name: 'unique_surface_type_name', columns: ['name'])]
@@ -49,6 +49,7 @@ class SurfaceType
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -60,6 +61,7 @@ class SurfaceType
     public function setDescription(?string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 

@@ -5,13 +5,13 @@ namespace App\Controller;
 use App\Entity\Goal;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route(path:"/api/goals", name:"api_goals_")]
+#[Route(path: '/api/goals', name: 'api_goals_')]
 class GoalsController extends ApiController
 {
-    protected string $entityName       = 'Goal';
+    protected string $entityName = 'Goal';
     protected string $entityNamePlural = 'Goals';
-    protected string $entityClass      = Goal::class;
-    protected array  $relations        = [
+    protected string $entityClass = Goal::class;
+    protected array $relations = [
         'scorer' => [
             'entityName' => 'Player',
             'fieldName' => 'scorer',
@@ -22,6 +22,6 @@ class GoalsController extends ApiController
             'type' => 2
         ]
     ];
-    protected array  $relationEntries  = [];
-    protected string $urlPart          = 'goals';
+    protected array $relationEntries = [];
+    protected string $urlPart = 'goals';
 }

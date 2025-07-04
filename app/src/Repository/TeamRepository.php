@@ -35,13 +35,13 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
             if ($user->getClub()) {
                 $qb->andWhere('cl = :club')
                    ->setParameter('club', $user->getClub());
-            } 
-            
+            }
+
             if ($user->getCoach()) {
                 $qb->andWhere('c = :coach')
                    ->setParameter('coach', $user->getCoach());
             }
-            
+
             if ($user->getPlayer()) {
                 $qb->andWhere('p = :player')
                    ->setParameter('player', $user->getPlayer());
@@ -71,7 +71,6 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
 
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
-        dd($id);
         // Für Admin-Detailansicht: Alle Details mit allen Relationen
         return $this->createQueryBuilder('t')
             ->select('t', 'p', 'g', 'l', 'pta', 'cta')

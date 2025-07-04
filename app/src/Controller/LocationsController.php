@@ -10,11 +10,11 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/api/locations', name: 'api_locations_')]
 class LocationsController extends ApiController
 {
-    protected string $entityName       = 'Location';
+    protected string $entityName = 'Location';
     protected string $entityNamePlural = 'Locations';
-    protected string $entityClass      = Location::class;
-    protected string $urlPart          = 'locations';
+    protected string $entityClass = Location::class;
+    protected string $urlPart = 'locations';
     protected array $relations = [
-        'surfaceType' => ['type' => 2, 'entityName' => 'SurfaceType'],
+        'surfaceType' => ['type' => 2, 'entityName' => 'SurfaceType']
     ];
 }

@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity()]
@@ -26,11 +27,11 @@ class MessengerMessage
     private string $queue_name;
 
     #[ORM\Column(type: 'datetime')]
-    private \DateTimeInterface $created_at;
+    private DateTimeInterface $created_at;
 
     #[ORM\Column(type: 'datetime')]
-    private \DateTimeInterface $available_at;
+    private DateTimeInterface $available_at;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $delivered_at = null;
+    private ?DateTimeInterface $delivered_at = null;
 }

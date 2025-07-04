@@ -9,7 +9,9 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class AgeGroupService
 {
-    public function __construct(private EntityManagerInterface $em) {}
+    public function __construct(private EntityManagerInterface $em)
+    {
+    }
 
     public function getAgeGroupByBirthDate(DateTimeInterface $birthDate, ?DateTimeInterface $referenceDate = null): ?AgeGroup
     {
@@ -22,7 +24,7 @@ class AgeGroupService
             $min = $group->getMinAge();
             $max = $group->getMaxAge();
 
-            if (($min === null || $age >= $min) && ($max === null || $age <= $max)) {
+            if ((null == $min || $age >= $min) && (null == $max || $age <= $max)) {
                 return $group;
             }
         }

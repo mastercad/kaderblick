@@ -45,6 +45,7 @@ class MessageGroup
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -56,6 +57,7 @@ class MessageGroup
     public function setOwner(User $owner): self
     {
         $this->owner = $owner;
+
         return $this;
     }
 
@@ -69,12 +71,14 @@ class MessageGroup
         if (!$this->members->contains($member)) {
             $this->members->add($member);
         }
+
         return $this;
     }
 
     public function removeMember(User $member): self
     {
         $this->members->removeElement($member);
+
         return $this;
     }
 }

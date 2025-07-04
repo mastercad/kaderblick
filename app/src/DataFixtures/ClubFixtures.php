@@ -25,19 +25,19 @@ class ClubFixtures extends Fixture implements DependentFixtureInterface
 
         $clubs = [
             [
-                'name' => 'Sportgemeinschaft Wurgwitz e.V.', 
-                'stadiumName' => 'Sportplatz Wurgwitz', 
-                'city' => 'Wurgwitz', 
+                'name' => 'Sportgemeinschaft Wurgwitz e.V.',
+                'stadiumName' => 'Sportplatz Wurgwitz',
+                'city' => 'Wurgwitz',
                 'country' => 'Deutschland',
                 'location' => $wurgwitz
             ],
             [
                 'name' => 'SG90 Braunsdorf e.V.',
-                'stadiumName' => 'Sportplatz Braunsdorf', 
+                'stadiumName' => 'Sportplatz Braunsdorf',
                 'city' => 'Braunsdorf',
                 'country' => 'Deutschland',
-                'location'=> $braunsdorf
-            ]
+                'location' => $braunsdorf
+            ],
         ];
 
         foreach ($clubs as $club) {
@@ -54,7 +54,7 @@ class ClubFixtures extends Fixture implements DependentFixtureInterface
         $manager->flush();
         $manager->clear();
 
-//        $this->createFakeData($manager);
+        //        $this->createFakeData($manager);
     }
 
     private function createFakeData($manager): void
@@ -65,11 +65,11 @@ class ClubFixtures extends Fixture implements DependentFixtureInterface
 
         $prefixes = ['FC', 'SV', 'SC', 'TSV', 'VfL', '1. FC', 'SpVgg', 'SG', 'SpG'];
         $suffixes = ['e.V.', '1904', 'United', 'Amateure', 'II', '', 'AK', 'Boys', 'Allstars'];
-        
+
         $stadionPrefixes = ['Stadion', 'Arena', 'Waldstadion', 'Sportpark', 'Kampfbahn', 'Volkspark', 'Stadion am', 'Arena an der'];
 
-        for ($i = 0; $i < $numClubs; $i++) {
-            $clubEntity = new Club(); 
+        for ($i = 0; $i < $numClubs; ++$i) {
+            $clubEntity = new Club();
             $location = $faker->randomElement($locations);
             $city = $location->getCity();
             $prefix = $faker->randomElement($prefixes);

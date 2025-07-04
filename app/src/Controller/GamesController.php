@@ -5,13 +5,13 @@ namespace App\Controller;
 use App\Entity\Game;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route(path:"/api/games", name:"api_games_")]
+#[Route(path: '/api/games', name: 'api_games_')]
 class GamesController extends ApiController
 {
-    protected string $entityName       = 'Game';
+    protected string $entityName = 'Game';
     protected string $entityNamePlural = 'Games';
-    protected string $entityClass      = Game::class;
-    protected array  $relations        = [
+    protected string $entityClass = Game::class;
+    protected array $relations = [
         'homeTeam' => [
             'entityName' => 'Team',
             'fieldName' => 'homeTeam',
@@ -30,7 +30,7 @@ class GamesController extends ApiController
         ],
         'gameType' => [
             'entityName' => 'GameType',
-            'type'=> 2,
+            'type' => 2
         ],
         'gameEvents' => [
             'entityName' => 'GameEvent',
@@ -39,13 +39,14 @@ class GamesController extends ApiController
         ],
         'substitutions' => [
             'entityName' => 'Substitution',
-            'type'=> 4,
+            'type' => 4
         ],
         'calendarEvents' => [
             'entityName' => 'CalendarEvent',
             'type' => 1,
         ]
     ];
-    protected array  $relationEntries  = [];
-    protected string $urlPart          = 'games';
+    protected array $relationEntries = [];
+    protected string $urlPart = 'games';
+    protected bool $createAndEditAllowed = false;
 }

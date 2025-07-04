@@ -2,10 +2,10 @@
 
 namespace App\Entity;
 
+use App\Repository\GameEventTypeRepository;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\GameEventTypeRepository;
 
 #[ORM\Entity(repositoryClass: GameEventTypeRepository::class)]
 class GameEventType
@@ -57,6 +57,7 @@ class GameEventType
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -68,6 +69,7 @@ class GameEventType
     public function setCode(string $code): self
     {
         $this->code = $code;
+
         return $this;
     }
 
@@ -79,6 +81,7 @@ class GameEventType
     public function setColor(?string $color): self
     {
         $this->color = $color;
+
         return $this;
     }
 
@@ -90,6 +93,7 @@ class GameEventType
     public function setIcon(?string $icon): self
     {
         $this->icon = $icon;
+
         return $this;
     }
 
@@ -101,6 +105,7 @@ class GameEventType
     public function setSystem(bool $isSystem): self
     {
         $this->isSystem = $isSystem;
+
         return $this;
     }
 }

@@ -61,7 +61,8 @@
     "config": {
         "allow-plugins": {
             "symfony/flex": true,
-            "symfony/runtime": true
+            "symfony/runtime": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
         }
     },
     "scripts": {
@@ -75,6 +76,19 @@
         "symfony/stopwatch": "^7.2",
         "symfony/web-profiler-bundle": "^7.2",
         "doctrine/doctrine-fixtures-bundle": "^4.1",
-        "fakerphp/faker": "^1.24"
+        "fakerphp/faker": "^1.24",
+        "phpunit/phpunit": "^12.2",
+        "symfony/browser-kit": "^7.3",
+        "symfony/css-selector": "^7.3",
+        "liip/test-fixtures-bundle": "^3.4",
+        "friendsofphp/php-cs-fixer": "^3.76",
+        "phpstan/phpstan": "^2.1",
+        "squizlabs/php_codesniffer": "^3.13",
+        "chindit/phpcs-extra": "^0.2.0",
+        "phpcsstandards/phpcsextra": "^1.4",
+        "phpcsstandards/phpcsutils": "^1.1",
+        "phpstan/phpstan-doctrine": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "vimeo/psalm": "^6.12"
     }
 }

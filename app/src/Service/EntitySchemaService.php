@@ -7,11 +7,22 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 
 class EntitySchemaService
 {
-    public function __construct(private EntityManagerInterface $em) {}
-
-    public function getEntitySchema(string $entityClass): array
+    public function __construct(private EntityManagerInterface $em)
     {
-        /** @var ClassMetadata $meta */
+    }
+
+    /**
+     * @return array<string, array{
+     *     type: string,
+     *     nullable: bool,
+     *     relationType?: int,
+     *     targetEntity?: class-string,
+     *     mappedBy?: string
+     * }>
+     */
+    public function retrieveEntitySchema(string $entityClass): array
+    {
+        /** @var ClassMetadata<object> $meta */
         $meta = $this->em->getClassMetadata($entityClass);
 
         $fields = [];

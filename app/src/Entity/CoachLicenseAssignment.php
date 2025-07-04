@@ -2,11 +2,11 @@
 
 namespace App\Entity;
 
+use App\Repository\CoachLicenseAssignmentRepository;
 use DateTimeInterface;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\CoachLicenseAssignmentRepository;
 
 #[ORM\Entity(repositoryClass: CoachLicenseAssignmentRepository::class)]
 class CoachLicenseAssignment
@@ -37,7 +37,7 @@ class CoachLicenseAssignment
 
     #[ORM\Column(type: Types::BOOLEAN)]
     #[Groups(['coach_license_assignment:read'])]
-    
+
     private bool $active = true;
 
     public function getId(): ?int
@@ -53,6 +53,7 @@ class CoachLicenseAssignment
     public function setCoach(?Coach $coach): self
     {
         $this->coach = $coach;
+
         return $this;
     }
 
@@ -64,6 +65,7 @@ class CoachLicenseAssignment
     public function setLicense(?CoachLicense $license): self
     {
         $this->license = $license;
+
         return $this;
     }
 
@@ -75,6 +77,7 @@ class CoachLicenseAssignment
     public function setStartDate(DateTimeInterface $startDate): self
     {
         $this->startDate = $startDate;
+
         return $this;
     }
 
@@ -86,6 +89,7 @@ class CoachLicenseAssignment
     public function setEndDate(?DateTimeInterface $endDate): self
     {
         $this->endDate = $endDate;
+
         return $this;
     }
 
@@ -97,14 +101,16 @@ class CoachLicenseAssignment
     public function setActive(bool $active): self
     {
         $this->active = $active;
+
         return $this;
     }
 
-    public function __toString(): string 
+    public function __toString(): string
     {
         $end = $this->endDate ? ' bis ' . $this->endDate->format('d.m.Y') : '';
+
         return sprintf(
-            '%s für %s (seit %s%s)', 
+            '%s für %s (seit %s%s)',
             $this->license?->getName() ?? 'Unbekannter Lizenz',
             $this->coach?->getFullName() ?? 'Unbekannter Coach',
             $this->startDate?->format('d.m.Y') ?? 'unbekannt',

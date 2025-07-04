@@ -17,8 +17,8 @@ class PlayersController extends ApiController
         'mainPosition' => ['type' => 2, 'entityName' => 'Position', 'fieldName' => 'MainPosition', 'methodName' => 'MainPosition'],
         'alternativePositions' => ['type' => 4, 'entityName' => 'Position', 'methodName' => 'AlternativePosition'],
         'playerTeamAssignments' => [
-            'type' => 4, 
-            'entityName' => 'PlayerTeamAssignment', 
+            'type' => 4,
+            'entityName' => 'PlayerTeamAssignment',
             'labelFields' => [
                 ['team.name']
             ]

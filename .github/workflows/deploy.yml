@@ -10,6 +10,36 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: prepare Test Env
+        run: |
+          # prepare database container 
+
+          docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
+          
+          docker volume inspect kaderblick-data >/dev/null 2>&1 || docker volume create kaderblick-data
+
+          # baue und starte im bedarfsfall db container
+          if docker ps --filter "name=kaderblick-db" --filter "status=running" | grep -q kaderblick-db; then
+            echo "DB Container läuft"
+          else
+            docker volume inspect kaderblick-db-data || docker volume create kaderblick-db-data
+            docker compose -f docker-compose.db.yml -p production up -d --build --force-recreate db
+          fi
+
+          docker compose -p staging up -d --build --force-recreate api vue-frontend
+
+      - name: run PHP-CS-Fixer
+        run: docker compose exec -T api ./vendor/bin/php-cs-fixer --config=.php-cs-fixer.dist.php fix --dry-run --diff --ansi
+
+      - name: run PHP-CS
+        run: docker compose exec -T api ./vendor/bin/phpcs
+
+      - name: run PHPStan
+        run: docker compose exec -T api ./vendor/bin/phpstan analyse
+
+      - name: run PHPUnit
+        run: docker compose exec -T api ./vendor/bin/phpunit
+
       - name: Generate release directory name
         id: release
         run: echo "dir=/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT

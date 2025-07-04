@@ -42,6 +42,7 @@ class League
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -56,6 +57,7 @@ class League
             $this->teams->add($team);
             $team->setLeague($this);
         }
+
         return $this;
     }
 
@@ -66,6 +68,7 @@ class League
                 $team->setLeague(null);
             }
         }
+
         return $this;
     }
 

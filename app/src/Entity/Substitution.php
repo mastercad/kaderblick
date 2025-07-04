@@ -2,9 +2,9 @@
 
 namespace App\Entity;
 
+use App\Repository\SubstitutionRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\SubstitutionRepository;
 
 // Auswechsel
 #[ORM\Entity(repositoryClass: SubstitutionRepository::class)]
@@ -50,6 +50,7 @@ class Substitution
     public function setGame(?Game $game): self
     {
         $this->game = $game;
+
         return $this;
     }
 
@@ -61,6 +62,7 @@ class Substitution
     public function setMinute(int $minute): self
     {
         $this->minute = $minute;
+
         return $this;
     }
 
@@ -72,6 +74,7 @@ class Substitution
     public function setPlayerIn(Player $playerIn): self
     {
         $this->playerIn = $playerIn;
+
         return $this;
     }
 
@@ -83,6 +86,7 @@ class Substitution
     public function setPlayerOut(Player $playerOut): self
     {
         $this->playerOut = $playerOut;
+
         return $this;
     }
 
@@ -94,6 +98,7 @@ class Substitution
     public function setTeam(Team $team): self
     {
         $this->team = $team;
+
         return $this;
     }
 
@@ -105,6 +110,7 @@ class Substitution
     public function setSubstitutionReason(?SubstitutionReason $substitutionReason): self
     {
         $this->substitutionReason = $substitutionReason;
+
         return $this;
     }
 }

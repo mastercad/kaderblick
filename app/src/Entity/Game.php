@@ -2,14 +2,14 @@
 
 namespace App\Entity;
 
+use App\Repository\GameRepository;
 use DateTimeInterface;
-use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
-use App\Repository\GameRepository;
 
 #[ORM\Entity(repositoryClass: GameRepository::class)]
 #[ORM\Table(name: 'games')]
@@ -70,7 +70,7 @@ class Game
     private ?Location $location = null;
 
     #[Groups(['game:read', 'game:write'])]
-    #[ORM\OneToOne(targetEntity: CalendarEvent::class, inversedBy: "game", cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(targetEntity: CalendarEvent::class, inversedBy: 'game', cascade: ['persist', 'remove'])]
     private ?CalendarEvent $calendarEvent;
 
     public function __construct()
@@ -93,6 +93,7 @@ class Game
     public function setCalendarEvent(?CalendarEvent $calendarEvent): self
     {
         $this->calendarEvent = $calendarEvent;
+
         return $this;
     }
 
@@ -104,6 +105,7 @@ class Game
     public function setHomeTeam(?Team $homeTeam): self
     {
         $this->homeTeam = $homeTeam;
+
         return $this;
     }
 
@@ -115,6 +117,7 @@ class Game
     public function setAwayTeam(?Team $awayTeam): self
     {
         $this->awayTeam = $awayTeam;
+
         return $this;
     }
 
@@ -129,6 +132,7 @@ class Game
             $this->gameEvents[] = $gameEvent;
             $gameEvent->setGame($this);
         }
+
         return $this;
     }
 
@@ -141,6 +145,7 @@ class Game
                 $gameEvent->setGame(null);
             }
         }
+
         return $this;
     }
 
@@ -152,6 +157,7 @@ class Game
     public function setDate(DateTimeInterface $date): self
     {
         $this->date = $date;
+
         return $this;
     }
 
@@ -166,6 +172,7 @@ class Game
             $this->goals[] = $goal;
             $goal->setGame($this);
         }
+
         return $this;
     }
 
@@ -177,6 +184,7 @@ class Game
                 $goal->setGame(null);
             }
         }
+
         return $this;
     }
 
@@ -191,6 +199,7 @@ class Game
             $this->substitutions[] = $substitution;
             $substitution->setGame($this);
         }
+
         return $this;
     }
 
@@ -202,6 +211,7 @@ class Game
                 $substitution->setGame(null);
             }
         }
+
         return $this;
     }
 
@@ -213,6 +223,7 @@ class Game
     public function setGameType(?GameType $gameType): self
     {
         $this->gameType = $gameType;
+
         return $this;
     }
 
@@ -224,6 +235,7 @@ class Game
     public function setHomeScore(?int $homeScore): self
     {
         $this->homeScore = $homeScore;
+
         return $this;
     }
 
@@ -235,6 +247,7 @@ class Game
     public function setAwayScore(?int $awayScore): self
     {
         $this->awayScore = $awayScore;
+
         return $this;
     }
 
@@ -246,6 +259,7 @@ class Game
     public function setIsFinished(bool $isFinished): self
     {
         $this->isFinished = $isFinished;
+
         return $this;
     }
 
@@ -257,6 +271,7 @@ class Game
     public function setLocation(?Location $location): self
     {
         $this->location = $location;
+
         return $this;
     }
 
@@ -270,15 +285,15 @@ class Game
         foreach ($this->goals as $goal) {
             if ($goal->getTeam() === $this->homeTeam) {
                 if (!$goal->isOwnGoal()) {
-                    $homeScore++;
+                    ++$homeScore;
                 } else {
-                    $awayScore++;
+                    ++$awayScore;
                 }
             } else {
                 if (!$goal->isOwnGoal()) {
-                    $awayScore++;
+                    ++$awayScore;
                 } else {
-                    $homeScore++;
+                    ++$homeScore;
                 }
             }
         }
@@ -287,7 +302,8 @@ class Game
         $this->awayScore = $awayScore;
     }
 
-    public function __toString() {
+    public function __toString()
+    {
         return $this->getHomeTeam()?->getName() . ' : ' . $this->getAwayTeam()?->getName();
     }
 }

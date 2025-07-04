@@ -28,6 +28,6 @@ class ClubsController extends ApiController
             'type' => 4,
             'entityName' => 'CoachClubAssignment',
             'label_fields' => ['coach.firstName', 'coach.lastName']
-        ],
+        ]
     ];
 }

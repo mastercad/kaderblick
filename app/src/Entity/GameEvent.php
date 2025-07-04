@@ -2,11 +2,11 @@
 
 namespace App\Entity;
 
+use App\Repository\GameEventRepository;
 use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\GameEventRepository;
 use Symfony\Component\Serializer\Attribute\Context;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: GameEventRepository::class)]
 #[ORM\Table(name: 'game_events')]
@@ -70,6 +70,7 @@ class GameEvent
     public function setGame(?Game $game): self
     {
         $this->game = $game;
+
         return $this;
     }
 
@@ -81,6 +82,7 @@ class GameEvent
     public function setGameEventType(GameEventType $gameEventType): self
     {
         $this->gameEventType = $gameEventType;
+
         return $this;
     }
 
@@ -92,6 +94,7 @@ class GameEvent
     public function setPlayer(?Player $player): self
     {
         $this->player = $player;
+
         return $this;
     }
 
@@ -103,6 +106,7 @@ class GameEvent
     public function setTeam(?Team $team): self
     {
         $this->team = $team;
+
         return $this;
     }
 
@@ -114,6 +118,7 @@ class GameEvent
     public function setTimestamp(DateTimeInterface $timestamp): self
     {
         $this->timestamp = $timestamp;
+
         return $this;
     }
 
@@ -125,6 +130,7 @@ class GameEvent
     public function setDescription(?string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -136,6 +142,7 @@ class GameEvent
     public function setRelatedPlayer(?Player $relatedPlayer): self
     {
         $this->relatedPlayer = $relatedPlayer;
+
         return $this;
     }
 
@@ -147,37 +154,38 @@ class GameEvent
     public function setSubstitutionReason(?SubstitutionReason $reason): self
     {
         $this->substitutionReason = $reason;
+
         return $this;
     }
 
     // Hilfsmethoden für Ein-/Auswechslungen
     public function isSubstitution(): bool
     {
-        return $this->getGameEventType()->getCode() === 'substitution';
+        return 'substitution' === $this->getGameEventType()->getCode();
     }
 
     public function isSubstitutionIn(): bool
     {
-        return $this->getGameEventType()->getCode() === 'substitution_in';
+        return 'substitution_in' === $this->getGameEventType()->getCode();
     }
 
     public function isSubstitutionOut(): bool
     {
-        return $this->getGameEventType()->getCode() === 'substitution_out';
+        return 'substitution_out' === $this->getGameEventType()->getCode();
     }
 
     public function __toString(): string
     {
         $output = $this->gameEventType?->getName() ?? 'Unbekanntes Ereignis';
-        
+
         if ($this->player) {
             $output .= ' - ' . $this->player->__toString();
         }
-        
+
         if ($this->timestamp) {
             $output .= ' (' . $this->timestamp->format('H:i') . ' Uhr)';
         }
-        
+
         return $output;
     }
 }

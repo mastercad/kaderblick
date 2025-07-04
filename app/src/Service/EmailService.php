@@ -2,28 +2,31 @@
 
 namespace App\Service;
 
-use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\Mailer\MailerInterface;
 
 class EmailService
 {
     public function __construct(
         private readonly MailerInterface $mailer,
-        private readonly ParameterBagInterface $params
-    ) {}
+        private readonly ParameterBagInterface $params,
+    ) {
+    }
 
+    /**
+     * @param string|array<int, string>   $to
+     * @param array<string, mixed> $context
+     */
     public function sendTemplatedEmail(
         string|array $to,
         string $subject,
         string $template,
         array $context = []
     ): void {
-        // Basis-Kontext für alle Emails
         $baseContext = [
             'website_name' => $this->params->get('website_name'),
-            'current_year' => date('Y'),
-            // Weitere globale Variablen hier...
+            'current_year' => date('Y')
         ];
 
         $email = (new TemplatedEmail())

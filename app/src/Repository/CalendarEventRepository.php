@@ -6,9 +6,9 @@ use App\Entity\CalendarEvent;
 use App\Entity\CalendarEventType;
 use App\Entity\Game;
 use App\Entity\Location;
+use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use DateTime;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 class CalendarEventRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface

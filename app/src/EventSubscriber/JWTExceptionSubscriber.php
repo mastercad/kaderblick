@@ -16,7 +16,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
-##[AsEventListener(event: KernelEvents::EXCEPTION, priority: 10)]
+// #[AsEventListener(event: KernelEvents::EXCEPTION, priority: 10)]
 class JWTExceptionSubscriber
 {
     public function __construct(
@@ -24,13 +24,15 @@ class JWTExceptionSubscriber
         private JWTTokenManagerInterface $JWTManager,
         private EntityManagerInterface $entityManager,
         private ParameterBagInterface $params
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExceptionEvent $event): void
     {
         $exception = $event->getThrowable();
 
-        if (!$exception instanceof AuthenticationException
+        if (
+            !$exception instanceof AuthenticationException
             && !$exception instanceof AccessDeniedException
         ) {
             return;
@@ -50,8 +52,6 @@ class JWTExceptionSubscriber
 
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $validToken->getEmail()]);
         if (!$user) {
-
-            dump($refreshToken);
             return;
         }
 
@@ -74,7 +74,7 @@ class JWTExceptionSubscriber
                 true,
                 false,
                 'Strict'
-            )
+            ),
         );
 
         $response->headers->setCookie(
@@ -88,9 +88,9 @@ class JWTExceptionSubscriber
                 true,
                 false,
                 'Strict'
-            )
+            ),
         );
-        
+
         $event->setResponse($response);
     }
 }

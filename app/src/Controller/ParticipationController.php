@@ -14,19 +14,22 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/api/participation', name: 'api_participation_')]
 class ParticipationController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $em) {}
+    public function __construct(private EntityManagerInterface $em)
+    {
+    }
 
     #[Route('/event/{id}', name: 'status', methods: ['GET'])]
     public function getEventParticipations(CalendarEvent $event): Response
     {
         $participations = $this->em->getRepository(Participation::class)
             ->findBy(['event' => $event]);
-        
+
         $players = $this->em->getRepository(Player::class)->findAll();
-        
+
         // Liste aller Spieler mit ihrem Teilnahmestatus
-        $status = array_map(function($player) use ($participations) {
-            $participation = array_filter($participations, fn($p) => $p->getPlayer() === $player);
+        $status = array_map(function ($player) use ($participations) {
+            $participation = array_filter($participations, fn ($p) => $p->getPlayer() === $player);
+
             return [
                 'player' => $player,
                 'status' => !empty($participation) ? current($participation)->isParticipating() : null,

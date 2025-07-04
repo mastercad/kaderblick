@@ -34,7 +34,7 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
                    ->andWhere('pca.club = :club')
                    ->setParameter('club', $user->getClub());
             }
-            
+
             if ($user->getCoach()) {
                 $qb->join('p.playerTeamAssignments', 'pta')
                    ->join('pta.team', 't')
@@ -42,7 +42,7 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
                    ->andWhere('cta.coach = :coach')
                    ->setParameter('coach', $user->getCoach());
             }
-            
+
             if ($user->getPlayer()) {
                 $qb->join('p.playerTeamAssignments', 'pta')
                    ->join('pta.team', 't')
@@ -57,6 +57,7 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         $now = new DateTime();
+
         return $this->createQueryBuilder('p')
             ->select('p', 'pta', 'pna')
             ->leftJoin('p.playerTeamAssignments', 'pta', 'WITH', 'pta.player = p')
@@ -104,7 +105,7 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
                    ->andWhere('pca.club = :club')
                    ->setParameter('club', $user->getClub());
             }
-            
+
             if ($user->getCoach()) {
                 $qb->join('p.playerTeamAssignments', 'pta')
                    ->join('pta.team', 't')
@@ -112,7 +113,7 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
                    ->andWhere('cta.coach = :coach')
                    ->setParameter('coach', $user->getCoach());
             }
-            
+
             if ($user->getPlayer()) {
                 $qb->join('p.playerTeamAssignments', 'pta')
                    ->join('pta.team', 't')

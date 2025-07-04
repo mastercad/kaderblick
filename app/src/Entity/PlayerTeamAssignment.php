@@ -2,11 +2,11 @@
 
 namespace App\Entity;
 
+use App\Repository\PlayerTeamAssignmentRepository;
 use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Context;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\PlayerTeamAssignmentRepository;
 
 #[ORM\Entity(repositoryClass: PlayerTeamAssignmentRepository::class)]
 class PlayerTeamAssignment
@@ -112,11 +112,12 @@ class PlayerTeamAssignment
         $this->endDate = $endDate;
     }
 
-    public function __toString(): string 
+    public function __toString(): string
     {
         $end = $this->endDate ? ' bis ' . $this->endDate->format('d.m.Y') : '';
+
         return sprintf(
-            '%s bei %s (seit %s%s)', 
+            '%s bei %s (seit %s%s)',
             $this->player?->getFullName() ?? 'Unbekannter Spieler',
             $this->team?->getName() ?? 'Unbekanntes Team',
             $this->startDate?->format('d.m.Y') ?? 'unbekannt',

@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Tests\EndToEnd;
+
+use App\Entity\User;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Security\Core\User\UserInterface;
+
+final class PlayerControllerTest extends WebTestCase
+{
+    public function testPlayerList(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/players');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('h1', 'Player List');
+        $this->assertSelectorExists('.player-item');
+    }
+
+    public function testPlayerDetail(): void
+    {
+        $user   = $this->createUser();
+        $client = static::createClient();
+
+        $client->loginUser($user);
+        $client->request('GET', '/api/players/1');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('h1', 'Player Detail');
+        $this->assertSelectorExists('.player-detail');
+    }
+
+    public function testPlayerCreate(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/players/create');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('h1', 'Create Player');
+        $this->assertSelectorExists('form#player-form');
+    }
+
+    public function testPlayerUpdate(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/players/1/edit');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('h1', 'Edit Player');
+        $this->assertSelectorExists('form#player-form');
+    }
+
+    private function createUser(int $userId = 1): UserInterface
+    {
+        $user = new User();
+        $user->setFirstName("Andreas");
+        $user->setLastName("Kempe");
+
+        return $user;
+    }
+}

@@ -15,8 +15,9 @@ use Symfony\Component\Routing\Annotation\Route;
 class MessageController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
-    ) {}
+        private EntityManagerInterface $entityManager,
+    ) {
+    }
 
     #[Route('/messages', name: 'messages_index', methods: ['GET'])]
     public function inbox(): Response
@@ -25,7 +26,7 @@ class MessageController extends AbstractController
     }
 
     #[Route('/api/messages', name: 'api_messages_index', methods: ['GET'])]
-    public function apiIndex(): JsonResponse
+    public function index(): JsonResponse
     {
         $user = $this->getUser();
         $messages = $this->entityManager->getRepository(Message::class)
@@ -37,7 +38,7 @@ class MessageController extends AbstractController
             ->getResult();
 
         return $this->json([
-            'messages' => array_map(fn(Message $message) => [
+            'messages' => array_map(fn (Message $message) => [
                 'id' => $message->getId(),
                 'subject' => $message->getSubject(),
                 'sender' => $message->getSender()->getFullName(),
@@ -60,7 +61,7 @@ class MessageController extends AbstractController
             ->getQuery()
             ->getResult();
 
-        $count = count(array_filter($messages, function(Message $message) use ($user) {
+        $count = count(array_filter($messages, function (Message $message) use ($user) {
             return !$message->isReadBy($user);
         }));
 
@@ -85,7 +86,7 @@ class MessageController extends AbstractController
             'subject' => $message->getSubject(),
             'content' => $message->getContent(),
             'sender' => $message->getSender()->getFullName(),
-            'recipients' => array_map(fn(User $u) => [
+            'recipients' => array_map(fn (User $u) => [
                 'id' => $u->getId(),
                 'name' => $u->getFullName()
             ], $message->getRecipients()->toArray()),
@@ -127,5 +128,28 @@ class MessageController extends AbstractController
         $this->entityManager->flush();
 
         return $this->json(['message' => 'Nachricht gesendet']);
+    }
+
+    #[Route('/api/messages/outbox', name: 'api_messages_outbox', methods: ['GET'])]
+    public function retrieveSendMessage()
+    {
+        $user = $this->getUser();
+        $messages = $this->entityManager->getRepository(Message::class)
+            ->createQueryBuilder('m')
+            ->where('sender = :user')
+            ->setParameter('user', $user)
+            ->orderBy('m.sentAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        return $this->json([
+            'messages' => array_map(fn (Message $message) => [
+                'id' => $message->getId(),
+                'subject' => $message->getSubject(),
+                'sender' => $message->getSender()->getFullName(),
+                'sentAt' => $message->getSentAt()->format('Y-m-d H:i:s'),
+                'isRead' => $message->isReadBy($user),
+            ], $messages),
+        ]);
     }
 }

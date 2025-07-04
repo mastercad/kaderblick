@@ -5,13 +5,13 @@ namespace App\Controller;
 use App\Entity\Coach;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route(path:"/api/coaches", name:"api_coaches_")]
+#[Route(path: '/api/coaches', name: 'api_coaches_')]
 class CoachesController extends ApiController
 {
-    protected string $entityName       = 'Coach';
+    protected string $entityName = 'Coach';
     protected string $entityNamePlural = 'Coaches';
-    protected string $entityClass      = Coach::class;
-    protected array  $relations = [
+    protected string $entityClass = Coach::class;
+    protected array $relations = [
         'coachTeamAssignments' => [
             'type' => 4,
             'entityName' => 'CoachTeamAssignment',
@@ -29,5 +29,5 @@ class CoachesController extends ApiController
             'label_fields' => ['license.name']
         ]
     ];
-    protected string $urlPart          = 'coaches';
+    protected string $urlPart = 'coaches';
 }

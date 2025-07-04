@@ -45,6 +45,7 @@ class CoachLicense
     public function setName(string $name): static
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -56,6 +57,7 @@ class CoachLicense
     public function setDescription(?string $description): static
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -67,6 +69,7 @@ class CoachLicense
     public function setCountryCode(?string $countryCode): static
     {
         $this->countryCode = $countryCode;
+
         return $this;
     }
 
@@ -78,6 +81,7 @@ class CoachLicense
     public function setActive(bool $active): static
     {
         $this->active = $active;
+
         return $this;
     }
 

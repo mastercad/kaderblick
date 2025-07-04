@@ -4,29 +4,29 @@ namespace App\Controller;
 
 use App\Entity\CalendarEvent;
 use App\Entity\CalendarEventType;
-use App\Entity\Location;
-use App\Entity\User;
 use App\Entity\Game;
-use App\Entity\Team;
 use App\Entity\GameType;
+use App\Entity\Location;
+use App\Entity\Team;
+use App\Entity\User;
 use App\Repository\CalendarEventRepository;
+use App\Service\EmailNotificationService;
+use DateTime;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Doctrine\ORM\EntityManagerInterface;
-use App\Service\EmailNotificationService;
-use DateTime;
-use DateTimeImmutable;
 
 #[Route('/calendar', name: 'calendar_')]
 class CalendarController extends AbstractController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly EmailNotificationService $emailService
-    ) {}
+        private readonly EmailNotificationService $emailService,
+    ) {
+    }
 
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(CalendarEventRepository $calendarEventRepository): Response
@@ -34,7 +34,7 @@ class CalendarController extends AbstractController
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
 
         $calendarGameEventType = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Spiel']);
-        
+
         return $this->render('calendar/index.html.twig', [
             'calendarGameEventTypeId' => $calendarGameEventType?->getId(),
             'upcomingEvents' => $calendarEventRepository->findUpcoming(),
@@ -50,12 +50,12 @@ class CalendarController extends AbstractController
     {
         $start = new DateTime($request->query->get('start'));
         $end = new DateTime($request->query->get('end'));
-        
+
         $calendarEvents = $calendarEventRepository->findBetweenDates($start, $end);
 
-        $formattedEvents = array_map(function($calendarEvent) {
+        $formattedEvents = array_map(function ($calendarEvent) {
             $endDate = $calendarEvent->getEndDate() ?: (clone $calendarEvent->getStartDate())->setTime(23, 59, 59);
-            
+
             return [
                 'id' => $calendarEvent->getId(),
                 'title' => $calendarEvent->getTitle(),
@@ -94,7 +94,7 @@ class CalendarController extends AbstractController
             'groups' => ['calendar_event:read'],
             'circular_reference_handler' => function ($object) {
                 return $object->getId();
-            }
+            },
         ]);
     }
 
@@ -102,6 +102,7 @@ class CalendarController extends AbstractController
     public function retrieveUpcomingEvents(CalendarEventRepository $calendarEventRepository): JsonResponse
     {
         $calendarEvents = $calendarEventRepository->findUpcoming();
+
         return $this->json($calendarEvents, 200, [], ['groups' => ['event:read']]);
     }
 
@@ -109,21 +110,21 @@ class CalendarController extends AbstractController
     public function createEvent(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        
+
         $calendarEvent = new CalendarEvent();
         $this->updateEventFromData($calendarEvent, $data);
-        
+
         return $this->json(['success' => true]);
     }
 
     /**
-     * Drag & Drop endpunkt für die Aktualisierung von Kalendereinträgen
+     * Drag & Drop endpunkt für die Aktualisierung von Kalendereinträgen.
      */
     #[Route('/event/{id}', name: 'event_update', methods: ['PUT'])]
     public function updateCalendarEvent(CalendarEvent $calendarEvent, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        
+
         $this->updateEventFromData($calendarEvent, $data);
         $entityManager->flush();
 
@@ -156,7 +157,7 @@ class CalendarController extends AbstractController
         $calendarEvent->setTitle($data['title'] ?? $calendarEvent->getTitle());
         $calendarEvent->setDescription($data['description'] ?? null);
         $calendarEvent->setStartDate(new DateTime($data['startDate']));
-        
+
         if (isset($data['endDate'])) {
             $calendarEvent->setEndDate(new DateTime($data['endDate']));
         }
@@ -181,7 +182,7 @@ class CalendarController extends AbstractController
             }
             $calendarEvent->getGame()->setHomeTeam($homeTeam);
         }
-        
+
         if (isset($data['awayTeamId'])) {
             $awayTeam = $this->entityManager->getReference(Team::class, (int) $data['awayTeamId']);
             if (null === $calendarEvent->getGame()) {
@@ -192,7 +193,7 @@ class CalendarController extends AbstractController
             }
             $calendarEvent->getGame()->setAwayTeam($awayTeam);
         }
-        
+
         if (isset($data['gameTypeId'])) {
             $gameType = $this->entityManager->getReference(GameType::class, (int) $data['gameTypeId']);
             if (null === $calendarEvent->getGame()) {
@@ -217,12 +218,12 @@ class CalendarController extends AbstractController
             ->getQuery()
             ->getSingleColumnResult();
     }
-    
+
     #[Route('/locations/search', name: 'search_locations', methods: ['GET'])]
     public function searchLocations(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         $term = $request->query->get('term', '');
-    
+
         $qb = $entityManager->createQueryBuilder();
         $qb->select('l')
            ->from(Location::class, 'l')
@@ -231,10 +232,9 @@ class CalendarController extends AbstractController
            ->orWhere('l.address LIKE :term')
            ->setParameter('term', '%' . $term . '%')
            ->setMaxResults(10);
-    
+
         $locations = $qb->getQuery()->getArrayResult();
-        
+
         return new JsonResponse($locations);
     }
-    
 }

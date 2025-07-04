@@ -3,10 +3,11 @@
 namespace App\Service;
 
 use App\Entity\User;
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 
 class EmailVerificationService
 {
@@ -15,14 +16,15 @@ class EmailVerificationService
         private MailerInterface $mailer,
         private UrlGeneratorInterface $urlGenerator,
         private string $emailFrom = 'noreply@kaderblick.byte-artist.de'
-    ) {}
+    ) {
+    }
 
     public function sendEmailChangeVerification(User $user): void
     {
         $token = bin2hex(random_bytes(32));
         $user->setEmailVerificationToken($token);
-        $user->setEmailVerificationTokenExpiresAt(new \DateTime('+24 hours'));
-        
+        $user->setEmailVerificationTokenExpiresAt(new DateTime('+24 hours'));
+
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
@@ -54,7 +56,7 @@ class EmailVerificationService
             return null;
         }
 
-        if ($user->getEmailVerificationTokenExpiresAt() < new \DateTime()) {
+        if ($user->getEmailVerificationTokenExpiresAt() < new DateTime()) {
             return null;
         }
 

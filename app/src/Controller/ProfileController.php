@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Service\EmailVerificationService;
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,15 +22,16 @@ class ProfileController extends AbstractController
         private UserPasswordHasherInterface $passwordHasher,
         private ValidatorInterface $validator,
         private EmailVerificationService $emailVerificationService,
-        private Security $security
-    ) {}
+        private Security $security,
+    ) {
+    }
 
     #[Route('/about-me', name: 'api_about_me', methods: ['GET'])]
     public function getProfile(): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
-        
+
         if (!$user) {
             return $this->json(['message' => 'Not logged in'], 401);
         }
@@ -53,7 +55,7 @@ class ProfileController extends AbstractController
     {
         /** @var User $user */
         $user = $this->getUser();
-        
+
         if (!$user) {
             return $this->json(['message' => 'Not logged in'], 401);
         }
@@ -68,14 +70,14 @@ class ProfileController extends AbstractController
         if (isset($data['lastName'])) {
             $user->setLastName($data['lastName']);
         }
-        
+
         // Handle email change
         if (isset($data['email']) && $data['email'] !== $user->getEmail()) {
             $existingUser = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $data['email']]);
             if ($existingUser) {
                 return $this->json(['message' => 'Diese E-Mail-Adresse wird bereits verwendet.'], 400);
             }
-            
+
             $user->setNewEmail($data['email']);
             $emailChanged = true;
         }
@@ -110,6 +112,7 @@ class ProfileController extends AbstractController
             foreach ($errors as $error) {
                 $errorMessages[] = $error->getMessage();
             }
+
             return $this->json(['message' => 'Validierungsfehler', 'errors' => $errorMessages], 400);
         }
 
@@ -119,9 +122,10 @@ class ProfileController extends AbstractController
         // Send verification email if email changed
         if ($emailChanged) {
             $this->emailVerificationService->sendEmailChangeVerification($user);
+
             return $this->json([
                 'message' => 'Profil aktualisiert',
-                'emailVerificationRequired' => true
+                'emailVerificationRequired' => true,
             ]);
         }
 
@@ -133,19 +137,19 @@ class ProfileController extends AbstractController
     {
         try {
             $user = $this->emailVerificationService->verifyEmailChangeToken($token);
-            
-            if ($user === null) {
+
+            if (null === $user) {
                 return $this->json(['message' => 'Ungültiger oder abgelaufener Token'], 400);
             }
 
             $newEmail = $user->getNewEmail();
             $user->setEmail($newEmail);
             $user->setNewEmail(null);
-            
+
             $this->entityManager->flush();
 
             return $this->json(['message' => 'E-Mail-Adresse erfolgreich geändert']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $this->json(['message' => 'Fehler bei der E-Mail-Verifizierung'], 400);
         }
     }

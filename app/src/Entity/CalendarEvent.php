@@ -2,11 +2,11 @@
 
 namespace App\Entity;
 
+use App\Repository\CalendarEventRepository;
 use DateTimeInterface;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
-use App\Repository\CalendarEventRepository;
 
 #[ORM\Entity(repositoryClass: CalendarEventRepository::class)]
 #[ORM\Table(name: 'calendar_events')]
@@ -43,9 +43,8 @@ class CalendarEvent
     private ?Location $location = null;
 
     #[Groups(['calendar_event:read'])]
-    #[ORM\OneToOne(targetEntity: Game::class, mappedBy: "calendarEvent", cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(targetEntity: Game::class, mappedBy: 'calendarEvent', cascade: ['persist', 'remove'])]
     private ?Game $game = null;
-
 
     #[ORM\Column]
     private bool $notificationSent = false;
@@ -63,6 +62,7 @@ class CalendarEvent
     public function setTitle(string $title): self
     {
         $this->title = $title;
+
         return $this;
     }
 
@@ -74,6 +74,7 @@ class CalendarEvent
     public function setDescription(?string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -85,6 +86,7 @@ class CalendarEvent
     public function setStartDate(DateTimeInterface $startDate): self
     {
         $this->startDate = $startDate;
+
         return $this;
     }
 
@@ -96,6 +98,7 @@ class CalendarEvent
     public function setEndDate(?DateTimeInterface $endDate): self
     {
         $this->endDate = $endDate;
+
         return $this;
     }
 
@@ -107,6 +110,7 @@ class CalendarEvent
     public function setEventType(?CalendarEventType $calendarEventType): self
     {
         $this->calendarEventType = $calendarEventType;
+
         return $this;
     }
 
@@ -118,6 +122,7 @@ class CalendarEvent
     public function setLocation(?Location $location): self
     {
         $this->location = $location;
+
         return $this;
     }
 
@@ -129,6 +134,7 @@ class CalendarEvent
     public function setNotificationSent(bool $notificationSent): self
     {
         $this->notificationSent = $notificationSent;
+
         return $this;
     }
 
@@ -140,11 +146,12 @@ class CalendarEvent
     public function setGame(?Game $game): self
     {
         $this->game = $game;
+
         return $this;
     }
 
     public function __toString(): string
     {
-        return $this->title ?? "UNKNOWN CALENDAR EVENT";
+        return $this->title ?? 'UNKNOWN CALENDAR EVENT';
     }
 }

@@ -2,24 +2,23 @@
 
 namespace App\Entity;
 
+use App\Repository\SubstitutionReasonRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\SubstitutionReasonRepository;
 
 /**
- * tactical	            Taktische Gründe (z. B. Systemwechsel, Zeitspiel, frischer Spieler)
- * injury	            Spieler verletzt sich oder ist angeschlagen
- * performance	        Schlechte Leistung, zu viele Fehler
- * resting / rotation	Schonung für andere Spiele
- * card_risk	        Risiko auf Gelb-Rot oder Platzverweis
- * debut	            Einwechslung für einen Jugend-/Debütspieler
- * comeback	            Rückkehr nach Verletzung
- * time_wasting	        Auswechslung in der Nachspielzeit zum Zeitspiel
- * fan_favor / farewell	Spieler bekommt Applaus beim Abschied
+ * tactical             Taktische Gründe (z. B. Systemwechsel, Zeitspiel, frischer Spieler)
+ * injury               Spieler verletzt sich oder ist angeschlagen
+ * performance          Schlechte Leistung, zu viele Fehler
+ * resting / rotation   Schonung für andere Spiele
+ * card_risk            Risiko auf Gelb-Rot oder Platzverweis
+ * debut                Einwechslung für einen Jugend-/Debütspieler
+ * comeback             Rückkehr nach Verletzung
+ * time_wasting         Auswechslung in der Nachspielzeit zum Zeitspiel
+ * fan_favor / farewell Spieler bekommt Applaus beim Abschied.
  */
-
 #[ORM\Entity(repositoryClass: SubstitutionReasonRepository::class)]
 class SubstitutionReason
 {
@@ -61,6 +60,7 @@ class SubstitutionReason
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -72,6 +72,7 @@ class SubstitutionReason
     public function setDescription(?string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -83,6 +84,7 @@ class SubstitutionReason
     public function setActive(bool $active): self
     {
         $this->active = $active;
+
         return $this;
     }
 
@@ -97,6 +99,7 @@ class SubstitutionReason
             $this->substitutions[] = $substitution;
             $substitution->setSubstitutionReason($this);
         }
+
         return $this;
     }
 
@@ -107,11 +110,12 @@ class SubstitutionReason
                 $substitution->setSubstitutionReason(null);
             }
         }
+
         return $this;
     }
 
     public function __toString()
     {
-        return $this->name ?? "UNKNOWN SUSTITUTION REASON";
+        return $this->name ?? 'UNKNOWN SUSTITUTION REASON';
     }
 }

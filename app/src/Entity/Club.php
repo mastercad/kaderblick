@@ -2,11 +2,11 @@
 
 namespace App\Entity;
 
+use App\Repository\ClubRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\ClubRepository;
 
 #[ORM\Entity(repositoryClass: ClubRepository::class)]
 #[ORM\Table(name: 'clubs')]
@@ -73,7 +73,7 @@ class Club
     #[Groups(['club:read'])]
     private Collection $teams;
 
-    public function __construct() 
+    public function __construct()
     {
         $this->playerClubAssignments = new ArrayCollection();
         $this->teams = new ArrayCollection();
@@ -92,6 +92,7 @@ class Club
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -103,6 +104,7 @@ class Club
     public function setShortName(?string $shortName): self
     {
         $this->shortName = $shortName;
+
         return $this;
     }
 
@@ -164,6 +166,7 @@ class Club
     public function setLocation(?Location $location): self
     {
         $this->location = $location;
+
         return $this;
     }
 
@@ -175,6 +178,7 @@ class Club
     public function setWebsite(?string $website): self
     {
         $this->website = $website;
+
         return $this;
     }
 
@@ -186,6 +190,7 @@ class Club
     public function setEmail(?string $email): self
     {
         $this->email = $email;
+
         return $this;
     }
 
@@ -197,6 +202,7 @@ class Club
     public function setPhone(?string $phone): self
     {
         $this->phone = $phone;
+
         return $this;
     }
 
@@ -224,23 +230,23 @@ class Club
 
     public function addPlayerClubAssignment(PlayerClubAssignment $playerClubAssignment): self
     {
-        if (!$this->playerClubAssignments->contains($playerClubAssignment))
-        {
+        if (!$this->playerClubAssignments->contains($playerClubAssignment)) {
             $this->playerClubAssignments[] = $playerClubAssignment;
             $playerClubAssignment->setClub($this);
         }
+
         return $this;
     }
 
     public function removePlayerClubAssignment(PlayerClubAssignment $playerClubAssignment): self
     {
-        if ($this->playerClubAssignments->removeElement($playerClubAssignment))
-        {
+        if ($this->playerClubAssignments->removeElement($playerClubAssignment)) {
             // set the owning side to null (unless already changed)
             if ($playerClubAssignment->getClub() === $this) {
                 $playerClubAssignment->setClub(null);
             }
         }
+
         return $this;
     }
 
@@ -258,23 +264,23 @@ class Club
 
     public function addCoachClubAssignment(CoachClubAssignment $coachClubAssignment): self
     {
-        if (!$this->coachClubAssignments->contains($coachClubAssignment))
-        {
+        if (!$this->coachClubAssignments->contains($coachClubAssignment)) {
             $this->coachClubAssignments[] = $coachClubAssignment;
             $coachClubAssignment->setClub($this);
         }
+
         return $this;
     }
 
     public function removeCoachClubAssignment(CoachClubAssignment $coachClubAssignment): self
     {
-        if ($this->coachClubAssignments->removeElement($coachClubAssignment))
-        {
+        if ($this->coachClubAssignments->removeElement($coachClubAssignment)) {
             // set the owning side to null (unless already changed)
             if ($coachClubAssignment->getClub() === $this) {
                 $coachClubAssignment->setClub(null);
             }
         }
+
         return $this;
     }
 
@@ -285,20 +291,20 @@ class Club
 
     public function addTeam(Team $team): self
     {
-        if (!$this->teams->contains($team))
-        {
+        if (!$this->teams->contains($team)) {
             $this->teams->add($team);
             $team->addClub($this);
         }
+
         return $this;
     }
 
     public function removeTeam(Team $team): self
     {
-        if ($this->teams->removeElement($team))
-        {
+        if ($this->teams->removeElement($team)) {
             $team->removeClub($this);
         }
+
         return $this;
     }
 

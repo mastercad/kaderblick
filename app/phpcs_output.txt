@@ -1,0 +1,10 @@
+ERROR: The --sniffs option only supports sniff codes.
+Sniff codes are in the form "Standard.Category.Sniff".
+
+The following problems were detected:
+* Message codes are not supported: ./phpcs.xml.dist
+
+Perhaps try --sniffs="./phpcs.xml" instead.
+
+Run "phpcs --help" for usage information
+

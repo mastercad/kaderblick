@@ -2,17 +2,17 @@
 
 namespace App\Entity;
 
+use App\Repository\PlayerNationalityAssignmentRepository;
 use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use App\Repository\PlayerNationalityAssignmentRepository;
 
 #[ORM\Entity(repositoryClass: PlayerNationalityAssignmentRepository::class)]
 class PlayerNationalityAssignment
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: "integer")]
+    #[ORM\Column(type: 'integer')]
     #[Groups(['player_nationality_assignment:read', 'player_nationality_assignment:write', 'player:read'])]
     private ?int $id = null;
 
@@ -35,14 +35,14 @@ class PlayerNationalityAssignment
     private ?DateTimeInterface $endDate = null;
 
     #[Groups(['player_nationality_assignment:read', 'player_nationality_assignment:write'])]
-    #[ORM\Column(type: "boolean", options: ["default" => true])]
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $active = true; // Falls mal aus historischen Gründen etwas deaktiviert werden soll
 
     public function getId(): ?int
     {
         return $this->id;
     }
-    
+
     public function getPlayer(): ?Player
     {
         return $this->player;
@@ -51,6 +51,7 @@ class PlayerNationalityAssignment
     public function setPlayer(?Player $player): self
     {
         $this->player = $player;
+
         return $this;
     }
 
@@ -62,6 +63,7 @@ class PlayerNationalityAssignment
     public function setNationality(?Nationality $nationality): self
     {
         $this->nationality = $nationality;
+
         return $this;
     }
 
@@ -73,6 +75,7 @@ class PlayerNationalityAssignment
     public function setStartDate(DateTimeInterface $startDate): self
     {
         $this->startDate = $startDate;
+
         return $this;
     }
 
@@ -84,6 +87,7 @@ class PlayerNationalityAssignment
     public function setEndDate(?DateTimeInterface $endDate): self
     {
         $this->endDate = $endDate;
+
         return $this;
     }
 
@@ -95,6 +99,7 @@ class PlayerNationalityAssignment
     public function setActive(bool $active): self
     {
         $this->active = $active;
+
         return $this;
     }
 

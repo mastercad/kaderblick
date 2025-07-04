@@ -47,6 +47,7 @@ class GoogleDriveAuthCommand extends Command
 
         if (!$authCode) {
             $output->writeln('<error>Kein Code eingegeben.</error>');
+
             return Command::FAILURE;
         }
 
@@ -54,6 +55,7 @@ class GoogleDriveAuthCommand extends Command
 
         if (isset($accessToken['error'])) {
             $output->writeln('<error>Fehler beim Abrufen des Tokens: ' . $accessToken['error_description'] . '</error>');
+
             return Command::FAILURE;
         }
 
@@ -61,6 +63,7 @@ class GoogleDriveAuthCommand extends Command
 
         if (!$refreshToken) {
             $output->writeln('<error>Kein Refresh Token erhalten. Möglicherweise hast du schon mal authorisiert und musst die Zustimmung erzwingen (prompt=consent).</error>');
+
             return Command::FAILURE;
         }
 

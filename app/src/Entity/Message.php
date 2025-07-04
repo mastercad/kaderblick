@@ -56,6 +56,7 @@ class Message
     public function setSender(User $sender): self
     {
         $this->sender = $sender;
+
         return $this;
     }
 
@@ -69,12 +70,14 @@ class Message
         if (!$this->recipients->contains($recipient)) {
             $this->recipients->add($recipient);
         }
+
         return $this;
     }
 
     public function removeRecipient(User $recipient): self
     {
         $this->recipients->removeElement($recipient);
+
         return $this;
     }
 
@@ -86,6 +89,7 @@ class Message
     public function setSubject(string $subject): self
     {
         $this->subject = $subject;
+
         return $this;
     }
 
@@ -97,10 +101,11 @@ class Message
     public function setContent(string $content): self
     {
         $this->content = $content;
+
         return $this;
     }
 
-    public function getSentAt(): \DateTime
+    public function getSentAt(): DateTime
     {
         return $this->sentAt;
     }
@@ -110,6 +115,7 @@ class Message
         if (!in_array($user->getId(), $this->readBy)) {
             $this->readBy[] = $user->getId();
         }
+
         return $this;
     }
 

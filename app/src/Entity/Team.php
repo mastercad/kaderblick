@@ -4,9 +4,9 @@ namespace App\Entity;
 
 use App\Repository\TeamRepository;
 use DateTime;
-use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: TeamRepository::class)]
@@ -67,6 +67,7 @@ class Team
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -78,6 +79,7 @@ class Team
     public function setAgeGroup(AgeGroup $ageGroup): self
     {
         $this->ageGroup = $ageGroup;
+
         return $this;
     }
 
@@ -89,6 +91,7 @@ class Team
     public function setLeague(?League $league): self
     {
         $this->league = $league;
+
         return $this;
     }
 
@@ -98,6 +101,7 @@ class Team
             $this->gameEvents[] = $gameEvent;
             $gameEvent->setTeam($this);
         }
+
         return $this;
     }
 
@@ -108,6 +112,7 @@ class Team
                 $gameEvent->setTeam(null);
             }
         }
+
         return $this;
     }
 
@@ -122,6 +127,7 @@ class Team
             $this->playerTeamAssignments[] = $assignment;
             $assignment->setTeam($this);
         }
+
         return $this;
     }
 
@@ -132,6 +138,7 @@ class Team
                 $assignment->setTeam(null);
             }
         }
+
         return $this;
     }
 
@@ -146,6 +153,7 @@ class Team
             $this->coachTeamAssignments[] = $assignment;
             $assignment->setTeam($this);
         }
+
         return $this;
     }
 
@@ -156,18 +164,20 @@ class Team
                 $assignment->setTeam(null);
             }
         }
+
         return $this;
     }
 
     public function getCurrentPlayers(): array
     {
         $now = new DateTime();
+
         return $this->playerTeamAssignments
-            ->filter(function(PlayerTeamAssignment $assignment) use ($now) {
-                return $assignment->getStartDate() <= $now && 
-                    ($assignment->getEndDate() === null || $assignment->getEndDate() >= $now);
+            ->filter(function (PlayerTeamAssignment $assignment) use ($now) {
+                return $assignment->getStartDate() <= $now
+                    && (null === $assignment->getEndDate() || $assignment->getEndDate() >= $now);
             })
-            ->map(function(PlayerTeamAssignment $assignment) {
+            ->map(function (PlayerTeamAssignment $assignment) {
                 return $assignment->getPlayer();
             })
             ->toArray();
@@ -181,6 +191,7 @@ class Team
     public function setClubs(?Collection $clubs): self
     {
         $this->clubs = $clubs;
+
         return $this;
     }
 
@@ -190,6 +201,7 @@ class Team
             $this->clubs[] = $club;
             $club->addTeam($this);
         }
+
         return $this;
     }
 
@@ -201,6 +213,7 @@ class Team
                 $club->removeTeam($this);
             }
         }
+
         return $this;
     }
 

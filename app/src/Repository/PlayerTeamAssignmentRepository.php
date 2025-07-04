@@ -18,13 +18,14 @@ class PlayerTeamAssignmentRepository extends ServiceEntityRepository implements 
     public function fetchFullList(?UserInterface $user = null): array
     {
         $now = new DateTime();
+
         return $this->createQueryBuilder('pta')
             ->select('pta', 'p', 't', 'ag')
             ->innerJoin('pta.player', 'p')
             ->innerJoin('pta.team', 't')
             ->leftJoin('t.ageGroup', 'ag')
-#            ->andWhere('pta.endDate IS NULL OR pta.endDate >= :now')
-#            ->setParameter('now', $now)
+//            ->andWhere('pta.endDate IS NULL OR pta.endDate >= :now')
+//            ->setParameter('now', $now)
             ->orderBy('pta.startDate', 'DESC')
             ->getQuery()
             ->getResult();
@@ -33,13 +34,14 @@ class PlayerTeamAssignmentRepository extends ServiceEntityRepository implements 
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         $now = new DateTime();
+
         return $this->createQueryBuilder('pta')
             ->select('pta', 'p', 't', 'ag')
             ->innerJoin('pta.player', 'p')
             ->innerJoin('pta.team', 't')
             ->leftJoin('t.ageGroup', 'ag')
-#            ->andWhere('pta.endDate IS NULL OR pta.endDate >= :now')
-#            ->setParameter('now', $now)
+//            ->andWhere('pta.endDate IS NULL OR pta.endDate >= :now')
+//            ->setParameter('now', $now)
             ->orderBy('pta.startDate', 'DESC')
             ->getQuery()
             ->getResult();

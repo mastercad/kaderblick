@@ -11,21 +11,24 @@ class EmailNotificationService
 {
     public function __construct(
         private readonly MailerInterface $mailer,
-        private readonly Environment $twig
-    ) {}
+        private readonly Environment $twig,
+    ) {
+    }
 
+    /**
+     * @param array<int, string> $recipients
+     * @param array<int, string> $uploadedFiles
+     */
     public function sendUploadNotification(array $recipients, string $folderUrl, array $uploadedFiles): void
     {
         $email = (new Email())
             ->from($_ENV['MAILER_FROM'])
             ->subject('Neue Videos wurden hochgeladen');
 
-        // Füge jeden Empfänger einzeln hinzu
         foreach ($recipients as $recipient) {
             $email->addTo($recipient);
         }
 
-        // Rendere das Email Template
         $html = $this->twig->render('emails/video_upload.html.twig', [
             'folderUrl' => $folderUrl,
             'files' => $uploadedFiles
@@ -35,6 +38,9 @@ class EmailNotificationService
         $this->mailer->send($email);
     }
 
+    /**
+     * @param array<int, string> $recipients
+     */
     public function sendEventNotification(array $recipients, CalendarEvent $calendarEvent): void
     {
         $email = (new Email())
@@ -45,12 +51,10 @@ class EmailNotificationService
             $email->addTo($recipient);
         }
 
-        // HTML Version
         $html = $this->twig->render('emails/event_notification.html.twig', [
             'event' => $calendarEvent
         ]);
 
-        // Plain Text Version
         $text = $this->twig->render('emails/event_notification.txt.twig', [
             'event' => $calendarEvent
         ]);

@@ -10,31 +10,30 @@ use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Symfony\Component\HttpFoundation\Response;
-
-use function Symfony\Component\DependencyInjection\Loader\Configurator\env;
 
 #[Route('/api', name: 'api_')]
 class VerificationController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $em,
-        private ParameterBagInterface $params
-    ) {}
+        private ParameterBagInterface $params,
+    ) {
+    }
 
     #[Route('/verify/email', name: 'verify_email')]
     public function verifyUserEmail(
-        Request $request, 
-        UserRepository $userRepository, 
+        Request $request,
+        UserRepository $userRepository,
         MailerInterface $mailer
     ): Response {
         $token = $request->query->get('Token');
-        
+
         $user = $userRepository->findUserByValidationToken($token, new DateTime());
 
         if (!$user instanceof User) {
@@ -48,7 +47,7 @@ class VerificationController extends AbstractController
         if ($player) {
             $user->setPlayer($player);
         }
-        
+
         $coach = $this->em->getRepository(Coach::class)->findOneBy(['email' => $user->getEmail()]);
         if ($coach) {
             $user->setCoach($coach);
@@ -66,9 +65,9 @@ class VerificationController extends AbstractController
                 'name' => $user->getEmail(),
                 'website_url' => $this->params->get('app.website_url'),
                 'contact_email' => $this->params->get('app.contact_email'),
-                'phone_number' => $this->params->get('app.phone_number') 
+                'phone_number' => $this->params->get('app.phone_number')
             ]);
-    
+
         $mailer->send($email);
 
         $this->addFlash(
@@ -78,12 +77,11 @@ class VerificationController extends AbstractController
 
         return $this->redirectToRoute('home');
     }
-    
+
     #[Route('/verify/success', name: 'app_verify_success')]
     public function verifySuccess(): JsonResponse
     {
-
-#        return $this->render('verification/verify.html.twig');
+        //        return $this->render('verification/verify.html.twig');
         return $this->json(['message' => 'E-Mail erfolgreich bestätigt']);
     }
 }

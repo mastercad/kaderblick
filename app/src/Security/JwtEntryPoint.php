@@ -2,10 +2,10 @@
 
 namespace App\Security;
 
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
 
 class JwtEntryPoint implements AuthenticationEntryPointInterface
 {
@@ -14,7 +14,7 @@ class JwtEntryPoint implements AuthenticationEntryPointInterface
         return new RedirectResponse('/');
     }
 
-    public function onAuthenticationFailure(Request $request, AuthenticationException $exception)
+    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): RedirectResponse
     {
         return new RedirectResponse('/');
     }

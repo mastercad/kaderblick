@@ -9,16 +9,16 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
- * regular	    Vertragsspieler	            Fester Kader-Spieler (dauerhaft im Team)
- * loan	        Leihgabe	                Temporär von einem anderen Verein ausgeliehen
- * guest	    Gastspieler	                Spielt gelegentlich mit, z. B. in Freundschaftsspielen
- * test	        Testspieler	                Spieler auf Probe, evtl. für Transfer oder Neuzugang
- * youth	    Jugendspieler	            Spieler aus dem Jugendbereich, der z. B. Aushilft in der 1. Mannschaft
- * dual	        Doppelte Spielberechtigung	Spielt z. B. in zwei Mannschaften, oft bei Jugend/Herren-Kombis
- * cooperation	Kooperationsspieler	        Kommt z. B. aus einem Partnerverein temporär
- * external	    Externer Spieler	        Gehört nicht zum Verein, aber wird für ein Turnier eingesetzt
- * suspended	Gesperrter Spieler	        Aktuell nicht spielberechtigt (Disziplin, Formalien, etc.)
- * injured	    Verletzter Spieler	        Aktuell nicht einsatzfähig
+ * regular      Vertragsspieler             Fester Kader-Spieler (dauerhaft im Team)
+ * loan         Leihgabe                    Temporär von einem anderen Verein ausgeliehen
+ * guest        Gastspieler                 Spielt gelegentlich mit, z. B. in Freundschaftsspielen
+ * test         Testspieler                 Spieler auf Probe, evtl. für Transfer oder Neuzugang
+ * youth        Jugendspieler               Spieler aus dem Jugendbereich, der z. B. Aushilft in der 1. Mannschaft
+ * dual         Doppelte Spielberechtigung  Spielt z. B. in zwei Mannschaften, oft bei Jugend/Herren-Kombis
+ * cooperation  Kooperationsspieler         Kommt z. B. aus einem Partnerverein temporär
+ * external     Externer Spieler            Gehört nicht zum Verein, aber wird für ein Turnier eingesetzt
+ * suspended    Gesperrter Spieler          Aktuell nicht spielberechtigt (Disziplin, Formalien, etc.)
+ * injured      Verletzter Spieler          Aktuell nicht einsatzfähig.
  */
 #[ORM\Entity(repositoryClass: PlayerTeamAssignmentTypeRepository::class)]
 class PlayerTeamAssignmentType

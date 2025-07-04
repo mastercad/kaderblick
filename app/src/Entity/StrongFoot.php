@@ -2,12 +2,12 @@
 
 namespace App\Entity;
 
+use App\Repository\StrongFootRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use App\Repository\StrongFootRepository;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: StrongFootRepository::class)]
 #[UniqueEntity(fields: ['code'], message: 'Dieser Code existiert bereits.')]
@@ -48,6 +48,7 @@ class StrongFoot
     public function setCode(string $code): self
     {
         $this->code = $code;
+
         return $this;
     }
 
@@ -59,6 +60,7 @@ class StrongFoot
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 

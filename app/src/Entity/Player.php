@@ -56,7 +56,7 @@ class Player
         notInRangeMessage: 'Die Größe muss zwischen {{ min }} und {{ max }} cm liegen.'
     )]
     private ?int $height = null; // in cm
-    
+
     #[Groups(['player:read', 'player:write'])]
     #[ORM\Column(type: 'integer', nullable: true)]
     #[Assert\Range(
@@ -65,17 +65,17 @@ class Player
         notInRangeMessage: 'Das Gewicht muss zwischen {{ min }} und {{ max }} kg liegen.'
     )]
     private ?int $weight = null; // in kg
-    
+
     #[Groups(['player:read', 'player:write'])]
     #[ORM\ManyToOne(targetEntity: StrongFoot::class, inversedBy: 'players')]
     #[ORM\JoinColumn(nullable: true)]
     private ?StrongFoot $strongFoot = null;
-    
+
     #[Groups(['player:read', 'player:write'])]
     #[ORM\ManyToOne(targetEntity: Position::class)]
     #[ORM\JoinColumn(nullable: false)]
     private Position $mainPosition;
-    
+
     #[Groups(['player:read', 'player:write'])]
     #[ORM\ManyToMany(targetEntity: Position::class)]
     #[ORM\JoinTable(name: 'player_alternative_positions')]
@@ -134,6 +134,7 @@ class Player
     public function setFirstName(string $firstName): self
     {
         $this->firstName = $firstName;
+
         return $this;
     }
 
@@ -145,6 +146,7 @@ class Player
     public function setLastName(string $lastName): self
     {
         $this->lastName = $lastName;
+
         return $this;
     }
 
@@ -161,6 +163,7 @@ class Player
     public function setBirthdate(DateTimeInterface $birthdate): self
     {
         $this->birthdate = $birthdate;
+
         return $this;
     }
 
@@ -175,6 +178,7 @@ class Player
             $this->playerTeamAssignments->add($assignment);
             $assignment->setPlayer($this);
         }
+
         return $this;
     }
 
@@ -185,6 +189,7 @@ class Player
                 $playerTeamAssignment->setPlayer(null);
             }
         }
+
         return $this;
     }
 
@@ -199,6 +204,7 @@ class Player
             $this->playerClubAssignments->add($playerClubAssignment);
             $playerClubAssignment->setPlayer($this);
         }
+
         return $this;
     }
 
@@ -209,6 +215,7 @@ class Player
                 $playerClubAssignment->setPlayer(null);
             }
         }
+
         return $this;
     }
 
@@ -218,6 +225,7 @@ class Player
             $this->goals->add($goal);
             $goal->setScorer($this);
         }
+
         return $this;
     }
 
@@ -228,6 +236,7 @@ class Player
                 $goal->setScorer(null);
             }
         }
+
         return $this;
     }
 
@@ -242,6 +251,7 @@ class Player
             $this->assistsProvided->add($goal);
             $goal->setAssistBy($this);
         }
+
         return $this;
     }
 
@@ -252,6 +262,7 @@ class Player
                 $goal->setAssistBy(null);
             }
         }
+
         return $this;
     }
 
@@ -266,6 +277,7 @@ class Player
             $this->playerNationalityAssignments->add($playerNationalityAssignment);
             $playerNationalityAssignment->setPlayer($this);
         }
+
         return $this;
     }
 
@@ -276,6 +288,7 @@ class Player
                 $playerNationalityAssignment->setPlayer(null);
             }
         }
+
         return $this;
     }
 
@@ -287,6 +300,7 @@ class Player
     public function setStrongFoot(?StrongFoot $strongFoot): self
     {
         $this->strongFoot = $strongFoot;
+
         return $this;
     }
 
@@ -298,6 +312,7 @@ class Player
     public function setMainPosition(Position $position): self
     {
         $this->mainPosition = $position;
+
         return $this;
     }
 
@@ -311,12 +326,14 @@ class Player
         if (!$this->alternativePositions->contains($position)) {
             $this->alternativePositions->add($position);
         }
+
         return $this;
     }
 
     public function removeAlternativePosition(Position $position): self
     {
         $this->alternativePositions->removeElement($position);
+
         return $this;
     }
 
@@ -328,6 +345,7 @@ class Player
     public function setHeight(?int $height): self
     {
         $this->height = $height;
+
         return $this;
     }
 
@@ -339,6 +357,7 @@ class Player
     public function setWeight(?int $weight): self
     {
         $this->weight = $weight;
+
         return $this;
     }
 
@@ -353,6 +372,7 @@ class Player
             $this->gameEvents->add($gameEvent);
             $gameEvent->setPlayer($this);
         }
+
         return $this;
     }
 
@@ -363,13 +383,14 @@ class Player
                 $gameEvent->setPlayer(null);
             }
         }
+
         return $this;
     }
 
     public function getEventsByType(string $eventTypeCode): array
     {
         return $this->gameEvents
-            ->filter(function(GameEvent $event) use ($eventTypeCode) {
+            ->filter(function (GameEvent $event) use ($eventTypeCode) {
                 return $event->getGameEventType()->getCode() === $eventTypeCode;
             })
             ->toArray();
@@ -402,28 +423,32 @@ class Player
     public function getCurrentTeam(): ?Team
     {
         $now = new DateTime();
-        
+
         foreach ($this->playerTeamAssignments as $assignment) {
-            if ($assignment->getStartDate() <= $now && 
-                ($assignment->getEndDate() === null || $assignment->getEndDate() >= $now)) {
+            if (
+                $assignment->getStartDate() <= $now
+                && (null === $assignment->getEndDate() || $assignment->getEndDate() >= $now)
+            ) {
                 return $assignment->getTeam();
             }
         }
-        
+
         return null;
     }
 
     public function getCurrentClub(): ?Club
     {
         $now = new DateTime();
-        
+
         foreach ($this->playerClubAssignments as $assignment) {
-            if ($assignment->getStartDate() <= $now && 
-                ($assignment->getEndDate() === null || $assignment->getEndDate() >= $now)) {
+            if (
+                $assignment->getStartDate() <= $now
+                && (null === $assignment->getEndDate() || $assignment->getEndDate() >= $now)
+            ) {
                 return $assignment->getClub();
             }
         }
-        
+
         return null;
     }
 
@@ -431,15 +456,17 @@ class Player
     {
         $now = new DateTime();
         $nationalities = [];
-        
+
         foreach ($this->playerNationalityAssignments as $assignment) {
-            if ($assignment->isActive() && 
-                $assignment->getStartDate() <= $now && 
-                ($assignment->getEndDate() === null || $assignment->getEndDate() >= $now)) {
+            if (
+                $assignment->isActive()
+                && $assignment->getStartDate() <= $now
+                && (null === $assignment->getEndDate() || $assignment->getEndDate() >= $now)
+            ) {
                 $nationalities[] = $assignment->getNationality();
             }
         }
-        
+
         return $nationalities;
     }
 
@@ -451,6 +478,7 @@ class Player
     public function setEmail(?string $email): self
     {
         $this->email = $email;
+
         return $this;
     }
 

@@ -2,9 +2,9 @@
 
 namespace App\DataFixtures;
 
-use App\Entity\Team;
-use App\Entity\League;
 use App\Entity\AgeGroup;
+use App\Entity\League;
+use App\Entity\Team;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;

@@ -36,10 +36,10 @@ class LocationFixtures extends Fixture implements DependentFixtureInterface
             [
                 'name' => 'Braunsdorf',
                 'address' => 'Ernst-Thälmann-Str. 29, 01737 Braunsdorf',
-                'city'=> 'Braunsdorf',
+                'city' => 'Braunsdorf',
                 'capacity' => 150,
                 'hasFloodlight' => false,
-                'surfaceType'=> $naturrasen
+                'surfaceType' => $naturrasen
             ],
         ];
 
@@ -58,7 +58,7 @@ class LocationFixtures extends Fixture implements DependentFixtureInterface
         $manager->flush();
         $manager->clear();
 
-//        $this->createFakeData($manager);
+        //        $this->createFakeData($manager);
     }
 
     private function createFakeData($manager): void
@@ -69,13 +69,13 @@ class LocationFixtures extends Fixture implements DependentFixtureInterface
         shuffle($surfaceTypes);
         $usedNames = [];
 
-        for ($i = 0; $i < $numLocations; $i++) {
+        for ($i = 0; $i < $numLocations; ++$i) {
             $locationEntity = new Location();
             $cityName = $faker->cityName;
             $locationEntity->setName($this->generateUniqueLocationName($cityName, $usedNames, $faker));
             $locationEntity->setAddress($faker->streetAddress);
             $locationEntity->setCity($cityName);
-            $locationEntity->setCapacity($faker->numberBetween(250,0));
+            $locationEntity->setCapacity($faker->numberBetween(250, 0));
             $locationEntity->setHasFloodlight($faker->boolean(false));
             $locationEntity->setSurfaceType($faker->randomElement($surfaceTypes));
 
@@ -86,15 +86,16 @@ class LocationFixtures extends Fixture implements DependentFixtureInterface
         $manager->clear();
     }
 
-    function generateUniqueLocationName(string &$cityName, array &$usedNames, Generator $faker): string
+    public function generateUniqueLocationName(string &$cityName, array &$usedNames, Generator $faker): string
     {
         do {
             $cityName = $faker->cityName;
             $nameParts = array_filter([$cityName]);
             $name = implode(' ', $nameParts);
         } while (in_array($name, $usedNames));
-    
+
         $usedNames[] = $name;
+
         return $name;
     }
 }

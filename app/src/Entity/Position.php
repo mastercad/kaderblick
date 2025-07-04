@@ -2,10 +2,10 @@
 
 namespace App\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use App\Repository\PositionRepository;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: PositionRepository::class)]
 #[ORM\UniqueConstraint(name: 'unique_position_name', columns: ['name'])]
@@ -43,6 +43,7 @@ class Position
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -54,6 +55,7 @@ class Position
     public function setShortName(?string $shortName): self
     {
         $this->shortName = $shortName;
+
         return $this;
     }
 
@@ -65,6 +67,7 @@ class Position
     public function setDescription(?string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 

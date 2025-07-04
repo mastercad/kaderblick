@@ -3,10 +3,14 @@
 namespace App\Repository;
 
 use App\Entity\User;
+use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<User>
+ */
 class UserRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +18,9 @@ class UserRepository extends ServiceEntityRepository implements OptimizedReposit
         parent::__construct($registry, User::class);
     }
 
+    /**
+     * @return User[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('u')
@@ -25,6 +32,9 @@ class UserRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getResult();
     }
 
+    /**
+     * @return User[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('u')
@@ -36,6 +46,9 @@ class UserRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('u')
@@ -46,6 +59,9 @@ class UserRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('u')
@@ -56,13 +72,16 @@ class UserRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return User|null
+     */
     public function findUserByValidationToken(string $token): ?User
     {
         return $this->createQueryBuilder('u')
             ->where('u.verificationToken = :token')
             ->andWhere('u.verificationExpires > :now')
             ->setParameter('token', $token)
-            ->setParameter('now', new \DateTime())
+            ->setParameter('now', new DateTime())
             ->getQuery()
             ->getOneOrNullResult();
     }

@@ -7,6 +7,7 @@ use App\Entity\User;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 class RefreshTokenService
 {
@@ -32,7 +33,7 @@ class RefreshTokenService
         return $token;
     }
 
-    public function validateRefreshToken(string $token): User
+    public function validateRefreshToken(string $token): UserInterface
     {
         $refreshToken = $this->em->getRepository(RefreshToken::class)->findOneBy(['token' => $token]);
 

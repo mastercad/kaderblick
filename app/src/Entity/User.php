@@ -1,11 +1,13 @@
 <?php
+
 namespace App\Entity;
 
+use App\Repository\UserRepository;
 use DateTime;
 use Doctrine\ORM\Mapping as ORM;
+use InvalidArgumentException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use App\Repository\UserRepository;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -23,7 +25,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', length: 255)]
     private $firstName;
 
-    #[ORM\Column(type:'string', length:255)]
+    #[ORM\Column(type: 'string', length: 255)]
     private $lastName;
 
     #[ORM\Column(type: 'json')]
@@ -31,10 +33,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: 'string')]
     private $password;
-    
+
     #[ORM\Column(type: 'boolean')]
     private bool $isVerified = false;
-    
+
     #[ORM\Column(type: 'boolean')]
     private bool $isEnabled = false;
 
@@ -47,16 +49,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToOne(targetEntity: Player::class)]
     #[ORM\JoinColumn(nullable: true)]
     #[Assert\Expression(
-        "this.getPlayer() === null or this.getClub() === null",
-        message: "Ein Benutzer kann nicht gleichzeitig Spieler und Vereinsmitglied sein."
+        'this.getPlayer() === null or this.getClub() === null',
+        message: 'Ein Benutzer kann nicht gleichzeitig Spieler und Vereinsmitglied sein.'
     )]
     private ?Player $player = null;
 
     #[ORM\OneToOne(targetEntity: Coach::class)]
     #[ORM\JoinColumn(nullable: true)]
     #[Assert\Expression(
-        "this.getCoach() === null or this.getClub() === null",
-        message: "Ein Benutzer kann nicht gleichzeitig Trainer und Vereinsmitglied sein."
+        'this.getCoach() === null or this.getClub() === null',
+        message: 'Ein Benutzer kann nicht gleichzeitig Trainer und Vereinsmitglied sein.'
     )]
     private ?Coach $coach = null;
 
@@ -86,7 +88,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $emailVerificationToken = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTime $emailVerificationTokenExpiresAt = null;
+    private ?DateTime $emailVerificationTokenExpiresAt = null;
 
     public function getId(): ?int
     {
@@ -113,12 +115,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setLastName(string $lastName): self
     {
         $this->lastName = $lastName;
+
         return $this;
     }
 
     public function getFullName(): ?string
     {
-        return $this->firstName .' '. $this->lastName;
+        return $this->firstName . ' ' . $this->lastName;
     }
 
     public function getEmail(): ?string
@@ -129,6 +132,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): self
     {
         $this->email = $email;
+
         return $this;
     }
 
@@ -145,23 +149,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         } else {
             $roles[] = 'ROLE_GUEST';
         }
-        
-        if ($this->player !== null) {
+
+        if (null !== $this->player) {
             $roles[] = 'ROLE_PLAYER';
         }
-        if ($this->coach !== null) {
+        if (null !== $this->coach) {
             $roles[] = 'ROLE_COACH';
         }
-        if ($this->club !== null) {
+        if (null !== $this->club) {
             $roles[] = 'ROLE_CLUB';
         }
-        
+
         return array_unique($roles);
     }
 
     public function setRoles(array $roles): self
     {
         $this->roles = $roles;
+
         return $this;
     }
 
@@ -173,6 +178,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): self
     {
         $this->password = $password;
+
         return $this;
     }
 
@@ -184,6 +190,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setIsVerified(bool $isVerified): self
     {
         $this->isVerified = $isVerified;
+
         return $this;
     }
 
@@ -195,6 +202,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setIsEnabled(bool $isEnabled): self
     {
         $this->isEnabled = $isEnabled;
+
         return $this;
     }
 
@@ -206,6 +214,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setVerificationToken(?string $verificationToken): self
     {
         $this->verificationToken = $verificationToken;
+
         return $this;
     }
 
@@ -217,6 +226,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setVerificationExpires(?DateTime $verificationExpires): self
     {
         $this->verificationExpires = $verificationExpires;
+
         return $this;
     }
 
@@ -227,10 +237,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setPlayer(?Player $player): self
     {
-        if ($player !== null && $this->club !== null) {
-            throw new \InvalidArgumentException('Ein Benutzer kann nicht gleichzeitig Spieler und Vereinsmitglied sein.');
+        if (null !== $player && null !== $this->club) {
+            throw new InvalidArgumentException('Ein Benutzer kann nicht gleichzeitig Spieler und Vereinsmitglied sein.');
         }
         $this->player = $player;
+
         return $this;
     }
 
@@ -241,10 +252,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setCoach(?Coach $coach): self
     {
-        if ($coach !== null && $this->club !== null) {
-            throw new \InvalidArgumentException('Ein Benutzer kann nicht gleichzeitig Trainer und Vereinsmitglied sein.');
+        if (null !== $coach && null !== $this->club) {
+            throw new InvalidArgumentException('Ein Benutzer kann nicht gleichzeitig Trainer und Vereinsmitglied sein.');
         }
         $this->coach = $coach;
+
         return $this;
     }
 
@@ -255,10 +267,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setClub(?Club $club): self
     {
-        if ($club !== null && ($this->player !== null || $this->coach !== null)) {
-            throw new \InvalidArgumentException('Ein Benutzer kann nicht gleichzeitig Vereinsmitglied und Spieler/Trainer sein.');
+        if (null !== $club && (null !== $this->player || null !== $this->coach)) {
+            throw new InvalidArgumentException('Ein Benutzer kann nicht gleichzeitig Vereinsmitglied und Spieler/Trainer sein.');
         }
         $this->club = $club;
+
         return $this;
     }
 
@@ -270,6 +283,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setHeight(?float $height): self
     {
         $this->height = $height;
+
         return $this;
     }
 
@@ -281,6 +295,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setWeight(?float $weight): self
     {
         $this->weight = $weight;
+
         return $this;
     }
 
@@ -292,6 +307,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setShoeSize(?float $shoeSize): self
     {
         $this->shoeSize = $shoeSize;
+
         return $this;
     }
 
@@ -303,6 +319,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setShirtSize(?string $shirtSize): self
     {
         $this->shirtSize = $shirtSize;
+
         return $this;
     }
 
@@ -314,6 +331,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPantsSize(?string $pantsSize): self
     {
         $this->pantsSize = $pantsSize;
+
         return $this;
     }
 
@@ -325,6 +343,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setNewEmail(?string $newEmail): self
     {
         $this->newEmail = $newEmail;
+
         return $this;
     }
 
@@ -336,19 +355,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmailVerificationToken(?string $token): self
     {
         $this->emailVerificationToken = $token;
+
         return $this;
     }
 
-    public function getEmailVerificationTokenExpiresAt(): ?\DateTime
+    public function getEmailVerificationTokenExpiresAt(): ?DateTime
     {
         return $this->emailVerificationTokenExpiresAt;
     }
 
-    public function setEmailVerificationTokenExpiresAt(?\DateTime $expiresAt): self
+    public function setEmailVerificationTokenExpiresAt(?DateTime $expiresAt): self
     {
         $this->emailVerificationTokenExpiresAt = $expiresAt;
+
         return $this;
     }
 
-    public function eraseCredentials(): void {}
+    public function eraseCredentials(): void
+    {
+    }
 }

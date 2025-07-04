@@ -3,9 +3,9 @@
 namespace App\Controller;
 
 use ApiPlatform\Metadata\UrlGeneratorInterface;
-use App\Entity\User;
-use App\Entity\Player;
 use App\Entity\Coach;
+use App\Entity\Player;
+use App\Entity\User;
 use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -26,7 +26,8 @@ class RegisterController extends AbstractController
         private EntityManagerInterface $em,
         private UserPasswordHasherInterface $passwordHasher,
         private ValidatorInterface $validator
-    ) {}
+    ) {
+    }
 
     #[Route('/register', name: 'register', methods: ['GET'])]
     public function registerFormular(Request $request)
@@ -47,7 +48,7 @@ class RegisterController extends AbstractController
         // Split fullname into firstName and lastName
         $fullName = trim($data['fullName'] ?? '');
         $nameParts = explode(' ', $fullName);
-        
+
         // Last word is lastName, everything before is firstName
         $lastName = array_pop($nameParts);
         $firstName = implode(' ', $nameParts);
@@ -61,17 +62,17 @@ class RegisterController extends AbstractController
             ->setIsVerified(false)
             ->setIsEnabled(false)
             ->setVerificationExpires((new DateTime())->modify('+1 month'));
-    
+
         try {
             $this->em->persist($user);
             $this->em->flush();
         } catch (UniqueConstraintViolationException $exception) {
             return new JsonResponse(
                 ['error' => 'E-Mail-Adresse bereits registriert.'],
-                400
+                400,
             );
         }
-    
+
         $url = $urlGenerator->generate(
             'api_verify_email',
             ['Token' => $user->getVerificationToken()],
@@ -87,9 +88,9 @@ class RegisterController extends AbstractController
                 'name' => $user->getEmail(),
                 'signedUrl' => $url
             ]);
-    
+
         $mailer->send($email);
-        
+
         return new JsonResponse(['message' => 'Registrierung erfolgreich. Bitte E-Mail bestätigen.'], 201);
     }
 
@@ -111,7 +112,7 @@ class RegisterController extends AbstractController
         if ($player) {
             $user->setPlayer($player);
         }
-        
+
         $coach = $this->em->getRepository(Coach::class)->findOneBy(['email' => $user->getEmail()]);
         if ($coach) {
             $user->setCoach($coach);
@@ -120,7 +121,7 @@ class RegisterController extends AbstractController
         $this->em->flush();
 
         $this->addFlash('success', 'Deine E-Mail-Adresse wurde erfolgreich verifiziert.');
-        
+
         return $this->redirectToRoute('app_login');
     }
 }

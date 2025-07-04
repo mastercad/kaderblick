@@ -15,10 +15,10 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route(path: "/api", name: "api_")]
+#[Route(path: '/api', name: 'api_')]
 class AuthController extends AbstractController
-{    
-    #[Route(path:"/login", name:"login")]    
+{
+    #[Route(path: '/login', name: 'login')]
     public function login(
         Request $request,
         JWTTokenManagerInterface $JWTManager,
@@ -34,7 +34,7 @@ class AuthController extends AbstractController
         }
 
         if (!$user->isVerified()) {
-            return new JsonResponse(['error'=> 'User not verified'], 401);
+            return new JsonResponse(['error' => 'User not verified'], 401);
         }
 
         $accessToken = $JWTManager->create($user);
@@ -56,7 +56,7 @@ class AuthController extends AbstractController
                 true,
                 false,
                 'Strict'
-            )
+            ),
         );
 
         $response->headers->setCookie(
@@ -70,13 +70,13 @@ class AuthController extends AbstractController
                 true,
                 false,
                 'Strict'
-            )
+            ),
         );
 
         return $response;
     }
-    
-    #[Route(path:"/logout", name:"logout")]
+
+    #[Route(path: '/logout', name: 'logout')]
     public function logoutAction(Request $request): JsonResponse
     {
         $response = new JsonResponse(['logged out' => true], 200);
@@ -88,32 +88,33 @@ class AuthController extends AbstractController
         return $response;
     }
 
-    #[Route(path:"/token/refresh", name:"token_refresh")]
+    #[Route(path: '/token/refresh', name: 'token_refresh')]
     public function refreshTokenAction(Request $request, EntityManagerInterface $em, JWTManager $jwtManager)
     {
         $refreshTokenString = $request->cookies->get('jwt_refresh_token');
-    
+
         if (!$refreshTokenString) {
             return new JsonResponse(['error' => 'No refresh token'], 401);
         }
-    
+
         $token = $em->getRepository(RefreshToken::class)->findOneBy(['token' => $refreshTokenString]);
-    
+
         if (!$token || $token->isExpired()) {
             return new JsonResponse(['error' => 'Invalid or expired refresh token'], 401);
         }
-    
+
         $user = $token->getUser();
         $jwt = $jwtManager->create($user);
-    
+
         return new JsonResponse(['token' => $jwt]);
     }
-    
+
     #[Route('/about/me', name: 'about_me')]
     public function me(): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
+
         return $this->json([
             'id' => $user->getId(),
             'email' => $user->getUserIdentifier(),

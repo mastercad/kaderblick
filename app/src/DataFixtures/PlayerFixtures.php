@@ -38,12 +38,12 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
         return;
 
         $rightFoot = $manager->getRepository(StrongFoot::class)->findOneBy(['code' => 'Rechts']);
-        $bothFoot = $manager->getRepository(StrongFoot::class)->findOneBy(['code'=> 'Beidfüßig']);
+        $bothFoot = $manager->getRepository(StrongFoot::class)->findOneBy(['code' => 'Beidfüßig']);
 
-        $posStuermer = $manager->getRepository(Position::class)->findOneBy(['shortName'=> 'ST']);
-        $posRechteAbwehr = $manager->getRepository(Position::class)->findOneBy(['shortName'=> 'RV']);
-        $posRechtsAussen = $manager->getRepository(Position::class)->findOneBy(['shortName'=> 'RA']);
-        $posMittelfeld = $manager->getRepository(Position::class)->findOneBy(['shortName'=> 'ZM']);
+        $posStuermer = $manager->getRepository(Position::class)->findOneBy(['shortName' => 'ST']);
+        $posRechteAbwehr = $manager->getRepository(Position::class)->findOneBy(['shortName' => 'RV']);
+        $posRechtsAussen = $manager->getRepository(Position::class)->findOneBy(['shortName' => 'RA']);
+        $posMittelfeld = $manager->getRepository(Position::class)->findOneBy(['shortName' => 'ZM']);
 
         $players = [
             [
@@ -56,7 +56,7 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
                     $posStuermer,
                     $posRechteAbwehr,
                     $posMittelfeld
-                ]
+                ],
             ],
             [
                 'firstName' => 'Moritz',
@@ -67,9 +67,9 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
                 'alternatePositions' => [
                     $posStuermer,
                     $posRechteAbwehr,
-                    $posRechtsAussen   
-                ]
-            ]
+                    $posRechtsAussen
+                ],
+            ],
         ];
 
         foreach ($players as $player) {
@@ -89,13 +89,13 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
 
         $manager->flush();
         $manager->clear();
-        
+
         $this->generateFakeData($manager);
     }
 
     private function generateFakeData(ObjectManager $manager): void
     {
-        echo "Memory Limit NOW: ". ini_get('memory_limit').PHP_EOL;
+        echo 'Memory Limit NOW: ' . ini_get('memory_limit') . PHP_EOL;
 
         $faker = Factory::create('de_DE');
         $teams = $manager->getRepository(Team::class)->findAll();
@@ -117,10 +117,9 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
 
         foreach ($teams as $team) {
             $usedShirtNumbers = [];
-            for ($playerId = 0; $playerId < $faker->numberBetween(10, 26); $playerId++) {
-
+            for ($playerId = 0; $playerId < $faker->numberBetween(10, 26); ++$playerId) {
                 $birthdate = $faker->dateTimeBetween('-60 years', '-5 years');
-                $age = (new DateTime)->diff($birthdate)->y;
+                $age = (new DateTime())->diff($birthdate)->y;
 
                 $playerEntity = new Player();
                 $playerEntity->setFirstName($faker->firstName);
@@ -172,9 +171,9 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
                 $attachedObjects[] = $playerTeamAssignmentEntity;
                 $attachedObjects[] = $playerNationalityAssignment;
 
-                $playerCount++;
-        
-                if ($playerCount % $batchSize === 0) {
+                ++$playerCount;
+
+                if (0 === $playerCount % $batchSize) {
                     $manager->flush();
 
                     foreach ($attachedObjects as $attacheObject) {
@@ -192,30 +191,31 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
     private function retrieveUniqueShirtNumber(array &$usedShirtNumbers, $faker): int
     {
         do {
-            $shirtNumber = $faker->numberBetween(1,26);
+            $shirtNumber = $faker->numberBetween(1, 26);
         } while (in_array($shirtNumber, $usedShirtNumbers));
 
         $usedShirtNumbers[] = $shirtNumber;
 
         return $shirtNumber;
     }
-/*
-    private function retrieveAlternativePositions(array $positionsMap, Position $randomPosition, Generator $faker): array
-    {
-        $alternativeTypen = array_filter(array_keys($positionsMap), fn($k) => $k !== $randomPosition);
-        shuffle($alternativeTypen);
-        $alternativPositions = [];
 
-        foreach (array_slice($alternativeTypen, 0, $faker->numberBetween(0, 2)) as $altTyp) {
-            if (!empty($positionsMap[$altTyp])) {
-                $alternativPositions[] = $faker->randomElement($positionsMap[$altTyp]);
+    /*
+        private function retrieveAlternativePositions(array $positionsMap, Position $randomPosition, Generator $faker): array
+        {
+            $alternativeTypen = array_filter(array_keys($positionsMap), fn($k) => $k !== $randomPosition);
+            shuffle($alternativeTypen);
+            $alternativPositions = [];
+
+            foreach (array_slice($alternativeTypen, 0, $faker->numberBetween(0, 2)) as $altTyp) {
+                if (!empty($positionsMap[$altTyp])) {
+                    $alternativPositions[] = $faker->randomElement($positionsMap[$altTyp]);
+                }
             }
-        }
 
-        return $alternativPositions;
-    }
-*/
-    private function preparePositionsMap(ObjectManager $manager): array 
+            return $alternativPositions;
+        }
+    */
+    private function preparePositionsMap(ObjectManager $manager): array
     {
         $rawPositions = $manager->getRepository(Position::class)->findAll();
         $positions = [];
@@ -243,20 +243,20 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
         ];
     }
 
-    private function retrieveAlternativePositions(string $mainPosition, array $positions, array $alternativeMap, Generator $faker): array 
+    private function retrieveAlternativePositions(string $mainPosition, array $positions, array $alternativeMap, Generator $faker): array
     {
         $alternativePositions = [];
 
         $alternativeNames = $alternativeMap[$mainPosition] ?? array_keys($positions);
         // Filtere die Hauptposition raus
-        $alternativeNames = array_filter($alternativeNames, fn($name) => $name !== $mainPosition);
-        
+        $alternativeNames = array_filter($alternativeNames, fn ($name) => $name !== $mainPosition);
+
         // Maximal 2 alternative Positionen
         $anzahlAlternativen = $faker->numberBetween(0, 2);
         $alternatives = $faker->randomElements($alternativeNames, $anzahlAlternativen);
-        
+
         // Hole aus Namen wieder die Position-Objekte
-        $alternativePositions = array_map(fn($name) => $positions[$name], $alternatives);
+        $alternativePositions = array_map(fn ($name) => $positions[$name], $alternatives);
 
         // 5% Chance für irgend eine position
         if ($faker->boolean(5)) {
