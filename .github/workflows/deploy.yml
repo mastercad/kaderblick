@@ -13,6 +13,8 @@ jobs:
         run: |
           # prepare database container 
 
+          ls -lisa
+
           cp .env.dist .env
 
           docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
@@ -46,7 +48,7 @@ jobs:
             fi
           fi
           
-          chmod -R 755 "$RELEASE_DIR"
+          chmod -R 755 .
 
           mkdir -p app/config/secrets/testing
           echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > app/config/secrets/testing/testing.decrypt.private.php
