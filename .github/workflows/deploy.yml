@@ -9,10 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
       - name: prepare Test Env
         run: |
           # prepare database container 
+
+          cp .env.dist .env
 
           docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
           
@@ -28,6 +29,35 @@ jobs:
 
           docker compose up -d --build --force-recreate api vue-frontend
 
+          docker compose exec -T api composer install
+
+          echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> app/.env
+
+          # ich bin mir ehrlich gesagt gerade gar nicht mehr sicher, ob das hier noch so sinn macht, die kommen ja immer mit dem branch aktuell rein
+          if [ -d "$CURRENT_DIR" ]; then
+            if [ -d "$CURRENT_DIR/app/config/secrets/testing" ]; then
+              mkdir -p "$RELEASE_DIR/app/config/secrets/testing"
+              cp -r "$CURRENT_DIR/app/config/secrets/testing/"* "$RELEASE_DIR/app/config/secrets/testing/" 2>/dev/null || true
+            fi
+
+            if [ -d "$CURRENT_DIR/app/config/jwt" ]; then
+              mkdir -p "$RELEASE_DIR/app/config/jwt"
+              cp -r "$CURRENT_DIR/app/config/jwt/"* "$RELEASE_DIR/app/config/jwt/" 2>/dev/null || true
+            fi
+          fi
+          
+          chmod -R 755 "$RELEASE_DIR"
+
+          mkdir -p app/config/secrets/testing
+          echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > app/config/secrets/testing/testing.decrypt.private.php
+
+          echo "Decrypt secrets"
+          docker compose exec -T api bin/console secrets:decrypt-to-local --force
+
+          echo "Erstelle jwt, wenn nötig"
+          if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
+            docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
+          fi
       - name: run PHP-CS-Fixer
         run: docker compose exec -T api ./vendor/bin/php-cs-fixer --config=.php-cs-fixer.dist.php fix --dry-run --diff --ansi
 
