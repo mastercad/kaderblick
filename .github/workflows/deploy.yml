@@ -50,7 +50,7 @@ jobs:
           mkdir -p app/config/secrets/test
           echo "<?php return \"${{ secrets.DEV_DECRYPT_KEY }}\"; ?>" > app/config/secrets/test/test.decrypt.private.php
 
-          docker compose exec -T api chown -R www-data:www-data ./
+          docker compose exec -T -u root api chown -R www-data:www-data ./
 
           echo "Decrypt secrets"
           docker compose exec -T api bin/console secrets:decrypt-to-local --env=test --force
