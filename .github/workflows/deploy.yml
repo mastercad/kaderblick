@@ -43,6 +43,8 @@ jobs:
           docker compose exec -T api php --version
           docker compose exec -T api pwd
           docker compose exec -T api bin/console about
+          docker compose exec -T api bin/console debug:dotenv
+          docker compose exec -T api bin/console debug:config
           echo "=== END DEBUG ==="
 
           mkdir -p "app/config/jwt"
