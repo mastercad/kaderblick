@@ -72,9 +72,6 @@ class UserRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getOneOrNullResult();
     }
 
-    /**
-     * @return User|null
-     */
     public function findUserByValidationToken(string $token): ?User
     {
         return $this->createQueryBuilder('u')

@@ -20,7 +20,7 @@ final class PlayerControllerTest extends WebTestCase
 
     public function testPlayerDetail(): void
     {
-        $user   = $this->createUser();
+        $user = $this->createUser();
         $client = static::createClient();
 
         $client->loginUser($user);
@@ -54,8 +54,8 @@ final class PlayerControllerTest extends WebTestCase
     private function createUser(int $userId = 1): UserInterface
     {
         $user = new User();
-        $user->setFirstName("Andreas");
-        $user->setLastName("Kempe");
+        $user->setFirstName('Andreas');
+        $user->setLastName('Kempe');
 
         return $user;
     }

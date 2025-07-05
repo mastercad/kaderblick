@@ -7,7 +7,6 @@ use Google\Client;
 use Google\Http\MediaFileUpload;
 use Google\Service\Drive;
 use Google\Service\Drive\DriveFile;
-use Psr\Http\Message\RequestInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class GoogleDriveService

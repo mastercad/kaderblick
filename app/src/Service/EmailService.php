@@ -16,7 +16,7 @@ class EmailService
 
     /**
      * @param string|array<int, string>   $to
-     * @param array<string, mixed> $context
+     * @param array<string, mixed>        $context
      */
     public function sendTemplatedEmail(
         string|array $to,
