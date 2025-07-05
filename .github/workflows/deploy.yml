@@ -59,6 +59,7 @@ jobs:
           docker compose exec -T api php --version
           docker compose exec -T api pwd
           docker compose exec -T api ls -la
+          docker compose exec -T api ls -lisa var/log
           docker compose exec -T api ls -la config/jwt/ 2>/dev/null || echo "JWT directory does not exist"
           docker compose exec -T api cat config/packages/lexik_jwt_authentication.yaml
           docker compose exec -T api env | grep JWT
@@ -68,7 +69,6 @@ jobs:
           docker compose exec -T api env | grep -E "(APP_|SYMFONY_|JWT_)"
           echo "=== END DEBUG ==="
 
-          docker compose exec -T api ls -lisa var/log
 
           if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
             docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
