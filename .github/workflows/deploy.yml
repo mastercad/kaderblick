@@ -76,9 +76,12 @@ jobs:
           docker compose exec -T api bin/console about
           echo "=== END DEBUG ==="
 
+          mkdir -p "app/config/secrets/dev"
+          mkdir -p "app/config/jwt"
+
           echo "Erstelle jwt, wenn nötig"
           if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
-            docker compose exec -T -e APP_ENV=prod api php bin/console lexik:jwt:generate-keypair --overwrite --env=prod
+            docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
           fi
       - name: run PHP-CS-Fixer
         run: docker compose exec -T api ./vendor/bin/php-cs-fixer --config=.php-cs-fixer.dist.php fix --dry-run --diff --ansi
