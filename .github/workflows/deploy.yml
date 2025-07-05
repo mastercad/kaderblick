@@ -13,14 +13,13 @@ jobs:
           # prepare database container 
 
           cp app/.env.dist app/.env
-
+          echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> app/.env
           sed -i 's/^APP_ENV=.*/APP_ENV=dev/' app/.env
 
           docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
           
           docker volume inspect kaderblick-data >/dev/null 2>&1 || docker volume create kaderblick-data
 
-          # baue und starte im bedarfsfall db container
           if docker ps --filter "name=kaderblick-db" --filter "status=running" | grep -q kaderblick-db; then
             echo "DB Container läuft"
           else
@@ -31,21 +30,6 @@ jobs:
           docker compose up -d --build --force-recreate api vue-frontend
 
           docker compose exec -T api composer install
-
-          echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> app/.env
-
-          # ich bin mir ehrlich gesagt gerade gar nicht mehr sicher, ob das hier noch so sinn macht, die kommen ja immer mit dem branch aktuell rein
-          if [ -d "$CURRENT_DIR" ]; then
-            if [ -d "$CURRENT_DIR/app/config/secrets/dev" ]; then
-              mkdir -p "$RELEASE_DIR/app/config/secrets/dev"
-              cp -r "$CURRENT_DIR/app/config/secrets/dev/"* "$RELEASE_DIR/app/config/secrets/dev/" 2>/dev/null || true
-            fi
-
-            if [ -d "$CURRENT_DIR/app/config/jwt" ]; then
-              mkdir -p "$RELEASE_DIR/app/config/jwt"
-              cp -r "$CURRENT_DIR/app/config/jwt/"* "$RELEASE_DIR/app/config/jwt/" 2>/dev/null || true
-            fi
-          fi
 
           mkdir -p app/config/secrets/dev
           # echo "<?php return \"${{ secrets.DEV_DECRYPT_KEY }}\"; ?>" > app/config/secrets/dev/dev.decrypt.private.php
@@ -58,25 +42,9 @@ jobs:
           echo "=== DEBUG INFO ==="
           docker compose exec -T api php --version
           docker compose exec -T api pwd
-          echo "ROOT CONTENT:"
-          docker compose exec -T api ls -la
-          echo "LOG CONTENT:"
-          docker compose exec -T api ls -lisa var/log
-          echo "JWT DIR EXISTS?:"
-          docker compose exec -T api ls -la config/jwt/ 2>/dev/null || echo "JWT directory does not exist"
-          echo "JWT CONFIG:"
-          docker compose exec -T api cat config/packages/lexik_jwt_authentication.yaml
-          echo "PEM FILE EXISTS?:"
-          docker compose exec -T api find . -name "*.pem" -type f 2>/dev/null || echo "No .pem files found"
-          echo "CONFIG DIR EXISTS?:"
-          docker compose exec -T api find . -name "config" -type d 2>/dev/null || echo "No config directory found"
-          echo "CONFIG CONTENT:"
-          docker compose exec -T api ls -la config/
-          echo "SYMFONY ABOUT CONTENT:"
           docker compose exec -T api bin/console about
           echo "=== END DEBUG ==="
 
-          mkdir -p "app/config/secrets/dev"
           mkdir -p "app/config/jwt"
 
           echo "Erstelle jwt, wenn nötig"
