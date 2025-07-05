@@ -70,8 +70,8 @@ jobs:
           docker compose exec -T api find . -name "config" -type d 2>/dev/null || echo "No config directory found"
           echo "CONFIG CONTENT:"
           docker compose exec -T api ls -la config/
-          echo "ENV CONTENT:"
-          docker compose exec -T api env | grep -E "(APP_|SYMFONY_|JWT_)"
+          echo "SYMFONY ABOUT CONTENT:"
+          docker compose exec -T api bin/console about
           echo "=== END DEBUG ==="
 
           echo "Erstelle jwt, wenn nötig"
