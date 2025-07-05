@@ -6,5 +6,3 @@ parameters:
         - public/
         - src/
         - tests/
-    includes:
-        - vendor/phpstan/phpstan-doctrine/extension.neon
