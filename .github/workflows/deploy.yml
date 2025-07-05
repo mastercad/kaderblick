@@ -54,6 +54,9 @@ jobs:
           docker compose exec -T api bin/console secrets:decrypt-to-local --env=test --force
 
           echo "Erstelle jwt, wenn nötig"
+
+          ls -lisa
+
           if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
             docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
           fi
