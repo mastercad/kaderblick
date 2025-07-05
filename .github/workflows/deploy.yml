@@ -14,7 +14,7 @@ jobs:
 
           cp app/.env.dist app/.env
 
-          sed -i 's/^APP_ENV=.*/APP_ENV=test/' app/.env
+          sed -i 's/^APP_ENV=.*/APP_ENV=dev/' app/.env
 
           docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
           
@@ -36,9 +36,9 @@ jobs:
 
           # ich bin mir ehrlich gesagt gerade gar nicht mehr sicher, ob das hier noch so sinn macht, die kommen ja immer mit dem branch aktuell rein
           if [ -d "$CURRENT_DIR" ]; then
-            if [ -d "$CURRENT_DIR/app/config/secrets/test" ]; then
-              mkdir -p "$RELEASE_DIR/app/config/secrets/test"
-              cp -r "$CURRENT_DIR/app/config/secrets/test/"* "$RELEASE_DIR/app/config/secrets/test/" 2>/dev/null || true
+            if [ -d "$CURRENT_DIR/app/config/secrets/dev" ]; then
+              mkdir -p "$RELEASE_DIR/app/config/secrets/dev"
+              cp -r "$CURRENT_DIR/app/config/secrets/dev/"* "$RELEASE_DIR/app/config/secrets/dev/" 2>/dev/null || true
             fi
 
             if [ -d "$CURRENT_DIR/app/config/jwt" ]; then
@@ -47,11 +47,11 @@ jobs:
             fi
           fi
 
-          mkdir -p app/config/secrets/test
-          echo "<?php return \"${{ secrets.DEV_DECRYPT_KEY }}\"; ?>" > app/config/secrets/test/test.decrypt.private.php
+          mkdir -p app/config/secrets/dev
+          echo "<?php return \"${{ secrets.DEV_DECRYPT_KEY }}\"; ?>" > app/config/secrets/dev/dev.decrypt.private.php
 
           echo "Decrypt secrets"
-          docker compose exec -T api bin/console secrets:decrypt-to-local --env=test --force
+          docker compose exec -T api bin/console secrets:decrypt-to-local --env=dev --force
 
           echo "=== DEBUG INFO ==="
           docker compose exec -T api php --version
