@@ -49,7 +49,7 @@ jobs:
 
           mkdir -p app/config/secrets/dev
           # echo "<?php return \"${{ secrets.DEV_DECRYPT_KEY }}\"; ?>" > app/config/secrets/dev/dev.decrypt.private.php
-          echo '${{ secrets.DEV_DECRYPT_KEY }}' > app/config/secrets/dev/dev.decrypt.private.php
+          echo '${{ secrets.DEV_DECRYPT_KEY }}' | base64 -d > app/config/secrets/dev/dev.decrypt.private.php
           chmod 600 app/config/secrets/dev/dev.decrypt.private.php
 
           echo "Decrypt secrets"
@@ -190,7 +190,7 @@ jobs:
 
             mkdir -p app/config/secrets/prod
             # echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > app/config/secrets/prod/prod.decrypt.private.php
-            echo '${{ secrets.PROD_DECRYPT_KEY }}' > app/config/secrets/prod/prod.decrypt.private.php
+            echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > app/config/secrets/prod/prod.decrypt.private.php
             chmod 600 app/config/secrets/prod/prod.decrypt.private.php
 
             # Build und Test mit uniquen Container-Namen
