@@ -57,6 +57,15 @@ jobs:
 
           ls -lisa
 
+          echo "=== DEBUG INFO ==="
+          docker compose exec -T api php --version
+          docker compose exec -T api pwd
+          docker compose exec -T api ls -la app/config/
+          docker compose exec -T api env | grep -E "(APP_|SYMFONY_|JWT_)"
+          echo "=== END DEBUG ==="
+
+          docker compose exec -T api ls -lisa var/log
+
           if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
             docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
           fi
