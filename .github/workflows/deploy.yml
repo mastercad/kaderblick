@@ -24,11 +24,11 @@ jobs:
             echo "DB Container läuft"
           else
             docker volume inspect kaderblick-db-data || docker volume create kaderblick-db-data
-            docker compose -f docker-compose.db.yml -p production up -d --build --force-recreate db
+            docker compose -f docker-compose.db.yml up -d --build --force-recreate db
           fi
           
           # Test-Datenbank und Rechte erstellen
-          docker compose exec -T db mariadb -uroot -proot -e "
+          docker compose -f docker-compose.db.yml exec -T db mariadb -uroot -proot -e "
             CREATE DATABASE IF NOT EXISTS symfony_test;
             GRANT ALL PRIVILEGES ON symfony_test.* TO 'symfony'@'%';
             FLUSH PRIVILEGES;
