@@ -26,13 +26,6 @@ jobs:
             docker volume inspect kaderblick-db-data || docker volume create kaderblick-db-data
             docker compose -f docker-compose.db.yml -p production up -d --build --force-recreate db
           fi
-
-
-          # Warten bis DB Container bereit ist
-          until docker compose exec -T db mariadb -uroot -proot -e "SELECT 1"; do
-            echo "Waiting for database connection..."
-            sleep 1
-          done
           
           # Test-Datenbank und Rechte erstellen
           docker compose exec -T db mariadb -uroot -proot -e "
