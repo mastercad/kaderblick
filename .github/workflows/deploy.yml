@@ -27,13 +27,44 @@ jobs:
             docker compose -f docker-compose.db.yml up -d --build --force-recreate db
           fi
           
-          until [ "`docker inspect -f {{.State.Health.Status}} kaderblick-db`" == "healthy" ]; do
-            echo "Waiting for DB container to be healthy..."
-            docker ps
-            docker inspect kaderblick-db | grep Health
+          # Warte auf DB-Container mit Timeout
+          timeout=90
+          elapsed=0
+          while true; do
+            status=`docker inspect -f {{.State.Health.Status}} kaderblick-db`
+            
+            case "$status" in
+              "healthy")
+                echo "DB Container ist bereit!"
+                break
+                ;;
+              "unhealthy")
+                echo "DB Container ist fehlerhaft - Details:"
+                docker logs kaderblick-db
+                docker inspect kaderblick-db
+                exit 1
+                ;;
+              "starting")
+                if [ "$elapsed" -ge "$timeout" ]; then
+                  echo "Container startet zu lange (Timeout nach ${timeout}s) - Details:"
+                  docker logs kaderblick-db
+                  docker inspect kaderblick-db
+                  exit 1
+                fi
+                ;;
+              *)
+                echo "Unerwarteter Status '$status' - Details:"
+                docker logs kaderblick-db
+                docker inspect kaderblick-db
+                exit 1
+                ;;
+            esac
+            
+            echo "Warte auf DB-Container (${elapsed}/${timeout}s)... Status: $status"
             sleep 2
+            elapsed=$((elapsed+2))
           done
-          
+
           # Test-Datenbank und Rechte erstellen
           docker compose -f docker-compose.db.yml exec -T db mariadb -uroot -proot -e "
             CREATE DATABASE IF NOT EXISTS symfony_test;
@@ -60,7 +91,7 @@ jobs:
           fi
           
           # Schema erstellen
-          docker compose exec -T api bin/console doctrine:schema:create --env=test
+          # docker compose exec -T api bin/console doctrine:schema:create --env=test
 
           docker compose exec -T api bin/console doctrine:migrations:migrate --env=test
       - name: run PHP-CS-Fixer
