@@ -8,7 +8,9 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * @extends ServiceEntityRepository<PlayerGameStats>
+ * @template-extends ServiceEntityRepository<PlayerGameStats>
+ *
+ * @implements OptimizedRepositoryInterface<PlayerGameStats>
  */
 class PlayerGameStatsRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {

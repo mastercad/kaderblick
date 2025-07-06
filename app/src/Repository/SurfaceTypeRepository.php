@@ -8,7 +8,9 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * @extends ServiceEntityRepository<SurfaceType>
+ * @template-extends ServiceEntityRepository<SurfaceType>
+ *
+ * @implements OptimizedRepositoryInterface<SurfaceType>
  */
 class SurfaceTypeRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {

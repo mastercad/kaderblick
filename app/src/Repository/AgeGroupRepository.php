@@ -9,7 +9,9 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * @extends ServiceEntityRepository<AgeGroup>
+ * @template-extends ServiceEntityRepository<AgeGroup>
+ *
+ * @implements OptimizedRepositoryInterface<AgeGroup>
  */
 class AgeGroupRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {

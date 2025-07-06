@@ -8,7 +8,9 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * @extends ServiceEntityRepository<GameType>
+ * @template-extends ServiceEntityRepository<GameType>
+ *
+ * @implements OptimizedRepositoryInterface<GameType>
  */
 class GameTypeRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {

@@ -9,7 +9,9 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * @extends ServiceEntityRepository<Team>
+ * @template-extends ServiceEntityRepository<Team>
+ *
+ * @implements OptimizedRepositoryInterface<Team>
  */
 class TeamRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {

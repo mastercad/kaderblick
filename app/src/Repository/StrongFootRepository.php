@@ -8,7 +8,9 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * @extends ServiceEntityRepository<StrongFoot>
+ * @template-extends ServiceEntityRepository<StrongFoot>
+ *
+ * @implements OptimizedRepositoryInterface<StrongFoot>
  */
 class StrongFootRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {

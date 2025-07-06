@@ -8,7 +8,9 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * @extends ServiceEntityRepository<CalendarEventType>
+ * @template-extends ServiceEntityRepository<CalendarEventType>
+ *
+ * @implements OptimizedRepositoryInterface<CalendarEventType>
  */
 class CalendarEventTypeRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {

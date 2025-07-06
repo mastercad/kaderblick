@@ -8,7 +8,9 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * @extends ServiceEntityRepository<CoachTeamAssignmentType>
+ * @template-extends ServiceEntityRepository<CoachTeamAssignmentType>
+ *
+ * @implements OptimizedRepositoryInterface<CoachTeamAssignmentType>
  */
 class CoachTeamAssignmentTypeRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {

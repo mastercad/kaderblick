@@ -11,7 +11,9 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * @extends ServiceEntityRepository<GameEvent>
+ * @template-extends ServiceEntityRepository<GameEvent>
+ *
+ * @implements OptimizedRepositoryInterface<GameEvent>
  */
 class GameEventRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {

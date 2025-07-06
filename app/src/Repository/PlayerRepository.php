@@ -11,7 +11,9 @@ use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * @extends ServiceEntityRepository<Player>
+ * @template-extends ServiceEntityRepository<Player>
+ *
+ * @implements OptimizedRepositoryInterface<Player>
  */
 class PlayerRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
