@@ -1,14 +1,12 @@
 <?php
 
-namespace App\DataFixtures;
+namespace App\DataFixtures\MasterData;
 
 use App\Entity\Location;
 use App\Entity\SurfaceType;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
-use Faker\Factory;
-use Faker\Generator;
 
 class LocationFixtures extends Fixture implements DependentFixtureInterface
 {
@@ -57,45 +55,5 @@ class LocationFixtures extends Fixture implements DependentFixtureInterface
 
         $manager->flush();
         $manager->clear();
-
-        //        $this->createFakeData($manager);
-    }
-
-    private function createFakeData($manager): void
-    {
-        $faker = Factory::create('de_DE');
-        $numLocations = $faker->numberBetween(50, 150);
-        $surfaceTypes = $manager->getRepository(SurfaceType::class)->findAll();
-        shuffle($surfaceTypes);
-        $usedNames = [];
-
-        for ($i = 0; $i < $numLocations; ++$i) {
-            $locationEntity = new Location();
-            $cityName = $faker->cityName;
-            $locationEntity->setName($this->generateUniqueLocationName($cityName, $usedNames, $faker));
-            $locationEntity->setAddress($faker->streetAddress);
-            $locationEntity->setCity($cityName);
-            $locationEntity->setCapacity($faker->numberBetween(250, 0));
-            $locationEntity->setHasFloodlight($faker->boolean(false));
-            $locationEntity->setSurfaceType($faker->randomElement($surfaceTypes));
-
-            $manager->persist($locationEntity);
-        }
-
-        $manager->flush();
-        $manager->clear();
-    }
-
-    public function generateUniqueLocationName(string &$cityName, array &$usedNames, Generator $faker): string
-    {
-        do {
-            $cityName = $faker->cityName;
-            $nameParts = array_filter([$cityName]);
-            $name = implode(' ', $nameParts);
-        } while (in_array($name, $usedNames));
-
-        $usedNames[] = $name;
-
-        return $name;
     }
 }

@@ -15,6 +15,7 @@ class CoachClubAssignment
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     #[Groups(['coach_club_assignment:read', 'coach_club_assignment:write', 'club:read', 'coach:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[Groups(['coach_club_assignment:read', 'coach_club_assignment:write', 'club:read'])]
@@ -112,9 +113,9 @@ class CoachClubAssignment
 
         return sprintf(
             '%s bei %s (seit %s%s)',
-            $this->coach?->getFullName() ?? 'Unbekannter Spieler',
-            $this->club?->getName() ?? 'Unbekanntes Verein',
-            $this->startDate?->format('d.m.Y') ?? 'unbekannt',
+            $this->coach ? $this->coach->getFullName() : 'Unbekannter Spieler',
+            $this->club ? $this->club->getName() : 'Unbekanntes Verein',
+            $this->startDate->format('d.m.Y'),
             $end
         );
     }

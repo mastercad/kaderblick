@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DataFixtures;
+namespace App\DataFixtures\MasterData;
 
 use App\Entity\CoachLicense;
 use Doctrine\Bundle\FixturesBundle\Fixture;

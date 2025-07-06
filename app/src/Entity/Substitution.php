@@ -13,6 +13,7 @@ class Substitution
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private int $id;
 
     #[Groups(['substitution:read', 'substitution:write', 'game:read', 'game_event:read'])]

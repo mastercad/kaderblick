@@ -8,6 +8,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<Team>
+ */
 class TeamRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -17,6 +20,8 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
 
     /**
      * @param User $user
+     *
+     * @return Team[]
      */
     public function fetchFullList(?UserInterface $user = null): array
     {
@@ -51,6 +56,9 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
         return $qb->getQuery()->getResult();
     }
 
+    /**
+     * @return Team[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('t')
@@ -69,6 +77,9 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         // Für Admin-Detailansicht: Alle Details mit allen Relationen
@@ -85,6 +96,9 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         // Für Frontend/API: Nur die benötigten Details

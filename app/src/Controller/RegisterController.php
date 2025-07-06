@@ -17,20 +17,17 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api', name: 'api_')]
 class RegisterController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $em,
-        private UserPasswordHasherInterface $passwordHasher,
-        private ValidatorInterface $validator
+        private EntityManagerInterface $em
     ) {
     }
 
     #[Route('/register', name: 'register', methods: ['GET'])]
-    public function registerFormular(Request $request)
+    public function registerFormular(Request $request): Response
     {
         return $this->render('auth/register.html.twig');
     }
@@ -97,7 +94,7 @@ class RegisterController extends AbstractController
     #[Route('/verify-email/{token}', name: 'verify_email')]
     public function verifyEmail(string $token): Response
     {
-        $user = $this->em->getRepository(User::class)->findUserByValidationToken($token);
+        $user = $this->em->getRepository(User::class)->findOneBy(['verificationToken' => $token]);
 
         if (!$user) {
             throw $this->createNotFoundException('Der Verifizierungslink ist ungültig oder abgelaufen.');

@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\CalendarEvent;
 use App\Entity\Participation;
 use App\Entity\Player;
+use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -46,7 +47,7 @@ class ParticipationController extends AbstractController
     #[Route('/event/{id}/respond', name: 'respond', methods: ['POST'])]
     public function respond(Request $request, CalendarEvent $event): Response
     {
-        /** @var User $user */
+        /** @var User|null $user */
         $user = $this->getUser();
         $player = $user->getPlayer();
 
@@ -58,7 +59,7 @@ class ParticipationController extends AbstractController
         $note = $request->request->get('note');
 
         $participation = $this->em->getRepository(Participation::class)
-            ->findOneBy(['event' => $event, 'player' => $player]) ?? new Participation();
+            ->findOneBy(['event' => $event, 'player' => $player]) ?? new Participation($player, $event);
 
         $participation->setPlayer($player)
             ->setEvent($event)

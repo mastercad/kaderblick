@@ -7,7 +7,6 @@ use App\Service\EmailVerificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -22,17 +21,16 @@ class ProfileController extends AbstractController
         private UserPasswordHasherInterface $passwordHasher,
         private ValidatorInterface $validator,
         private EmailVerificationService $emailVerificationService,
-        private Security $security,
     ) {
     }
 
     #[Route('/about-me', name: 'api_about_me', methods: ['GET'])]
     public function getProfile(): JsonResponse
     {
-        /** @var User $user */
+        /** @var ?User $user */
         $user = $this->getUser();
 
-        if (!$user) {
+        if (!($user instanceof User)) {
             return $this->json(['message' => 'Not logged in'], 401);
         }
 
@@ -53,10 +51,10 @@ class ProfileController extends AbstractController
     #[Route('/update-profile', name: 'api_update_profile', methods: ['PUT'])]
     public function updateProfile(Request $request): JsonResponse
     {
-        /** @var User $user */
+        /** @var ?User $user */
         $user = $this->getUser();
 
-        if (!$user) {
+        if (!($user instanceof User)) {
             return $this->json(['message' => 'Not logged in'], 401);
         }
 

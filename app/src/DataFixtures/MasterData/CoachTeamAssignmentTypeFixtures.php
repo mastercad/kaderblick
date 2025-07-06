@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DataFixtures;
+namespace App\DataFixtures\MasterData;
 
 use App\Entity\CoachTeamAssignmentType;
 use Doctrine\Bundle\FixturesBundle\Fixture;

@@ -1,7 +1,11 @@
 <?php
 
-namespace App\DataFixtures;
+namespace App\DataFixtures\FakeData;
 
+use App\DataFixtures\MasterData\PlayerTeamAssignmentTypeFixtures;
+use App\DataFixtures\MasterData\PositionFixtures;
+use App\DataFixtures\MasterData\StrongFootFixtures;
+use App\DataFixtures\MasterData\TeamFixtures;
 use App\Entity\Club;
 use App\Entity\Nationality;
 use App\Entity\Player;
@@ -13,7 +17,6 @@ use App\Entity\Position;
 use App\Entity\StrongFoot;
 use App\Entity\Team;
 use DateTime;
-use DateTimeImmutable;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
@@ -34,66 +37,6 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
     }
 
     public function load(ObjectManager $manager): void
-    {
-        return;
-
-        $rightFoot = $manager->getRepository(StrongFoot::class)->findOneBy(['code' => 'Rechts']);
-        $bothFoot = $manager->getRepository(StrongFoot::class)->findOneBy(['code' => 'Beidfüßig']);
-
-        $posStuermer = $manager->getRepository(Position::class)->findOneBy(['shortName' => 'ST']);
-        $posRechteAbwehr = $manager->getRepository(Position::class)->findOneBy(['shortName' => 'RV']);
-        $posRechtsAussen = $manager->getRepository(Position::class)->findOneBy(['shortName' => 'RA']);
-        $posMittelfeld = $manager->getRepository(Position::class)->findOneBy(['shortName' => 'ZM']);
-
-        $players = [
-            [
-                'firstName' => 'Justin',
-                'lastName' => 'Wetzig',
-                'birthDate' => new DateTimeImmutable('2008-03-07'),
-                'strongFoot' => $rightFoot,
-                'mainPosition' => $posStuermer,
-                'alternatePositions' => [
-                    $posStuermer,
-                    $posRechteAbwehr,
-                    $posMittelfeld
-                ],
-            ],
-            [
-                'firstName' => 'Moritz',
-                'lastName' => 'Eichler',
-                'birthDate' => new DateTimeImmutable('2008-10-06'),
-                'strongFoot' => $bothFoot,
-                'mainPosition' => $posStuermer,
-                'alternatePositions' => [
-                    $posStuermer,
-                    $posRechteAbwehr,
-                    $posRechtsAussen
-                ],
-            ],
-        ];
-
-        foreach ($players as $player) {
-            $playerEntity = new Player();
-            $playerEntity->setFirstName($player['firstName']);
-            $playerEntity->setLastName($player['lastName']);
-            $playerEntity->setMainPosition($player['mainPosition']);
-            $playerEntity->setStrongFoot($player['strongFoot']);
-            $playerEntity->setBirthdate($player['birthDate']);
-
-            foreach ($player['alternatePositions'] as $position) {
-                $playerEntity->addAlternativePosition($position);
-            }
-
-            $manager->persist($playerEntity);
-        }
-
-        $manager->flush();
-        $manager->clear();
-
-        $this->generateFakeData($manager);
-    }
-
-    private function generateFakeData(ObjectManager $manager): void
     {
         echo 'Memory Limit NOW: ' . ini_get('memory_limit') . PHP_EOL;
 
@@ -188,7 +131,10 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
         $manager->clear();
     }
 
-    private function retrieveUniqueShirtNumber(array &$usedShirtNumbers, $faker): int
+    /** 
+     * @param array<int> $usedShirtNumbers 
+     */
+    private function retrieveUniqueShirtNumber(array &$usedShirtNumbers, Generator $faker): int
     {
         do {
             $shirtNumber = $faker->numberBetween(1, 26);
@@ -199,22 +145,9 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
         return $shirtNumber;
     }
 
-    /*
-        private function retrieveAlternativePositions(array $positionsMap, Position $randomPosition, Generator $faker): array
-        {
-            $alternativeTypen = array_filter(array_keys($positionsMap), fn($k) => $k !== $randomPosition);
-            shuffle($alternativeTypen);
-            $alternativPositions = [];
-
-            foreach (array_slice($alternativeTypen, 0, $faker->numberBetween(0, 2)) as $altTyp) {
-                if (!empty($positionsMap[$altTyp])) {
-                    $alternativPositions[] = $faker->randomElement($positionsMap[$altTyp]);
-                }
-            }
-
-            return $alternativPositions;
-        }
-    */
+    /**
+     * @return array{0: array<string, Position>, 1: array<string, array<int, string>>}
+     */
     private function preparePositionsMap(ObjectManager $manager): array
     {
         $rawPositions = $manager->getRepository(Position::class)->findAll();
@@ -243,6 +176,11 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
         ];
     }
 
+    /**
+     * @param array<string, Position> $positions
+     * @param array<string, array<int, string>> $alternativeMap
+     * @return array<int, Position>
+     */
     private function retrieveAlternativePositions(string $mainPosition, array $positions, array $alternativeMap, Generator $faker): array
     {
         $alternativePositions = [];

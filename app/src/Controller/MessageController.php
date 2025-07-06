@@ -28,7 +28,13 @@ class MessageController extends AbstractController
     #[Route('/api/messages', name: 'api_messages_index', methods: ['GET'])]
     public function index(): JsonResponse
     {
+        /** @var User|null $user */
         $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['message' => 'Unauthorized'], 401);
+        }
+
+        /** @var User $user */
         $messages = $this->entityManager->getRepository(Message::class)
             ->createQueryBuilder('m')
             ->where(':user MEMBER OF m.recipients')
@@ -51,8 +57,12 @@ class MessageController extends AbstractController
     #[Route('/api/messages/unread-count', name: 'api_messages_unread_count', methods: ['GET'])]
     public function unreadCount(): JsonResponse
     {
-        /** @var User $user */
         $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['message' => 'Unauthorized'], 401);
+        }
+
+        /** @var User $user */
         $messages = $this->entityManager->getRepository(Message::class)
             ->createQueryBuilder('m')
             ->select('m')
@@ -72,6 +82,11 @@ class MessageController extends AbstractController
     public function show(Message $message): JsonResponse
     {
         $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['message' => 'Unauthorized'], 401);
+        }
+
+        /** @var User $user */
         if (!$message->getRecipients()->contains($user)) {
             return $this->json(['message' => 'Nachricht nicht gefunden'], 404);
         }
@@ -98,11 +113,16 @@ class MessageController extends AbstractController
     #[Route('/api/messages', name: 'api_messages_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['message' => 'Unauthorized'], 401);
+        }
+
+        /** @var User $user */
         $data = json_decode($request->getContent(), true);
-        $sender = $this->getUser();
 
         $message = new Message();
-        $message->setSender($sender);
+        $message->setSender($user);
         $message->setSubject($data['subject']);
         $message->setContent($data['content']);
 
@@ -131,9 +151,14 @@ class MessageController extends AbstractController
     }
 
     #[Route('/api/messages/outbox', name: 'api_messages_outbox', methods: ['GET'])]
-    public function retrieveSendMessage()
+    public function retrieveSendMessage(): JsonResponse
     {
         $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['message' => 'Unauthorized'], 401);
+        }
+
+        /** @var User $user */
         $messages = $this->entityManager->getRepository(Message::class)
             ->createQueryBuilder('m')
             ->where('sender = :user')

@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Repository\AbstractApiRepositoryInterface;
 use App\Repository\OptimizedRepositoryInterface;
-use App\Service\EntitySchemaService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\MissingIdentifierField;
 use Error;
@@ -21,21 +20,35 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 abstract class ApiController extends AbstractController
 {
     protected string $title = '';
+
+    /** @var array<string, mixed> */
     protected array $fillable = [];
+
+    /** @var array<string, mixed> */
     protected array $columns = [];
+
+    /** @var array<string, mixed> */
     protected array $casts = [];
-    // entweder casts oder types
+
+    /** @var array<string, mixed> */
     protected array $types = [];
+
     protected string $templateDir = '';
     protected bool $createAndEditAllowed = true;
 
-    protected string $entityClass = '';
+    /** @var class-string */
+    protected string $entityClass;
     protected string $entityName = '';
     protected string $entityNamePlural = '';
+
+    /** @var array<string, array{type: int, entityName: string, label_fields?: array<string>}> */
     protected array $relations = [];
+
+    /** @var array<string, array<int>> */
     protected array $relationEntries = [];
     protected string $urlPart = '';
 
+    /** @var array<int, Error> */
     private array $errors = [];
     private string $permissionPrefix = '';
 
@@ -45,8 +58,7 @@ abstract class ApiController extends AbstractController
     public function __construct(
         private EntityManagerInterface $em,
         private SerializerInterface $serializer,
-        private ValidatorInterface $validator,
-        private EntitySchemaService $entitySchemaService
+        private ValidatorInterface $validator
     ) {
         $this->templateDir = 'api';
         $this->permissionPrefix = $this->convertToSnakeCase($this->entityName);
@@ -84,6 +96,7 @@ abstract class ApiController extends AbstractController
     #[Route('/api/schema/{entity}', name: 'api_entity_schema')]
     public function getSchema(string $entity, UserInterface $user): JsonResponse
     {
+        /** @var class-string $entityClass */
         $entityClass = 'App\\Entity\\' . $entity;
 
         if (!class_exists($entityClass)) {
@@ -107,9 +120,13 @@ abstract class ApiController extends AbstractController
         }
 
         foreach ($meta->associationMappings as $field => $assoc) {
+            /** @var class-string $targetClass */
             $targetClass = $assoc['targetEntity'];
             $repo = $this->em->getRepository($targetClass);
-            $entities = $repo->fetchFullList($user);
+
+            $entities = $repo instanceof OptimizedRepositoryInterface
+                ? $repo->fetchFullList($user)
+                : $repo->findAll();
 
             $choices = array_map(fn ($entity) => ($entity instanceof $targetClass) ? [
                 'id' => $entity->getId(),
@@ -129,34 +146,22 @@ abstract class ApiController extends AbstractController
     }
 
     #[Route('/list', name: 'list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
         $entries = [];
+        /** @var \Doctrine\ORM\EntityRepository<object> $repository */
         $repository = $this->em->getRepository($this->entityClass);
-        if (class_implements($repository, OptimizedRepositoryInterface::class)) {
+
+        if ($repository instanceof OptimizedRepositoryInterface) {
             $entries = $repository->fetchFullList($this->getUser());
         } else {
-            $entries = $this->em->getRepository($this->entityClass)
-                ->createQueryBuilder('p')
-                ->setFirstResult($request->page ?? $this->defaultPage)
-                ->setMaxResults($request->resultsPerPage ?? $this->defaultResultsPerPage)
+            $entries = $repository->createQueryBuilder('p')
+                ->setFirstResult((int) $request->query->get('page', $this->defaultPage))
+                ->setMaxResults((int) $request->query->get('resultsPerPage', $this->defaultResultsPerPage))
                 ->getQuery()
                 ->getResult();
         }
-        //        $entities = $this->em->getRepository($this->entityClass)->findAll();
-        /*
-                $entries = $this->em->getRepository($this->entityClass)
-                    ->createQueryBuilder('p')
-                    ->setFirstResult($request->page ?? $this->defaultPage)
-                    ->setMaxResults($request->resultsPerPage ?? $this->defaultResultsPerPage)
-                    ->getQuery()
-                    ->getResult();
-        */
-        //        $context = [
-        //            'circular_reference_handler' => function ($object) {
-        //                return $object->getId();
-        //            },
-        //        ];
+
         $context = ['groups' => [$this->permissionPrefix . ':read']];
 
         $json = $this->serializer->serialize($entries, 'json', $context);
@@ -170,7 +175,12 @@ abstract class ApiController extends AbstractController
     #[Route('/{id}', name: 'show', methods: ['GET'])]
     public function show(int $id): JsonResponse
     {
-        $entity = $this->em->getRepository($this->entityClass)->fetchFullEntry($id, $this->getUser());
+        /** @var \Doctrine\ORM\EntityRepository<object> $repository */
+        $repository = $this->em->getRepository($this->entityClass);
+        $entity = $repository instanceof OptimizedRepositoryInterface
+            ? $repository->fetchFullEntry($id, $this->getUser())
+            : $repository->find($id);
+
         $context = ['groups' => [lcfirst($this->entityName) . ':read']];
         $json = $this->serializer->serialize($entity, 'json', $context);
 
@@ -203,6 +213,7 @@ abstract class ApiController extends AbstractController
             $this->handleRelations($entity);
 
             $errors = $this->validator->validate($entity);
+            $messages = []; // Initialize messages array
             if (
                 count($errors) > 0
                 || count($this->errors) > 0
@@ -236,7 +247,9 @@ abstract class ApiController extends AbstractController
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
     public function update(Request $request, int $id): JsonResponse
     {
-        $entity = $this->em->getRepository($this->entityClass)->find($id);
+        /** @var \Doctrine\ORM\EntityRepository<object> $repository */
+        $repository = $this->em->getRepository($this->entityClass);
+        $entity = $repository->find($id);
         $dataArray = json_decode($request->getContent(), true);
 
         $dataArray = $this->cleanupData($dataArray);
@@ -291,6 +304,11 @@ abstract class ApiController extends AbstractController
         };
     }
 
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
     private function cleanupData(array $data): array
     {
         $meta = $this->em->getClassMetadata($this->entityClass);
@@ -306,6 +324,11 @@ abstract class ApiController extends AbstractController
         return $data;
     }
 
+    /**
+     * @param array<string, mixed> $dataArray
+     *
+     * @return array<string, mixed>
+     */
     private function collectionRelationIds(array $dataArray): array
     {
         foreach ($this->relations as $relation => $config) {
@@ -323,7 +346,7 @@ abstract class ApiController extends AbstractController
         return $dataArray;
     }
 
-    private function handleRelations($entity): self
+    private function handleRelations(object $entity): self
     {
         foreach ($this->relations as $relation => $config) {
             if (in_array($config['type'], [4, 8])) {
@@ -336,7 +359,10 @@ abstract class ApiController extends AbstractController
         return $this;
     }
 
-    private function handleMultipleRelation($relation, $config, $entity): self
+    /**
+     * @param array{type: int, entityName: string, methodName?: string} $config
+     */
+    private function handleMultipleRelation(string $relation, array $config, object $entity): self
     {
         // Nur wenn tatsächlich neue Daten für diese Relation vorhanden sind
         if (!isset($this->relationEntries[$relation])) {
@@ -351,8 +377,10 @@ abstract class ApiController extends AbstractController
         }
 
         if (!empty($this->relationEntries[$relation])) {
+            /** @var class-string $className */
             $className = sprintf('\App\Entity\%s', $entityName);
-            $entries = $this->em->getRepository($className)->findBy(['id' => $this->relationEntries[$relation]]);
+            $repository = $this->em->getRepository($className);
+            $entries = $repository->findBy(['id' => $this->relationEntries[$relation]]);
 
             foreach ($entries as $entry) {
                 $entity->{'add' . $methodName}($entry);
@@ -362,7 +390,10 @@ abstract class ApiController extends AbstractController
         return $this;
     }
 
-    private function handleSingleRelation($relation, $config, $entity): self
+    /**
+     * @param array{type: int, entityName: string, methodName?: string, fieldName?: string} $config
+     */
+    private function handleSingleRelation(string $relation, array $config, object $entity): self
     {
         $entityName = ucfirst($config['entityName']);
         $methodName = $config['methodName'] ?? $entityName;
@@ -378,9 +409,11 @@ abstract class ApiController extends AbstractController
         }
 
         if (isset($this->relationEntries[$relation])) {
+            /** @var class-string $className */
             $className = sprintf('\App\Entity\%s', $entityName);
             try {
-                $entry = $this->em->getRepository($className)->find($this->relationEntries[$relation]);
+                $repository = $this->em->getRepository($className);
+                $entry = $repository->find($this->relationEntries[$relation]);
                 if ($entry instanceof $className) {
                     $entity->{'set' . $methodName}($entry);
                 } else {

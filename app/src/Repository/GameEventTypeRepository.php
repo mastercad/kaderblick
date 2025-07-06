@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<GameEventType>
+ */
 class GameEventTypeRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class GameEventTypeRepository extends ServiceEntityRepository implements Optimiz
         parent::__construct($registry, GameEventType::class);
     }
 
+    /**
+     * @return GameEventType[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('get')
@@ -24,6 +30,9 @@ class GameEventTypeRepository extends ServiceEntityRepository implements Optimiz
             ->getResult();
     }
 
+    /**
+     * @return GameEventType[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('get')
@@ -36,6 +45,9 @@ class GameEventTypeRepository extends ServiceEntityRepository implements Optimiz
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('get')
@@ -50,6 +62,9 @@ class GameEventTypeRepository extends ServiceEntityRepository implements Optimiz
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('get')

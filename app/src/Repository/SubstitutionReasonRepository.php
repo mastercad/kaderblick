@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<SubstitutionReason>
+ */
 class SubstitutionReasonRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class SubstitutionReasonRepository extends ServiceEntityRepository implements Op
         parent::__construct($registry, SubstitutionReason::class);
     }
 
+    /**
+     * @return SubstitutionReason[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('sr')
@@ -27,6 +33,9 @@ class SubstitutionReasonRepository extends ServiceEntityRepository implements Op
             ->getResult();
     }
 
+    /**
+     * @return SubstitutionReason[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('sr')
@@ -40,6 +49,9 @@ class SubstitutionReasonRepository extends ServiceEntityRepository implements Op
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('sr')
@@ -53,6 +65,9 @@ class SubstitutionReasonRepository extends ServiceEntityRepository implements Op
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('sr')

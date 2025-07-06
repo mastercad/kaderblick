@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<SurfaceType>
+ */
 class SurfaceTypeRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class SurfaceTypeRepository extends ServiceEntityRepository implements Optimized
         parent::__construct($registry, SurfaceType::class);
     }
 
+    /**
+     * @return SurfaceType[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('s')
@@ -24,6 +30,9 @@ class SurfaceTypeRepository extends ServiceEntityRepository implements Optimized
             ->getResult();
     }
 
+    /**
+     * @return SurfaceType[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('s')
@@ -33,6 +42,9 @@ class SurfaceTypeRepository extends ServiceEntityRepository implements Optimized
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('s')
@@ -44,6 +56,9 @@ class SurfaceTypeRepository extends ServiceEntityRepository implements Optimized
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('s')

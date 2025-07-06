@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<CoachLicenseAssignment>
+ */
 class CoachLicenseAssignmentRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class CoachLicenseAssignmentRepository extends ServiceEntityRepository implement
         parent::__construct($registry, CoachLicenseAssignment::class);
     }
 
+    /**
+     * @return CoachLicenseAssignment[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('cla')
@@ -25,6 +31,9 @@ class CoachLicenseAssignmentRepository extends ServiceEntityRepository implement
             ->getResult();
     }
 
+    /**
+     * @return CoachLicenseAssignment[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('cla')
@@ -38,6 +47,9 @@ class CoachLicenseAssignmentRepository extends ServiceEntityRepository implement
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('cla')
@@ -50,6 +62,9 @@ class CoachLicenseAssignmentRepository extends ServiceEntityRepository implement
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('cla')

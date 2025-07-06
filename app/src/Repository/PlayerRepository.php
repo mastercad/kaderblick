@@ -10,6 +10,9 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<Player>
+ */
 class PlayerRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     private RoleHierarchyInterface $roleHierarchy;
@@ -22,6 +25,8 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
 
     /**
      * @param User $user
+     *
+     * @return Player[]
      */
     public function fetchFullList(?UserInterface $user = null): array
     {
@@ -54,6 +59,9 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
         return $qb->getQuery()->getResult();
     }
 
+    /**
+     * @return Player[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         $now = new DateTime();
@@ -68,6 +76,9 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('p')
@@ -80,6 +91,9 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('p')
@@ -94,6 +108,8 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
 
     /**
      * @param User $user
+     *
+     * @return array<int, Player>
      */
     public function findVisiblePlayers(?UserInterface $user = null): array
     {

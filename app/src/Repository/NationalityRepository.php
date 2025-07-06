@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<Nationality>
+ */
 class NationalityRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class NationalityRepository extends ServiceEntityRepository implements Optimized
         parent::__construct($registry, Nationality::class);
     }
 
+    /**
+     * @return Nationality[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('n')
@@ -27,6 +33,9 @@ class NationalityRepository extends ServiceEntityRepository implements Optimized
             ->getResult();
     }
 
+    /**
+     * @return Nationality[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('n')
@@ -41,6 +50,9 @@ class NationalityRepository extends ServiceEntityRepository implements Optimized
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('n')
@@ -55,6 +67,9 @@ class NationalityRepository extends ServiceEntityRepository implements Optimized
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('n')

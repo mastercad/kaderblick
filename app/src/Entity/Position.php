@@ -16,6 +16,7 @@ class Position
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['position:read', 'player:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]

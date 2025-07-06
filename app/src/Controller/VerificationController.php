@@ -6,7 +6,6 @@ use App\Entity\Coach;
 use App\Entity\Player;
 use App\Entity\User;
 use App\Repository\UserRepository;
-use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -34,7 +33,8 @@ class VerificationController extends AbstractController
     ): Response {
         $token = $request->query->get('Token');
 
-        $user = $userRepository->findUserByValidationToken($token, new DateTime());
+        // Korrigierter Aufruf mit nur einem Parameter
+        $user = $userRepository->findUserByValidationToken($token);
 
         if (!$user instanceof User) {
             return new Response('error: Ungültiger Token', 400);

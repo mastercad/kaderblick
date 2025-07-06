@@ -14,6 +14,7 @@ class Nationality
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     #[Groups(['nationality:read', 'nationality:write', 'coach:read', 'player:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 100)]
@@ -24,10 +25,12 @@ class Nationality
     #[Groups(['nationality:read', 'nationality:write'])]
     private string $isoCode; // z. B. "DEU", "FRA"
 
+    /** @var Collection<int, PlayerNationalityAssignment> */
     #[ORM\OneToMany(mappedBy: 'nationality', targetEntity: PlayerNationalityAssignment::class)]
     #[Groups(['nationality:read', 'nationality:write'])]
     private Collection $playerNationalityAssignments;
 
+    /** @var Collection<int, CoachNationalityAssignment> */
     #[ORM\OneToMany(mappedBy: 'nationality', targetEntity: CoachNationalityAssignment::class)]
     #[Groups(['nationality:read', 'nationality:write'])]
     private Collection $coachNationalityAssignments;
@@ -61,6 +64,7 @@ class Nationality
         return $this;
     }
 
+    /** @return Collection<int, PlayerNationalityAssignment> */
     public function getPlayerNationalityAssignments(): Collection
     {
         return $this->playerNationalityAssignments;
@@ -88,6 +92,7 @@ class Nationality
         return $this;
     }
 
+    /** @return Collection<int, CoachNationalityAssignment> */
     public function getCoachNationalityAssignments(): Collection
     {
         return $this->coachNationalityAssignments;

@@ -26,10 +26,8 @@ class VideoUploadController extends AbstractController
     #[Route('/upload', name: 'upload', methods: ['POST'])]
     public function upload(Request $request): JsonResponse
     {
-        /** @var UploadedFile $videoFile */
         $videoFile = $request->files->get('video');
-
-        if (!$videoFile) {
+        if (!$videoFile instanceof UploadedFile) {
             return new JsonResponse(['error' => 'No video file provided'], 400);
         }
 
@@ -112,11 +110,10 @@ class VideoUploadController extends AbstractController
     #[Route('/upload-batch', name: 'upload_batch', methods: ['POST'])]
     public function uploadBatch(Request $request): JsonResponse
     {
-        /** @var UploadedFile $video */
         $video = $request->files->get('video');
         $folderId = $request->request->get('folderId');
 
-        if (!$video || !$folderId) {
+        if (!$video instanceof UploadedFile || !$folderId) {
             return new JsonResponse(['error' => 'Invalid request data'], 400);
         }
 
@@ -142,12 +139,11 @@ class VideoUploadController extends AbstractController
     #[Route('/upload-batch-chunked', name: 'upload_batch_chunked', methods: ['POST'])]
     public function uploadBatchChunked(Request $request): JsonResponse
     {
-        /** @var UploadedFile $video */
         $video = $request->files->get('video');
         $folderId = $request->request->get('folderId');
         $force = 'true' === $request->request->get('force');
 
-        if (!$video || !$folderId) {
+        if (!$video instanceof UploadedFile || !$folderId) {
             return new JsonResponse(['error' => 'Invalid request data'], 400);
         }
 

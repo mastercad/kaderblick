@@ -54,7 +54,12 @@ class CalendarController extends AbstractController
         $calendarEvents = $calendarEventRepository->findBetweenDates($start, $end);
 
         $formattedEvents = array_map(function ($calendarEvent) {
-            $endDate = $calendarEvent->getEndDate() ?: (clone $calendarEvent->getStartDate())->setTime(23, 59, 59);
+            $endDate = $calendarEvent->getEndDate();
+            if (!$endDate) {
+                $endDate = new DateTime();
+                $endDate->setTimestamp($calendarEvent->getStartDate()->getTimestamp());
+                $endDate->modify('23:59:59');
+            }
 
             return [
                 'id' => $calendarEvent->getId(),
@@ -89,13 +94,6 @@ class CalendarController extends AbstractController
         }, $calendarEvents);
 
         return $this->json($formattedEvents);
-
-        return $this->json($calendarEvents, 200, [], [
-            'groups' => ['calendar_event:read'],
-            'circular_reference_handler' => function ($object) {
-                return $object->getId();
-            },
-        ]);
     }
 
     #[Route('/upcoming', name: 'upcoming', methods: ['GET'])]
@@ -152,6 +150,19 @@ class CalendarController extends AbstractController
         return $this->json(['success' => true]);
     }
 
+    /**
+     * @param array{
+     *     title?: string,
+     *     description?: string,
+     *     startDate: string,
+     *     endDate?: string,
+     *     typeId?: int,
+     *     locationId?: string,
+     *     homeTeamId?: string,
+     *     awayTeamId?: string,
+     *     gameTypeId?: string
+     * } $data
+     */
     private function updateEventFromData(CalendarEvent $calendarEvent, array $data): void
     {
         $calendarEvent->setTitle($data['title'] ?? $calendarEvent->getTitle());
@@ -209,6 +220,7 @@ class CalendarController extends AbstractController
         $this->entityManager->flush();
     }
 
+    /** @return array<int, string> */
     private function loadEventRecipients(CalendarEvent $calendarEvent): array
     {
         return $this->entityManager->getRepository(User::class)

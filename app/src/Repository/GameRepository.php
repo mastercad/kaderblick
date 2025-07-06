@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<Game>
+ */
 class GameRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class GameRepository extends ServiceEntityRepository implements OptimizedReposit
         parent::__construct($registry, Game::class);
     }
 
+    /**
+     * @return Game[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('g')
@@ -27,6 +33,9 @@ class GameRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getResult();
     }
 
+    /**
+     * @return Game[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('g')
@@ -45,6 +54,9 @@ class GameRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('g')
@@ -61,6 +73,9 @@ class GameRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('g')

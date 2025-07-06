@@ -62,6 +62,7 @@ class GoogleDriveAdapter
         $this->driveService->files->delete($fileId);
     }
 
+    /** @return array<int, DriveFile> */
     public function listFiles(): array
     {
         $response = $this->driveService->files->listFiles([

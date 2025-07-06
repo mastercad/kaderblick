@@ -62,7 +62,7 @@ class UserManagementController extends AbstractController
     {
         // Prüfen ob der aktuelle Benutzer die Berechtigung hat, diese Rolle zu vergeben
         $currentUser = $this->getUser();
-        $selectedRoles = $request->request->all('roles', []);
+        $selectedRoles = $request->request->all()['roles'] ?? [];
 
         // Sicherstellen dass ROLE_USER immer gesetzt ist
         if (!in_array('ROLE_USER', $selectedRoles)) {
@@ -98,7 +98,7 @@ class UserManagementController extends AbstractController
         $clubs = $this->em->getRepository(Club::class)->findAll();
 
         // Flash Messages von vorherigen Status-Änderungen löschen
-        /** @var Session $session */
+        /** @var \Symfony\Component\HttpFoundation\Session\Session $session */
         $session = $this->requestStack->getSession();
         $session->getFlashBag()->clear();
 
@@ -211,6 +211,7 @@ class UserManagementController extends AbstractController
         return $this->json(['results' => $formatted]);
     }
 
+    /** @return array{type: string|null, entity: Player|Coach|Club|null} */
     private function getCurrentAssignment(User $user): array
     {
         if ($user->getPlayer()) {

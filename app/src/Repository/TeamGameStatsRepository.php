@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<TeamGameStats>
+ */
 class TeamGameStatsRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class TeamGameStatsRepository extends ServiceEntityRepository implements Optimiz
         parent::__construct($registry, TeamGameStats::class);
     }
 
+    /**
+     * @return TeamGameStats[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('tgs')
@@ -27,6 +33,9 @@ class TeamGameStatsRepository extends ServiceEntityRepository implements Optimiz
             ->getResult();
     }
 
+    /**
+     * @return TeamGameStats[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('tgs')
@@ -44,6 +53,9 @@ class TeamGameStatsRepository extends ServiceEntityRepository implements Optimiz
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('tgs')
@@ -58,6 +70,9 @@ class TeamGameStatsRepository extends ServiceEntityRepository implements Optimiz
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('tgs')

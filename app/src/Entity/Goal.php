@@ -14,6 +14,7 @@ class Goal
     #[ORM\GeneratedValue]
     #[Groups(['goal:read', 'game:read', 'player:read', 'team:read'])]
     #[ORM\Column(type: 'integer')]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(type: 'integer')]

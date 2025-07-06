@@ -14,6 +14,7 @@ class CalendarEventType
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['calendar_event_type:read', 'calendar_event:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -22,7 +23,7 @@ class CalendarEventType
 
     #[ORM\Column(length: 7)]
     #[Groups(['calendar_event_type:read', 'calendar_event:read'])]
-    private ?string $color = '#1a4789';  // Standard Blau
+    private string $color = '#1a4789';  // Standard Blau
 
     public function getId(): ?int
     {

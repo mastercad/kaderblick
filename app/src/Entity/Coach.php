@@ -19,6 +19,7 @@ class Coach
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['coach:read', 'coach:write', 'team:read', 'coach_team_assignment:read', 'coach_club_assignment:read', 'club:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
@@ -39,18 +40,22 @@ class Coach
     #[Assert\Email(message: 'Die E-Mail-Adresse {{ value }} ist nicht gültig.')]
     private ?string $email = null;
 
+    /** @var Collection<int, CoachTeamAssignment> */
     #[Groups(['coach:read'])]
     #[ORM\OneToMany(targetEntity: CoachTeamAssignment::class, mappedBy: 'coach', cascade: ['persist'])]
     private Collection $coachTeamAssignments;
 
+    /** @var Collection<int, CoachClubAssignment> */
     #[Groups(['coach:read'])]
     #[ORM\OneToMany(targetEntity: CoachClubAssignment::class, mappedBy: 'coach', cascade: ['persist'])]
     private Collection $coachClubAssignments;
 
+    /** @var Collection<int, CoachNationalityAssignment> */
     #[Groups(['coach:read'])]
     #[ORM\OneToMany(targetEntity: CoachNationalityAssignment::class, mappedBy: 'coach')]
     private Collection $coachNationalityAssignments;
 
+    /** @var Collection<int, CoachLicenseAssignment> */
     #[Groups(['coach:read'])]
     #[ORM\OneToMany(targetEntity: CoachLicenseAssignment::class, mappedBy: 'coach')]
     private Collection $coachLicenseAssignments;
@@ -116,6 +121,7 @@ class Coach
         return $this;
     }
 
+    /** @return Collection<int, CoachTeamAssignment> */
     public function getCoachTeamAssignments(): Collection
     {
         return $this->coachTeamAssignments;
@@ -142,6 +148,7 @@ class Coach
         return $this;
     }
 
+    /** @return Collection<int, CoachClubAssignment> */
     public function getCoachClubAssignments(): Collection
     {
         return $this->coachClubAssignments;
@@ -168,6 +175,7 @@ class Coach
         return $this;
     }
 
+    /** @return Collection<int, CoachNationalityAssignment> */
     public function getCoachNationalityAssignments(): Collection
     {
         return $this->coachNationalityAssignments;
@@ -194,6 +202,7 @@ class Coach
         return $this;
     }
 
+    /** @return Collection<int, CoachLicenseAssignment> */
     public function getCoachLicenseAssignments(): Collection
     {
         return $this->coachLicenseAssignments->filter(function (CoachLicenseAssignment $coachLicenseAssignment) {
@@ -222,6 +231,7 @@ class Coach
         return $this;
     }
 
+    /** @return Collection<int, CoachLicenseAssignment> */
     public function getActiveCoachLicenseAssignments(): Collection
     {
         $today = new DateTimeImmutable();

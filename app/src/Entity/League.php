@@ -15,12 +15,14 @@ class League
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['league:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['league:read'])]
     private ?string $name = null;
 
+    /** @var Collection<int, Team> */
     #[ORM\OneToMany(mappedBy: 'league', targetEntity: Team::class)]
     private Collection $teams;
 
@@ -46,6 +48,7 @@ class League
         return $this;
     }
 
+    /** @return Collection<int, Team> */
     public function getTeams(): Collection
     {
         return $this->teams;

@@ -8,6 +8,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<PlayerTeamAssignment>
+ */
 class PlayerTeamAssignmentRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -15,6 +18,9 @@ class PlayerTeamAssignmentRepository extends ServiceEntityRepository implements 
         parent::__construct($registry, PlayerTeamAssignment::class);
     }
 
+    /**
+     * @return PlayerTeamAssignment[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         $now = new DateTime();
@@ -31,6 +37,9 @@ class PlayerTeamAssignmentRepository extends ServiceEntityRepository implements 
             ->getResult();
     }
 
+    /**
+     * @return PlayerTeamAssignment[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         $now = new DateTime();
@@ -47,6 +56,9 @@ class PlayerTeamAssignmentRepository extends ServiceEntityRepository implements 
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('pta')
@@ -60,6 +72,9 @@ class PlayerTeamAssignmentRepository extends ServiceEntityRepository implements 
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('pta')

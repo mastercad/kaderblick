@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<StrongFoot>
+ */
 class StrongFootRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class StrongFootRepository extends ServiceEntityRepository implements OptimizedR
         parent::__construct($registry, StrongFoot::class);
     }
 
+    /**
+     * @return StrongFoot[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('sf')
@@ -24,6 +30,9 @@ class StrongFootRepository extends ServiceEntityRepository implements OptimizedR
             ->getResult();
     }
 
+    /**
+     * @return StrongFoot[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('sf')
@@ -36,6 +45,9 @@ class StrongFootRepository extends ServiceEntityRepository implements OptimizedR
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('sf')
@@ -47,6 +59,9 @@ class StrongFootRepository extends ServiceEntityRepository implements OptimizedR
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('sf')

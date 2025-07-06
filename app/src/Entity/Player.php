@@ -20,6 +20,7 @@ class Player
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     #[Groups(['player:read', 'player:write', 'team:read', 'goal:read', 'player_team_assignment:read', 'player_club_assignment:read', 'club:read', 'game_event:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[Groups(['player:read', 'player:write', 'team:read', 'goal:read', 'player_team_assignment:read', 'player_club_assignment:read', 'club:read', 'game_event:read'])]
@@ -76,31 +77,38 @@ class Player
     #[ORM\JoinColumn(nullable: false)]
     private Position $mainPosition;
 
+    /** @var Collection<int, Position> */
     #[Groups(['player:read', 'player:write'])]
     #[ORM\ManyToMany(targetEntity: Position::class)]
     #[ORM\JoinTable(name: 'player_alternative_positions')]
     private Collection $alternativePositions;
 
+    /** @var Collection<int, Goal> */
     #[Groups(['player:read'])]
     #[ORM\OneToMany(targetEntity: Goal::class, mappedBy: 'scorer')]
     private Collection $goals;
 
+    /** @var Collection<int, Goal> */
     #[Groups(['player:read'])]
     #[ORM\OneToMany(targetEntity: Goal::class, mappedBy: 'assistBy')]
     private Collection $assistsProvided;
 
+    /** @var Collection<int, GameEvent> */
     #[Groups(['player:read'])]
     #[ORM\OneToMany(targetEntity: GameEvent::class, mappedBy: 'player')]
     private Collection $gameEvents;
 
+    /** @var Collection<int, PlayerTeamAssignment> */
     #[Groups(['player:read'])]
     #[ORM\OneToMany(targetEntity: PlayerTeamAssignment::class, mappedBy: 'player', cascade: ['persist'])]
     private Collection $playerTeamAssignments;
 
+    /** @var Collection<int, PlayerClubAssignment> */
     #[Groups(['player:read'])]
     #[ORM\OneToMany(targetEntity: PlayerClubAssignment::class, mappedBy: 'player', cascade: ['persist'])]
     private Collection $playerClubAssignments;
 
+    /** @var Collection<int, PlayerNationalityAssignment> */
     #[Groups(['player:read'])]
     #[ORM\OneToMany(targetEntity: PlayerNationalityAssignment::class, mappedBy: 'player')]
     private Collection $playerNationalityAssignments;
@@ -167,6 +175,7 @@ class Player
         return $this;
     }
 
+    /** @return Collection<int, PlayerTeamAssignment> */
     public function getPlayerTeamAssignments(): Collection
     {
         return $this->playerTeamAssignments;
@@ -193,6 +202,7 @@ class Player
         return $this;
     }
 
+    /** @return Collection<int, PlayerClubAssignment> */
     public function getPlayerClubAssignments(): Collection
     {
         return $this->playerClubAssignments;
@@ -240,6 +250,7 @@ class Player
         return $this;
     }
 
+    /** @return Collection<int, Goal> */
     public function getAssistsProvided(): Collection
     {
         return $this->assistsProvided;
@@ -266,6 +277,7 @@ class Player
         return $this;
     }
 
+    /** @return Collection<int, PlayerNationalityAssignment> */
     public function getPlayerNationalityAssignments(): Collection
     {
         return $this->playerNationalityAssignments;
@@ -316,6 +328,7 @@ class Player
         return $this;
     }
 
+    /** @return Collection<int, Position> */
     public function getAlternativePositions(): Collection
     {
         return $this->alternativePositions;
@@ -361,6 +374,7 @@ class Player
         return $this;
     }
 
+    /** @return Collection<int, GameEvent> */
     public function getGameEvents(): Collection
     {
         return $this->gameEvents;
@@ -387,6 +401,7 @@ class Player
         return $this;
     }
 
+    /** @return array<int, GameEvent> */
     public function getEventsByType(string $eventTypeCode): array
     {
         return $this->gameEvents
@@ -396,62 +411,25 @@ class Player
             ->toArray();
     }
 
+    /** @return array<int, GameEvent> */
     public function getYellowCards(): array
     {
         return $this->getEventsByType('yellow_card');
     }
 
+    /** @return array<int, GameEvent> */
     public function getRedCards(): array
     {
         return $this->getEventsByType('red_card');
     }
 
+    /** @return array<int, GameEvent> */
     public function getGoals(): array
     {
         return $this->getEventsByType('goal');
     }
 
-    public function getAge(): ?int
-    {
-        if (!$this->birthdate) {
-            return null;
-        }
-
-        return $this->birthdate->diff(new DateTime())->y;
-    }
-
-    public function getCurrentTeam(): ?Team
-    {
-        $now = new DateTime();
-
-        foreach ($this->playerTeamAssignments as $assignment) {
-            if (
-                $assignment->getStartDate() <= $now
-                && (null === $assignment->getEndDate() || $assignment->getEndDate() >= $now)
-            ) {
-                return $assignment->getTeam();
-            }
-        }
-
-        return null;
-    }
-
-    public function getCurrentClub(): ?Club
-    {
-        $now = new DateTime();
-
-        foreach ($this->playerClubAssignments as $assignment) {
-            if (
-                $assignment->getStartDate() <= $now
-                && (null === $assignment->getEndDate() || $assignment->getEndDate() >= $now)
-            ) {
-                return $assignment->getClub();
-            }
-        }
-
-        return null;
-    }
-
+    /** @return array<int, Nationality> */
     public function getCurrentNationalities(): array
     {
         $now = new DateTime();

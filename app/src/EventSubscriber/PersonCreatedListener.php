@@ -27,15 +27,13 @@ class PersonCreatedListener
 
         // Prüfen ob bereits ein User mit dieser E-Mail existiert
         $user = $entityManager->getRepository(User::class)->findOneBy(['email' => $player->getEmail()]);
+
         if (!$user) {
             return;
         }
 
-        // User mit dem Player/Coach verknüpfen
-        if ($player instanceof Player) {
-            $user->setClub(null);
-            $user->setPlayer($player);
-        }
+        $user->setClub(null);
+        $user->setPlayer($player);
 
         $entityManager->persist($user);
         $entityManager->flush();
@@ -52,15 +50,13 @@ class PersonCreatedListener
 
         // Prüfen ob bereits ein User mit dieser E-Mail existiert
         $user = $entityManager->getRepository(User::class)->findOneBy(['email' => $player->getEmail()]);
+
         if (!$user) {
             return;
         }
 
-        // User mit dem Player/Coach verknüpfen
-        if ($player instanceof Player) {
-            $user->setClub(null);
-            $user->setPlayer($player);
-        }
+        $user->setClub(null);
+        $user->setPlayer($player);
 
         $entityManager->persist($user);
         $entityManager->flush();
@@ -77,15 +73,13 @@ class PersonCreatedListener
 
         // Prüfen ob bereits ein User mit dieser E-Mail existiert
         $user = $entityManager->getRepository(User::class)->findOneBy(['email' => $coach->getEmail()]);
+
         if (!$user) {
             return;
         }
 
-        // User mit dem Player/Coach verknüpfen
-        if ($coach instanceof Player) {
-            $user->setClub(null);
-            $user->setCoach($coach);
-        }
+        $user->setClub(null);
+        $user->setCoach($coach);
 
         $entityManager->persist($user);
         $entityManager->flush();
@@ -102,15 +96,13 @@ class PersonCreatedListener
 
         // Prüfen ob bereits ein User mit dieser E-Mail existiert
         $user = $entityManager->getRepository(User::class)->findOneBy(['email' => $coach->getEmail()]);
+
         if (!$user) {
             return;
         }
 
-        // User mit dem Player/Coach verknüpfen
-        if ($coach instanceof Player) {
-            $user->setClub(null);
-            $user->setCoach($coach);
-        }
+        $user->setClub(null);
+        $user->setCoach($coach);
 
         $entityManager->persist($user);
         $entityManager->flush();

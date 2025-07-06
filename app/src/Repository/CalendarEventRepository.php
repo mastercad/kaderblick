@@ -11,6 +11,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<CalendarEvent>
+ */
 class CalendarEventRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -18,6 +21,9 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
         parent::__construct($registry, CalendarEvent::class);
     }
 
+    /**
+     * @return CalendarEvent[]
+     */
     public function findUpcoming(): array
     {
         return $this->createQueryBuilder('ce')
@@ -29,6 +35,9 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
             ->getResult();
     }
 
+    /**
+     * @return CalendarEvent[]
+     */
     public function findBetweenDates(DateTime $start, DateTime $end): array
     {
         return $this->createQueryBuilder('ce')
@@ -41,6 +50,9 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
             ->getResult();
     }
 
+    /**
+     * @return CalendarEvent[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('ce')
@@ -52,6 +64,9 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
             ->getResult();
     }
 
+    /**
+     * @return CalendarEvent[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('ce')
@@ -63,6 +78,9 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('ce')
@@ -76,6 +94,9 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('ce')

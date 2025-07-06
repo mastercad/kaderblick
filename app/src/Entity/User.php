@@ -17,22 +17,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    private $id;
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
+    private int $id;
 
     #[ORM\Column(type: 'string', unique: true)]
-    private $email;
+    private string $email;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $firstName;
+    private string $firstName;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $lastName;
+    private string $lastName;
 
+    /** @var array<string> */
     #[ORM\Column(type: 'json')]
-    private $roles = [];
+    private array $roles = [];
 
     #[ORM\Column(type: 'string')]
-    private $password;
+    private string $password;
 
     #[ORM\Column(type: 'boolean')]
     private bool $isVerified = false;
@@ -163,6 +165,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return array_unique($roles);
     }
 
+    /**
+     * @param array<string> $roles
+     */
     public function setRoles(array $roles): self
     {
         $this->roles = $roles;

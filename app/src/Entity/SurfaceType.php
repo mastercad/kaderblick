@@ -18,6 +18,7 @@ class SurfaceType
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['surface_type:read', 'location:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
@@ -28,6 +29,7 @@ class SurfaceType
     #[Groups(['surface_type:read', 'surface_type:write'])]
     private ?string $description = null;
 
+    /** @var Collection<int, Location> */
     #[ORM\OneToMany(mappedBy: 'surfaceType', targetEntity: Location::class)]
     private Collection $locations;
 
@@ -65,6 +67,7 @@ class SurfaceType
         return $this;
     }
 
+    /** @return Collection<int, Location> */
     public function getLocations(): Collection
     {
         return $this->locations;

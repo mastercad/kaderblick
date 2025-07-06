@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<Club>
+ */
 class ClubRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class ClubRepository extends ServiceEntityRepository implements OptimizedReposit
         parent::__construct($registry, Club::class);
     }
 
+    /**
+     * @return Club[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('c')
@@ -25,6 +31,9 @@ class ClubRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getResult();
     }
 
+    /**
+     * @return Club[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('c')
@@ -37,6 +46,9 @@ class ClubRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('c')
@@ -49,6 +61,9 @@ class ClubRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('c')

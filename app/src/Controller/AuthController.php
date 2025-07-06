@@ -55,7 +55,7 @@ class AuthController extends AbstractController
                 true,
                 true,
                 false,
-                'Strict'
+                'strict'
             ),
         );
 
@@ -69,7 +69,7 @@ class AuthController extends AbstractController
                 true,
                 true,
                 false,
-                'Strict'
+                'strict'
             ),
         );
 
@@ -89,7 +89,7 @@ class AuthController extends AbstractController
     }
 
     #[Route(path: '/token/refresh', name: 'token_refresh')]
-    public function refreshTokenAction(Request $request, EntityManagerInterface $em, JWTManager $jwtManager)
+    public function refreshTokenAction(Request $request, EntityManagerInterface $em, JWTManager $jwtManager): JsonResponse
     {
         $refreshTokenString = $request->cookies->get('jwt_refresh_token');
 

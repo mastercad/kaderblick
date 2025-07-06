@@ -16,5 +16,4 @@ class PlayerClubAssignmentsController extends ApiController
         'player' => ['type' => 2, 'entityName' => 'Player'],
         'club' => ['type' => 2, 'entityName' => 'Club']
     ];
-    protected array $relationEntries = [];
 }

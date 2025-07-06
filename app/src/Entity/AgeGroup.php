@@ -22,6 +22,7 @@ class AgeGroup
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     #[Groups(['age_group:read', 'team:read', 'club:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 50, unique: true)]

@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<PlayerNationalityAssignment>
+ */
 class PlayerNationalityAssignmentRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class PlayerNationalityAssignmentRepository extends ServiceEntityRepository impl
         parent::__construct($registry, PlayerNationalityAssignment::class);
     }
 
+    /**
+     * @return PlayerNationalityAssignment[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('pna')
@@ -27,6 +33,9 @@ class PlayerNationalityAssignmentRepository extends ServiceEntityRepository impl
             ->getResult();
     }
 
+    /**
+     * @return PlayerNationalityAssignment[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('pna')
@@ -40,6 +49,9 @@ class PlayerNationalityAssignmentRepository extends ServiceEntityRepository impl
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('pna')
@@ -52,6 +64,9 @@ class PlayerNationalityAssignmentRepository extends ServiceEntityRepository impl
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('pna')

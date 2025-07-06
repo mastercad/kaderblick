@@ -27,6 +27,7 @@ class PlayerTeamAssignmentType
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     #[Groups(['player_team_assignment_type:read', 'player_team_assignment:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private int $id;
 
     #[Groups(['player_team_assignment_type:read', 'player_team_assignment:read'])]
@@ -40,6 +41,7 @@ class PlayerTeamAssignmentType
     #[ORM\Column(type: 'boolean')]
     private bool $active = true;
 
+    /** @var Collection<int, PlayerTeamAssignment> */
     #[ORM\OneToMany(targetEntity: PlayerTeamAssignment::class, mappedBy: 'playerTeamAssignmentType')]
     private Collection $playerTeamAssignments;
 
@@ -83,6 +85,7 @@ class PlayerTeamAssignmentType
         $this->active = $active;
     }
 
+    /** @return Collection<int, PlayerTeamAssignment> */
     public function getPlayerTeamAssignments(): Collection
     {
         return $this->playerTeamAssignments;

@@ -14,12 +14,14 @@ class Message
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: false)]
     private User $sender;
 
+    /** @var Collection<int, User> */
     #[ORM\ManyToMany(targetEntity: User::class)]
     #[ORM\JoinTable(name: 'message_recipients')]
     private Collection $recipients;
@@ -33,6 +35,7 @@ class Message
     #[ORM\Column(type: 'datetime')]
     private DateTime $sentAt;
 
+    /** @var array<int, int> User IDs that have read the message */
     #[ORM\Column(type: 'json')]
     private array $readBy = [];
 
@@ -60,6 +63,7 @@ class Message
         return $this;
     }
 
+    /** @return Collection<int, User> */
     public function getRecipients(): Collection
     {
         return $this->recipients;

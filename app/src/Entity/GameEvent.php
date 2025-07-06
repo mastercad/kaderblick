@@ -16,6 +16,7 @@ class GameEvent
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     #[Groups(['game_event:read', 'game_event:write', 'team:read', 'game:read', 'calendar_event:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Game::class, inversedBy: 'gameEvents')]
@@ -26,7 +27,7 @@ class GameEvent
     #[ORM\ManyToOne(targetEntity: GameEventType::class, inversedBy: 'gameEvents')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['game_event:read', 'game_event:write', 'game:read', 'calendar_event:read'])]
-    private GameEventType $gameEventType;
+    private ?GameEventType $gameEventType;
 
     #[ORM\ManyToOne(targetEntity: Player::class, inversedBy: 'gameEvents')]
     #[ORM\JoinColumn(nullable: true)]
@@ -41,7 +42,7 @@ class GameEvent
     #[ORM\Column(type: 'datetime')]
     #[Groups(['game_event:read', 'game_event:write'])]
     #[Context(normalizationContext: ['datetime_format' => 'd.m.Y H:i:s'])]
-    private ?DateTimeInterface $timestamp;
+    private DateTimeInterface $timestamp;
 
     #[Groups(['game_event:read', 'game_event:write'])]
     #[ORM\Column(type: 'text', nullable: true)]
@@ -74,12 +75,12 @@ class GameEvent
         return $this;
     }
 
-    public function getGameEventType(): GameEventType
+    public function getGameEventType(): ?GameEventType
     {
         return $this->gameEventType;
     }
 
-    public function setGameEventType(GameEventType $gameEventType): self
+    public function setGameEventType(?GameEventType $gameEventType): self
     {
         $this->gameEventType = $gameEventType;
 
@@ -182,9 +183,7 @@ class GameEvent
             $output .= ' - ' . $this->player->__toString();
         }
 
-        if ($this->timestamp) {
-            $output .= ' (' . $this->timestamp->format('H:i') . ' Uhr)';
-        }
+        $output .= ' (' . $this->timestamp->format('H:i') . ' Uhr)';
 
         return $output;
     }

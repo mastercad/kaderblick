@@ -14,6 +14,7 @@ class CoachLicense
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER)]
     #[Groups(['coach_license:read', 'coach_license:write', 'coach_license_assignment:read', 'coach:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]

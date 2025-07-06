@@ -16,6 +16,7 @@ class CalendarEvent
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['calendar_event:read', 'game:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]

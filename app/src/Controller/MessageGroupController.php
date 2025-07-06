@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/api/message-groups')]
@@ -37,10 +38,15 @@ class MessageGroupController extends AbstractController
     public function create(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
+        /** @var User|null $user */
+        $user = $this->getUser();
 
+        if (!$user instanceof User) {
+            throw new UnauthorizedHttpException('Unauthorized');
+        }
         $group = new MessageGroup();
         $group->setName($data['name']);
-        $group->setOwner($this->getUser());
+        $group->setOwner($user);
 
         if (!empty($data['memberIds'])) {
             $members = $this->entityManager->getRepository(User::class)

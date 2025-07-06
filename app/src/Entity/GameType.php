@@ -15,6 +15,7 @@ class GameType
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[Groups(['game_type:read', 'game_type:write', 'game:read', 'calendar_event:read'])]
@@ -25,6 +26,7 @@ class GameType
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
 
+    /** @var Collection<int, Game> */
     #[Groups(['game_type:read', 'game_type:write'])]
     #[ORM\OneToMany(mappedBy: 'gameType', targetEntity: Game::class)]
     private Collection $games;
@@ -63,6 +65,7 @@ class GameType
         return $this->description;
     }
 
+    /** @return Collection<int, Game> */
     public function getGames(): Collection
     {
         return $this->games;

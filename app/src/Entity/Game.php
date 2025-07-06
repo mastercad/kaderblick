@@ -20,6 +20,7 @@ class Game
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     #[Groups(['game:read', 'game:write', 'team:read', 'player:read', 'game_event:read', 'calendar_event:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private int $id;
 
     #[Groups(['game:read', 'game:write', 'game_event:read', 'calendar_event:read'])]
@@ -33,22 +34,25 @@ class Game
     #[Groups(['game:read', 'game:write', 'game_event:read'])]
     #[Assert\NotNull(message: 'Das Spieldatum darf nicht leer sein.')]
     #[Context(normalizationContext: ['datetime_format' => 'd.m.Y H:i'])]
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?DateTimeInterface $date;
+    #[ORM\Column(type: 'datetime')]
+    private DateTimeInterface $date;
 
     #[Groups(['game:read', 'game:write', 'game_event:read', 'calendar_event:read'])]
     #[ORM\ManyToOne(targetEntity: GameType::class, inversedBy: 'games')]
     #[ORM\JoinColumn(nullable: false)]
     private GameType $gameType;
 
+    /** @var Collection<int, Goal> */
     #[Groups(['game:read', 'game:write'])]
     #[ORM\OneToMany(mappedBy: 'game', targetEntity: Goal::class)]
     private Collection $goals;
 
+    /** @var Collection<int, GameEvent> */
     #[Groups(['game:read', 'game:write'])]
     #[ORM\OneToMany(mappedBy: 'game', targetEntity: GameEvent::class)]
     private Collection $gameEvents;
 
+    /** @var Collection<int, Substitution> */
     #[Groups(['game:read', 'game:write'])]
     #[ORM\OneToMany(mappedBy: 'game', targetEntity: Substitution::class)]
     private Collection $substitutions;
@@ -121,6 +125,7 @@ class Game
         return $this;
     }
 
+    /** @return Collection<int, GameEvent> */
     public function getGameEvents(): Collection
     {
         return $this->gameEvents;
@@ -161,6 +166,7 @@ class Game
         return $this;
     }
 
+    /** @return Collection<int, Goal> */
     public function getGoals(): Collection
     {
         return $this->goals;
@@ -188,6 +194,7 @@ class Game
         return $this;
     }
 
+    /** @return Collection<int, Substitution> */
     public function getSubstitutions(): Collection
     {
         return $this->substitutions;
@@ -273,33 +280,6 @@ class Game
         $this->location = $location;
 
         return $this;
-    }
-
-    #[ORM\PrePersist]
-    #[ORM\PreUpdate]
-    public function updateScores(): void
-    {
-        $homeScore = 0;
-        $awayScore = 0;
-
-        foreach ($this->goals as $goal) {
-            if ($goal->getTeam() === $this->homeTeam) {
-                if (!$goal->isOwnGoal()) {
-                    ++$homeScore;
-                } else {
-                    ++$awayScore;
-                }
-            } else {
-                if (!$goal->isOwnGoal()) {
-                    ++$awayScore;
-                } else {
-                    ++$homeScore;
-                }
-            }
-        }
-
-        $this->homeScore = $homeScore;
-        $this->awayScore = $awayScore;
     }
 
     public function __toString()

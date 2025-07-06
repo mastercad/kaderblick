@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<CalendarEventType>
+ */
 class CalendarEventTypeRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class CalendarEventTypeRepository extends ServiceEntityRepository implements Opt
         parent::__construct($registry, CalendarEventType::class);
     }
 
+    /**
+     * @return CalendarEventType[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('t')
@@ -24,6 +30,9 @@ class CalendarEventTypeRepository extends ServiceEntityRepository implements Opt
             ->getResult();
     }
 
+    /**
+     * @return CalendarEventType[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('t')
@@ -33,6 +42,9 @@ class CalendarEventTypeRepository extends ServiceEntityRepository implements Opt
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('t')
@@ -44,6 +56,9 @@ class CalendarEventTypeRepository extends ServiceEntityRepository implements Opt
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('t')

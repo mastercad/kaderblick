@@ -26,11 +26,12 @@ class SubstitutionReason
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['substitution_reason:read', 'substitution_reason:write', 'game:read', 'game_event:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[Groups(['substitution_reason:read', 'substitution_reason:write', 'game:read', 'game_event:read'])]
     #[ORM\Column(length: 255)]
-    private ?string $name;
+    private string $name;
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
@@ -38,6 +39,7 @@ class SubstitutionReason
     #[ORM\Column(type: 'boolean')]
     private bool $active = true;
 
+    /** @var Collection<int, Substitution> */
     #[Groups(['substitution_reason:read'])]
     #[ORM\OneToMany(targetEntity: Substitution::class, mappedBy: 'substitutionReason')]
     private Collection $substitutions;
@@ -88,6 +90,7 @@ class SubstitutionReason
         return $this;
     }
 
+    /** @return Collection<int, Substitution> */
     public function getSubstitutions(): Collection
     {
         return $this->substitutions;

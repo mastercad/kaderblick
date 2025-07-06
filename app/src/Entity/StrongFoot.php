@@ -17,6 +17,7 @@ class StrongFoot
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['strong_foot:read', 'player:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(length: 20, unique: true)]
@@ -27,6 +28,7 @@ class StrongFoot
     #[Groups(['strong_foot:read', 'strong_foot:write', 'player:read'])]
     private string $name;
 
+    /** @var Collection<int, Player> */
     #[ORM\OneToMany(mappedBy: 'strongFoot', targetEntity: Player::class, fetch: 'EXTRA_LAZY')]
     private Collection $players;
 
@@ -62,6 +64,14 @@ class StrongFoot
         $this->name = $name;
 
         return $this;
+    }
+
+    /**
+     * @return Collection<int, Player>
+     */
+    public function getPlayers(): Collection
+    {
+        return $this->players;
     }
 
     public function __toString(): string

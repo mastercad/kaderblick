@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<GameType>
+ */
 class GameTypeRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class GameTypeRepository extends ServiceEntityRepository implements OptimizedRep
         parent::__construct($registry, GameType::class);
     }
 
+    /**
+     * @return GameType[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('gt')
@@ -26,6 +32,9 @@ class GameTypeRepository extends ServiceEntityRepository implements OptimizedRep
             ->getResult();
     }
 
+    /**
+     * @return GameType[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('gt')
@@ -38,6 +47,9 @@ class GameTypeRepository extends ServiceEntityRepository implements OptimizedRep
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('gt')
@@ -51,6 +63,9 @@ class GameTypeRepository extends ServiceEntityRepository implements OptimizedRep
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('gt')

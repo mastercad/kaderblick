@@ -45,10 +45,8 @@ class JWTExceptionSubscriber
             return;
         }
 
+        /** @var User $validToken */
         $validToken = $this->refreshTokenService->validateRefreshToken($refreshToken);
-        if (!$validToken) {
-            return;
-        }
 
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $validToken->getEmail()]);
         if (!$user) {
@@ -73,7 +71,7 @@ class JWTExceptionSubscriber
                 true,
                 true,
                 false,
-                'Strict'
+                'strict'
             ),
         );
 
@@ -87,7 +85,7 @@ class JWTExceptionSubscriber
                 true,
                 true,
                 false,
-                'Strict'
+                'strict'
             ),
         );
 

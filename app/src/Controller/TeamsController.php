@@ -11,6 +11,7 @@ class TeamsController extends ApiController
     protected string $entityName = 'Team';
     protected string $entityNamePlural = 'Teams';
     protected string $entityClass = Team::class;
+
     protected array $relations = [
         'ageGroup' => ['type' => 2, 'entityName' => 'AgeGroup'],
         'clubs' => ['type' => 4, 'entityName' => 'Club'],

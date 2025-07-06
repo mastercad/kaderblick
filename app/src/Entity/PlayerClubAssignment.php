@@ -15,6 +15,7 @@ class PlayerClubAssignment
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     #[Groups(['player_club_assignment:read', 'player_club_assignment:write', 'club:read', 'player:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[Groups(['player_club_assignment:read', 'player_club_assignment:write', 'club:read'])]
@@ -108,14 +109,12 @@ class PlayerClubAssignment
 
     public function __toString(): string
     {
-        $end = $this->endDate ? ' bis ' . $this->endDate->format('d.m.Y') : '';
-
         return sprintf(
-            '%s bei %s (seit %s%s)',
-            $this->player?->getFullName() ?? 'Unbekannter Spieler',
-            $this->club?->getName() ?? 'Unbekannter Verein',
-            $this->startDate?->format('d.m.Y') ?? 'unbekannt',
-            $end
+            '%s @ %s (%s - %s)',
+            $this->player->getFullName(),
+            $this->club->getName(),
+            $this->startDate->format('d.m.Y'),
+            $this->endDate ? $this->endDate->format('d.m.Y') : 'aktiv'
         );
     }
 }

@@ -13,6 +13,7 @@ class MessageGroup
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -22,6 +23,7 @@ class MessageGroup
     #[ORM\JoinColumn(nullable: false)]
     private User $owner;
 
+    /** @var Collection<int, User> */
     #[ORM\ManyToMany(targetEntity: User::class)]
     #[ORM\JoinTable(name: 'message_group_members')]
     private Collection $members;
@@ -61,6 +63,7 @@ class MessageGroup
         return $this;
     }
 
+    /** @return Collection<int, User> */
     public function getMembers(): Collection
     {
         return $this->members;

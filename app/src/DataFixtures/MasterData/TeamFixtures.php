@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DataFixtures;
+namespace App\DataFixtures\MasterData;
 
 use App\Entity\AgeGroup;
 use App\Entity\League;
@@ -21,8 +21,6 @@ class TeamFixtures extends Fixture implements DependentFixtureInterface
 
     public function load(ObjectManager $manager): void
     {
-        return;
-
         $teams = [
             ['name' => 'FC Musterdorf', 'league' => 'kreisliga_a', 'ageGroup' => 'senioren'],
             ['name' => 'SV Beispielhausen', 'league' => 'kreisliga_b', 'ageGroup' => 'senioren'],

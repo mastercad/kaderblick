@@ -16,6 +16,7 @@ class Club
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['club:read', 'club:write', 'team:read', 'coach:read', 'coach_club_assignment:read', 'player_club_assignment:read', 'player:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -61,14 +62,17 @@ class Club
     #[ORM\Column(type: 'boolean')]
     private bool $active = true;
 
+    /** @var Collection<int, PlayerClubAssignment> */
     #[Groups(['club:read'])]
     #[ORM\OneToMany(mappedBy: 'club', targetEntity: PlayerClubAssignment::class, cascade: ['persist', 'remove'])]
     private Collection $playerClubAssignments;
 
+    /** @var Collection<int, CoachClubAssignment> */
     #[Groups(['club:read'])]
     #[ORM\OneToMany(mappedBy: 'club', targetEntity: CoachClubAssignment::class, cascade: ['persist', 'remove'])]
     private Collection $coachClubAssignments;
 
+    /** @var Collection<int, Team> */
     #[ORM\ManyToMany(targetEntity: Team::class, mappedBy: 'clubs')]
     #[Groups(['club:read'])]
     private Collection $teams;
@@ -76,6 +80,7 @@ class Club
     public function __construct()
     {
         $this->playerClubAssignments = new ArrayCollection();
+        $this->coachClubAssignments = new ArrayCollection();
         $this->teams = new ArrayCollection();
     }
 
@@ -216,14 +221,16 @@ class Club
         return $this->active;
     }
 
+    /** @return Collection<int, PlayerClubAssignment> */
     public function getPlayerClubAssignments(): Collection
     {
         return $this->playerClubAssignments;
     }
 
+    /** @param Collection<int, PlayerClubAssignment> $playerClubAssignments */
     public function setPlayerClubAssignments(?Collection $playerClubAssignments): self
     {
-        $this->playerClubAssignments = $playerClubAssignments;
+        $this->playerClubAssignments = $playerClubAssignments ?? new ArrayCollection();
 
         return $this;
     }
@@ -250,14 +257,16 @@ class Club
         return $this;
     }
 
+    /** @return Collection<int, CoachClubAssignment> */
     public function getCoachClubAssignments(): Collection
     {
         return $this->coachClubAssignments;
     }
 
+    /** @param Collection<int, CoachClubAssignment> $coachClubAssignments */
     public function setCoachClubAssignments(?Collection $coachClubAssignments): self
     {
-        $this->coachClubAssignments = $coachClubAssignments;
+        $this->coachClubAssignments = $coachClubAssignments ?? new ArrayCollection();
 
         return $this;
     }
@@ -284,6 +293,7 @@ class Club
         return $this;
     }
 
+    /** @return Collection<int, Team> */
     public function getTeams(): Collection
     {
         return $this->teams;

@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<CoachLicense>
+ */
 class CoachLicenseRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class CoachLicenseRepository extends ServiceEntityRepository implements Optimize
         parent::__construct($registry, CoachLicense::class);
     }
 
+    /**
+     * @return CoachLicense[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('cl')
@@ -24,6 +30,9 @@ class CoachLicenseRepository extends ServiceEntityRepository implements Optimize
             ->getResult();
     }
 
+    /**
+     * @return CoachLicense[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('cl')
@@ -36,6 +45,9 @@ class CoachLicenseRepository extends ServiceEntityRepository implements Optimize
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('cl')
@@ -48,6 +60,9 @@ class CoachLicenseRepository extends ServiceEntityRepository implements Optimize
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('cl')

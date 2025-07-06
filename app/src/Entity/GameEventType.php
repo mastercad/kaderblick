@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\GameEventTypeRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -14,6 +15,7 @@ class GameEventType
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     #[Groups(['game_event_type:read', 'game_event:read', 'game:read', 'calendar_event:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private int $id;
 
     #[ORM\Column(length: 50, unique: true)]
@@ -35,9 +37,15 @@ class GameEventType
     #[ORM\Column(type: 'boolean')]
     private bool $isSystem = false; // true = systemgeschützt
 
+    /** @var Collection<int, GameEvent> */
     #[Groups(['game_event_type:read'])]
     #[ORM\OneToMany(targetEntity: GameEvent::class, mappedBy: 'gameEventType')]
     private Collection $gameEvents;
+
+    public function __construct()
+    {
+        $this->gameEvents = new ArrayCollection();
+    }
 
     public function __toString(): string
     {
@@ -105,6 +113,33 @@ class GameEventType
     public function setSystem(bool $isSystem): self
     {
         $this->isSystem = $isSystem;
+
+        return $this;
+    }
+
+    /** @return Collection<int, GameEvent> */
+    public function getGameEvents(): Collection
+    {
+        return $this->gameEvents;
+    }
+
+    public function addGameEvent(GameEvent $gameEvent): self
+    {
+        if (!$this->gameEvents->contains($gameEvent)) {
+            $this->gameEvents[] = $gameEvent;
+            $gameEvent->setGameEventType($this);
+        }
+
+        return $this;
+    }
+
+    public function removeGameEvent(GameEvent $gameEvent): self
+    {
+        if ($this->gameEvents->removeElement($gameEvent)) {
+            if ($gameEvent->getGameEventType() === $this) {
+                $gameEvent->setGameEventType(null);
+            }
+        }
 
         return $this;
     }

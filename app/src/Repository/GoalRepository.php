@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<Goal>
+ */
 class GoalRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class GoalRepository extends ServiceEntityRepository implements OptimizedReposit
         parent::__construct($registry, Goal::class);
     }
 
+    /**
+     * @return Goal[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('g')
@@ -28,6 +34,9 @@ class GoalRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getResult();
     }
 
+    /**
+     * @return Goal[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('g')
@@ -46,6 +55,9 @@ class GoalRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('g')
@@ -60,6 +72,9 @@ class GoalRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('g')

@@ -65,7 +65,7 @@ class JWTExpiredSubscriber
                 true,
                 true,
                 false,
-                'Strict'
+                'strict'
             ),
         );
 

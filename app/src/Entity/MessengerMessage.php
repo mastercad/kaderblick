@@ -15,6 +15,7 @@ class MessengerMessage
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'AUTO')]
     #[ORM\Column(type: 'bigint')]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(type: 'text')]
@@ -34,4 +35,81 @@ class MessengerMessage
 
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTimeInterface $delivered_at = null;
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getBody(): string
+    {
+        return $this->body;
+    }
+
+    public function setBody(string $body): self
+    {
+        $this->body = $body;
+
+        return $this;
+    }
+
+    public function getHeaders(): string
+    {
+        return $this->headers;
+    }
+
+    public function setHeaders(string $headers): self
+    {
+        $this->headers = $headers;
+
+        return $this;
+    }
+
+    public function getQueueName(): string
+    {
+        return $this->queue_name;
+    }
+
+    public function setQueueName(string $queue_name): self
+    {
+        $this->queue_name = $queue_name;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): DateTimeInterface
+    {
+        return $this->created_at;
+    }
+
+    public function setCreatedAt(DateTimeInterface $created_at): self
+    {
+        $this->created_at = $created_at;
+
+        return $this;
+    }
+
+    public function getAvailableAt(): DateTimeInterface
+    {
+        return $this->available_at;
+    }
+
+    public function setAvailableAt(DateTimeInterface $available_at): self
+    {
+        $this->available_at = $available_at;
+
+        return $this;
+    }
+
+    public function getDeliveredAt(): ?DateTimeInterface
+    {
+        return $this->delivered_at;
+    }
+
+    public function setDeliveredAt(?DateTimeInterface $delivered_at): self
+    {
+        $this->delivered_at = $delivered_at;
+
+        return $this;
+    }
 }

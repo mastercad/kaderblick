@@ -16,6 +16,7 @@ class Location
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['location:read', 'location:write', 'team:read', 'club:read', 'game:read', 'event:read', 'calendar_event:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]

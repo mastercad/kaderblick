@@ -15,6 +15,7 @@ class PlayerTeamAssignment
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     #[Groups(['player_team_assignment:read', 'player_team_assignment:write', 'team:read', 'player:read', 'club:read'])]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private int $id;
 
     #[ORM\ManyToOne(targetEntity: Player::class, inversedBy: 'playerTeamAssignments')]

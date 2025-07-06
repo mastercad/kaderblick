@@ -13,6 +13,7 @@ class CoachNationalityAssignment
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Coach::class, inversedBy: 'coachNationalityAssignments')]

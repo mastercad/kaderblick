@@ -10,6 +10,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * @extends ServiceEntityRepository<GameEvent>
+ */
 class GameEventRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -17,6 +20,9 @@ class GameEventRepository extends ServiceEntityRepository implements OptimizedRe
         parent::__construct($registry, GameEvent::class);
     }
 
+    /**
+     * @return GameEvent[]
+     */
     public function findPlayerEvents(Player $player, string $eventTypeCode): array
     {
         return $this->createQueryBuilder('e')
@@ -30,6 +36,9 @@ class GameEventRepository extends ServiceEntityRepository implements OptimizedRe
             ->getResult();
     }
 
+    /**
+     * @return GameEvent[]
+     */
     public function findTeamEvents(Team $team, string $eventTypeCode): array
     {
         return $this->createQueryBuilder('e')
@@ -44,6 +53,9 @@ class GameEventRepository extends ServiceEntityRepository implements OptimizedRe
             ->getResult();
     }
 
+    /**
+     * @return GameEvent[]
+     */
     public function findSubstitutions(Game $game): array
     {
         return $this->createQueryBuilder('e')
@@ -59,6 +71,9 @@ class GameEventRepository extends ServiceEntityRepository implements OptimizedRe
             ->getResult();
     }
 
+    /**
+     * @return GameEvent[]
+     */
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('ge')
@@ -75,6 +90,9 @@ class GameEventRepository extends ServiceEntityRepository implements OptimizedRe
             ->getResult();
     }
 
+    /**
+     * @return GameEvent[]
+     */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('ge')
@@ -97,6 +115,9 @@ class GameEventRepository extends ServiceEntityRepository implements OptimizedRe
             ->getResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchFullEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('ge')
@@ -110,6 +131,9 @@ class GameEventRepository extends ServiceEntityRepository implements OptimizedRe
             ->getOneOrNullResult();
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('ge')
