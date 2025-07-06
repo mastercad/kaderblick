@@ -12,6 +12,12 @@ services:
       - kaderblick-db-data:/var/lib/mysql
     networks:
       - kaderblick-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   kaderblick-db-data:

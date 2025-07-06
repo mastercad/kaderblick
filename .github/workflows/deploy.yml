@@ -27,6 +27,13 @@ jobs:
             docker compose -f docker-compose.db.yml up -d --build --force-recreate db
           fi
           
+          until [ "`docker inspect -f {{.State.Health.Status}} kaderblick-db`" == "healthy" ]; do
+            echo "Waiting for DB container to be healthy..."
+            docker ps
+            docker inspect kaderblick-db | grep Health
+            sleep 2
+          done
+          
           # Test-Datenbank und Rechte erstellen
           docker compose -f docker-compose.db.yml exec -T db mariadb -uroot -proot -e "
             CREATE DATABASE IF NOT EXISTS symfony_test;
