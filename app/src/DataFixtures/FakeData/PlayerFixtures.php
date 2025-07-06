@@ -131,8 +131,8 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
         $manager->clear();
     }
 
-    /** 
-     * @param array<int> $usedShirtNumbers 
+    /**
+     * @param array<int> $usedShirtNumbers
      */
     private function retrieveUniqueShirtNumber(array &$usedShirtNumbers, Generator $faker): int
     {
@@ -177,8 +177,9 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
     }
 
     /**
-     * @param array<string, Position> $positions
+     * @param array<string, Position>           $positions
      * @param array<string, array<int, string>> $alternativeMap
+     *
      * @return array<int, Position>
      */
     private function retrieveAlternativePositions(string $mainPosition, array $positions, array $alternativeMap, Generator $faker): array
