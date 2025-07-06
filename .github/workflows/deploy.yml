@@ -27,6 +27,20 @@ jobs:
             docker compose -f docker-compose.db.yml -p production up -d --build --force-recreate db
           fi
 
+
+          # Warten bis DB Container bereit ist
+          until docker compose exec -T db mariadb -uroot -proot -e "SELECT 1"; do
+            echo "Waiting for database connection..."
+            sleep 1
+          done
+          
+          # Test-Datenbank und Rechte erstellen
+          docker compose exec -T db mariadb -uroot -proot -e "
+            CREATE DATABASE IF NOT EXISTS symfony_test;
+            GRANT ALL PRIVILEGES ON symfony_test.* TO 'symfony'@'%';
+            FLUSH PRIVILEGES;
+          "
+          
           docker compose up -d --build --force-recreate api vue-frontend
 
           docker compose exec -T api composer install
@@ -44,6 +58,11 @@ jobs:
           if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
             docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
           fi
+          
+          # Schema erstellen
+          docker compose exec -T api bin/console doctrine:schema:create --env=test
+
+          docker compose exec -T api bin/console doctrine:migrations:migrate --env=test
       - name: run PHP-CS-Fixer
         run: docker compose exec -T api ./vendor/bin/php-cs-fixer --config=.php-cs-fixer.dist.php fix --dry-run --diff --ansi
 
