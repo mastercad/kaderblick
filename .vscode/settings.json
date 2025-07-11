@@ -1,14 +1,15 @@
 {
     "phpcs.enable": true,
-    "phpcs.executablePath": "bin/docker-phpcs",
+    "phpcs.executablePath": "app/bin/docker-phpcs",
     "phpcs.standard": "PSR12",
     
     "phpcbf.enable": true,
-    "phpcbf.executablePath": "bin/docker-phpcbf",
+    "phpcbf.executablePath": "app/bin/docker-phpcbf",
     "phpcbf.standard": "PSR12",
     
-    "php-cs-fixer.executablePath": "bin/docker-php-cs-fixer",
+    "php-cs-fixer.executablePath": "/media/Austausch/Projetke/fußballverein/webapp/app/bin/docker-php-cs-fixer",
     "php-cs-fixer.onsave": true,
     
-    "phpstan.executablePath": "bin/docker-phpstan"
+    "phpstan.executablePath": "app/bin/docker-phpstan",
+    "symfony-vscode.phpExecutablePath": "app/bin/docker-php"
 }

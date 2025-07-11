@@ -4,10 +4,16 @@ namespace App\DataFixtures\MasterData;
 
 use App\Entity\SubstitutionReason;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 
-class SubstitutionReasonFixtures extends Fixture
+class SubstitutionReasonFixtures extends Fixture implements FixtureGroupInterface
 {
+    public static function getGroups(): array
+    {
+        return ['master'];
+    }
+
     public function load(ObjectManager $manager): void
     {
         $reasons = [
@@ -28,6 +34,11 @@ class SubstitutionReasonFixtures extends Fixture
             $substitutionReason->setDescription($reason['description']);
             $substitutionReason->setActive(true);
             $manager->persist($substitutionReason);
+
+            $this->addReference(
+                'substitution_reason_' . strtolower(str_replace(' ', '-', $substitutionReason->getName())),
+                $substitutionReason
+            );
         }
 
         $manager->flush();

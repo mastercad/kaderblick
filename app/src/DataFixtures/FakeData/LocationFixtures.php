@@ -6,18 +6,24 @@ use App\DataFixtures\MasterData\SurfaceTypeFixtures;
 use App\Entity\Location;
 use App\Entity\SurfaceType;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 use Faker\Generator;
 
-class LocationFixtures extends Fixture implements DependentFixtureInterface
+class LocationFixtures extends Fixture implements DependentFixtureInterface, FixtureGroupInterface
 {
     public function getDependencies(): array
     {
         return [
             SurfaceTypeFixtures::class,
         ];
+    }
+
+    public static function getGroups(): array
+    {
+        return ['fake'];
     }
 
     public function load(ObjectManager $manager): void

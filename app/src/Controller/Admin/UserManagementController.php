@@ -4,10 +4,14 @@ namespace App\Controller\Admin;
 
 use App\Entity\Club;
 use App\Entity\Coach;
+use App\Entity\Permission;
 use App\Entity\Player;
+use App\Entity\RelationType;
 use App\Entity\User;
+use App\Entity\UserRelation;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,7 +27,6 @@ class UserManagementController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $em,
-        private RequestStack $requestStack,
         private RoleHierarchyInterface $roleHierarchy
     ) {
     }
@@ -95,56 +98,138 @@ class UserManagementController extends AbstractController
     {
         $players = $this->em->getRepository(Player::class)->findAll();
         $coaches = $this->em->getRepository(Coach::class)->findAll();
-        $clubs = $this->em->getRepository(Club::class)->findAll();
 
-        // Flash Messages von vorherigen Status-Änderungen löschen
-        /** @var \Symfony\Component\HttpFoundation\Session\Session $session */
-        $session = $this->requestStack->getSession();
-        $session->getFlashBag()->clear();
+        // Beziehungstypen aus der Datenbank laden
+        $relationTypes = $this->em->getRepository(RelationType::class)->findBy([], ['name' => 'ASC']);
+        $permissions = $this->em->getRepository(Permission::class)->findBy([], ['name' => 'ASC']);
+
+        // Bestehende Zuordnungen laden
+        $userRelations = $this->em->getRepository(UserRelation::class)->findBy(['user' => $user]);
+        $currentAssignments = ['players' => [], 'coaches' => []];
+        $entity = null;
+
+        foreach ($userRelations as $relation) {
+            $type = null;
+            if ($relation->getPlayer()) {
+                $type = 'players';
+                $entity = $relation->getPlayer();
+            } elseif ($relation->getCoach()) {
+                $type = 'coaches';
+                $entity = $relation->getCoach();
+            }
+
+            if ($entity instanceof Player
+                || $entity instanceof Coach
+            ) {
+                $currentAssignments[$type][] = [
+                    'entity' => $entity,
+                    'relationType' => $relation->getRelationType(),
+                    'permissions' => $relation->getPermissions()
+                ];
+            }
+        }
+
+        // RelationTypes nach Kategorie gruppieren
+        $groupedRelationTypes = [];
+        foreach ($relationTypes as $type) {
+            $groupedRelationTypes[$type->getCategory()][] = $type;
+        }
 
         return $this->render('admin/users/assign.html.twig', [
             'user' => $user,
             'players' => $players,
             'coaches' => $coaches,
-            'clubs' => $clubs,
-            'currentAssignment' => $this->getCurrentAssignment($user)
+            'currentAssignments' => $currentAssignments,
+            'relationTypes' => $groupedRelationTypes,
+            'permissions' => $permissions
         ]);
     }
 
     #[Route('/{id}/assign', name: 'assign_post', methods: ['POST'])]
     public function handleAssign(Request $request, User $user): Response
     {
+        $this->em->beginTransaction();
         try {
-            // Wenn Club ausgewählt wurde, alle anderen Zuordnungen entfernen
-            if ($request->request->get('club_id')) {
-                $user->setPlayer(null)->setCoach(null);
-                $club = $this->em->getRepository(Club::class)->find($request->request->get('club_id'));
-                $user->setClub($club); // Hier wird null gesetzt wenn keine ID übergeben wurde
-            } else {
-                $user->setClub(null);
-
-                // Player setzen oder entfernen
-                $player = $request->request->get('player_id')
-                    ? $this->em->getRepository(Player::class)->find($request->request->get('player_id'))
-                    : null;
-                $user->setPlayer($player);
-
-                // Coach setzen oder entfernen
-                $coach = $request->request->get('coach_id')
-                    ? $this->em->getRepository(Coach::class)->find($request->request->get('coach_id'))
-                    : null;
-                $user->setCoach($coach);
+            $existingRelations = $this->em->getRepository(UserRelation::class)->findBy(['user' => $user]);
+            foreach ($existingRelations as $relation) {
+                $this->em->remove($relation);
             }
 
-            $this->em->persist($user);
+            $playerAssignments = $request->request->all('player_assignments');
+            foreach ($playerAssignments as $index => $assignment) {
+                if (empty($assignment['id']) || empty($assignment['type'])) {
+                    throw new InvalidArgumentException("Ungültige Daten für Spielerzuordnung #{$index}");
+                }
+
+                $player = $this->em->getRepository(Player::class)->find($assignment['id']);
+                if (!$player) {
+                    throw new InvalidArgumentException("Spieler mit ID {$assignment['id']} nicht gefunden");
+                }
+
+                $relationType = $this->em->getRepository(RelationType::class)->find($assignment['type']);
+                if (!$relationType) {
+                    throw new InvalidArgumentException("Beziehungstyp mit ID {$assignment['type']} nicht gefunden");
+                }
+
+                if ('player' !== $relationType->getCategory()) {
+                    throw new InvalidArgumentException("Beziehungstyp {$relationType->getName()} ist nicht für Spieler vorgesehen");
+                }
+
+                $relation = new UserRelation();
+                $relation->setUser($user);
+                $relation->setPlayer($player);
+                $relation->setRelationType($relationType);
+                $relation->setPermissions($assignment['permissions'] ?? []);
+
+                $this->em->persist($relation);
+            }
+
+            // Neue Coach-Zuordnungen
+            $coachAssignments = $request->request->all('coach_assignments');
+            foreach ($coachAssignments as $index => $assignment) {
+                if (empty($assignment['id']) || empty($assignment['type'])) {
+                    throw new InvalidArgumentException("Ungültige Daten für Trainerzuordnung #{$index}");
+                }
+
+                $coach = $this->em->getRepository(Coach::class)->find($assignment['id']);
+                if (!$coach) {
+                    throw new InvalidArgumentException("Trainer mit ID {$assignment['id']} nicht gefunden");
+                }
+
+                $relationType = $this->em->getRepository(RelationType::class)->find($assignment['type']);
+                if (!$relationType) {
+                    throw new InvalidArgumentException("Beziehungstyp mit ID {$assignment['type']} nicht gefunden");
+                }
+
+                if ('coach' !== $relationType->getCategory()) {
+                    throw new InvalidArgumentException("Beziehungstyp {$relationType->getName()} ist nicht für Trainer vorgesehen");
+                }
+
+                $relation = new UserRelation();
+                $relation->setUser($user);
+                $relation->setCoach($coach);
+                $relation->setRelationType($relationType);
+                $relation->setPermissions($assignment['permissions'] ?? []);
+
+                $this->em->persist($relation);
+            }
+
             $this->em->flush();
+            $this->em->commit();
 
-            $this->addFlash('success', 'Zuordnungen erfolgreich aktualisiert.');
+            return $this->json([
+                'status' => 'success',
+                'message' => 'Zuordnungen erfolgreich aktualisiert.'
+            ]);
         } catch (Exception $e) {
-            $this->addFlash('error', 'Fehler bei der Zuordnung: ' . $e->getMessage());
-        }
+            $this->em->rollback();
 
-        return $this->redirectToRoute('admin_users_assign', ['id' => $user->getId()]);
+            return $this->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString() // Im Produktivbetrieb entfernen!
+            ], 400);
+        }
     }
 
     #[Route('/{id}/toggle-status', name: 'toggle_status', methods: ['GET'])]
@@ -209,21 +294,5 @@ class UserManagementController extends AbstractController
         }, $results);
 
         return $this->json(['results' => $formatted]);
-    }
-
-    /** @return array{type: string|null, entity: Player|Coach|Club|null} */
-    private function getCurrentAssignment(User $user): array
-    {
-        if ($user->getPlayer()) {
-            return ['type' => 'player', 'entity' => $user->getPlayer()];
-        }
-        if ($user->getCoach()) {
-            return ['type' => 'coach', 'entity' => $user->getCoach()];
-        }
-        if ($user->getClub()) {
-            return ['type' => 'club', 'entity' => $user->getClub()];
-        }
-
-        return ['type' => null, 'entity' => null];
     }
 }

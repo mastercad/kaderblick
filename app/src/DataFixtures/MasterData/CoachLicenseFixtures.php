@@ -4,10 +4,16 @@ namespace App\DataFixtures\MasterData;
 
 use App\Entity\CoachLicense;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 
-class CoachLicenseFixtures extends Fixture
+class CoachLicenseFixtures extends Fixture implements FixtureGroupInterface
 {
+    public static function getGroups(): array
+    {
+        return ['master'];
+    }
+
     public function load(ObjectManager $manager): void
     {
         $licenses = [
@@ -17,7 +23,7 @@ class CoachLicenseFixtures extends Fixture
             ['C-Lizenz', 'Für Breiten- und Jugendfußball im Amateurbereich.', 'DE'],
             ['B-Lizenz', 'Für leistungsorientierten Jugendfußball und untere Ligen.', 'DE'],
             ['A-Lizenz', 'Für höherklassige Amateurmannschaften.', 'DE'],
-            ['Fußball-Lehrer', 'Höchste deutsche Lizenzstufe, Voraussetzung für Bundesliga.', 'DE'],
+            ['Fussball-Lehrer', 'Höchste deutsche Lizenzstufe, Voraussetzung für Bundesliga.', 'DE'],
 
             // UEFA
             ['UEFA C', 'Einsteigerlizenz auf UEFA-Ebene.', 'UEFA'],
@@ -33,6 +39,8 @@ class CoachLicenseFixtures extends Fixture
             $license->setCountryCode($region);
             $license->setActive(true);
             $manager->persist($license);
+
+            $this->addReference('coach_license_' . strtolower(str_replace([' ', '-'], '_', $name)), $license);
         }
 
         $manager->flush();

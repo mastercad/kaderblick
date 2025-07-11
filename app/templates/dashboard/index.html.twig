@@ -4,9 +4,295 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block body %}
-<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-    <h1 class="h2 mt-3">Dashboard</h1>
-    <p>Willkommen im Dashboard. Hier kannst du deine Daten verwalten.</p>
-    {% block dashboard_content %}{% endblock %}
-</main>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Dashboard</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addWidgetModal">
+            <i class="fas fa-plus"></i> Widget hinzufügen
+        </button>
+    </div>
+
+    <style>
+        #widgetGrid {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+        .widget-item .card {
+            height: 100%; /* Nur volle Höhe für die Card */
+        }
+    </style>
+
+    <div id="widgetContainer">
+        <div class="row" id="widgetGrid">
+            {% for widget in widgets %}
+                <div class="col-md-{{ widget.width }} mb-4 widget-item" data-widget-id="{{ widget.id }}">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ widget.type|title }}</h5>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-secondary widget-refresh" title="Aktualisieren">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary widget-settings" title="Einstellungen">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger widget-delete" title="Entfernen">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body widget-content" data-widget-type="{{ widget.type }}">
+                            {# Widget-Inhalt wird per JavaScript geladen #}
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Laden...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{# Modal für neues Widget #}
+<div class="modal fade" id="addWidgetModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Widget hinzufügen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group">
+                    <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="calendar">
+                        <i class="fas fa-calendar"></i> Kalender
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="stats">
+                        <i class="fas fa-chart-bar"></i> Statistiken
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="messages">
+                        <i class="fas fa-envelope"></i> Nachrichten
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="news">
+                        <i class="fas fa-newspaper"></i> News
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const grid = document.getElementById('widgetGrid');
+            
+            new Sortable(grid, {
+                animation: 150,
+                handle: '.card-header',
+                draggable: '.widget-item',
+                onEnd: updateWidgetPositions
+            });
+
+            // Initial Widget-Inhalte laden
+            document.querySelectorAll('.widget-item').forEach(async widget => {
+                await loadWidgetContent(widget);
+            });
+
+            document.addEventListener('click', function(e) {
+                // Löschen-Button
+                if (e.target.closest('.widget-delete')) {
+                    handleDelete(e.target.closest('.widget-delete'));
+                    return;
+                }
+                
+                // Einstellungen-Button
+                if (e.target.closest('.widget-settings')) {
+                    handleSettings(e.target.closest('.widget-settings'));
+                    return;
+                }
+                
+                // Refresh-Button
+                if (e.target.closest('.widget-refresh')) {
+                    handleRefresh(e.target.closest('.widget-refresh'));
+                    return;
+                }
+            });
+
+            document.querySelectorAll('.btn-add-widget').forEach(button => {
+                button.addEventListener('click', async function() {
+                    createWidget(this.dataset.widgetType);
+                });
+            });
+        });
+
+        async function createWidget(type) {
+            await fetch('{{ path("app_dashboard_widget_create") }}', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ type: type })
+            }).then((response) => {
+                if (response.status >= 400 && response.status < 600) {
+                  throw new Error("Bad response from server - " + response.status + " : " + response.statusText);
+                }
+                return response;
+            }).then((returnedResponse) => returnedResponse.json()
+            ).then((data) => {
+                addWidget(data.widget.id);
+            }).catch((error) => {
+                console.log(error)
+            });
+        }
+
+        async function addWidget(widgetId) {
+            /** @TODO hier vielleicht noch umbauen in "path generate by name", war mir jetzt zu viel aufwand für den quatsch **/
+            await fetch('/widget/' + widgetId, {
+                  method: 'GET'
+            }).then((response) => {
+                if (response.status >= 400 && response.status < 600) {
+                  throw new Error("Bad response from server - " + response.status + " : " + response.statusText);
+                }
+                return response.text();
+            }).then((html) => {
+                const widgetElement = createWidgetFromHtml(html, widgetId);
+                loadWidgetContent(widgetElement);
+                document.getElementById('widgetGrid').appendChild(widgetElement);
+            }).catch((error) => {
+                console.error(error);
+            });
+        }
+
+        // Widget-Updates
+        function updateWidgetPositions() {
+            const widgets = [];
+            document.querySelectorAll('.widget-item').forEach((widget, index) => {
+                const width = parseInt(widget.className.match(/col-md-(\d+)/)[1]);
+                widgets.push({
+                    id: widget.dataset.widgetId,
+                    position: index,
+                    width: width
+                });
+            });
+
+            fetch('{{ path("app_dashboard_widget_update") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ widgets: widgets })
+            }).catch(error => console.error('Error:', error));
+        }
+
+        async function loadWidgetContent(widgetElement) {
+            const widgetContent = widgetElement.querySelector('.widget-content');
+            const widgetId = widgetElement.dataset.widgetId;
+            try {
+                const response = await fetch(`/widget/${widgetId}/content`);
+                if (response.ok) {
+                    const html = await response.text();
+                    widgetContent.innerHTML = html;
+                    
+                    // Führe eventuell eingebettetes Script manuell aus, da sie beim laden nicht direkt ausgeführt werden
+                    const scripts = widgetContent.getElementsByTagName('script');
+                    Array.from(scripts).forEach(script => {
+                        const newScript = document.createElement('script');
+                        Array.from(script.attributes).forEach(attr => {
+                            newScript.setAttribute(attr.name, attr.value);
+                        });
+                        newScript.appendChild(document.createTextNode(script.innerHTML));
+                        script.parentNode.replaceChild(newScript, script);
+                    });
+                }
+            } catch (error) {
+                console.error('Widget loading error:', error);
+                widgetContent.innerHTML = '<div class="alert alert-danger">Widget konnte nicht geladen werden</div>';
+            }
+        }
+        
+        function createWidgetFromHtml(htmlString, widgetId) {
+            const container = document.createElement('div');
+            container.innerHTML = htmlString.trim();
+
+            return container.firstElementChild;
+        }
+
+        async function handleDelete(button) {
+            if (!confirm('Widget wirklich entfernen?')) return;
+            
+            const widget = button.closest('.widget-item');
+            const widgetId = widget.dataset.widgetId;
+
+            try {
+                const response = await fetch(`/widget/${widgetId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    widget.remove();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function handleSettings(button) {
+            const widget = button.closest('.widget-item');
+            const widgetId = widget.dataset.widgetId;
+            const width = parseInt(widget.className.match(/col-md-(\d+)/)[1]);
+            
+            const modal = `
+                <div class="modal fade" id="widgetSettings${widgetId}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Widget-Einstellungen</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Breite</label>
+                                    <select class="form-select widget-width">
+                                        <option value="3" ${width === 3 ? 'selected' : ''}>Schmal (25%)</option>
+                                        <option value="4" ${width === 4 ? 'selected' : ''}>Normal (33%)</option>
+                                        <option value="6" ${width === 6 ? 'selected' : ''}>Breit (50%)</option>
+                                        <option value="12" ${width === 12 ? 'selected' : ''}>Volle Breite (100%)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                                <button type="button" class="btn btn-primary save-settings">Speichern</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modal);
+            const modalElement = document.getElementById(`widgetSettings${widgetId}`);
+            const bsModal = new bootstrap.Modal(modalElement);
+            
+            modalElement.querySelector('.save-settings').addEventListener('click', async function() {
+                const newWidth = modalElement.querySelector('.widget-width').value;
+                widget.className = widget.className.replace(/col-md-\d+/, `col-md-${newWidth}`);
+                
+                await loadWidgetContent(widget); // Widget nach Breitenänderung neu laden
+                await updateWidgetPositions();
+                bsModal.hide();
+                modalElement.remove();
+    
+                bsModal.show();
+            });
+        }
+
+        function handleRefresh(button) {
+            const widget = button.closest('.widget-item');
+            loadWidgetContent(widget);
+        }
+    </script>
 {% endblock %}

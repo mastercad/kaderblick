@@ -1,0 +1,17 @@
+{% if messages|length > 0 %}
+    <ul class="list-group">
+        {% for message in messages %}
+            <li class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">{{ message.subject }}</h6>
+                    <small>{{ message.sentAt|date('d.m.Y') }}</small>
+                </div>
+                <small class="text-muted">
+                    <i class="fas fa-user"></i> {{ message.sender.fullName }}
+                </small>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <div class="text-muted text-center">Keine neuen Nachrichten</div>
+{% endif %}

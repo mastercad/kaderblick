@@ -4,10 +4,16 @@ namespace App\DataFixtures\MasterData;
 
 use App\Entity\GameEventType;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 
-class GameEventTypeFixtures extends Fixture
+class GameEventTypeFixtures extends Fixture implements FixtureGroupInterface
 {
+    public static function getGroups(): array
+    {
+        return ['master'];
+    }
+
     public function load(ObjectManager $manager): void
     {
         $eventTypes = [
@@ -70,6 +76,11 @@ class GameEventTypeFixtures extends Fixture
             $eventType->setIcon($type['icon']);
             $eventType->setSystem($type['isSystem']);
             $manager->persist($eventType);
+
+            $this->addReference(
+                'game_event_type_' . strtolower(str_replace(['-', ' '], '_', $eventType->getName())),
+                $eventType
+            );
         }
 
         $manager->flush();

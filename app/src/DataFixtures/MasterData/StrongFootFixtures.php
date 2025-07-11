@@ -4,10 +4,16 @@ namespace App\DataFixtures\MasterData;
 
 use App\Entity\StrongFoot;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 
-class StrongFootFixtures extends Fixture
+class StrongFootFixtures extends Fixture implements FixtureGroupInterface
 {
+    public static function getGroups(): array
+    {
+        return ['master'];
+    }
+
     public function load(ObjectManager $manager): void
     {
         $feet = [
@@ -21,6 +27,8 @@ class StrongFootFixtures extends Fixture
             $strongFoot->setCode($foot['code']);
             $strongFoot->setName($foot['name']);
             $manager->persist($strongFoot);
+
+            $this->addReference('strong_foot_' . strtolower($strongFoot->getCode()), $strongFoot);
         }
 
         $manager->flush();

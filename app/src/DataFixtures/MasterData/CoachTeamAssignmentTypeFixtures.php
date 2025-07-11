@@ -4,10 +4,16 @@ namespace App\DataFixtures\MasterData;
 
 use App\Entity\CoachTeamAssignmentType;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 
-class CoachTeamAssignmentTypeFixtures extends Fixture
+class CoachTeamAssignmentTypeFixtures extends Fixture implements FixtureGroupInterface
 {
+    public static function getGroups(): array
+    {
+        return ['master'];
+    }
+
     public function load(ObjectManager $manager): void
     {
         $types = [
@@ -64,6 +70,13 @@ class CoachTeamAssignmentTypeFixtures extends Fixture
             $assignmentType->setDescription($type['description']);
             $assignmentType->setActive($type['active']);
             $manager->persist($assignmentType);
+
+            $referenceName = 'coach_team_assignment_type_' . strtolower(str_replace([' ', '-'], '_', $assignmentType->getName()));
+
+            $this->addReference(
+                $referenceName,
+                $assignmentType
+            );
         }
 
         $manager->flush();

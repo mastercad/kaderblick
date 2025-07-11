@@ -26,13 +26,16 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
     /**
      * @return CalendarEvent[]
      */
-    public function findUpcoming(): array
+    public function findUpcoming(int $limit = 5): array
     {
         return $this->createQueryBuilder('ce')
-            ->leftJoin(Game::class, 'g', 'WITH', 'g.calendarEvent = ce')
+            ->select('ce', 'cet', 'l') // Füge notwendige Joins hinzu
+            ->leftJoin('ce.calendarEventType', 'cet')
+            ->leftJoin('ce.location', 'l')
             ->where('ce.startDate >= :now')
             ->setParameter('now', new DateTime())
             ->orderBy('ce.startDate', 'ASC')
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
     }

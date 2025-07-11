@@ -4,10 +4,16 @@ namespace App\DataFixtures\MasterData;
 
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 
-class UserFixtures extends Fixture
+class UserFixtures extends Fixture implements FixtureGroupInterface
 {
+    public static function getGroups(): array
+    {
+        return ['master'];
+    }
+
     public function load(ObjectManager $manager): void
     {
         $user = new User();
@@ -20,6 +26,7 @@ class UserFixtures extends Fixture
             ->setIsEnabled(true);
 
         $manager->persist($user);
+
         $manager->flush();
         $manager->clear();
     }

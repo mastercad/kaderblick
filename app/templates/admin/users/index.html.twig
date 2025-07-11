@@ -36,22 +36,27 @@
                         </td>
                         <td>
                             {% set assignments = [] %}
-                            {% if user.player %}
-                                {% set assignments = assignments|merge(['Spieler']) %}
-                            {% endif %}
-                            {% if user.coach %}
-                                {% set assignments = assignments|merge(['Trainer']) %}
-                            {% endif %}
-                            {% if user.club %}
-                                {% set assignments = assignments|merge(['Verein']) %}
-                            {% endif %}
+                            {% for relation in user.relatedTo %}
+                                {% if relation.player %}
+                                    {% set assignments = assignments|merge([
+                                        relation.relationType.name ~ ' von ' ~ relation.player.fullName
+                                    ]) %}
+                                {% endif %}
+                                {% if relation.coach %}
+                                    {% set assignments = assignments|merge([
+                                        relation.relationType.name ~ ' von ' ~ relation.coach.fullName
+                                    ]) %}
+                                {% endif %}
+                            {% endfor %}
                             
                             {% if assignments|length > 0 %}
-                                {% for assignment in assignments %}
-                                    <span class="badge bg-info">{{ assignment }}</span>
-                                {% endfor %}
+                                <ul class="list-unstyled mb-0">
+                                    {% for assignment in assignments %}
+                                        <li>{{ assignment }}</li>
+                                    {% endfor %}
+                                </ul>
                             {% else %}
-                                <span class="badge bg-secondary">Keine</span>
+                                <span class="text-muted">Keine</span>
                             {% endif %}
                         </td>
                         <td>

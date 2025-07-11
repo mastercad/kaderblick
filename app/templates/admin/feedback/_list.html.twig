@@ -1,0 +1,81 @@
+{% if feedback|length > 0 %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Benutzer</th>
+                    <th>Typ</th>
+                    <th>Nachricht</th>
+                    <th>Status</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in feedback %}
+                    <tr>
+                        <td>{{ item.createdAt|date('d.m.Y H:i') }}</td>
+                        <td>{{ item.user.fullName }}</td>
+                        <td>
+                            <span class="badge bg-{{ item.type == 'bug' ? 'danger' : (item.type == 'feature' ? 'primary' : 'info') }}">
+                                {{ item.type|capitalize }}
+                            </span>
+                        </td>
+                        <td>{{ item.message|nl2br }}</td>
+                        <td>
+                            {% if item.resolved %}
+                                <span class="badge bg-success">Erledigt</span>
+                            {% elseif item.isRead %}
+                                <span class="badge bg-warning">Gelesen</span>
+                            {% else %}
+                                <span class="badge bg-danger">Neu</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not item.isRead %}
+                                <form method="post" action="{{ path('admin_feedback_mark_read', {'id': item.id}) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-info">
+                                        <i class="fas fa-check"></i> Als gelesen markieren
+                                    </button>
+                                </form>
+                            {% endif %}
+                            {% if not item.resolved %}
+                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#resolveModal{{ item.id }}">
+                                    <i class="fas fa-check-double"></i> Erledigen
+                                </button>
+
+                                {# Modal für "Erledigen" #}
+                                <div class="modal fade" id="resolveModal{{ item.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form method="post" action="{{ path('admin_feedback_resolve', {'id': item.id}) }}">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Feedback erledigen</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label for="adminNote" class="form-label">Notiz/Kommentar</label>
+                                                        <textarea name="adminNote" id="adminNote" class="form-control" rows="3"></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                                                    <button type="submit" class="btn btn-success">Als erledigt markieren</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        Keine Einträge vorhanden.
+    </div>
+{% endif %}

@@ -4,11 +4,11 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use DateTime;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use InvalidArgumentException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
@@ -48,20 +48,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTime $verificationExpires = null;
 
-    #[ORM\OneToOne(targetEntity: Player::class)]
+    #[ORM\ManyToOne(targetEntity: Player::class)]
     #[ORM\JoinColumn(nullable: true)]
-    #[Assert\Expression(
-        'this.getPlayer() === null or this.getClub() === null',
-        message: 'Ein Benutzer kann nicht gleichzeitig Spieler und Vereinsmitglied sein.'
-    )]
     private ?Player $player = null;
 
-    #[ORM\OneToOne(targetEntity: Coach::class)]
+    #[ORM\ManyToOne(targetEntity: Coach::class)]
     #[ORM\JoinColumn(nullable: true)]
-    #[Assert\Expression(
-        'this.getCoach() === null or this.getClub() === null',
-        message: 'Ein Benutzer kann nicht gleichzeitig Trainer und Vereinsmitglied sein.'
-    )]
     private ?Coach $coach = null;
 
     #[ORM\ManyToOne(targetEntity: Club::class)]
@@ -91,6 +83,38 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTime $emailVerificationTokenExpiresAt = null;
+
+    /**
+     * @var Collection<int, DashboardWidget>
+     */
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: DashboardWidget::class)]
+    private Collection $widgets;
+
+    /**
+     * @var Collection<int, UserRelation>
+     */
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: UserRelation::class)]
+    private Collection $relatedTo;
+
+    /**
+     * @var Collection<int, UserRelation>
+     */
+    #[ORM\OneToMany(mappedBy: 'relatedUser', targetEntity: UserRelation::class)]
+    private Collection $relatedFrom;
+
+    /**
+     * @var Collection<int, PushSubscription>
+     */
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: PushSubscription::class, orphanRemoval: true)]
+    private Collection $pushSubscriptions;
+
+    public function __construct()
+    {
+        $this->widgets = new ArrayCollection();
+        $this->relatedTo = new ArrayCollection();
+        $this->relatedFrom = new ArrayCollection();
+        $this->pushSubscriptions = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -160,6 +184,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
         if (null !== $this->club) {
             $roles[] = 'ROLE_CLUB';
+        }
+        if ($this->getRelatedTo()->count() > 0) {
+            $roles[] = 'ROLE_RELATED_USER';
         }
 
         return array_unique($roles);
@@ -242,9 +269,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setPlayer(?Player $player): self
     {
-        if (null !== $player && null !== $this->club) {
-            throw new InvalidArgumentException('Ein Benutzer kann nicht gleichzeitig Spieler und Vereinsmitglied sein.');
-        }
         $this->player = $player;
 
         return $this;
@@ -257,9 +281,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setCoach(?Coach $coach): self
     {
-        if (null !== $coach && null !== $this->club) {
-            throw new InvalidArgumentException('Ein Benutzer kann nicht gleichzeitig Trainer und Vereinsmitglied sein.');
-        }
         $this->coach = $coach;
 
         return $this;
@@ -272,9 +293,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setClub(?Club $club): self
     {
-        if (null !== $club && (null !== $this->player || null !== $this->coach)) {
-            throw new InvalidArgumentException('Ein Benutzer kann nicht gleichzeitig Vereinsmitglied und Spieler/Trainer sein.');
-        }
         $this->club = $club;
 
         return $this;
@@ -376,7 +394,129 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /**
+     * @return Collection<int, DashboardWidget>
+     */
+    public function getWidgets(): Collection
+    {
+        return $this->widgets;
+    }
+
+    public function addWidget(DashboardWidget $widget): self
+    {
+        if (!$this->widgets->contains($widget)) {
+            $this->widgets->add($widget);
+            $widget->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeWidget(DashboardWidget $widget): self
+    {
+        if ($this->widgets->removeElement($widget)) {
+            // set the owning side to null (unless already changed)
+            if ($widget->getUser() === $this) {
+                $widget->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, UserRelation>
+     */
+    public function getRelatedTo(): Collection
+    {
+        return $this->relatedTo;
+    }
+
+    /**
+     * @return Collection<int, UserRelation>
+     */
+    public function getRelatedFrom(): Collection
+    {
+        return $this->relatedFrom;
+    }
+
+    public function addRelatedTo(UserRelation $relation): self
+    {
+        if (!$this->relatedTo->contains($relation)) {
+            $this->relatedTo->add($relation);
+            $relation->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRelatedTo(UserRelation $relation): self
+    {
+        if ($this->relatedTo->removeElement($relation)) {
+            if ($relation->getUser() === $this) {
+                $relation->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function addRelatedFrom(UserRelation $relation): self
+    {
+        if (!$this->relatedFrom->contains($relation)) {
+            $this->relatedFrom->add($relation);
+            $relation->setRelatedUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRelatedFrom(UserRelation $relation): self
+    {
+        if ($this->relatedFrom->removeElement($relation)) {
+            if ($relation->getRelatedUser() === $this) {
+                $relation->setRelatedUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PushSubscription>
+     */
+    public function getPushSubscriptions(): Collection
+    {
+        return $this->pushSubscriptions;
+    }
+
+    public function addPushSubscription(PushSubscription $subscription): self
+    {
+        if (!$this->pushSubscriptions->contains($subscription)) {
+            $this->pushSubscriptions->add($subscription);
+            $subscription->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removePushSubscription(PushSubscription $subscription): self
+    {
+        if ($this->pushSubscriptions->removeElement($subscription)) {
+            if ($subscription->getUser() === $this) {
+                $subscription->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
     public function eraseCredentials(): void
     {
+    }
+
+    public function __toString(): string
+    {
+        return $this->getFullName();
     }
 }

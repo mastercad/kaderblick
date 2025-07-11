@@ -5,7 +5,6 @@ namespace App\DataFixtures\FakeData;
 use App\DataFixtures\MasterData\PlayerTeamAssignmentTypeFixtures;
 use App\DataFixtures\MasterData\PositionFixtures;
 use App\DataFixtures\MasterData\StrongFootFixtures;
-use App\DataFixtures\MasterData\TeamFixtures;
 use App\Entity\Club;
 use App\Entity\Nationality;
 use App\Entity\Player;
@@ -18,12 +17,13 @@ use App\Entity\StrongFoot;
 use App\Entity\Team;
 use DateTime;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 use Faker\Generator;
 
-class PlayerFixtures extends Fixture implements DependentFixtureInterface
+class PlayerFixtures extends Fixture implements DependentFixtureInterface, FixtureGroupInterface
 {
     public function getDependencies(): array
     {
@@ -31,9 +31,14 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface
             ClubFixtures::class,
             StrongFootFixtures::class,
             PositionFixtures::class,
-            TeamFixtures::class,
+            //            TeamFixtures::class,
             PlayerTeamAssignmentTypeFixtures::class,
         ];
+    }
+
+    public static function getGroups(): array
+    {
+        return ['fake'];
     }
 
     public function load(ObjectManager $manager): void

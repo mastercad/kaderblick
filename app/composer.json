@@ -46,7 +46,8 @@
         "league/flysystem-bundle": "^3.4",
         "masbug/flysystem-google-drive-ext": "^2.4",
         "google/apiclient": "^2.0",
-        "symfony/monolog-bundle": "^3.10"
+        "symfony/monolog-bundle": "^3.10",
+        "minishlink/web-push": "^9.0"
     },
     "autoload": {
         "psr-4": {

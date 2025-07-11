@@ -4,10 +4,16 @@ namespace App\DataFixtures\MasterData;
 
 use App\Entity\Position;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 
-class PositionFixtures extends Fixture
+class PositionFixtures extends Fixture implements FixtureGroupInterface
 {
+    public static function getGroups(): array
+    {
+        return ['master'];
+    }
+
     public function load(ObjectManager $manager): void
     {
         $positions = [
@@ -31,6 +37,8 @@ class PositionFixtures extends Fixture
             $position->setShortName($pos['shortName']);
             $position->setDescription($pos['description']);
             $manager->persist($position);
+
+            $this->addReference('position_' . strtolower($position->getShortName()), $position);
         }
 
         $manager->flush();

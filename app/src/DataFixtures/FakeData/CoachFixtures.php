@@ -4,7 +4,6 @@ namespace App\DataFixtures\FakeData;
 
 use App\DataFixtures\MasterData\CoachLicenseFixtures;
 use App\DataFixtures\MasterData\CoachTeamAssignmentTypeFixtures;
-use App\DataFixtures\MasterData\TeamFixtures;
 use App\Entity\Club;
 use App\Entity\Coach;
 use App\Entity\CoachClubAssignment;
@@ -14,11 +13,12 @@ use App\Entity\CoachTeamAssignment;
 use App\Entity\CoachTeamAssignmentType;
 use App\Entity\Team;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 
-class CoachFixtures extends Fixture implements DependentFixtureInterface
+class CoachFixtures extends Fixture implements DependentFixtureInterface, FixtureGroupInterface
 {
     public function getDependencies(): array
     {
@@ -26,8 +26,13 @@ class CoachFixtures extends Fixture implements DependentFixtureInterface
             CoachLicenseFixtures::class,
             CoachTeamAssignmentTypeFixtures::class,
             ClubFixtures::class,
-            TeamFixtures::class,
+            //            TeamFixtures::class,
         ];
+    }
+
+    public static function getGroups(): array
+    {
+        return ['fake'];
     }
 
     public function load(ObjectManager $manager): void

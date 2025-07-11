@@ -1,0 +1,21 @@
+<div class="col-md-{{ widget.width }} mb-4 widget-item" data-widget-id="{{ widget.id }}">
+    <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{{ widget.type|title }}</h5>
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-outline-secondary widget-refresh" title="Aktualisieren">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary widget-settings" title="Einstellungen">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger widget-delete" title="Entfernen">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body widget-content" data-widget-type="{{ widget.type }}">
+           {{ widgetContent|raw }}
+        </div>
+    </div>
+</div>

@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\AgeGroupRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
@@ -20,36 +21,36 @@ class AgeGroup
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'integer')]
+    #[ORM\Column(type: Types::INTEGER)]
     #[Groups(['age_group:read', 'team:read', 'club:read'])]
     /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
-    #[ORM\Column(type: 'string', length: 50, unique: true)]
+    #[ORM\Column(type: Types::STRING, length: 50, unique: true)]
     #[Groups(['age_group:read', 'age_group:write', 'team:read', 'club:read'])]
     private string $code; // z.B. "A-Junioren", "U17"
 
-    #[ORM\Column(type: 'string', length: 100)]
+    #[ORM\Column(type: Types::STRING, length: 100)]
     #[Groups(['age_group:read', 'age_group:write', 'team:read', 'club:read'])]
     private ?string $name = null; // z.B. "A-Junioren"
 
-    #[ORM\Column(type: 'string', length: 100)]
+    #[ORM\Column(type: Types::STRING, length: 100)]
     #[Groups(['age_group:read', 'age_group:write', 'team:read'])]
     private string $englishName; // z.B. "U17"
 
-    #[ORM\Column(type: 'integer')]
+    #[ORM\Column(type: Types::INTEGER)]
     #[Groups(['age_group:read', 'age_group:write', 'team:read'])]
     private int $minAge; // z.B. 16
 
-    #[ORM\Column(type: 'integer')]
+    #[ORM\Column(type: Types::INTEGER)]
     #[Groups(['age_group:read', 'age_group:write', 'team:read'])]
     private int $maxAge; // z.B. 17
 
-    #[ORM\Column(type: 'string', length: 5)]
+    #[ORM\Column(type: Types::STRING, length: 5)]
     #[Groups(['age_group:read', 'age_group:write', 'team:read'])]
     private string $referenceDate; // z.B. "01-01" (Monat-Tag, als String)
 
-    #[ORM\Column(type: 'text', nullable: true)]
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['age_group:read', 'age_group:write', 'team:read'])]
     private ?string $description = null;
 

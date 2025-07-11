@@ -81,4 +81,35 @@ class UserRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    public function findBy(array $criteria, ?array $orderBy = null, ?int $limit = null, ?int $offset = null): array
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->leftJoin('u.relatedTo', 'r')
+            ->leftJoin('r.player', 'p')
+            ->leftJoin('r.coach', 'c')
+            ->leftJoin('r.relationType', 'rt')
+            ->addSelect('r', 'p', 'c', 'rt');
+
+        foreach ($criteria as $field => $value) {
+            $qb->andWhere("u.$field = :$field")
+               ->setParameter($field, $value);
+        }
+
+        if ($orderBy) {
+            foreach ($orderBy as $field => $direction) {
+                $qb->addOrderBy("u.$field", $direction);
+            }
+        }
+
+        if ($limit) {
+            $qb->setMaxResults($limit);
+        }
+
+        if ($offset) {
+            $qb->setFirstResult($offset);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }

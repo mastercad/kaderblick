@@ -2,106 +2,296 @@
 
 {% block title %}Benutzer zuordnen{% endblock %}
 
-{% block stylesheets %}
-    {{ parent() }}
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-{% endblock %}
-
 {% block body %}
     <div class="container">
-        <h1>Zuordnung für {{ user.email }}</h1>
+        <h1>Benutzer zuordnen</h1>
+        <h2 class="mb-4">{{ user.fullName }}</h2>
 
-        {% for message in app.flashes('success') %}
-            <div class="alert alert-success">
-                {{ message }}
+        <form method="post" class="mb-5">
+            {# Player Assignments #}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Spielerzuordnungen</h3>
+                    <button type="button" class="btn btn-primary btn-sm" id="addPlayerAssignment">
+                        <i class="fas fa-plus"></i> Hinzufügen
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="playerAssignments" data-prototype='
+                        <div class="row mb-3 assignment-row">
+                            <div class="col-md-3">
+                                <select name="player_assignments[__name__][id]" class="form-select" required>
+                                    <option value="">Spieler auswählen</option>
+                                    {% for player in players %}
+                                        <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select name="player_assignments[__name__][type]" class="form-select" required>
+                                    <option value="">Beziehung wählen</option>
+                                    {% for type in relationTypes.player %}
+                                        <option value="{{ type.id }}">{{ type.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <select name="player_assignments[__name__][permissions][]" class="form-select" multiple>
+                                    {% for permission in permissions %}
+                                        <option value="{{ permission.identifier }}" title="{{ permission.description }}">
+                                            {{ permission.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-danger btn-sm remove-assignment">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    '>
+                        {% if currentAssignments.players is defined %}
+                            {% for assignment in currentAssignments.players %}
+                                <div class="row mb-3 assignment-row">
+                                    <div class="col-md-3">
+                                        <select name="player_assignments[{{ loop.index0 }}][id]" class="form-select" required>
+                                            <option value="">Spieler auswählen</option>
+                                            {% for player in players %}
+                                                <option value="{{ player.id }}" {{ player.id == assignment.entity.id ? 'selected' : '' }}>
+                                                    {{ player.fullName }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select name="player_assignments[{{ loop.index0 }}][type]" class="form-select" required>
+                                            <option value="">Beziehung wählen</option>
+                                            {% for type in relationTypes.player %}
+                                                <option value="{{ type.id }}" {{ type.id == assignment.relationType.id ? 'selected' : '' }}>
+                                                    {{ type.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <select name="player_assignments[{{ loop.index0 }}][permissions][]" class="form-select" multiple>
+                                            {% for permission in permissions %}
+                                                <option value="{{ permission.identifier }}" 
+                                                        {{ permission.identifier in assignment.permissions ? 'selected' : '' }}
+                                                        title="{{ permission.description }}">
+                                                    {{ permission.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="button" class="btn btn-danger btn-sm remove-assignment">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-        {% endfor %}
 
-        {% for message in app.flashes('error') %}
-            <div class="alert alert-danger">
-                {{ message }}
+            {# Coach Assignments #}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Trainerzuordnungen</h3>
+                    <button type="button" class="btn btn-primary btn-sm" id="addCoachAssignment">
+                        <i class="fas fa-plus"></i> Hinzufügen
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="coachAssignments" data-prototype='
+                        <div class="row mb-3 assignment-row">
+                            <div class="col-md-3">
+                                <select name="coach_assignments[__name__][id]" class="form-select" required>
+                                    <option value="">Trainer auswählen</option>
+                                    {% for coach in coaches %}
+                                        <option value="{{ coach.id }}">{{ coach.fullName }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select name="coach_assignments[__name__][type]" class="form-select" required>
+                                    <option value="">Beziehung wählen</option>
+                                    {% for type in relationTypes.coach %}
+                                        <option value="{{ type.id }}" data-category="coach">
+                                            {{ type.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <select name="coach_assignments[__name__][permissions][]" class="form-select" multiple>
+                                    {% for permission in permissions %}
+                                        <option value="{{ permission.identifier }}" title="{{ permission.description }}">
+                                            {{ permission.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-danger btn-sm remove-assignment">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    '>
+                        {% if currentAssignments.coaches is defined %}
+                            {% for assignment in currentAssignments.coaches %}
+                                <div class="row mb-3 assignment-row">
+                                    <div class="col-md-3">
+                                        <select name="coach_assignments[{{ loop.index0 }}][id]" class="form-select" required>
+                                            <option value="">Trainer auswählen</option>
+                                            {% for coach in coaches %}
+                                                <option value="{{ coach.id }}" {{ coach.id == assignment.entity.id ? 'selected' : '' }}>
+                                                    {{ coach.fullName }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select name="coach_assignments[{{ loop.index0 }}][type]" class="form-select" required>
+                                            <option value="">Beziehung wählen</option>
+                                            {% for type in relationTypes.coach %}
+                                                <option value="{{ type.id }}" {{ type.id == assignment.relationType.id ? 'selected' : '' }}>
+                                                    {{ type.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <select name="coach_assignments[{{ loop.index0 }}][permissions][]" class="form-select" multiple>
+                                            {% for permission in permissions %}
+                                                <option value="{{ permission.identifier }}" 
+                                                        {{ permission.identifier in assignment.permissions ? 'selected' : '' }}
+                                                        title="{{ permission.description }}">
+                                                    {{ permission.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="button" class="btn btn-danger btn-sm remove-assignment">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-        {% endfor %}
 
-        <form method="post">
-            <div class="form-group">
-                <h3>Spieler Zuordnung</h3>
-                <select id="player_id" name="player_id" class="form-control">
-                    <option value="">Keine Zuordnung</option>
-                    {% if user.player %}
-                        <option value="{{ user.player.id }}" selected>
-                            {{ user.player.fullName }}{% if user.player.email %} ({{ user.player.email }}){% endif %}
-                        </option>
-                    {% endif %}
-                </select>
+            <div class="d-flex justify-content-between">
+                <a href="{{ path('admin_users_index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Zurück
+                </a>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> Speichern
+                </button>
             </div>
-
-            <div class="form-group mt-3">
-                <h3>Trainer Zuordnung</h3>
-                <select id="coach_id" name="coach_id" class="form-control">
-                    <option value="">Keine Zuordnung</option>
-                    {% if user.coach %}
-                        <option value="{{ user.coach.id }}" selected>
-                            {{ user.coach.fullName }}{% if user.coach.email %} ({{ user.coach.email }}){% endif %}
-                        </option>
-                    {% endif %}
-                </select>
-            </div>
-
-            <div class="form-group mt-3">
-                <h3>Vereins Zuordnung</h3>
-                <p class="text-warning">Achtung: Bei Auswahl eines Vereins werden Spieler- und Trainer-Zuordnungen entfernt!</p>
-                <select id="club_id" name="club_id" class="form-control">
-                    <option value="">Keine Zuordnung</option>
-                    {% if user.club %}
-                        <option value="{{ user.club.id }}" selected>{{ user.club.name }}</option>
-                    {% endif %}
-                </select>
-            </div>
-
-            <button type="submit" class="btn btn-primary mt-3">Zuordnungen speichern</button>
         </form>
     </div>
 {% endblock %}
 
 {% block javascripts %}
-    {{ parent() }}
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            function initSelect2(elementId, searchType, placeholder) {
-                $(elementId).select2({
-                    ajax: {
-                        url: "{{ path('admin_users_search', {'type': 'REPLACE_TYPE'}) }}".replace('REPLACE_TYPE', searchType),
-                        dataType: 'json',
-                        delay: 250,
-                        data: function (params) {
-                            return {
-                                term: params.term || ''
-                            };
-                        },
-                        processResults: function (data) {
-                            return {
-                                results: data.results || []
-                            };
-                        }
-                    },
-                    minimumInputLength: 2,
-                    placeholder: placeholder,
-                    width: '100%',
-                    allowClear: true
-                }).on('select2:unselecting', function() {
-                    $(this).val('').trigger('change');
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function initAssignments(containerId, addButtonId) {
+        const container = document.getElementById(containerId);
+        const addButton = document.getElementById(addButtonId);
+        let counter = container.getElementsByClassName('assignment-row').length;
+
+        addButton.addEventListener('click', function() {
+            const prototype = container.getAttribute('data-prototype');
+            const newRow = prototype.replace(/__name__/g, counter);
+            container.insertAdjacentHTML('beforeend', newRow);
+            
+            // Bootstrap Select für neue Multiple Selects initialisieren
+            const newSelects = container.querySelectorAll(`select[multiple]:not(.selectpicker)`);
+            newSelects.forEach(select => {
+                $(select).selectpicker({
+                    selectedTextFormat: 'count > 2'
                 });
-
-                var $emptyOption = new Option('Keine Zuordnung', '', true, false);
-                $(elementId).append($emptyOption).trigger('change');
-            }
-
-            initSelect2('#player_id', 'player', 'Spieler suchen...');
-            initSelect2('#coach_id', 'coach', 'Trainer suchen...');
-            initSelect2('#club_id', 'club', 'Verein suchen...');
+            });
+            
+            counter++;
         });
-    </script>
+
+        container.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-assignment') || 
+                e.target.closest('.remove-assignment')) {
+                const row = e.target.closest('.assignment-row');
+                row.remove();
+            }
+        });
+    }
+
+    initAssignments('playerAssignments', 'addPlayerAssignment');
+    initAssignments('coachAssignments', 'addCoachAssignment');
+
+    // Bootstrap Select für existierende Multiple Selects
+    document.querySelectorAll('select[multiple]').forEach(select => {
+        $(select).selectpicker({
+            selectedTextFormat: 'count > 2'
+        });
+    });
+
+    // Form Submit Handler
+    document.querySelector('form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const form = e.target;
+        const formData = new FormData(form);
+        
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                // Erfolgreiche Aktualisierung
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success';
+                alertDiv.textContent = result.message;
+                form.prepend(alertDiv);
+                
+                // Nach 2 Sekunden Alert ausblenden
+                setTimeout(() => alertDiv.remove(), 2000);
+            } else {
+                // Fehlerfall
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger';
+                alertDiv.innerHTML = `<strong>Fehler:</strong> ${result.message}`;
+                
+                // Im Development-Mode Stack Trace anzeigen
+                if (result.trace) {
+                    const traceDiv = document.createElement('pre');
+                    traceDiv.className = 'mt-2 p-2 bg-light';
+                    traceDiv.style.fontSize = '0.8em';
+                    traceDiv.textContent = result.trace;
+                    alertDiv.appendChild(traceDiv);
+                }
+                
+                form.prepend(alertDiv);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger';
+            alertDiv.textContent = 'Ein unerwarteter Fehler ist aufgetreten.';
+            form.prepend(alertDiv);
+        }
+    });
+});
+</script>
 {% endblock %}

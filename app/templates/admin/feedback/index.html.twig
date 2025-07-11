@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Feedback-Übersicht{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <h1>Feedback-Übersicht</h1>
+
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#unresolved">
+                    Neues Feedback
+                    {% if unresolved|length > 0 %}
+                        <span class="badge bg-danger">{{ unresolved|length }}</span>
+                    {% endif %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#read">
+                    In Bearbeitung
+                    {% if read|length > 0 %}
+                        <span class="badge bg-warning">{{ read|length }}</span>
+                    {% endif %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#resolved">
+                    Erledigt
+                    {% if resolved|length > 0 %}
+                        <span class="badge bg-success">{{ resolved|length }}</span>
+                    {% endif %}
+                </a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="unresolved">
+                {% include 'admin/feedback/_list.html.twig' with {'feedback': unresolved} %}
+            </div>
+            <div class="tab-pane fade" id="read">
+                {% include 'admin/feedback/_list.html.twig' with {'feedback': read} %}
+            </div>
+            <div class="tab-pane fade" id="resolved">
+                {% include 'admin/feedback/_list.html.twig' with {'feedback': resolved} %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

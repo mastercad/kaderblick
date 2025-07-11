@@ -1,0 +1,23 @@
+<div id="calendar-widget-{{ widget.id }}" class="small-calendar"></div>
+
+<script>
+    var calendarEl = document.getElementById('calendar-widget-{{ widget.id }}');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'de',
+        height: 'auto',
+        headerToolbar: {
+            left: 'prev',
+            center: 'title',
+            right: 'next'
+        },
+        events: '{{ path('calendar_events') }}'
+    });
+    calendar.render();
+</script>
+
+<style>
+.small-calendar {
+    min-height: 300px;
+}
+</style>

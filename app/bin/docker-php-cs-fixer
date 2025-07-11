@@ -1,2 +1,3 @@
 #!/bin/bash
+
 docker compose exec -T api ./vendor/bin/php-cs-fixer fix "$@"

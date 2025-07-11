@@ -70,7 +70,11 @@ Event Kalender
                                 description: event.description,
                                 start: event.startDate|date('c'),
                                 end: event.endDate ? event.endDate|date('c') : null,
-                                type: event.type ? { id: event.type.id, name: event.type.name, color: event.type.color } : null,
+                                type: event.eventType ? { 
+                                    id: event.eventType.id, 
+                                    name: event.eventType.name, 
+                                    color: event.eventType.color 
+                                } : null,
                                 location: event.location ? { id: event.location.id, name: event.location.name } : null
                              }|json_encode|e('html_attr') }}'>
                             <div class="d-flex w-100 justify-content-between">

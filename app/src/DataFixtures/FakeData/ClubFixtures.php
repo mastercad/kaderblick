@@ -2,21 +2,26 @@
 
 namespace App\DataFixtures\FakeData;
 
-use App\DataFixtures\FakeData\LocationFixtures as FakeDataLocationFixtures;
 use App\Entity\Club;
 use App\Entity\Location;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
 
-class ClubFixtures extends Fixture implements DependentFixtureInterface
+class ClubFixtures extends Fixture implements DependentFixtureInterface, FixtureGroupInterface
 {
     public function getDependencies(): array
     {
         return [
-            FakeDataLocationFixtures::class,
+            LocationFixtures::class,
         ];
+    }
+
+    public static function getGroups(): array
+    {
+        return ['fake'];
     }
 
     public function load(ObjectManager $manager): void

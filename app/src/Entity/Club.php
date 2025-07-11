@@ -33,9 +33,11 @@ class Club
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $stadiumName = null;
 
+    /** @deprecated use Location */
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $city = null;
 
+    /** @deprecated use Location */
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $country = null;
 

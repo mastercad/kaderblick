@@ -4,10 +4,16 @@ namespace App\DataFixtures\MasterData;
 
 use App\Entity\Nationality;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 
-class NationalityFixtures extends Fixture
+class NationalityFixtures extends Fixture implements FixtureGroupInterface
 {
+    public static function getGroups(): array
+    {
+        return ['master'];
+    }
+
     public function load(ObjectManager $manager): void
     {
         $nationalities = [
@@ -27,6 +33,11 @@ class NationalityFixtures extends Fixture
             $nationalityEntity->setIsoCode($nationality['isoCode']);
 
             $manager->persist($nationalityEntity);
+
+            $this->addReference(
+                'nationality_' . strtolower($nationalityEntity->getName()),
+                $nationalityEntity
+            );
         }
 
         $manager->flush();
