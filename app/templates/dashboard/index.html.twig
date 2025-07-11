@@ -79,6 +79,9 @@
                     <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="news">
                         <i class="fas fa-newspaper"></i> News
                     </button>
+                    <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="upcoming_events">
+                        <i class="fas fa-newspaper"></i> Anstehende Veranstaltungen
+                    </button>
                 </div>
             </div>
         </div>
@@ -285,9 +288,9 @@
                 await updateWidgetPositions();
                 bsModal.hide();
                 modalElement.remove();
-    
-                bsModal.show();
             });
+    
+            bsModal.show();
         }
 
         function handleRefresh(button) {

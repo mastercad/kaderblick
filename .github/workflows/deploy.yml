@@ -261,6 +261,12 @@ jobs:
             echo "Setze Rechte für current"
             chmod -R 777 $CURRENT_DIR/app/var
 
+            mkdir -p "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads"
+
+            ln -sfn "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads" "$RELEASE_DIR/app/public/uploads"
+
+            chmod -R 777 "$RELEASE_DIR/app/public/uploads"
+
             # Neue Production starten
             echo "gehe in current"
             cd $CURRENT_DIR
