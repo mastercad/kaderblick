@@ -5,6 +5,7 @@
 
 {% block body %}
 <div class="container-fluid">
+    {% if ( is_granted('ROLE_USER') ) %}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Dashboard</h1>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addWidgetModal">
@@ -87,10 +88,12 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
+    {% if ( is_granted('ROLE_USER') ) %}
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script>
 
@@ -298,4 +301,5 @@
             loadWidgetContent(widget);
         }
     </script>
+    {% endif %}
 {% endblock %}
