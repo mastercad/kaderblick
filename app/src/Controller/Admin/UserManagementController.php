@@ -117,7 +117,8 @@ class UserManagementController extends AbstractController
                 $entity = $relation->getCoach();
             }
 
-            if ($entity instanceof Player
+            if (
+                $entity instanceof Player
                 || $entity instanceof Coach
             ) {
                 $currentAssignments[$type][] = [
