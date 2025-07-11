@@ -1,8 +1,4 @@
 name: Deploy to AlfahostingMore actions
-uses: actions/cache@v3
-  with:
-    path: vendor
-    key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
 
 on:
   push:
@@ -15,6 +11,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - name: Cache Composer vendors
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          
       - name: prepare Test Env
         run: |
           # prepare database container 
@@ -119,6 +122,14 @@ jobs:
     needs: quality-assurance
     timeout-minutes: 30
 
+    - uses: actions/checkout@v3
+
+    - name: Cache Composer vendors
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+        
     steps:
       - name: Generate release directory name
         id: release
