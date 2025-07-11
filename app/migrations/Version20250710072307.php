@@ -29,9 +29,6 @@ final class Version20250710072307 extends AbstractMigration
             ALTER TABLE feedback CHANGE message message LONGTEXT NOT NULL, CHANGE resolved resolved TINYINT(1) NOT NULL, CHANGE admin_note admin_note LONGTEXT DEFAULT NULL, CHANGE is_read is_read TINYINT(1) NOT NULL
         SQL);
         $this->addSql(<<<'SQL'
-            ALTER TABLE feedback RENAME INDEX idx_feedback_user TO IDX_D2294458A76ED395
-        SQL);
-        $this->addSql(<<<'SQL'
             ALTER TABLE games CHANGE date date DATETIME NULL;
             UPDATE games SET date = NULL WHERE date = "" OR date IS NULL;
             UPDATE games SET date = CONCAT(date, " 00:00:00");
