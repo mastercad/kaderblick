@@ -57,7 +57,10 @@ final class Version20250710072307 extends AbstractMigration
             ALTER TABLE feedback RENAME INDEX idx_feedback_user TO IDX_D2294458A76ED395
         SQL);
         $this->addSql(<<<'SQL'
-            ALTER TABLE games CHANGE date date DATETIME NOT NULL
+            ALTER TABLE games CHANGE date date DATETIME NULL;
+            UPDATE games SET date = NULL WHERE date = "" OR date IS NULL;
+            UPDATE games SET date = CONCAT(date, " 00:00:00");
+            ALTER TABLE games CHANGE date date DATETIME NOT NULL;
         SQL);
         $this->addSql(<<<'SQL'
             DROP INDEX UNIQ_permission_identifier ON permissions
