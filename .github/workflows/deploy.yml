@@ -122,15 +122,15 @@ jobs:
     needs: quality-assurance
     timeout-minutes: 30
 
-    - uses: actions/checkout@v3
-
-    - name: Cache Composer vendors
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
-        
     steps:
+      - uses: actions/checkout@v3
+  
+      - name: Cache Composer vendors
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          
       - name: Generate release directory name
         id: release
         run: echo "dir=/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
