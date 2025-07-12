@@ -11,5 +11,7 @@ return [
     'MAILER_PASSWORD' => null,
     'MAILER_USER' => null,
     'PHONE' => null,
+    'VAPID_PRIVATE_KEY' => null,
+    'VAPID_PUBLIC_KEY' => null,
     'WEBSITE' => null,
 ];
