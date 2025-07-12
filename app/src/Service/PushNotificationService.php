@@ -61,7 +61,21 @@ class PushNotificationService
                 json_encode([
                     'title' => $title,
                     'body' => $body,
-                    'url' => $url
+                    'url' => $url,
+                    'icon' => 'https://example.com/icon.png',
+                    'image' => 'https://example.com/bild.jpg',
+                    'badge' => 'https://example.com/badge.png',
+                    'vibrate' => [200, 100, 200],
+                    'actions' => [
+                        [
+                            'action' => 'details',
+                            'title' => 'Details anzeigen'
+                        ]
+                    ],
+                    // 'silent' => false, // erzwingt das die Benachrichtigung sofort angezeigt wird, auch wenn der Benutzer nicht auf den Link klickt
+                    /** @TODO tag vermeidet duplicate zum selben thema, das tag hier macht allerdings wenig sinn und ist nur zu testzwecken das */
+                    'tag' => 'notification-' . $user->getId(),
+                    'requireInteraction' => true
                 ])
             );
         }

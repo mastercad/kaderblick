@@ -1,0 +1,30 @@
+{
+    "name": "Kaderblick",
+    "short_name": "KB App",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#3367D6",
+    "icons": [
+      {
+        "src": "/images/icon.png",
+        "type": "image/png",
+        "sizes": "192x192"
+      },
+      {
+        "src": "/images/icon_512x512.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      }
+    ],
+    "splash_pages": null,
+    "prefer_related_applications": false,
+    "related_applications": [],
+    "shortcuts": [
+        {
+            "name": "Neue Aufgabe",
+            "short_name": "Aufgabe",
+            "url": "/new-task"
+        }
+    ]
+}

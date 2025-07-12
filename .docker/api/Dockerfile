@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     openssl libssl-dev \
     && update-ca-certificates \
-    && docker-php-ext-install intl pdo pdo_mysql zip opcache
+    && docker-php-ext-install intl pdo pdo_mysql zip opcache bcmath
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite

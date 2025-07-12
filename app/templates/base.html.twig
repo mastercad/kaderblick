@@ -9,6 +9,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.css' rel='stylesheet' />
     <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@5.11.3/main.css' rel='stylesheet' />
+    <link rel="manifest" href="/manifest.json">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Kaderblick">
+    <link rel="apple-touch-icon" href="/images/icon.png">
+    <link rel="favicon" href="/favicon.ico">
 
     {% block stylesheets %}{% endblock %}
 </head>
@@ -27,6 +34,8 @@
             <i class="fas fa-comment-dots"></i>
         </button>
     </div>
+
+    <button class="btn btn-primary rounded-circle" id="installPWA">App installieren</button>
 
     {# Feedback Modal #}
     <div class="modal fade" id="feedback_modal" tabindex="-1">
@@ -602,6 +611,25 @@
       if ('serviceWorker' in navigator && 'PushManager' in window) {
           registerServiceWorker();
       }
+
+      // PWA logic:
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Zeige einen Button an (z. B. <button id="installPWA">App installieren</button>)
+        document.getElementById('installPWA').style.display = 'block';
+      });
+
+      document.getElementById('installPWA').addEventListener('click', () => {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('PWA installiert');
+          }
+          deferredPrompt = null;
+        });
+      });
     });
 
     async function fetchWithRefresh(url, options = {}) {

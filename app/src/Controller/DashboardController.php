@@ -6,6 +6,7 @@ use App\Entity\DashboardWidget;
 use App\Entity\User;
 use App\Repository\CalendarEventRepository;
 use App\Repository\DashboardWidgetRepository;
+use App\Service\PushNotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -92,7 +93,7 @@ class DashboardController extends AbstractController
     }
 
     #[Route('widget', name: 'widget_create', methods: ['PUT'])]
-    public function createWidget(Request $request, EntityManagerInterface $em): JsonResponse
+    public function createWidget(Request $request, EntityManagerInterface $em, PushNotificationService $pushNotificationService): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
@@ -102,6 +103,12 @@ class DashboardController extends AbstractController
 
         /** @var User $user */
         $user = $this->getUser();
+
+        $pushNotificationService->sendNotification(
+            $user,
+            'Widget created',
+            'A new widget has been created on your dashboard.'
+        );
 
         $widget = new DashboardWidget();
         $widget->setUser($user);
