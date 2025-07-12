@@ -73,7 +73,7 @@ class PushNotificationService
                         ]
                     ],
                     // 'silent' => false, // erzwingt das die Benachrichtigung sofort angezeigt wird, auch wenn der Benutzer nicht auf den Link klickt
-                    /** @TODO tag vermeidet duplicate zum selben thema, das tag hier macht allerdings wenig sinn und ist nur zu testzwecken das */
+                    /* @TODO tag vermeidet duplicate zum selben thema, das tag hier macht allerdings wenig sinn und ist nur zu testzwecken das */
                     'tag' => 'notification-' . $user->getId(),
                     'requireInteraction' => true
                 ])
