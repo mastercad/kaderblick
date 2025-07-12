@@ -135,7 +135,7 @@
             }
 
             // Für beide Event-Typen registrieren
-            document.addEventListener('click', handleWidgetInteraction);
+            document.addEventListener('pointerup', handleWidgetInteraction);
 
             document.querySelectorAll('.btn-add-widget').forEach(button => {
                 button.addEventListener('click', async function() {
