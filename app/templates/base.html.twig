@@ -11,7 +11,7 @@
     <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@5.11.3/main.css' rel='stylesheet' />
     <link rel="manifest" href="/manifest.json">
 
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Kaderblick">
     <link rel="apple-touch-icon" href="/images/icon.png">
@@ -34,8 +34,6 @@
             <i class="fas fa-comment-dots"></i>
         </button>
     </div>
-
-    <button class="btn btn-primary rounded-circle" id="installPWA">App installieren</button>
 
     {# Feedback Modal #}
     <div class="modal fade" id="feedback_modal" tabindex="-1">
@@ -613,23 +611,40 @@
       }
 
       // PWA logic:
+      const installButton = document.getElementById('installPWA');
       let deferredPrompt;
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        // Zeige einen Button an (z. B. <button id="installPWA">App installieren</button>)
-        document.getElementById('installPWA').style.display = 'block';
-      });
 
-      document.getElementById('installPWA').addEventListener('click', () => {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            console.log('PWA installiert');
-          }
-          deferredPrompt = null;
+      function isPWAInstalled() {
+        return (
+          window.matchMedia('(display-mode: standalone)').matches ||
+          window.navigator.standalone || 
+          document.referrer.includes('android-app://')
+        );
+      }
+
+      installButton.style.display = 'none';
+
+      if (!isPWAInstalled()) {
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          deferredPrompt = e;
+          installButton.style.display = 'block';
         });
-      });
+
+        installButton.addEventListener('click', async () => {
+          if (!deferredPrompt) {
+            console.info("DEFERRED PROMPT IST NICHT DEFINIERT!");
+            return
+          };
+          
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          console.log(`Installation ${outcome}`);
+          installButton.style.display = 'none';
+        });
+      } else {
+        console.info("Kaderblick bereits als PWA installiert!");
+      }
     });
 
     async function fetchWithRefresh(url, options = {}) {
