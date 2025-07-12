@@ -230,7 +230,7 @@ jobs:
             mkdir -p app/config/secrets/prod
             # echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > app/config/secrets/prod/prod.decrypt.private.php
             echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > app/config/secrets/prod/prod.decrypt.private.php
-            chmod 600 app/config/secrets/prod/prod.decrypt.private.php
+            chmod 655 app/config/secrets/prod/prod.decrypt.private.php
 
             # Build und Test mit uniquen Container-Namen
             echo "Starte neuen Staging für vorbereitungen"
