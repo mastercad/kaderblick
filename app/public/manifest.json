@@ -1,6 +1,6 @@
 {
     "name": "Kaderblick",
-    "short_name": "KB App",
+    "short_name": "Kaderblick App",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",

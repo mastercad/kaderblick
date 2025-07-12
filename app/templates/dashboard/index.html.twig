@@ -107,30 +107,36 @@
                 onEnd: updateWidgetPositions
             });
 
-            // Initial Widget-Inhalte laden
             document.querySelectorAll('.widget-item').forEach(async widget => {
                 await loadWidgetContent(widget);
             });
 
-            document.addEventListener('click', function(e) {
-                // Löschen-Button
-                if (e.target.closest('.widget-delete')) {
-                    handleDelete(e.target.closest('.widget-delete'));
+            function handleWidgetInteraction(e) {
+                const deleteBtn = e.target.closest('.widget-delete');
+                if (deleteBtn) {
+                    handleDelete(deleteBtn);
+                    e.preventDefault();
                     return;
                 }
-                
-                // Einstellungen-Button
-                if (e.target.closest('.widget-settings')) {
-                    handleSettings(e.target.closest('.widget-settings'));
+
+                const settingsBtn = e.target.closest('.widget-settings');
+                if (settingsBtn) {
+                    handleSettings(settingsBtn);
+                    e.preventDefault();
                     return;
                 }
-                
-                // Refresh-Button
-                if (e.target.closest('.widget-refresh')) {
-                    handleRefresh(e.target.closest('.widget-refresh'));
+
+                const refreshButton = e.target.closest('.widget-refresh');
+                if (refreshButton) {
+                    handleRefresh(refreshButton);
+                    e.preventDefault();
                     return;
                 }
-            });
+            }
+
+            // Für beide Event-Typen registrieren
+            document.addEventListener('click', handleWidgetInteraction);
+            document.addEventListener('touchstart', handleWidgetInteraction);
 
             document.querySelectorAll('.btn-add-widget').forEach(button => {
                 button.addEventListener('click', async function() {
