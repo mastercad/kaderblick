@@ -26,5 +26,6 @@
             "short_name": "Aufgabe",
             "url": "/new-task"
         }
-    ]
+    ],
+    "gcm_sender_id": "103953800507"
 }

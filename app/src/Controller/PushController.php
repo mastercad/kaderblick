@@ -35,16 +35,14 @@ class PushController extends AbstractController
         $subscription = $this->em->getRepository(PushSubscription::class)
             ->findOneBy(['user' => $user, 'endpoint' => $data['endpoint']]);
 
-        if ($subscription instanceof PushSubscription) {
-            $subscription->setPublicKey($data['keys']['p256dh']);
-            $subscription->setAuthToken($data['keys']['auth']);
-        } else {
+        if (! $subscription instanceof PushSubscription) {
             $subscription = new PushSubscription();
             $subscription->setUser($user);
             $subscription->setEndpoint($data['endpoint']);
-            $subscription->setPublicKey($data['keys']['p256dh']);
-            $subscription->setAuthToken($data['keys']['auth']);
         }
+
+        $subscription->setPublicKey($data['keys']['p256dh']);
+        $subscription->setAuthToken($data['keys']['auth']);
 
         $this->em->persist($subscription);
         $this->em->flush();
