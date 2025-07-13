@@ -35,7 +35,7 @@ class PushController extends AbstractController
         $subscription = $this->em->getRepository(PushSubscription::class)
             ->findOneBy(['user' => $user, 'endpoint' => $data['endpoint']]);
 
-        if (! $subscription instanceof PushSubscription) {
+        if (!$subscription instanceof PushSubscription) {
             $subscription = new PushSubscription();
             $subscription->setUser($user);
             $subscription->setEndpoint($data['endpoint']);
