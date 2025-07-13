@@ -163,7 +163,7 @@
         }
 
         async function addWidget(widgetId) {
-            /** @TODO hier vielleicht noch umbauen in "path generate by name", war mir jetzt zu viel aufwand für den quatsch **/
+            // TODO hier vielleicht noch umbauen in "path generate by name", war mir jetzt zu viel aufwand für den quatsch
             await fetch('/widget/' + widgetId, {
                   method: 'GET'
             }).then((response) => {

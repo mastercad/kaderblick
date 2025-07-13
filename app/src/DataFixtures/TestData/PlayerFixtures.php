@@ -85,11 +85,17 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface, Fixtu
             for ($playerNumber = 1; $playerNumber <= $playerCount; ++$playerNumber) {
                 $selectedClub = $clubs[array_rand($clubs)];
 
+                $firstName = 'Player_' . $playerNumber;
+                $lastName = 'Team ' . $teamNumber . ' / Club ' . $selectedClub->getName();
+                $email = $firstName . '.' . $lastName . '@example.com';
                 $player = new Player();
-                $player->setFirstName('Player_' . $playerNumber);
-                $player->setLastName('Team ' . $teamNumber . ' / Club ' . $selectedClub->getName());
+                $player->setFirstName($firstName);
+                $player->setLastName($lastName);
                 $player->setStrongFoot($strongFeet[array_rand($strongFeet)]);
+                $player->setEmail($email);
 
+                // TODO positionen sind aktuell noch dynamisch, das könnte bei strengeren tests ein problem werden,
+                // vielleicht diese positionen einmal auswürfeln und dann fest hinterlegen
                 // Position basierend auf Teamgröße und Spielernummer
                 if ($playerNumber <= ceil($playerCount * 0.1)) {
                     $player->setMainPosition($positions['tor']);                    // 10% Torhüter
@@ -108,6 +114,7 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface, Fixtu
                 $clubAssignment = new PlayerClubAssignment();
                 $clubAssignment->setPlayer($player);
                 $clubAssignment->setClub($selectedClub);
+                // TODO das start datum und auch ein enddatum variabler gestalten
                 $clubAssignment->setStartDate(new DateTimeImmutable('2023-01-01'));
                 $manager->persist($clubAssignment);
 
@@ -115,9 +122,11 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface, Fixtu
                 $teamAssignment = new PlayerTeamAssignment();
                 $teamAssignment->setPlayer($player);
                 $teamAssignment->setTeam($team);
+                // TODO auch hier das Startdatum und enddatum variabler gestalten
                 $teamAssignment->setStartDate(new DateTimeImmutable('2023-01-01'));
 
                 // Dynamischere Verteilung der Spielertypen
+                // TODO für solidere Tests diese dynamic in statische verteilung umwandeln
                 $assignmentType = match (true) {
                     $playerNumber <= ceil($playerCount * 0.6) => 'vertragsspieler',     // 60% Stammspieler
                     $playerNumber <= ceil($playerCount * 0.8) => 'gastspieler',         // 20% Gastspieler

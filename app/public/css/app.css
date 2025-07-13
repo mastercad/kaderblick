@@ -1,0 +1,15 @@
+body {
+    background-color: var(--custom-bg);
+    color: var(--custom-text);
+    transition: background 0.3s, color 0.3s;
+}
+
+:root, [data-bs-theme="light"] {
+    --custom-bg: #ffffff;
+    --custom-text: #212529;
+}
+
+[data-bs-theme="dark"] {
+    --custom-bg: #121212;
+    --custom-text: #f8f9fa;
+}

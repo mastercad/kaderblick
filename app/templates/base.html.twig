@@ -2,6 +2,16 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
+    <!-- prevent FOUC during theme switch after side is loaded -->
+    <script>
+      // Theme sofort setzen (vor dem DOM-Load)
+      const savedTheme = localStorage.getItem('theme') || 'system';
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      if (savedTheme === 'dark' || (savedTheme === 'system' && systemDark)) {
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+      }
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}Mein Dashboard{% endblock %}</title>
@@ -9,12 +19,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.css' rel='stylesheet' />
     <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@5.11.3/main.css' rel='stylesheet' />
+    <link href='/css/app.css' rel='stylesheet' />
+
     <link rel="manifest" href="/manifest.json">
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Kaderblick">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="white">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="black">
 
     <link rel="apple-touch-icon" href="/images/icon.png">
     <link rel="favicon" href="/favicon.ico">
@@ -231,6 +246,19 @@
                             </div>
                         </div>
                         <div id="profileMessage" class="alert d-none"></div>
+                        <div class="mb-3">
+                          <h6>Theme</h6>
+                          <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                              Theme
+                            </button>
+                            <ul class="dropdown-menu">
+                              <li><a class="dropdown-item" href="#" data-theme="system">System</a></li>
+                              <li><a class="dropdown-item" href="#" data-theme="light">Light</a></li>
+                              <li><a class="dropdown-item" href="#" data-theme="dark">Dark</a></li>
+                            </ul>
+                          </div>
+                        </div>
                         <button type="submit" class="btn btn-primary">Speichern</button>
                     </form>
                 </div>
@@ -684,6 +712,41 @@
 
       return response;
     }
+
+    // Theme
+    document.addEventListener('DOMContentLoaded', () => {
+      const themeSwitcher = document.querySelectorAll('[data-theme]');
+      const savedTheme = localStorage.getItem('theme') || 'system';
+      
+      // Theme beim Laden setzen
+      setTheme(savedTheme);
+
+      // Event-Listener für Theme-Buttons
+      themeSwitcher.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const theme = e.target.getAttribute('data-theme');
+          setTheme(theme);
+          localStorage.setItem('theme', theme);
+        });
+      });
+
+      // Theme anwenden
+      function setTheme(theme) {
+        if (theme === 'system') {
+          const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-bs-theme', systemTheme);
+        } else {
+          document.documentElement.setAttribute('data-bs-theme', theme);
+        }
+      }
+
+      // Reagiere auf System-Theme-Änderungen
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (localStorage.getItem('theme') === 'system') {
+          setTheme('system');
+        }
+      });
+    });
   </script>
   {#<script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
   <script>
