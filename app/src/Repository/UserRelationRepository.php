@@ -14,6 +14,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @template-extends ServiceEntityRepository<UserRelation>
+ *
  * @extends ServiceEntityRepository<UserRelation>
  */
 class UserRelationRepository extends ServiceEntityRepository

@@ -26,7 +26,7 @@ class GithubService
     /**
      * @param array<int, string> $labels
      *
-     * @return array<string, mixed> 
+     * @return array<string, mixed>
      */
     public function createIssue(string $title, string $body, array $labels = []): array
     {

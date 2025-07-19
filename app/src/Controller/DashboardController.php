@@ -151,6 +151,7 @@ class DashboardController extends AbstractController
     {
         /** @var User $user */
         $user = $this->getUser();
+
         return match ($widget->getType()) {
             'upcoming_events' => $this->renderView('widgets/upcoming_events.html.twig', [
                 'widget' => $widget,

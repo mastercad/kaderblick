@@ -2,8 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\UserRelation;
-use App\Repository\AbstractApiRepositoryInterface;
 use App\Repository\OptimizedRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\MissingIdentifierField;

@@ -12,6 +12,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @template-extends ServiceEntityRepository<Team>
+ *
  * @implements OptimizedRepositoryInterface<Team>
  */
 class TeamRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
