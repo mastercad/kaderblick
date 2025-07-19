@@ -17,6 +17,9 @@ class MessageRepository extends ServiceEntityRepository
         parent::__construct($registry, Message::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function findNewMessages(User $user, int $limit = 5): array
     {
         return $this->createQueryBuilder('m')

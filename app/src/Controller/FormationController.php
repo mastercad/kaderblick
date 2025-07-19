@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Formation;
+use App\Entity\User;
 use App\Form\FormationType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -33,7 +34,9 @@ class FormationController extends AbstractController
 
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
-            $formation->setUser($this->getUser());
+            /** @var User $user */
+            $user = $this->getUser();
+            $formation->setUser($user);
             $em->persist($formation);
             $em->flush();
 

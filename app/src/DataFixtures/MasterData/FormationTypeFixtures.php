@@ -109,11 +109,12 @@ class FormationTypeFixtures extends Fixture implements FixtureGroupInterface
 
         foreach ($formationTypes as $formationType) {
             $formation = new FormationType();
-            $formation->setName($formationType);
+            $formation->setName($formationType['name']);
+            $formation->setBackgroundPath($formationType['background']);
 
             $manager->persist($formation);
 
-            $this->addReference('formation_type_' . strtolower($formationType), $formation);
+            $this->addReference('formation_type_' . strtolower($formationType['name']), $formation);
         }
 
         $manager->flush();

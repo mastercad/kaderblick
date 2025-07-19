@@ -149,6 +149,8 @@ class DashboardController extends AbstractController
 
     private function retrieveWidgetContent(DashboardWidget $widget): string
     {
+        /** @var User $user */
+        $user = $this->getUser();
         return match ($widget->getType()) {
             'upcoming_events' => $this->renderView('widgets/upcoming_events.html.twig', [
                 'widget' => $widget,
@@ -159,7 +161,7 @@ class DashboardController extends AbstractController
             ]),
             'messages' => $this->renderView('widgets/messages.html.twig', [
                 'widget' => $widget,
-                'messages' => $this->messagesRepo->findLatestForUser($this->getUser())
+                'messages' => $this->messagesRepo->findLatestForUser($user)
             ]),
             default => 'Widget type not implemented yet'
         };

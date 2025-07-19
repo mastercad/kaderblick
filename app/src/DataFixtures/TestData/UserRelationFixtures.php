@@ -2,6 +2,7 @@
 
 namespace App\DataFixtures\TestData;
 
+use App\Entity\Coach;
 use App\Entity\Player;
 use App\Entity\RelationType;
 use App\Entity\User;
@@ -43,7 +44,7 @@ class UserRelationFixtures extends Fixture implements DependentFixtureInterface,
 
         $userVaterVonSpielerSechsundreisigTeamZweiUndCoachVonTeamVier = $this->getReference('user_10', User::class);
         $playerZehnTeamZwei = $this->getReference('player_10', Player::class);
-        $coachTeamVier = $this->getReference('coach_7', User::class);
+        $coachTeamVier = $this->getReference('coach_7', Coach::class);
 
         $userRelationVaterVonSpielerSechsunddreisigTeamZweiUndCoachVonTeamVier = new UserRelation();
         $userRelationVaterVonSpielerSechsunddreisigTeamZweiUndCoachVonTeamVier->setPlayer($playerZehnTeamZwei);

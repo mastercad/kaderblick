@@ -13,6 +13,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
+ * @template-extends ServiceEntityRepository<UserRelation>
  * @extends ServiceEntityRepository<UserRelation>
  */
 class UserRelationRepository extends ServiceEntityRepository
@@ -22,7 +23,10 @@ class UserRelationRepository extends ServiceEntityRepository
         parent::__construct($registry, UserRelation::class);
     }
 
-    public function findRelevantTeams(UserInterface $user)
+    /**
+     * @return array<string, mixed>
+     */
+    public function findRelevantTeams(UserInterface $user): array
     {
         return $this->createQueryBuilder('ur')
             ->select(['IDENTITY(pta.team) as playerTeamId', 'IDENTITY(cta.team) as coachTeamId'])

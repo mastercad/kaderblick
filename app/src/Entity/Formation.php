@@ -10,11 +10,13 @@ class Formation
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
+    /** @var array<string, mixed> $formationData */
     #[ORM\Column(type: 'json')]
     private array $formationData = [];
 
@@ -41,11 +43,17 @@ class Formation
         return $this;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getFormationData(): array
     {
         return $this->formationData;
     }
 
+    /**
+     * @param array<string, mixed> $formationData
+     */
     public function setFormationData(array $formationData): self
     {
         $this->formationData = $formationData;

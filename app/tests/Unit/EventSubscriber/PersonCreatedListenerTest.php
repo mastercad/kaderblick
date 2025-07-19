@@ -12,15 +12,20 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PostPersistEventArgs;
 use Doctrine\ORM\Event\PostUpdateEventArgs;
 use Doctrine\Persistence\ObjectRepository;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class PersonCreatedListenerTest extends TestCase
 {
-    private $entityManager;
-    private $userRepository;
-    private $relationTypeRepository;
-    private $userRelationRepository;
-    private $listener;
+    private EntityManagerInterface&MockObject $entityManager;
+    /** @var ObjectRepository<User>&MockObject */
+    private ObjectRepository $userRepository;
+    /** @var ObjectRepository<RelationType>&MockObject */
+    private ObjectRepository $relationTypeRepository;
+    /** @var ObjectRepository<UserRelation>&MockObject */
+    private ObjectRepository $userRelationRepository;
+    /** @phpstan-ignore-next-line all tests are skipped for now */
+    private PersonCreatedListener $listener;
 
     protected function setUp(): void
     {
@@ -39,9 +44,10 @@ class PersonCreatedListenerTest extends TestCase
         $this->listener = new PersonCreatedListener();
     }
 
-    public function testPostPersistPlayerWithEmailAndUser()
+    public function testPostPersistPlayerWithEmailAndUser(): void
     {
         $this->markTestIncomplete();
+        /** @phpstan-ignore-next-line all tests are skipped for now */
         $player = (new Player())->setEmail('player@test.com');
         $user = new User();
         $relationType = (new RelationType())->setIdentifier('self_player');
@@ -58,9 +64,10 @@ class PersonCreatedListenerTest extends TestCase
         $this->listener->postPersistPlayer($player, $args);
     }
 
-    public function testPostPersistPlayerWithoutEmail()
+    public function testPostPersistPlayerWithoutEmail(): void
     {
         $this->markTestIncomplete();
+        /** @phpstan-ignore-next-line all tests are skipped for now */
         $player = new Player(); // no email
         $args = $this->createMock(PostPersistEventArgs::class);
 
@@ -68,9 +75,10 @@ class PersonCreatedListenerTest extends TestCase
         $this->listener->postPersistPlayer($player, $args);
     }
 
-    public function testPostPersistPlayerWithoutUser()
+    public function testPostPersistPlayerWithoutUser(): void
     {
         $this->markTestIncomplete();
+        /** @phpstan-ignore-next-line all tests are skipped for now */
         $player = (new Player())->setEmail('player@test.com');
         $args = $this->createMock(PostPersistEventArgs::class);
         $args->method('getObjectManager')->willReturn($this->entityManager);
@@ -81,9 +89,10 @@ class PersonCreatedListenerTest extends TestCase
         $this->listener->postPersistPlayer($player, $args);
     }
 
-    public function testPostUpdatePlayerWithExistingRelation()
+    public function testPostUpdatePlayerWithExistingRelation(): void
     {
         $this->markTestIncomplete();
+        /** @phpstan-ignore-next-line all tests are skipped for now */
         $player = (new Player())->setEmail('player@test.com');
         $user = new User();
         $relationType = (new RelationType())->setIdentifier('self_player');
@@ -99,9 +108,10 @@ class PersonCreatedListenerTest extends TestCase
         $this->listener->postUpdatePlayer($player, $args);
     }
 
-    public function testPostUpdatePlayerCreatesNewRelation()
+    public function testPostUpdatePlayerCreatesNewRelation(): void
     {
         $this->markTestIncomplete();
+        /** @phpstan-ignore-next-line all tests are skipped for now */
         $player = (new Player())->setEmail('player@test.com');
         $user = new User();
         $relationType = (new RelationType())->setIdentifier('self_player');
@@ -119,9 +129,10 @@ class PersonCreatedListenerTest extends TestCase
         $this->listener->postUpdatePlayer($player, $args);
     }
 
-    public function testPostPersistCoachWithEmailAndUser()
+    public function testPostPersistCoachWithEmailAndUser(): void
     {
         $this->markTestIncomplete();
+        /** @phpstan-ignore-next-line all tests are skipped for now */
         $coach = (new Coach())->setEmail('coach@test.com');
         $user = new User();
         $relationType = (new RelationType())->setIdentifier('self_coach');
@@ -138,9 +149,10 @@ class PersonCreatedListenerTest extends TestCase
         $this->listener->postPersistCoach($coach, $args);
     }
 
-    public function testPostUpdateCoachWithExistingRelation()
+    public function testPostUpdateCoachWithExistingRelation(): void
     {
         $this->markTestIncomplete();
+        /** @phpstan-ignore-next-line all tests are skipped for now */
         $coach = (new Coach())->setEmail('coach@test.com');
         $user = new User();
         $relationType = (new RelationType())->setIdentifier('self_coach');
@@ -156,9 +168,10 @@ class PersonCreatedListenerTest extends TestCase
         $this->listener->postUpdateCoach($coach, $args);
     }
 
-    public function testPostUpdateCoachCreatesNewRelation()
+    public function testPostUpdateCoachCreatesNewRelation(): void
     {
         $this->markTestIncomplete();
+        /** @phpstan-ignore-next-line all tests are skipped for now */
         $coach = (new Coach())->setEmail('coach@test.com');
         $user = new User();
         $relationType = (new RelationType())->setIdentifier('self_coach');
@@ -176,9 +189,10 @@ class PersonCreatedListenerTest extends TestCase
         $this->listener->postUpdateCoach($coach, $args);
     }
 
-    public function testPostUpdatePlayerWithoutRelationType()
+    public function testPostUpdatePlayerWithoutRelationType(): void
     {
         $this->markTestIncomplete();
+        /** @phpstan-ignore-next-line all tests are skipped for now */
         $player = (new Player())->setEmail('player@test.com');
         $user = new User();
 

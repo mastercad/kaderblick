@@ -11,17 +11,20 @@ class FormationType
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
-    private string $name; // 'football', 'basketball' etc.
+    private string $name;
 
     #[ORM\Column(length: 255)]
     private string $backgroundPath = 'default-field.jpg';
 
+    /** @var array<string, mixed>|null $defaultPositions */
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $defaultPositions = null;
 
+    /** @var Collection<int, Formation> $formations */
     #[ORM\OneToMany(mappedBy: 'formationType', targetEntity: Formation::class)]
     private Collection $formations;
 
@@ -59,11 +62,19 @@ class FormationType
         return $this;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getDefaultPositions(): ?array
     {
         return $this->defaultPositions;
     }
 
+    /**
+     * @param array<string, mixed>|null $defaultPositions
+     *
+     * @return $this
+     */
     public function setDefaultPositions(?array $defaultPositions): self
     {
         $this->defaultPositions = $defaultPositions;
@@ -71,6 +82,9 @@ class FormationType
         return $this;
     }
 
+    /**
+     * @return Collection<int, Formation>
+     */
     public function getFormations(): Collection
     {
         return $this->formations;

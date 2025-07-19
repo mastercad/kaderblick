@@ -5,7 +5,6 @@ namespace App\Tests\Feature;
 use App\Entity\Coach;
 use App\Entity\Player;
 use App\Entity\User;
-use App\Entity\UserRelation;
 use App\Repository\UserRelationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -13,13 +12,14 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 class PersonCreatedListenerTest extends KernelTestCase
 {
     private EntityManagerInterface $entityManager;
+    /** @phpstan-ignore-next-line all tests are skipped for now */
     private UserRelationRepository $userRelationRepository;
 
     protected function setUp(): void
     {
         self::bootKernel();
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-        $this->userRelationRepository = $this->entityManager->getRepository(UserRelation::class);
+        $this->userRelationRepository = self::getContainer()->get(UserRelationRepository::class);
     }
 
     protected function tearDown(): void
@@ -28,9 +28,10 @@ class PersonCreatedListenerTest extends KernelTestCase
         $this->entityManager->close();
     }
 
-    public function testPlayerCreationCreatesUserRelation()
+    public function testPlayerCreationCreatesUserRelation(): void
     {
         $this->markTestIncomplete();
+        /** @phpstan-ignore-next-line all tests are skipped for now */
         $email = 'player_endtoend@test.com';
 
         // User erstellen
@@ -62,9 +63,10 @@ class PersonCreatedListenerTest extends KernelTestCase
         $this->assertEquals('self_player', $relation->getRelationType()->getIdentifier());
     }
 
-    public function testCoachCreationCreatesUserRelation()
+    public function testCoachCreationCreatesUserRelation(): void
     {
         $this->markTestIncomplete();
+        /** @phpstan-ignore-next-line all tests are skipped for now */
         $email = 'coach_endtoend@test.com';
 
         // User erstellen
@@ -96,9 +98,10 @@ class PersonCreatedListenerTest extends KernelTestCase
         $this->assertEquals('self_coach', $relation->getRelationType()->getIdentifier());
     }
 
-    public function testPlayerUpdateCreatesUserRelationWhenEmailAddedLater()
+    public function testPlayerUpdateCreatesUserRelationWhenEmailAddedLater(): void
     {
         $this->markTestIncomplete();
+        /** @phpstan-ignore-next-line all tests are skipped for now */
         $email = 'player_update@test.com';
 
         // Player ohne Email erstellen (sollte keine Relation erstellen)
@@ -132,9 +135,10 @@ class PersonCreatedListenerTest extends KernelTestCase
         $this->assertNotNull($relation, 'UserRelation sollte nach Update erstellt worden sein');
     }
 
-    public function testNoDuplicateRelationsCreated()
+    public function testNoDuplicateRelationsCreated(): void
     {
         $this->markTestIncomplete();
+        /** @phpstan-ignore-next-line all tests are skipped for now */
         $email = 'no_duplicate@test.com';
 
         // User erstellen

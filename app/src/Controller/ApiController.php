@@ -69,23 +69,6 @@ abstract class ApiController extends AbstractController
     public function index(Request $request): Response
     {
         $entries = $this->em->getRepository($this->entityClass)->findAll();
-        //        $entries = $this->em->createQuery('SELECT * FROM ' . $this->entityClass . ' p');
-        $teams = $this->em->getRepository(UserRelation::class)->findRelevantTeams($this->getUser());
-
-        //        $entries = [];
-        /*
-        $repository = $this->em->getRepository($this->entityClass);
-        if (class_implements($repository, AbstractApiRepositoryInterface::class)) {
-            $entries = $repository->fetchRelevantList($this->getUser());
-        } else {
-            $entries = $this->em->getRepository($this->entityClass)
-                ->createQueryBuilder('p')
-                ->setFirstResult($request->page ?? $this->defaultPage)
-                ->setMaxResults($request->resultsPerPage ?? $this->defaultResultsPerPage)
-                ->getQuery()
-                ->getResult();
-        }
-        */
 
         return $this->render($this->templateDir . '/index.html.twig', [
             'entries' => $entries,

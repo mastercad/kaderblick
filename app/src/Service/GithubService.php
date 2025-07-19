@@ -6,10 +6,10 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class GithubService
 {
-    private $httpClient;
-    private $githubToken;
-    private $repoOwner;
-    private $repoName;
+    private HttpClientInterface $httpClient;
+    private string $githubToken;
+    private string $repoOwner;
+    private string $repoName;
 
     public function __construct(
         HttpClientInterface $httpClient,
@@ -23,7 +23,11 @@ class GithubService
         $this->repoName = $githubRepoName;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @param array<int, string> $labels
+     *
+     * @return array<string, mixed> 
+     */
     public function createIssue(string $title, string $body, array $labels = []): array
     {
         $response = $this->httpClient->request('POST', "https://api.github.com/repos/{$this->repoOwner}/{$this->repoName}/issues", [
