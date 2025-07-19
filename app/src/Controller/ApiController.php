@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\Team;
 use App\Entity\UserRelation;
 use App\Repository\AbstractApiRepositoryInterface;
 use App\Repository\OptimizedRepositoryInterface;
@@ -73,7 +72,7 @@ abstract class ApiController extends AbstractController
         //        $entries = $this->em->createQuery('SELECT * FROM ' . $this->entityClass . ' p');
         $teams = $this->em->getRepository(UserRelation::class)->findRelevantTeams($this->getUser());
 
-//        $entries = [];
+        //        $entries = [];
         /*
         $repository = $this->em->getRepository($this->entityClass);
         if (class_implements($repository, AbstractApiRepositoryInterface::class)) {

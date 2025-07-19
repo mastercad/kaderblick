@@ -25,10 +25,10 @@ class UserFixtures extends Fixture implements DependentFixtureInterface, Fixture
 
     public function load(ObjectManager $manager): void
     {
-        for ($userCount = 1; $userCount <= 20; $userCount++) {
+        for ($userCount = 1; $userCount <= 20; ++$userCount) {
             $user = new User();
             $user->setFirstName('testuser');
-            $user->setLastName((string)$userCount);
+            $user->setLastName((string) $userCount);
             $user->setEmail('user' . $userCount . '@example.com');
             $user->setPassword('password');
 

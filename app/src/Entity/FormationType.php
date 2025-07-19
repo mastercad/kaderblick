@@ -43,6 +43,7 @@ class FormationType
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -54,6 +55,7 @@ class FormationType
     public function setBackgroundPath(string $backgroundPath): self
     {
         $this->backgroundPath = $backgroundPath;
+
         return $this;
     }
 
@@ -65,6 +67,7 @@ class FormationType
     public function setDefaultPositions(?array $defaultPositions): self
     {
         $this->defaultPositions = $defaultPositions;
+
         return $this;
     }
 
@@ -79,6 +82,7 @@ class FormationType
             $this->formations->add($formation);
             $formation->setFormationType($this);
         }
+
         return $this;
     }
 

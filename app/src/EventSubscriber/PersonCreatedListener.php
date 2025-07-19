@@ -36,7 +36,7 @@ class PersonCreatedListener
 
         // Prüfen, ob bereits eine relation besteht:
         $userPlayerRelation = $entityManager->getRepository(UserRelation::class)->findOneBy(['user' => $user, 'player' => $player]);
-        if ($userPlayerRelation instanceof UserRelation && $userPlayerRelation->getRelationType()->getIdentifier() === 'self_player') {
+        if ($userPlayerRelation instanceof UserRelation && 'self_player' === $userPlayerRelation->getRelationType()->getIdentifier()) {
             return;
         }
 
@@ -121,7 +121,7 @@ class PersonCreatedListener
 
         // Prüfen, ob bereits eine relation besteht:
         $userCoachRelation = $entityManager->getRepository(UserRelation::class)->findOneBy(['user' => $user, 'coach' => $coach]);
-        if ($userCoachRelation instanceof UserRelation && $userCoachRelation->getRelationType()->getIdentifier() === 'self_coach') {
+        if ($userCoachRelation instanceof UserRelation && 'self_coach' === $userCoachRelation->getRelationType()->getIdentifier()) {
             return;
         }
 

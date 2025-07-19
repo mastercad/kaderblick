@@ -37,6 +37,7 @@ class Formation
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -48,6 +49,7 @@ class Formation
     public function setFormationData(array $formationData): self
     {
         $this->formationData = $formationData;
+
         return $this;
     }
 
@@ -59,6 +61,7 @@ class Formation
     public function setUser(?User $user): self
     {
         $this->user = $user;
+
         return $this;
     }
 

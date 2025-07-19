@@ -4,7 +4,6 @@ namespace App\Controller\Api;
 
 use App\Entity\Feedback;
 use App\Entity\User;
-use App\Service\GithubService;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

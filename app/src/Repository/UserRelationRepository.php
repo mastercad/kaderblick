@@ -28,8 +28,18 @@ class UserRelationRepository extends ServiceEntityRepository
             ->select(['IDENTITY(pta.team) as playerTeamId', 'IDENTITY(cta.team) as coachTeamId'])
             ->leftJoin(Player::class, 'p', 'WITH', 'ur.player = p')
             ->leftJoin(Coach::class, 'c', 'WITH', 'ur.coach = c')
-            ->leftJoin(PlayerTeamAssignment::class, 'pta', 'WITH', 'pta.player = p AND pta.startDate <= CURRENT_TIMESTAMP() AND (pta.endDate >= CURRENT_TIMESTAMP() OR pta.endDate IS NULL)')
-            ->leftJoin(CoachTeamAssignment::class, 'cta', 'WITH', 'cta.coach = c AND cta.startDate <= CURRENT_TIMESTAMP() AND (cta.endDate >= CURRENT_TIMESTAMP() OR cta.endDate IS NULL)')
+            ->leftJoin(
+                PlayerTeamAssignment::class,
+                'pta',
+                'WITH',
+                'pta.player = p AND pta.startDate <= CURRENT_TIMESTAMP() AND (pta.endDate >= CURRENT_TIMESTAMP() OR pta.endDate IS NULL)'
+            )
+            ->leftJoin(
+                CoachTeamAssignment::class,
+                'cta',
+                'WITH',
+                'cta.coach = c AND cta.startDate <= CURRENT_TIMESTAMP() AND (cta.endDate >= CURRENT_TIMESTAMP() OR cta.endDate IS NULL)'
+            )
             ->where('ur.user = :user AND cta.id IS NOT NULL OR pta.id IS NOT NULL')
             ->setParameter('user', $user)
             ->getQuery()
