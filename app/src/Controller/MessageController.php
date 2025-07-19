@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Message;
 use App\Entity\MessageGroup;
 use App\Entity\User;
+use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -127,16 +128,24 @@ class MessageController extends AbstractController
         $message->setContent($data['content']);
 
         if (!empty($data['recipientIds'])) {
+            $criteria = Criteria::create()
+                ->where(Criteria::expr()->in('id', $data['recipientIds']));
+
             $recipients = $this->entityManager->getRepository(User::class)
-                ->findBy(['id' => $data['recipientIds']]);
+                ->matching($criteria);
+
             foreach ($recipients as $recipient) {
                 $message->addRecipient($recipient);
             }
         }
 
         if (!empty($data['groupId'])) {
+            $criteria = Criteria::create()
+                ->where(Criteria::expr()->in('id', $data['recipientIds']));
+
             $group = $this->entityManager->getRepository(MessageGroup::class)
                 ->find($data['groupId']);
+
             if ($group) {
                 foreach ($group->getMembers() as $member) {
                     $message->addRecipient($member);

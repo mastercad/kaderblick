@@ -17,6 +17,19 @@ class MessageRepository extends ServiceEntityRepository
         parent::__construct($registry, Message::class);
     }
 
+    public function findNewMessages(User $user, int $limit = 5): array
+    {
+        return $this->createQueryBuilder('m')
+            ->leftJoin('m.recipients', 'r')
+            ->where('r.id = :userId')
+            ->andWhere('m.readAt IS NULL')
+            ->setParameter('userId', $user->getId())
+            ->orderBy('m.sentAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     /**
      * @return array<string, mixed>
      */

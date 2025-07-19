@@ -4,7 +4,9 @@ namespace App\EventSubscriber;
 
 use App\Entity\Coach;
 use App\Entity\Player;
+use App\Entity\RelationType;
 use App\Entity\User;
+use App\Entity\UserRelation;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\Event\PostPersistEventArgs;
 use Doctrine\ORM\Event\PostUpdateEventArgs;
@@ -25,17 +27,26 @@ class PersonCreatedListener
             return;
         }
 
-        // Prüfen ob bereits ein User mit dieser E-Mail existiert
+        // Prüfen ob ein User mit dieser E-Mail existiert
         $user = $entityManager->getRepository(User::class)->findOneBy(['email' => $player->getEmail()]);
 
         if (!$user) {
             return;
         }
 
-        $user->setClub(null);
-        $user->setPlayer($player);
+        // Prüfen, ob bereits eine relation besteht:
+        $userPlayerRelation = $entityManager->getRepository(UserRelation::class)->findOneBy(['user' => $user, 'player' => $player]);
+        if ($userPlayerRelation instanceof UserRelation && $userPlayerRelation->getRelationType()->getIdentifier() === 'self_player') {
+            return;
+        }
 
-        $entityManager->persist($user);
+        $userPlayerRelation = new UserRelation();
+        $userPlayerRelationType = $entityManager->getRepository(RelationType::class)->findOneBy(['identifier' => 'self_player']);
+        $userPlayerRelation->setRelationType($userPlayerRelationType);
+        $userPlayerRelation->setRelatedUser($user);
+        $userPlayerRelation->setPlayer($player);
+
+        $entityManager->persist($userPlayerRelation);
         $entityManager->flush();
     }
 
@@ -55,11 +66,14 @@ class PersonCreatedListener
             return;
         }
 
-        $user->setClub(null);
-        $user->setPlayer($player);
+        $userPlayerSelfRelationType = $entityManager->getRepository(RelationType::class)->findOneBy(['identifier' => 'self_player']);
 
-        $entityManager->persist($user);
-        $entityManager->flush();
+        $userRelation = new UserRelation();
+        $userRelation->setPlayer($player);
+        $userRelation->setRelatedUser($user);
+        $userRelation->setRelationType($userPlayerSelfRelationType);
+
+        $entityManager->persist($userRelation);
     }
 
     public function postPersistCoach(Coach $coach, PostPersistEventArgs $args): void
@@ -78,10 +92,14 @@ class PersonCreatedListener
             return;
         }
 
-        $user->setClub(null);
-        $user->setCoach($coach);
+        $userCoachSelfRelationType = $entityManager->getRepository(RelationType::class)->findOneBy(['identifier' => 'self_coach']);
 
-        $entityManager->persist($user);
+        $userRelation = new UserRelation();
+        $userRelation->setCoach($coach);
+        $userRelation->setRelatedUser($user);
+        $userRelation->setRelationType($userCoachSelfRelationType);
+
+        $entityManager->persist($userRelation);
         $entityManager->flush();
     }
 
@@ -101,10 +119,19 @@ class PersonCreatedListener
             return;
         }
 
-        $user->setClub(null);
-        $user->setCoach($coach);
+        // Prüfen, ob bereits eine relation besteht:
+        $userCoachRelation = $entityManager->getRepository(UserRelation::class)->findOneBy(['user' => $user, 'coach' => $coach]);
+        if ($userCoachRelation instanceof UserRelation && $userCoachRelation->getRelationType()->getIdentifier() === 'self_coach') {
+            return;
+        }
 
-        $entityManager->persist($user);
+        $userCoachRelation = new UserRelation();
+        $userCoachRelationType = $entityManager->getRepository(RelationType::class)->findOneBy(['identifier' => 'self_coach']);
+        $userCoachRelation->setRelationType($userCoachRelationType);
+        $userCoachRelation->setRelatedUser($user);
+        $userCoachRelation->setCoach($coach);
+
+        $entityManager->persist($userCoachRelation);
         $entityManager->flush();
     }
 }

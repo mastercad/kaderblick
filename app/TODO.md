@@ -16,6 +16,25 @@ SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
 - datenbank musste zentralisiert und ausgelagert werden, da auf einem volume keine 2 datenbanken laufen können, das gab konflikte was dafür sorgte dass eine der beiden db dauernd neu startete
 - will ich api und vue neu bauen oder starten und in der docker-compose steht auch die db, wird die automatisch mit gestartet, weil sie als abhängigkeit da drin stand, getrennt ist es sauberer
 
+# laden von aktuellen spiel(en)
+# für spieler:
+- spiel muss vor jetzt beginnen und noch nicht enden
+- spiel muss selber verein sein, wie spieler
+- spiel muss selbes team sein, wie spieler
+
+# für benutzer
+- spiel muss vor jetzt beginnen und noch nicht enden
+- spiel muss im selben verein sein, wie der verein  des coaches oder spielers mit dem der benutzer verküpft ist
+- spiel muss im selben team sein, wie das team des coaches oder spielers mit dem der benutzer verküpft ist
+
+SELECT player_team_assignment.team_id, coach_team_assignment.team_id
+FROM `user_relations` 
+LEFT JOIN players ON players.id = user_relations.player_id
+LEFT JOIN coach ON coach.id = user_relations.coach_id
+LEFT JOIN coach_team_assignment ON coach_team_assignment.coach_id = coach.id AND coach_team_assignment.start_date <= NOW() AND (coach_team_assignment.end_date >= NOW() OR coach_team_assignment.end_date IS NULL)
+LEFT JOIN player_team_assignment ON player_team_assignment.player_id = players.id AND player_team_assignment.start_date <= NOW() AND 
+(player_team_assignment.end_date >= NOW() OR player_team_assignment.end_date IS NULL)
+WHERE user_relations.user_id = 1;
 
 # Aufgaben
 - Schema inhalt der entities über ein command generieren und in einem ordner ablegen um performance zu sparen, die daten müssen nicht jedes mal neu ausgelesen werden. man könnte das ganze eventuell in einem post install / post update composer command aufrufen. hierbei ist aber zu bedenken, dass das durchaus zu fehlern führen kann, wenn keine datenbank vorhanden ist, aber composer install ausgeführt werden soll. man kann es aber auch ein script schreiben, was sich um das setup der app kümmert. dort drin könnte man das command ebenfalls aufrufen. es ist nicht so tragisch, aber bei jeder neuen migration der db sollten auch diese schema dateien dann neu generiert werden. aktuell passiert das on-the-fly

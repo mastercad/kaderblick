@@ -6,6 +6,7 @@ use App\Entity\DashboardWidget;
 use App\Entity\User;
 use App\Repository\CalendarEventRepository;
 use App\Repository\DashboardWidgetRepository;
+use App\Repository\MessageRepository;
 use App\Service\PushNotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,7 +18,7 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/', name: 'app_dashboard_')]
 class DashboardController extends AbstractController
 {
-    public function __construct(private CalendarEventRepository $calendarRepo)
+    public function __construct(private CalendarEventRepository $calendarRepo, private MessageRepository $messagesRepo)
     {
     }
 
@@ -155,6 +156,10 @@ class DashboardController extends AbstractController
             ]),
             'calendar' => $this->renderView('widgets/calendar.html.twig', [
                 'widget' => $widget
+            ]),
+            'messages' => $this->renderView('widgets/messages.html.twig', [
+                'widget' => $widget,
+                'messages' => $this->messagesRepo->findLatestForUser($this->getUser())
             ]),
             default => 'Widget type not implemented yet'
         };

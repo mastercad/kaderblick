@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Entity\Team;
+use App\Entity\UserRelation;
 use App\Repository\AbstractApiRepositoryInterface;
 use App\Repository\OptimizedRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -67,9 +69,11 @@ abstract class ApiController extends AbstractController
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        //        $entries = $this->em->getRepository($this->entityClass)->findAll();
+        $entries = $this->em->getRepository($this->entityClass)->findAll();
         //        $entries = $this->em->createQuery('SELECT * FROM ' . $this->entityClass . ' p');
-        $entries = [];
+        $teams = $this->em->getRepository(UserRelation::class)->findRelevantTeams($this->getUser());
+
+//        $entries = [];
         /*
         $repository = $this->em->getRepository($this->entityClass);
         if (class_implements($repository, AbstractApiRepositoryInterface::class)) {

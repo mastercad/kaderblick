@@ -8,6 +8,9 @@ parameters:
     app.website_url: '%env(WEBSITE)%'
     app.contact_email: '%env(EMAIL)%'
     app.phone_number: '%env(PHONE)%'
+    github_token: '%env(GITHUB_TOKEN)%'
+    github_repo_owner: '%env(GITHUB_REPO_OWNER)%'
+    github_repo_name: '%env(GITHUB_REPO_NAME)%'
 
 services:
     # default configuration for services in *this* file
@@ -17,6 +20,9 @@ services:
         bind:
             $vapidPublicKey: '%env(resolve:VAPID_PUBLIC_KEY)%'
             $vapidPrivateKey: '%env(resolve:VAPID_PRIVATE_KEY)%'
+            $githubToken: '%env(resolve:GITHUB_TOKEN)%'
+            $githubRepoOwner: '%env(resolve:GITHUB_REPO_OWNER)%'
+            $githubRepoName: '%env(resolve:GITHUB_REPO_NAME)%'
 #        bind:
 #            $mailerDsn: '%env(MAILER_DSN1)%'
 #            $mailerDsn: 'smtp://%env(MAILER_USER)%:%env(MAILER_PASSWORD)%@byte-artist.de:587'

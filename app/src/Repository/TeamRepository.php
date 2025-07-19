@@ -2,8 +2,13 @@
 
 namespace App\Repository;
 
+use App\Entity\Coach;
+use App\Entity\CoachTeamAssignment;
+use App\Entity\Player;
+use App\Entity\PlayerTeamAssignment;
 use App\Entity\Team;
 use App\Entity\User;
+use App\Entity\UserRelation;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -37,7 +42,7 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
             ->leftJoin('cta.coach', 'c', 'WITH', 'cta.coach = c')
             ->leftJoin('pta.player', 'p', 'WITH', 'pta.player = p')
             ->orderBy('t.name', 'ASC');
-
+/*
         if ($user && !in_array('ROLE_ADMIN', $user->getRoles())) {
             if ($user->getClub()) {
                 $qb->andWhere('cl = :club')
@@ -54,7 +59,7 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
                    ->setParameter('player', $user->getPlayer());
             }
         }
-
+*/
         return $qb->getQuery()->getResult();
     }
 

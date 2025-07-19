@@ -143,7 +143,8 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface, Fixtu
                 );
 
                 $manager->persist($teamAssignment);
-                $this->addReference('player_' . $teamNumber . '_' . $playerNumber, $player);
+
+                $this->addReference('player_' . $playerNumber . '_' . $teamNumber, $player);
             }
         }
 

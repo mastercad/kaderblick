@@ -1,0 +1,72 @@
+{# templates/formation/index.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Teamaufstellungen{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Meine Teamaufstellungen</h1>
+        <a href="{{ path('formation_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Neue Aufstellung
+        </a>
+    </div>
+
+    {% if formations|length > 0 %}
+        <div class="row">
+            {% for formation in formations %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ formation.name }}</h5>
+                            <span class="badge bg-secondary">{{ formation.formationType.name|capitalize }}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="formation-preview mb-3"
+                                 style="height: 150px;
+                                        position: relative;
+                                        background-color: #e9ecef;
+                                        background-image: url('{% if formation.formationType.backgroundPath %}{{ '/images/formation/' ~ formation.formationType.backgroundPath }}{% else %}'/images/formation/default_formation_background.png')}} {% endif %}');
+                                        background-position: center;
+                                        background-size: cover;
+                                        border-radius: 5px;"
+                                >
+                                {% for player in formation.formationData.players|default([]) %}
+                                    <div style="position: absolute; 
+                                                left: {{ player.x }}%; 
+                                                top: {{ player.y }}%; 
+                                                width: 20px; 
+                                                height: 20px; 
+                                                background-color: #0d6efd;
+                                                border-radius: 50%; 
+                                                transform: translate(-50%, -50%);
+                                                display: flex; 
+                                                align-items: center; 
+                                                justify-content: center;
+                                                color: white;
+                                                font-size: 0.7rem;
+                                                font-weight: bold;">
+                                        {{ player.number }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <p class="text-muted small mb-2">Aufstellung: {{ formation.formationData.code|default('Kein Code') }}</p>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="{{ path('formation_edit', {'id': formation.id}) }}" class="btn btn-sm btn-outline-primary">
+                                Bearbeiten
+                            </a>
+                            {# Hier können Sie später einen Löschen-Button hinzufügen #}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Sie haben noch keine Aufstellungen erstellt. 
+            <a href="{{ path('formation_new') }}" class="alert-link">Erstellen Sie jetzt Ihre erste Aufstellung</a>.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

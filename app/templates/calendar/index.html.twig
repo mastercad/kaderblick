@@ -245,10 +245,21 @@ Event Kalender
         const eventTypeFilters = document.querySelectorAll('.event-type-filter');
         const editModal = document.getElementById('newEventModal')
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const date = urlParams.get('date') || new Date().toISOString().slice(0, 10);
+
+        const view = urlParams.get('view') || 'dayGridMonth';
+        const fullCalendarView = 
+            view === 'day' ? 'timeGridDay' :
+            view === 'week' ? 'timeGridWeek' :
+            view === 'month' ? 'dayGridMonth' :
+            'dayGridMonth';
+
         const calendarGameEventTypeId = '{{ calendarGameEventTypeId }}';
         const calendarEl = document.getElementById('calendar');
         const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
+            initialView: fullCalendarView,
+            initialDate: date,
             locale: 'de',
             headerToolbar: {
                 left: 'prev,next today',

@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Feedback;
 use App\Repository\FeedbackRepository;
+use App\Service\GithubService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,8 +17,11 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class FeedbackController extends AbstractController
 {
     #[Route('/', name: 'admin_feedback_index', methods: ['GET'])]
-    public function index(FeedbackRepository $feedbackRepository): Response
+    public function index(FeedbackRepository $feedbackRepository, GithubService $githubService): Response
     {
+
+//        dump($githubService->retrieveIssues());
+
         return $this->render('admin/feedback/index.html.twig', [
             'unresolved' => $feedbackRepository->findUnresolved(),
             'read' => $feedbackRepository->findByIsReadAndUnresolved(),

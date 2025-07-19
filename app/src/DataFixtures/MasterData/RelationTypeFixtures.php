@@ -23,12 +23,14 @@ class RelationTypeFixtures extends Fixture implements FixtureGroupInterface
             ['relative', 'Verwandter', 'player'],
             ['guardian', 'Erziehungsberechtigter', 'player'],
             ['friend', 'Freund', 'player'],
+            ['self_player', 'Spieler selbst', 'player'],
 
             // Coach Relations
             ['assistant', 'Assistent', 'coach'],
             ['observer', 'Beobachter', 'coach'],
             ['substitute', 'Vertretung', 'coach'],
             ['mentor', 'Mentor', 'coach'],
+            ['self_coach', 'Trainer selbst', 'coach']
         ];
 
         foreach ($types as [$identifier, $name, $category]) {

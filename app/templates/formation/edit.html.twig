@@ -1,0 +1,246 @@
+{# templates/formation/edit.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Aufstellung bearbeiten{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .pitch {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background-color: #4CAF50;
+            border: 2px solid #2E7D32;
+            border-radius: 10px;
+            margin-bottom: 20px;
+/*            background-image: 
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+*/
+            background-image: url('{% if formation.formationType.backgroundPath %}{{ '/images/formation/' ~ formation.formationType.backgroundPath }}{% else %}'/images/formation/default_formation_background.png')}} {% endif %}');
+            background-position: center;
+            background-size: cover;
+        }
+        .player {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: move;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            user-select: none;
+            z-index: 10;
+        }
+        .player-number {
+            font-weight: bold;
+        }
+        .formation-preview {
+            margin-top: 20px;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        <h1>{{ formation.name }} <small class="text-muted">Aufstellung bearbeiten</small></h1>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="pitch" id="formationPitch">
+                    {# Spieler werden hier per JavaScript hinzugefügt #}
+                </div>
+                
+                <div class="mb-3">
+                    <button class="btn btn-primary" id="addPlayer">Spieler hinzufügen</button>
+                    <button class="btn btn-success" id="saveFormation">Speichern</button>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        Spielerliste
+                    </div>
+                    <div class="card-body" id="playerList">
+                        {# Spielerliste #}
+                    </div>
+                </div>
+                
+                <div class="card mt-3">
+                    <div class="card-header">
+                        Aufstellungs-Code
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="formationCode" 
+                                   placeholder="z.B. 4-4-2" value="{{ formation.formationData.code|default('') }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const pitch = document.getElementById('formationPitch');
+            const addPlayerBtn = document.getElementById('addPlayer');
+            const saveBtn = document.getElementById('saveFormation');
+            const formationCode = document.getElementById('formationCode');
+            
+            let players = [];
+            let nextPlayerNumber = 1;
+            
+            // Initiale Spieler laden, falls vorhanden
+            {% if formation.formationData.players is defined %}
+                players = {{ formation.formationData.players|json_encode|raw }};
+                nextPlayerNumber = players.length > 0 ? 
+                    Math.max(...players.map(p => p.number)) + 1 : 1;
+                renderPlayers();
+            {% endif %}
+            
+            // Spieler hinzufügen
+            addPlayerBtn.addEventListener('click', function() {
+                const player = {
+                    id: Date.now(),
+                    number: nextPlayerNumber++,
+                    x: 50,
+                    y: 50,
+                    name: `Spieler ${nextPlayerNumber-1}`
+                };
+                players.push(player);
+                renderPlayers();
+            });
+            
+            // Spieler rendern
+            function renderPlayers() {
+                pitch.innerHTML = '';
+                players.forEach(player => {
+                    const playerEl = document.createElement('div');
+                    playerEl.className = 'player';
+                    playerEl.style.left = `${player.x}%`;
+                    playerEl.style.top = `${player.y}%`;
+                    playerEl.dataset.id = player.id;
+                    playerEl.innerHTML = `<span class="player-number">${player.number}</span>`;
+                    
+                    // Drag & Drop
+                    makeDraggable(playerEl, player);
+                    
+                    pitch.appendChild(playerEl);
+                });
+                
+                updatePlayerList();
+            }
+            
+            // Spielerliste aktualisieren
+            function updatePlayerList() {
+                const playerList = document.getElementById('playerList');
+                playerList.innerHTML = '';
+                
+                players.forEach(player => {
+                    const playerItem = document.createElement('div');
+                    playerItem.className = 'd-flex justify-content-between align-items-center mb-2';
+                    playerItem.innerHTML = `
+                        <div>
+                            <span class="badge bg-primary me-2">${player.number}</span>
+                            <input type="text" class="form-control form-control-sm d-inline-block w-auto" 
+                                   value="${player.name}" data-id="${player.id}" 
+                                   onchange="updatePlayerName(this)">
+                        </div>
+                        <button class="btn btn-sm btn-danger" onclick="removePlayer(${player.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    `;
+                    playerList.appendChild(playerItem);
+                });
+            }
+            
+            // Drag & Drop Funktion
+            function makeDraggable(element, playerData) {
+                let isDragging = false;
+                let offsetX, offsetY;
+                
+                element.addEventListener('mousedown', function(e) {
+                    isDragging = true;
+                    offsetX = e.clientX - element.getBoundingClientRect().left;
+                    offsetY = e.clientY - element.getBoundingClientRect().top;
+                    element.style.cursor = 'grabbing';
+                    e.preventDefault();
+                });
+                
+                document.addEventListener('mousemove', function(e) {
+                    if (!isDragging) return;
+                    
+                    const pitchRect = pitch.getBoundingClientRect();
+                    let x = e.clientX - pitchRect.left - offsetX;
+                    let y = e.clientY - pitchRect.top - offsetY;
+                    
+                    // Begrenzung auf das Spielfeld
+                    x = Math.max(0, Math.min(x, pitchRect.width - element.offsetWidth));
+                    y = Math.max(0, Math.min(y, pitchRect.height - element.offsetHeight));
+                    
+                    // Position in Prozent speichern
+                    playerData.x = (x / pitchRect.width) * 100;
+                    playerData.y = (y / pitchRect.height) * 100;
+                    
+                    element.style.left = `${playerData.x}%`;
+                    element.style.top = `${playerData.y}%`;
+                });
+                
+                document.addEventListener('mouseup', function() {
+                    isDragging = false;
+                    element.style.cursor = 'move';
+                });
+            }
+            
+            // Spieler entfernen
+            window.removePlayer = function(id) {
+                players = players.filter(player => player.id !== id);
+                renderPlayers();
+            };
+            
+            // Spielername aktualisieren
+            window.updatePlayerName = function(input) {
+                const id = parseInt(input.dataset.id);
+                const player = players.find(p => p.id === id);
+                if (player) {
+                    player.name = input.value;
+                }
+            };
+            
+            // Aufstellung speichern
+            saveBtn.addEventListener('click', function() {
+                const data = {
+                    players: players,
+                    code: formationCode.value,
+                    timestamp: new Date().toISOString()
+                };
+                
+                fetch('{{ path('formation_edit', {'id': formation.id}) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const toast = new bootstrap.Toast(document.getElementById('saveToast'));
+                        toast.show();
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

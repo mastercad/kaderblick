@@ -3,11 +3,14 @@
 namespace App\Repository;
 
 use App\Entity\Coach;
+use App\Entity\CoachTeamAssignment;
 use App\Entity\Player;
+use App\Entity\PlayerTeamAssignment;
 use App\Entity\User;
 use App\Entity\UserRelation;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @extends ServiceEntityRepository<UserRelation>
@@ -17,6 +20,20 @@ class UserRelationRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, UserRelation::class);
+    }
+
+    public function findRelevantTeams(UserInterface $user)
+    {
+        return $this->createQueryBuilder('ur')
+            ->select(['IDENTITY(pta.team) as playerTeamId', 'IDENTITY(cta.team) as coachTeamId'])
+            ->leftJoin(Player::class, 'p', 'WITH', 'ur.player = p')
+            ->leftJoin(Coach::class, 'c', 'WITH', 'ur.coach = c')
+            ->leftJoin(PlayerTeamAssignment::class, 'pta', 'WITH', 'pta.player = p AND pta.startDate <= CURRENT_TIMESTAMP() AND (pta.endDate >= CURRENT_TIMESTAMP() OR pta.endDate IS NULL)')
+            ->leftJoin(CoachTeamAssignment::class, 'cta', 'WITH', 'cta.coach = c AND cta.startDate <= CURRENT_TIMESTAMP() AND (cta.endDate >= CURRENT_TIMESTAMP() OR cta.endDate IS NULL)')
+            ->where('ur.user = :user AND cta.id IS NOT NULL OR pta.id IS NOT NULL')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getArrayResult();
     }
 
     /**

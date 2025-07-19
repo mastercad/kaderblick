@@ -79,14 +79,15 @@ class GameEventRepository extends ServiceEntityRepository implements OptimizedRe
     public function fetchFullList(?UserInterface $user = null): array
     {
         return $this->createQueryBuilder('ge')
-            ->select('ge', 'g', 't', 'p', 'get', 'rp', 'sr')
+            ->select('ge', 'g', 't', 'p', 'get', 'rp', 'sr', 'ce')
             ->leftJoin('ge.game', 'g')
             ->leftJoin('ge.team', 't')
             ->leftJoin('ge.player', 'p')
             ->leftJoin('ge.gameEventType', 'get')
             ->leftJoin('ge.relatedPlayer', 'rp')
             ->leftJoin('ge.substitutionReason', 'sr')
-            ->orderBy('g.date', 'DESC')
+            ->leftJoin('g.calendarEvent', 'ce')
+            ->orderBy('ce.startDate', 'DESC')
             ->addOrderBy('ge.timestamp', 'ASC')
             ->getQuery()
             ->getResult();

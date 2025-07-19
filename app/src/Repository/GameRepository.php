@@ -2,7 +2,12 @@
 
 namespace App\Repository;
 
+use App\Entity\Coach;
+use App\Entity\CoachTeamAssignment;
 use App\Entity\Game;
+use App\Entity\Player;
+use App\Entity\PlayerTeamAssignment;
+use App\Entity\UserRelation;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -40,6 +45,18 @@ class GameRepository extends ServiceEntityRepository implements OptimizedReposit
      */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
+        $availableTeams = $this->createQueryBuilder('t')
+            ->select('t')
+            ->from(UserRelation::class, 'ur')
+            ->leftJoin(Player::class, 'p', 'WITH', 'ur.player = p')
+            ->leftJoin(Coach::class, 'c', 'WITH', 'ur.coach = c')
+            ->leftJoin(PlayerTeamAssignment::class, 'pta', 'WITH', 'pta.player = p AND pta.start_date <= NOW() AND (pta.end_date >= NOW() OR pta.end_date IS NULL)')
+            ->leftJoin(CoachTeamAssignment::class, 'cta', 'WITH', 'cta.coach = c AND cta.start_date <= NOW() AND (cta.end_date >= NOW() OR cta.end_date IS NULL)')
+            ->where('ur.user = :user AND cta.id IS NOT NULL AND pta.id IS NOT NULL')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getArrayResult();
+
         return $this->createQueryBuilder('g')
             ->select('g.id, g.date, g.homeScore, g.awayScore, g.status')
             ->addSelect('ht.id as homeTeam_id, ht.name as homeTeam_name')
@@ -50,6 +67,8 @@ class GameRepository extends ServiceEntityRepository implements OptimizedReposit
             ->leftJoin('g.awayTeam', 'at')
             ->leftJoin('g.location', 'l')
             ->leftJoin('g.gameEvents', 'ge')
+            ->where('t IS IN (:availableTeams)')
+            ->setParameter('availableTeams', $availableTeams)
             ->groupBy('g.id, ht.id, at.id, l.name')
             ->orderBy('g.date', 'DESC')
             ->getQuery()

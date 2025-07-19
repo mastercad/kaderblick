@@ -2,6 +2,7 @@
 
 return [
     'EMAIL' => null,
+    'GITHUB_TOKEN' => null,
     'GOOGLE_CLIENT_ID' => null,
     'GOOGLE_CLIENT_SECRET' => null,
     'JWT_PASSPHRASE' => null,

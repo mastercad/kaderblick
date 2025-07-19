@@ -3,13 +3,10 @@
 namespace App\Entity;
 
 use App\Repository\GameRepository;
-use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: GameRepository::class)]
 #[ORM\Table(name: 'games')]
@@ -30,12 +27,6 @@ class Game
     #[Groups(['game:read', 'game:write', 'game_event:read', 'calendar_event:read'])]
     #[ORM\ManyToOne(targetEntity: Team::class)]
     private ?Team $awayTeam = null;
-
-    #[Groups(['game:read', 'game:write', 'game_event:read'])]
-    #[Assert\NotNull(message: 'Das Spieldatum darf nicht leer sein.')]
-    #[Context(normalizationContext: ['datetime_format' => 'd.m.Y H:i'])]
-    #[ORM\Column(type: 'datetime')]
-    private DateTimeInterface $date;
 
     #[Groups(['game:read', 'game:write', 'game_event:read', 'calendar_event:read'])]
     #[ORM\ManyToOne(targetEntity: GameType::class, inversedBy: 'games')]
@@ -150,18 +141,6 @@ class Game
                 $gameEvent->setGame(null);
             }
         }
-
-        return $this;
-    }
-
-    public function getDate(): DateTimeInterface
-    {
-        return $this->date;
-    }
-
-    public function setDate(DateTimeInterface $date): self
-    {
-        $this->date = $date;
 
         return $this;
     }
