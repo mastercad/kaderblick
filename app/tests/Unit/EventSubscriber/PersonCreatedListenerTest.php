@@ -25,7 +25,6 @@ class PersonCreatedListenerTest extends TestCase
     private EntityRepository $relationTypeRepository;
     /** @var EntityRepository<UserRelation>&MockObject */
     private EntityRepository $userRelationRepository;
-    /** @phpstan-ignore-next-line all tests are skipped for now */
     private PersonCreatedListener $listener;
 
     protected function setUp(): void
