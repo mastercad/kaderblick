@@ -9,30 +9,33 @@ use App\Entity\User;
 use App\Entity\UserRelation;
 use App\EventSubscriber\PersonCreatedListener;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Event\PostPersistEventArgs;
 use Doctrine\ORM\Event\PostUpdateEventArgs;
+use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\Persistence\ObjectRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 class PersonCreatedListenerTest extends TestCase
 {
     private EntityManagerInterface&MockObject $entityManager;
-    /** @var ObjectRepository<User>&MockObject */
-    private ObjectRepository $userRepository;
-    /** @var ObjectRepository<RelationType>&MockObject */
-    private ObjectRepository $relationTypeRepository;
-    /** @var ObjectRepository<UserRelation>&MockObject */
-    private ObjectRepository $userRelationRepository;
+    /** @var EntityRepository<User>&MockObject */
+    private EntityRepository $userRepository;
+    /** @var EntityRepository<RelationType>&MockObject */
+    private EntityRepository $relationTypeRepository;
+    /** @var EntityRepository<UserRelation>&MockObject */
+    private EntityRepository $userRelationRepository;
     /** @phpstan-ignore-next-line all tests are skipped for now */
     private PersonCreatedListener $listener;
 
     protected function setUp(): void
     {
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
-        $this->userRepository = $this->createMock(ObjectRepository::class);
-        $this->relationTypeRepository = $this->createMock(ObjectRepository::class);
-        $this->userRelationRepository = $this->createMock(ObjectRepository::class);
+        $this->userRepository = $this->createMock(EntityRepository::class);
+        $this->relationTypeRepository = $this->createMock(EntityRepository::class);
+        $this->userRelationRepository = $this->createMock(EntityRepository::class);
 
         $this->entityManager->method('getRepository')
             ->willReturnMap([
@@ -46,14 +49,11 @@ class PersonCreatedListenerTest extends TestCase
 
     public function testPostPersistPlayerWithEmailAndUser(): void
     {
-        $this->markTestIncomplete();
-        /** @phpstan-ignore-next-line all tests are skipped for now */
         $player = (new Player())->setEmail('player@test.com');
         $user = new User();
         $relationType = (new RelationType())->setIdentifier('self_player');
 
-        $args = $this->createMock(PostPersistEventArgs::class);
-        $args->method('getObjectManager')->willReturn($this->entityManager);
+        $args = $this->createPostPersistEventArgs();
 
         $this->userRepository->method('findOneBy')->willReturn($user);
         $this->relationTypeRepository->method('findOneBy')->willReturn($relationType);
@@ -66,10 +66,8 @@ class PersonCreatedListenerTest extends TestCase
 
     public function testPostPersistPlayerWithoutEmail(): void
     {
-        $this->markTestIncomplete();
-        /** @phpstan-ignore-next-line all tests are skipped for now */
         $player = new Player(); // no email
-        $args = $this->createMock(PostPersistEventArgs::class);
+        $args = $this->createPostPersistEventArgs();
 
         $this->entityManager->expects($this->never())->method('persist');
         $this->listener->postPersistPlayer($player, $args);
@@ -77,11 +75,9 @@ class PersonCreatedListenerTest extends TestCase
 
     public function testPostPersistPlayerWithoutUser(): void
     {
-        $this->markTestIncomplete();
-        /** @phpstan-ignore-next-line all tests are skipped for now */
         $player = (new Player())->setEmail('player@test.com');
-        $args = $this->createMock(PostPersistEventArgs::class);
-        $args->method('getObjectManager')->willReturn($this->entityManager);
+
+        $args = $this->createPostPersistEventArgs();
 
         $this->userRepository->method('findOneBy')->willReturn(null);
 
@@ -91,15 +87,12 @@ class PersonCreatedListenerTest extends TestCase
 
     public function testPostUpdatePlayerWithExistingRelation(): void
     {
-        $this->markTestIncomplete();
-        /** @phpstan-ignore-next-line all tests are skipped for now */
         $player = (new Player())->setEmail('player@test.com');
         $user = new User();
         $relationType = (new RelationType())->setIdentifier('self_player');
         $existingRelation = (new UserRelation())->setRelationType($relationType);
 
-        $args = $this->createMock(PostUpdateEventArgs::class);
-        $args->method('getObjectManager')->willReturn($this->entityManager);
+        $args = $this->createPostUpdateEventArgs();
 
         $this->userRepository->method('findOneBy')->willReturn($user);
         $this->userRelationRepository->method('findOneBy')->willReturn($existingRelation);
@@ -110,14 +103,11 @@ class PersonCreatedListenerTest extends TestCase
 
     public function testPostUpdatePlayerCreatesNewRelation(): void
     {
-        $this->markTestIncomplete();
-        /** @phpstan-ignore-next-line all tests are skipped for now */
         $player = (new Player())->setEmail('player@test.com');
         $user = new User();
         $relationType = (new RelationType())->setIdentifier('self_player');
 
-        $args = $this->createMock(PostUpdateEventArgs::class);
-        $args->method('getObjectManager')->willReturn($this->entityManager);
+        $args = $this->createPostUpdateEventArgs();
 
         $this->userRepository->method('findOneBy')->willReturn($user);
         $this->userRelationRepository->method('findOneBy')->willReturn(null);
@@ -131,14 +121,11 @@ class PersonCreatedListenerTest extends TestCase
 
     public function testPostPersistCoachWithEmailAndUser(): void
     {
-        $this->markTestIncomplete();
-        /** @phpstan-ignore-next-line all tests are skipped for now */
         $coach = (new Coach())->setEmail('coach@test.com');
         $user = new User();
         $relationType = (new RelationType())->setIdentifier('self_coach');
 
-        $args = $this->createMock(PostPersistEventArgs::class);
-        $args->method('getObjectManager')->willReturn($this->entityManager);
+        $args = $this->createPostPersistEventArgs();
 
         $this->userRepository->method('findOneBy')->willReturn($user);
         $this->relationTypeRepository->method('findOneBy')->willReturn($relationType);
@@ -151,15 +138,12 @@ class PersonCreatedListenerTest extends TestCase
 
     public function testPostUpdateCoachWithExistingRelation(): void
     {
-        $this->markTestIncomplete();
-        /** @phpstan-ignore-next-line all tests are skipped for now */
         $coach = (new Coach())->setEmail('coach@test.com');
         $user = new User();
         $relationType = (new RelationType())->setIdentifier('self_coach');
         $existingRelation = (new UserRelation())->setRelationType($relationType);
 
-        $args = $this->createMock(PostUpdateEventArgs::class);
-        $args->method('getObjectManager')->willReturn($this->entityManager);
+        $args = $this->createPostUpdateEventArgs();
 
         $this->userRepository->method('findOneBy')->willReturn($user);
         $this->userRelationRepository->method('findOneBy')->willReturn($existingRelation);
@@ -170,14 +154,11 @@ class PersonCreatedListenerTest extends TestCase
 
     public function testPostUpdateCoachCreatesNewRelation(): void
     {
-        $this->markTestIncomplete();
-        /** @phpstan-ignore-next-line all tests are skipped for now */
         $coach = (new Coach())->setEmail('coach@test.com');
         $user = new User();
         $relationType = (new RelationType())->setIdentifier('self_coach');
 
-        $args = $this->createMock(PostUpdateEventArgs::class);
-        $args->method('getObjectManager')->willReturn($this->entityManager);
+        $args = $this->createPostUpdateEventArgs();
 
         $this->userRepository->method('findOneBy')->willReturn($user);
         $this->userRelationRepository->method('findOneBy')->willReturn(null);
@@ -189,21 +170,13 @@ class PersonCreatedListenerTest extends TestCase
         $this->listener->postUpdateCoach($coach, $args);
     }
 
-    public function testPostUpdatePlayerWithoutRelationType(): void
+    private function createPostPersistEventArgs(): PostPersistEventArgs
     {
-        $this->markTestIncomplete();
-        /** @phpstan-ignore-next-line all tests are skipped for now */
-        $player = (new Player())->setEmail('player@test.com');
-        $user = new User();
+        return new PostPersistEventArgs(new stdClass(), $this->entityManager);
+    }
 
-        $args = $this->createMock(PostUpdateEventArgs::class);
-        $args->method('getObjectManager')->willReturn($this->entityManager);
-
-        $this->userRepository->method('findOneBy')->willReturn($user);
-        $this->userRelationRepository->method('findOneBy')->willReturn(null);
-        $this->relationTypeRepository->method('findOneBy')->willReturn(null);
-
-        $this->entityManager->expects($this->never())->method('persist');
-        $this->listener->postUpdatePlayer($player, $args);
+    private function createPostUpdateEventArgs(): PostUpdateEventArgs
+    {
+        return new PostUpdateEventArgs(new stdClass(), $this->entityManager);
     }
 }

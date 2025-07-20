@@ -44,36 +44,10 @@ class LeagueFixtures extends Fixture implements FixtureGroupInterface
             'Kreisklasse B',
             'Kreisklasse C',
 
-            // Jugend Bundesligen
-            'A-Junioren-Bundesliga',
-            'B-Junioren-Bundesliga',
-
-            // Jugend Regional
-            'A-Junioren-Regionalliga',
-            'B-Junioren-Regionalliga',
-            'C-Junioren-Regionalliga',
-
-            // Jugend Verbandsebene
-            'A-Junioren-Verbandsliga',
-            'B-Junioren-Verbandsliga',
-            'C-Junioren-Verbandsliga',
-            'D-Junioren-Verbandsliga',
-
-            // Jugend Bezirksebene
-            'A-Junioren-Bezirksliga',
-            'B-Junioren-Bezirksliga',
-            'C-Junioren-Bezirksliga',
-            'D-Junioren-Bezirksliga',
-            'E-Junioren-Bezirksliga',
-
-            // Jugend Kreisebene
-            'A-Junioren-Kreisliga',
-            'B-Junioren-Kreisliga',
-            'C-Junioren-Kreisliga',
-            'D-Junioren-Kreisliga',
-            'E-Junioren-Kreisliga',
-            'F-Junioren-Kreisliga',
-            'G-Junioren-Kreisliga',
+            'Regionalliga',
+            'Verbandsliga',
+            'Bezirksliga',
+            'Kreisliga',
 
             // Frauen Bundesligen
             'Frauen-Bundesliga',
@@ -92,10 +66,6 @@ class LeagueFixtures extends Fixture implements FixtureGroupInterface
             $league->setName($leagueName);
             $manager->persist($league);
 
-            // Referenz-Key erstellen:
-            // 1. Punkte entfernen (z.B. "2." -> "2")
-            // 2. Sonderzeichen durch Unterstrich ersetzen
-            // 3. Mehrfache Unterstriche zu einem zusammenfassen
             $referenceKey = 'league_' . strtolower(
                 preg_replace(
                     '/_+/',
