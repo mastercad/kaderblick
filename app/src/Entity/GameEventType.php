@@ -9,6 +9,10 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: GameEventTypeRepository::class)]
+#[ORM\Table(name: 'game_event_types', uniqueConstraints: [
+    new ORM\UniqueConstraint(name: 'uniq_game_event_types_name', columns: ['name']),
+    new ORM\UniqueConstraint(name: 'uniq_game_event_types_identifier', columns: ['identifier'])
+])]
 class GameEventType
 {
     #[ORM\Id]

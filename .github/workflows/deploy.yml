@@ -77,8 +77,9 @@ jobs:
 
           # Test-Datenbank und Rechte erstellen
           docker compose -f docker-compose.db.yml exec -T db mariadb -uroot -proot -e "
-            CREATE DATABASE IF NOT EXISTS symfony_test;
-            GRANT ALL PRIVILEGES ON symfony_test.* TO 'symfony'@'%';
+            CREATE DATABASE IF NOT EXISTS kaderblick_test;
+            CREATE USER IF NOT EXISTS 'kaderblick'@'%' IDENTIFIED BY 'kaderblick';
+            GRANT ALL PRIVILEGES ON kaderblick_test.* TO 'kaderblick'@'%';
             FLUSH PRIVILEGES;
           "
           

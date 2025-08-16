@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Repository\CalendarEventRepository;
 use App\Repository\DashboardWidgetRepository;
 use App\Repository\MessageRepository;
+use App\Repository\NewsRepository;
 use App\Service\PushNotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -14,11 +15,12 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/', name: 'app_dashboard_')]
 class DashboardController extends AbstractController
 {
-    public function __construct(private CalendarEventRepository $calendarRepo, private MessageRepository $messagesRepo)
+    public function __construct(private CalendarEventRepository $calendarRepo, private MessageRepository $messagesRepo, private NewsRepository $newsRepo)
     {
     }
 
@@ -41,6 +43,7 @@ class DashboardController extends AbstractController
         ]);
     }
 
+    #[IsGranted('IS_AUTHENTICATED')]
     #[Route('/widget/{id}', name: 'widget', methods: ['GET'])]
     public function widget(
         DashboardWidget $widget,
@@ -56,6 +59,7 @@ class DashboardController extends AbstractController
         ]);
     }
 
+    #[IsGranted('IS_AUTHENTICATED')]
     #[Route('/widget/{id}/content', name: 'widget_content')]
     public function widgetContent(DashboardWidget $widget): Response
     {
@@ -66,6 +70,7 @@ class DashboardController extends AbstractController
         return new Response($this->retrieveWidgetContent($widget));
     }
 
+    #[IsGranted('IS_AUTHENTICATED')]
     #[Route('widget', name: 'widget_update', methods: ['POST'])]
     public function updateWidgets(Request $request, EntityManagerInterface $em): JsonResponse
     {
@@ -93,6 +98,7 @@ class DashboardController extends AbstractController
         return $this->json(['status' => 'success']);
     }
 
+    #[IsGranted('IS_AUTHENTICATED')]
     #[Route('widget', name: 'widget_create', methods: ['PUT'])]
     public function createWidget(Request $request, EntityManagerInterface $em, PushNotificationService $pushNotificationService): JsonResponse
     {
@@ -134,6 +140,7 @@ class DashboardController extends AbstractController
         ]);
     }
 
+    #[IsGranted('IS_AUTHENTICATED')]
     #[Route('widget/{id}', name: 'widget_delete', methods: ['DELETE'])]
     public function deleteWidget(DashboardWidget $widget, EntityManagerInterface $em): JsonResponse
     {
@@ -147,6 +154,7 @@ class DashboardController extends AbstractController
         return $this->json(['status' => 'success']);
     }
 
+    #[IsGranted('IS_AUTHENTICATED')]
     private function retrieveWidgetContent(DashboardWidget $widget): string
     {
         /** @var User $user */
@@ -163,6 +171,10 @@ class DashboardController extends AbstractController
             'messages' => $this->renderView('widgets/messages.html.twig', [
                 'widget' => $widget,
                 'messages' => $this->messagesRepo->findLatestForUser($user)
+            ]),
+            'news' => $this->renderView('widgets/news.html.twig', [
+                'widget' => $widget,
+                'news' => $this->newsRepo->findForUser($user)
             ]),
             default => 'Widget type not implemented yet'
         };

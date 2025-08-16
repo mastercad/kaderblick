@@ -8,6 +8,16 @@ use Symfony\Component\Serializer\Attribute\Groups;
 
 // Auswechsel
 #[ORM\Entity(repositoryClass: SubstitutionRepository::class)]
+#[ORM\Table(
+    name: 'substitutions',
+    indexes: [
+        new ORM\Index(name: 'idx_substitution_game_id', columns: ['game_id']),
+        new ORM\Index(name: 'idx_substitution_player_in_id', columns: ['player_in_id']),
+        new ORM\Index(name: 'idx_substitution_player_out_id', columns: ['player_out_id']),
+        new ORM\Index(name: 'idx_substitution_team_id', columns: ['team_id']),
+        new ORM\Index(name: 'idx_substitution_substitution_reason_id', columns: ['substitution_reason_id'])
+    ]
+)]
 class Substitution
 {
     #[ORM\Id]
@@ -18,24 +28,27 @@ class Substitution
 
     #[Groups(['substitution:read', 'substitution:write', 'game:read', 'game_event:read'])]
     #[ORM\ManyToOne(targetEntity: Game::class, inversedBy: 'substitutions')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'game_id', referencedColumnName: 'id', nullable: false)]
     private Game $game;
 
     #[ORM\Column(type: 'integer')]
     private int $minute;
 
     #[ORM\ManyToOne]
+    #[ORM\JoinColumn(name: 'player_in_id', referencedColumnName: 'id', nullable: false)]
     private Player $playerIn;
 
     #[ORM\ManyToOne]
+    #[ORM\JoinColumn(name: 'player_out_id', referencedColumnName: 'id', nullable: false)]
     private Player $playerOut;
 
     #[ORM\ManyToOne]
+    #[ORM\JoinColumn(name: 'team_id', referencedColumnName: 'id', nullable: false)]
     private Team $team;
 
     #[Groups(['substitution:read'])]
     #[ORM\ManyToOne(targetEntity: SubstitutionReason::class, inversedBy: 'substitutions')]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(name: 'substitution_reason_id', referencedColumnName: 'id', nullable: true)]
     private ?SubstitutionReason $substitutionReason = null;
 
     public function getId(): int

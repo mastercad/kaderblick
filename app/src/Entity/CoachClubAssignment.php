@@ -9,6 +9,13 @@ use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CoachClubAssignmentRepository::class)]
+#[ORM\Table(
+    name: 'coach_club_assignments',
+    indexes: [
+        new ORM\Index(name: 'idx_coach_club_assignment_coach_id', columns: ['coach_id']),
+        new ORM\Index(name: 'idx_coach_club_assignment_club_id', columns: ['club_id'])
+    ]
+)]
 class CoachClubAssignment
 {
     #[ORM\Id]
@@ -20,12 +27,12 @@ class CoachClubAssignment
 
     #[Groups(['coach_club_assignment:read', 'coach_club_assignment:write', 'club:read'])]
     #[ORM\ManyToOne(targetEntity: Coach::class, inversedBy: 'coachClubAssignments')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'coach_id', referencedColumnName: 'id', nullable: false)]
     private ?Coach $coach = null;
 
     #[ORM\ManyToOne(targetEntity: Club::class, inversedBy: 'coachClubAssignments')]
     #[Groups(['coach_club_assignment:read', 'coach_club_assignment:write', 'coach:read'])]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'club_id', referencedColumnName: 'id', nullable: false)]
     private ?Club $club = null;
 
     #[ORM\Column(type: 'date', nullable: true)]

@@ -9,6 +9,13 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CoachLicenseAssignmentRepository::class)]
+#[ORM\Table(
+    name: 'coach_license_assignments',
+    indexes: [
+        new ORM\Index(name: 'idx_coach_license_assignment_coach_id', columns: ['coach_id']),
+        new ORM\Index(name: 'idx_coach_license_assignment_license_id', columns: ['license_id'])
+    ]
+)]
 class CoachLicenseAssignment
 {
     #[ORM\Id]
@@ -19,12 +26,12 @@ class CoachLicenseAssignment
     private ?int $id = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'license_id', referencedColumnName: 'id', nullable: false)]
     #[Groups(['coach_license_assignment:read', 'coach:read'])]
     private ?CoachLicense $license = null;
 
     #[ORM\ManyToOne(targetEntity: Coach::class, inversedBy: 'coachLicenseAssignments')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'coach_id', referencedColumnName: 'id', nullable: false)]
     #[Groups(['coach_license_assignment:read'])]
     private ?Coach $coach = null;
 

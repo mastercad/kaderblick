@@ -86,7 +86,7 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface, Fixtu
                 $selectedClub = $clubs[array_rand($clubs)];
 
                 $firstName = 'Player_' . $playerNumber;
-                $lastName = 'Team ' . $teamNumber . ' / Club ' . $selectedClub->getName();
+                $lastName = 'Team ' . $teamNumber . ' / ' . $selectedClub->getName();
                 $email = $firstName . '.' . $lastName . '@example.com';
                 $player = new Player();
                 $player->setFirstName($firstName);

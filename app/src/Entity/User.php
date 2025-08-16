@@ -11,7 +11,17 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-#[ORM\Table(name: 'users')]
+#[ORM\Table(
+    name: 'users',
+    indexes: [
+        new ORM\Index(name: 'idx_users_player_id', columns: ['player_id']),
+        new ORM\Index(name: 'idx_users_coach_id', columns: ['coach_id']),
+        new ORM\Index(name: 'idx_users_club_id', columns: ['club_id'])
+    ],
+    uniqueConstraints: [
+        new ORM\UniqueConstraint(name: 'uniq_users_email', columns: ['email'])
+    ]
+)]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -23,7 +33,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', unique: true)]
     private string $email;
 
-    #[ORM\Column(type: 'string', length: 255)]
+    #[ORM\Column(name: 'first_name', type: 'string', length: 255)]
     private string $firstName;
 
     #[ORM\Column(type: 'string', length: 255)]
@@ -47,18 +57,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTime $verificationExpires = null;
-
-    #[ORM\ManyToOne(targetEntity: Player::class)]
-    #[ORM\JoinColumn(nullable: true)]
-    private ?Player $player = null;
-
-    #[ORM\ManyToOne(targetEntity: Coach::class)]
-    #[ORM\JoinColumn(nullable: true)]
-    private ?Coach $coach = null;
-
-    #[ORM\ManyToOne(targetEntity: Club::class)]
-    #[ORM\JoinColumn(nullable: true)]
-    private ?Club $club = null;
 
     #[ORM\Column(type: 'float', nullable: true)]
     private ?float $height = null;
@@ -94,13 +92,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * @var Collection<int, UserRelation>
      */
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: UserRelation::class)]
-    private Collection $relatedTo;
-
-    /**
-     * @var Collection<int, UserRelation>
-     */
-    #[ORM\OneToMany(mappedBy: 'relatedUser', targetEntity: UserRelation::class)]
-    private Collection $relatedFrom;
+    private Collection $relations;
 
     /**
      * @var Collection<int, PushSubscription>
@@ -111,8 +103,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __construct()
     {
         $this->widgets = new ArrayCollection();
-        $this->relatedTo = new ArrayCollection();
-        $this->relatedFrom = new ArrayCollection();
+        $this->relations = new ArrayCollection();
         $this->pushSubscriptions = new ArrayCollection();
     }
 
@@ -175,17 +166,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         } else {
             $roles[] = 'ROLE_GUEST';
         }
-
-        if (null !== $this->player) {
-            $roles[] = 'ROLE_PLAYER';
-        }
-        if (null !== $this->coach) {
-            $roles[] = 'ROLE_COACH';
-        }
-        if (null !== $this->club) {
-            $roles[] = 'ROLE_CLUB';
-        }
-        if ($this->getRelatedTo()->count() > 0) {
+        if ($this->relations->count() > 0) {
             $roles[] = 'ROLE_RELATED_USER';
         }
 
@@ -198,6 +179,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setRoles(array $roles): self
     {
         $this->roles = $roles;
+
+        return $this;
+    }
+
+    public function addRole(string $role): self
+    {
+        $this->roles[] = $role;
+
+        $this->roles = array_unique($this->roles);
 
         return $this;
     }
@@ -258,42 +248,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setVerificationExpires(?DateTime $verificationExpires): self
     {
         $this->verificationExpires = $verificationExpires;
-
-        return $this;
-    }
-
-    public function getPlayer(): ?Player
-    {
-        return $this->player;
-    }
-
-    public function setPlayer(?Player $player): self
-    {
-        $this->player = $player;
-
-        return $this;
-    }
-
-    public function getCoach(): ?Coach
-    {
-        return $this->coach;
-    }
-
-    public function setCoach(?Coach $coach): self
-    {
-        $this->coach = $coach;
-
-        return $this;
-    }
-
-    public function getClub(): ?Club
-    {
-        return $this->club;
-    }
-
-    public function setClub(?Club $club): self
-    {
-        $this->club = $club;
 
         return $this;
     }
@@ -427,55 +381,26 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @return Collection<int, UserRelation>
      */
-    public function getRelatedTo(): Collection
+    public function getRelations(): Collection
     {
-        return $this->relatedTo;
+        return $this->relations;
     }
 
-    /**
-     * @return Collection<int, UserRelation>
-     */
-    public function getRelatedFrom(): Collection
+    public function addRelation(UserRelation $relation): self
     {
-        return $this->relatedFrom;
-    }
-
-    public function addRelatedTo(UserRelation $relation): self
-    {
-        if (!$this->relatedTo->contains($relation)) {
-            $this->relatedTo->add($relation);
+        if (!$this->relations->contains($relation)) {
+            $this->relations->add($relation);
             $relation->setUser($this);
         }
 
         return $this;
     }
 
-    public function removeRelatedTo(UserRelation $relation): self
+    public function removeRelation(UserRelation $relation): self
     {
-        if ($this->relatedTo->removeElement($relation)) {
+        if ($this->relations->removeElement($relation)) {
             if ($relation->getUser() === $this) {
                 $relation->setUser(null);
-            }
-        }
-
-        return $this;
-    }
-
-    public function addRelatedFrom(UserRelation $relation): self
-    {
-        if (!$this->relatedFrom->contains($relation)) {
-            $this->relatedFrom->add($relation);
-            $relation->setRelatedUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removeRelatedFrom(UserRelation $relation): self
-    {
-        if ($this->relatedFrom->removeElement($relation)) {
-            if ($relation->getRelatedUser() === $this) {
-                $relation->setRelatedUser(null);
             }
         }
 

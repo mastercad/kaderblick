@@ -2,8 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\Coach;
-use App\Entity\Player;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -33,7 +31,6 @@ class VerificationController extends AbstractController
     ): Response {
         $token = $request->query->get('Token');
 
-        // Korrigierter Aufruf mit nur einem Parameter
         $user = $userRepository->findUserByValidationToken($token);
 
         if (!$user instanceof User) {
@@ -41,17 +38,6 @@ class VerificationController extends AbstractController
         }
 
         $user->setIsVerified(true);
-
-        // Automatische Zuordnung prüfen
-        $player = $this->em->getRepository(Player::class)->findOneBy(['email' => $user->getEmail()]);
-        if ($player) {
-            $user->setPlayer($player);
-        }
-
-        $coach = $this->em->getRepository(Coach::class)->findOneBy(['email' => $user->getEmail()]);
-        if ($coach) {
-            $user->setCoach($coach);
-        }
 
         $this->em->persist($user);
         $this->em->flush();
@@ -75,13 +61,12 @@ class VerificationController extends AbstractController
             'Dein Account wurde erfolgreich aktiviert! Du kannst dich jetzt anmelden.'
         );
 
-        return $this->redirectToRoute('home');
+        return $this->redirectToRoute('app_dashboard_index');
     }
 
     #[Route('/verify/success', name: 'app_verify_success')]
     public function verifySuccess(): JsonResponse
     {
-        //        return $this->render('verification/verify.html.twig');
         return $this->json(['message' => 'E-Mail erfolgreich bestätigt']);
     }
 }

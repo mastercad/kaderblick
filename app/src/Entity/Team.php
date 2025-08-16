@@ -10,6 +10,14 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: TeamRepository::class)]
+#[ORM\Table(
+    name: 'teams',
+    indexes: [
+        new ORM\Index(name: 'idx_teams_age_group_id', columns: ['age_group_id']),
+        new ORM\Index(name: 'idx_teams_league_id', columns: ['league_id']),
+        new ORM\Index(name: 'idx_teams_name', columns: ['name'])
+    ]
+)]
 class Team
 {
     #[ORM\Id]
@@ -24,11 +32,22 @@ class Team
     private string $name;
 
     #[ORM\ManyToOne(targetEntity: AgeGroup::class, cascade: ['persist'])]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(
+        name: 'age_group_id',
+        referencedColumnName: 'id',
+        nullable: false,
+        onDelete: 'CASCADE'
+    )]
     #[Groups(['team:read', 'team:write', 'club:read', 'player_team_assignment:read', 'game_event:read', 'coach:read', 'game:read'])]
     private AgeGroup $ageGroup;
 
     #[ORM\ManyToOne(targetEntity: League::class, inversedBy: 'teams', cascade: ['persist'])]
+    #[ORM\JoinColumn(
+        name: 'league_id',
+        referencedColumnName: 'id',
+        nullable: true,
+        onDelete: 'SET NULL'
+    )]
     private ?League $league = null;
 
     /** @var Collection<int, GameEvent> */

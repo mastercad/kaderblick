@@ -8,6 +8,13 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: PlayerNationalityAssignmentRepository::class)]
+#[ORM\Table(
+    name: 'player_nationality_assignments',
+    indexes: [
+        new ORM\Index(name: 'idx_player_nationality_assignment_player_id', columns: ['player_id']),
+        new ORM\Index(name: 'idx_player_nationality_assignment_nationality_id', columns: ['nationality_id'])
+    ]
+)]
 class PlayerNationalityAssignment
 {
     #[ORM\Id]
@@ -18,12 +25,12 @@ class PlayerNationalityAssignment
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Player::class, inversedBy: 'playerNationalityAssignments')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'player_id', referencedColumnName: 'id', nullable: false)]
     #[Groups(['player_nationality_assignment:read', 'player_nationality_assignment:write'])]
     private ?Player $player = null;
 
     #[ORM\ManyToOne(targetEntity: Nationality::class, inversedBy: 'playerNationalityAssignments')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'nationality_id', referencedColumnName: 'id', nullable: false)]
     #[Groups(['player_nationality_assignment:read', 'player_nationality_assignment:write', 'player:read'])]
     private ?Nationality $nationality = null;
 

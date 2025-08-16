@@ -5,9 +5,9 @@ services:
     container_name: kaderblick-db
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: symfony
-      MYSQL_USER: symfony
-      MYSQL_PASSWORD: symfony
+      MYSQL_DATABASE: kaderblick
+      MYSQL_USER: kaderblick
+      MYSQL_PASSWORD: kaderblick
     volumes:
       - kaderblick-db-data:/var/lib/mysql
     networks:

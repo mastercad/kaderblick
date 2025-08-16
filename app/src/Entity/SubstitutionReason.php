@@ -20,6 +20,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
  * fan_favor / farewell Spieler bekommt Applaus beim Abschied.
  */
 #[ORM\Entity(repositoryClass: SubstitutionReasonRepository::class)]
+#[ORM\Table(name: 'substitution_reasons')]
 class SubstitutionReason
 {
     #[ORM\Id]

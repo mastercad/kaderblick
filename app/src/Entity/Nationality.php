@@ -8,6 +8,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: NationalityRepository::class)]
+#[ORM\Table(name: 'nationalities', uniqueConstraints: [
+    new ORM\UniqueConstraint(name: 'uniq_nationality_iso_code', columns: ['iso_code'])
+])]
 class Nationality
 {
     #[ORM\Id]

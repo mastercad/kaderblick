@@ -2,8 +2,6 @@
 
 namespace App\Repository;
 
-use App\Entity\Coach;
-use App\Entity\Player;
 use App\Entity\Team;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -66,7 +64,7 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
      */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
-        return $this->createQueryBuilder('t')
+        $qb = $this->createQueryBuilder('t')
             ->select('t.id, t.name')
             ->addSelect('ag.id as age_group_id, ag.name as age_group_name')
             ->addSelect('l.id as league_id, l.name as league_name')
@@ -76,10 +74,39 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
             ->leftJoin('t.league', 'l')
             ->leftJoin('t.playerTeamAssignments', 'pta')
             ->leftJoin('t.coachTeamAssignments', 'cta')
-            ->groupBy('t.id')
-            ->orderBy('t.name', 'ASC')
-            ->getQuery()
-            ->getResult();
+            ->groupBy('t.id, ag.id, l.id')
+            ->orderBy('t.name', 'ASC');
+
+        if ($user && !in_array('ROLE_ADMIN', $user->getRoles(), true)) {
+            $playerIds = [];
+            $coachIds = [];
+            if ($user instanceof User) {
+                foreach ($user->getRelations() as $relation) {
+                    if ($relation->getPlayer()) {
+                        $playerIds[] = $relation->getPlayer()->getId();
+                    }
+                    if ($relation->getCoach()) {
+                        $coachIds[] = $relation->getCoach()->getId();
+                    }
+                }
+            }
+            if ($playerIds && $coachIds) {
+                $qb->andWhere('pta.player IN (:playerIds) OR cta.coach IN (:coachIds)')
+                   ->setParameter('playerIds', $playerIds)
+                   ->setParameter('coachIds', $coachIds);
+            } elseif ($playerIds) {
+                $qb->andWhere('pta.player IN (:playerIds)')
+                   ->setParameter('playerIds', $playerIds);
+            } elseif ($coachIds) {
+                $qb->andWhere('cta.coach IN (:coachIds)')
+                   ->setParameter('coachIds', $coachIds);
+            } else {
+                // User hat keine Spieler- oder Trainerrelation, keine Teams anzeigen
+                $qb->andWhere('1 = 0');
+            }
+        }
+
+        return $qb->getQuery()->getResult();
     }
 
     /**

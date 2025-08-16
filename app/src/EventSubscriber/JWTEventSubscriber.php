@@ -24,13 +24,13 @@ class JWTEventSubscriber implements EventSubscriberInterface
 
     public function onJWTNotFound(JWTNotFoundEvent $event): void
     {
-        $response = new RedirectResponse($this->router->generate('app_dashboard'));
+        $response = new RedirectResponse($this->router->generate('app_dashboard_index'));
         $event->setResponse($response);
     }
 
     public function onAuthenticationFailure(AuthenticationFailureEvent $event): void
     {
-        $response = new RedirectResponse($this->router->generate('app_dashboard'));
+        $response = new RedirectResponse($this->router->generate('app_dashboard_index'));
         $event->setResponse($response);
     }
 }

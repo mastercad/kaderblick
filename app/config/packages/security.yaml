@@ -49,14 +49,13 @@ security:
     role_hierarchy:
         ROLE_GUEST:       []
         ROLE_USER:        [ROLE_GUEST]
-        ROLE_PLAYER:      [ROLE_USER]
-        ROLE_COACH:       [ROLE_USER]
         ROLE_CLUB:        [ROLE_USER]
         ROLE_ADMIN:       [ROLE_USER]
         ROLE_SUPER_ADMIN: [ROLE_ADMIN]
 
     access_control:
         - { path: ^/admin,        roles: ROLE_ADMIN }
+        - { path: ^/news,         roles: ROLE_USER }
         - { path: ^/api/users,    roles: ROLE_USER }
         - { path: ^/api/messages/unread-count, roles: ROLE_USER }
         - { path: ^/api/messages, roles: ROLE_USER }

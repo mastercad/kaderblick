@@ -9,7 +9,13 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CalendarEventRepository::class)]
-#[ORM\Table(name: 'calendar_events')]
+#[ORM\Table(
+    name: 'calendar_events',
+    indexes: [
+        new ORM\Index(name: 'idx_calendar_events_calendar_event_type_id', columns: ['calendar_event_type_id']),
+        new ORM\Index(name: 'idx_calendar_events_location_id', columns: ['location_id'])
+    ]
+)]
 class CalendarEvent
 {
     #[ORM\Id]
@@ -36,10 +42,22 @@ class CalendarEvent
     private ?DateTimeInterface $endDate = null;
 
     #[ORM\ManyToOne]
+    #[ORM\JoinColumn(
+        name: 'calendar_event_type_id',
+        referencedColumnName: 'id',
+        nullable: true,
+        onDelete: 'SET NULL'
+    )]
     #[Groups(['calendar_event:read'])]
     private ?CalendarEventType $calendarEventType = null;
 
     #[ORM\ManyToOne]
+    #[ORM\JoinColumn(
+        name: 'location_id',
+        referencedColumnName: 'id',
+        nullable: true,
+        onDelete: 'SET NULL'
+    )]
     #[Groups(['calendar_event:read'])]
     private ?Location $location = null;
 
@@ -103,12 +121,12 @@ class CalendarEvent
         return $this;
     }
 
-    public function getEventType(): ?CalendarEventType
+    public function getCalendarEventType(): ?CalendarEventType
     {
         return $this->calendarEventType;
     }
 
-    public function setEventType(?CalendarEventType $calendarEventType): self
+    public function setCalendarEventType(?CalendarEventType $calendarEventType): self
     {
         $this->calendarEventType = $calendarEventType;
 

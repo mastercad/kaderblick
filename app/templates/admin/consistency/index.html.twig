@@ -1,0 +1,206 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Datenkonsistenz-Prüfung{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-search me-2"></i>Datenkonsistenz-Prüfung</h1>
+        <button class="btn btn-outline-primary" onclick="window.location.reload()">
+            <i class="fas fa-sync-alt me-2"></i>Neu prüfen
+        </button>
+    </div>
+
+    {% if issues.summary.totalIssues == 0 %}
+        <div class="alert alert-success">
+            <h4><i class="fas fa-check-circle me-2"></i>Alle Daten sind konsistent!</h4>
+            <p class="mb-0">Es wurden keine Inkonsistenzen gefunden.</p>
+        </div>
+    {% else %}
+        <div class="alert alert-warning">
+            <h4><i class="fas fa-exclamation-triangle me-2"></i>{{ issues.summary.totalIssues }} Inkonsistenz(en) gefunden</h4>
+            <p class="mb-0">Die folgenden Probleme wurden identifiziert und können automatisch behoben werden.</p>
+        </div>
+
+        <!-- Coach-Team ohne Verein -->
+        {% if issues.coachTeamWithoutClub|length > 0 %}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-badge text-warning me-2"></i>
+                        Coaches mit Team-Zuordnung aber fehlender Verein-Zuordnung
+                        <span class="badge bg-warning">{{ issues.coachTeamWithoutClub|length }}</span>
+                    </h5>
+                    <button class="btn btn-success btn-sm" onclick="fixCoachClubs()">
+                        <i class="fas fa-wrench me-2"></i>Automatisch beheben
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Diese Coaches sind Teams zugeordnet, aber nicht den entsprechenden Vereinen:</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Coach</th>
+                                    <th>Team</th>
+                                    <th>Fehlende Verein-Zuordnung</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for issue in issues.coachTeamWithoutClub %}
+                                    <tr>
+                                        <td>{{ issue.coach.fullName }}</td>
+                                        <td>{{ issue.team.name }}</td>
+                                        <td>
+                                            {% for club in issue.missingClubs %}
+                                                <span class="badge bg-secondary me-1">{{ club.name }}</span>
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Spieler-Team ohne Verein -->
+        {% if issues.playerTeamWithoutClub|length > 0 %}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-running text-warning me-2"></i>
+                        Spieler mit Team-Zuordnung aber fehlender Verein-Zuordnung
+                        <span class="badge bg-warning">{{ issues.playerTeamWithoutClub|length }}</span>
+                    </h5>
+                    <button class="btn btn-success btn-sm" onclick="fixPlayerClubs()">
+                        <i class="fas fa-wrench me-2"></i>Automatisch beheben
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Diese Spieler sind Teams zugeordnet, aber nicht den entsprechenden Vereinen:</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Spieler</th>
+                                    <th>Team</th>
+                                    <th>Fehlende Verein-Zuordnung</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for issue in issues.playerTeamWithoutClub %}
+                                    <tr>
+                                        <td>{{ issue.player.fullName }}</td>
+                                        <td>{{ issue.team.name }}</td>
+                                        <td>
+                                            {% for club in issue.missingClubs %}
+                                                <span class="badge bg-secondary me-1">{{ club.name }}</span>
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Automatische Korrektur</h5>
+            </div>
+            <div class="card-body">
+                <p>Die automatische Korrektur erstellt fehlende Zuordnungen mit dem heutigen Datum als Startdatum. 
+                   Überprüfen Sie nach der Korrektur die Zuordnungen und passen Sie Daten gegebenenfalls an.</p>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" onclick="fixAll()">
+                        <i class="fas fa-magic me-2"></i>Alle Probleme beheben
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Toast für Feedback -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="actionToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <strong class="me-auto">Datenkonsistenz</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastMessage">
+            <!-- Nachricht wird hier eingefügt -->
+        </div>
+    </div>
+</div>
+
+<script>
+function showToast(message, success = true) {
+    const toastEl = document.getElementById('actionToast');
+    const toastBody = document.getElementById('toastMessage');
+    
+    toastBody.textContent = message;
+    
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+
+function fixCoachClubs() {
+    fetch('{{ path("admin_consistency_fix_coach_clubs") }}', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        showToast(data.message, data.success);
+        if (data.success && data.fixed > 0) {
+            setTimeout(() => window.location.reload(), 2000);
+        }
+    })
+    .catch(error => {
+        showToast('Fehler beim Korrigieren der Coach-Zuordnungen.', false);
+    });
+}
+
+function fixPlayerClubs() {
+    fetch('{{ path("admin_consistency_fix_player_clubs") }}', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        showToast(data.message, data.success);
+        if (data.success && data.fixed > 0) {
+            setTimeout(() => window.location.reload(), 2000);
+        }
+    })
+    .catch(error => {
+        showToast('Fehler beim Korrigieren der Spieler-Zuordnungen.', false);
+    });
+}
+
+function fixAll() {
+    Promise.all([
+        fetch('{{ path("admin_consistency_fix_coach_clubs") }}', { method: 'POST' }),
+        fetch('{{ path("admin_consistency_fix_player_clubs") }}', { method: 'POST' })
+    ])
+    .then(responses => Promise.all(responses.map(r => r.json())))
+    .then(results => {
+        const totalFixed = results.reduce((sum, result) => sum + result.fixed, 0);
+        showToast(`Alle Probleme behoben! ${totalFixed} Zuordnungen erstellt.`);
+        setTimeout(() => window.location.reload(), 2000);
+    })
+    .catch(error => {
+        showToast('Fehler beim Korrigieren der Zuordnungen.', false);
+    });
+}
+</script>
+{% endblock %}

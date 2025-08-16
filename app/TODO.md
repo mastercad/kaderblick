@@ -96,3 +96,9 @@ Problem:
 
 Lösung:
 ich habe startDate auf nullable gesetzt und der read gruppe des aufrufers zugewiesen, damit ging es
+
+
+# SCHEMA PROBLEM MIT DOCTRINE
+
+Doctrine\Migrations\Provider\OrmSchemaProvider
+Doctrine\ORM\Tools\SchemaTool

@@ -1,7 +1,7 @@
 {% if events|length > 0 %}
     <div class="list-group">
         {% for event in events %}
-            <div class="list-group-item" style="border-left: 4px solid {{ event.eventType.color }}">
+            <div class="list-group-item" style="border-left: 4px solid {{ event.calendarEventType.color }}">
                 <div class="d-flex w-100 justify-content-between">
                     <h6 class="mb-1">{{ event.title }}</h6>
                     <small>
@@ -21,8 +21,8 @@
                             </span>
                         {% endif %}
                     </small>
-                    <small class="badge" style="background-color: {{ event.eventType.color }}">
-                        {{ event.eventType.name }}
+                    <small class="badge" style="background-color: {{ event.calendarEventType.color }}">
+                        {{ event.calendarEventType.name }}
                     </small>
                 </div>
             </div>

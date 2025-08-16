@@ -16,6 +16,155 @@
             border-radius: 3px;
             margin: 1px 0;
         }
+        
+        /* Moderne Card-Styles */
+        .card {
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            border-radius: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            padding: 1rem 1.5rem;
+        }
+        
+        .card-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        /* Filter-Bereich verschönern */
+        .form-check {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .form-check:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .form-check-input:checked {
+            background-color: var(--bs-primary);
+            border-color: var(--bs-primary);
+        }
+        
+        /* Event-Liste verschönern */
+        .list-group-item {
+            border: none;
+            border-radius: 10px !important;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .list-group-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .list-group-item h6 {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .list-group-item small {
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        /* Kalender-Container */
+        #calendar {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        }
+        
+        /* Button-Styles */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+        
+        /* Modal verschönern */
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px 16px 0 0;
+            border: none;
+        }
+        
+        /* Spinner ansprechender */
+        .spinner-border {
+            color: #667eea;
+        }
+        
+        /* Responsive Verbesserungen */
+        @media (max-width: 768px) {
+            .card {
+                margin-bottom: 1rem;
+            }
+            
+            .list-group-item:hover {
+                transform: none;
+            }
+        }
+        
+        /* Animationen für Ladevorgang */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Badge-Styles im Modal */
+        .badge {
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        /* Form-Styles */
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
     </style>
 {% endblock %}
 
@@ -62,34 +211,13 @@ Event Kalender
             </div>
             <div class="card-body">
                 <div class="list-group">
-                    {% for event in upcomingEvents %}
-                        <div class="list-group-item list-group-item-action" role="button" 
-                             data-event='{{ {
-                                id: event.id,
-                                title: event.title,
-                                description: event.description,
-                                start: event.startDate|date('c'),
-                                end: event.endDate ? event.endDate|date('c') : null,
-                                type: event.eventType ? { 
-                                    id: event.eventType.id, 
-                                    name: event.eventType.name, 
-                                    color: event.eventType.color 
-                                } : null,
-                                location: event.location ? { id: event.location.id, name: event.location.name } : null
-                             }|json_encode|e('html_attr') }}'>
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">{{ event.title }}</h6>
-                                <small>{{ event.startDate|date('d.m.Y H:i') }}</small>
-                            </div>
-                            <p class="mb-1">{{ event.description }}</p>
-                            {% if event.location %}
-                                <small>
-                                    <i class="fas fa-map-marker-alt"></i> 
-                                    {{ event.location.name }}
-                                </small>
-                            {% endif %}
+                    <!-- Events werden per JavaScript geladen -->
+                    <div class="text-center p-3">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Laden...</span>
                         </div>
-                    {% endfor %}
+                        <div class="ms-2 d-inline">Termine werden geladen...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -119,8 +247,8 @@ Event Kalender
                             <input type="text" class="form-control" id="eventTitle" required>
                         </div>
                         <div class="mb-3">
-                            <label for="eventType" class="form-label">Art</label>
-                            <select class="form-select" id="eventType" required>
+                            <label for="calendarEventType" class="form-label">Art</label>
+                            <select class="form-select" id="calendarEventType" required>
                                 {% for type in eventTypes %}
                                     <option value="{{ type.id }}" data-color="{{ type.color }}">{{ type.name }}</option>
                                 {% endfor %}
@@ -204,19 +332,62 @@ Event Kalender
 
 {# Event-Details Modal hinzufügen #}
 <div class="modal fade" id="eventDetailsModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="eventDetailsTitle"></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p><strong>Termin:</strong> <span id="eventDetailsDate"></span></p>
-                <div id="eventDetailsLocationContainer">
-                    <p><strong>Ort:</strong> <span id="eventDetailsLocation"></span></p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Typ:</strong> <span id="eventDetailsType"></span></p>
+                        <p><strong>Termin:</strong> <span id="eventDetailsDate"></span></p>
+                        <div id="eventDetailsLocationContainer">
+                            <p><strong>Ort:</strong> <span id="eventDetailsLocation"></span></p>
+                        </div>
+                        <p><strong>Beschreibung:</strong></p>
+                        <p id="eventDetailsDescription"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <div id="participationSection">
+                            <h6>Teilnahme</h6>
+                            <div id="participationStatus" class="mb-3">
+                                <p>Ihr Status: <span id="currentParticipationStatus" class="badge"></span></p>
+                                <div id="participationNote" style="display: none;">
+                                    <small class="text-muted" id="participationNoteText"></small>
+                                </div>
+                            </div>
+                            <div id="participationForm">
+                                <div class="mb-3">
+                                    <label for="participationStatusSelect" class="form-label">Status ändern:</label>
+                                    <select class="form-select" id="participationStatusSelect">
+                                        <option value="">Laden...</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="participationNoteInput" class="form-label">Notiz (optional):</label>
+                                    <textarea class="form-control" id="participationNoteInput" rows="2" placeholder="Zusätzliche Informationen..."></textarea>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm" id="saveParticipation">
+                                    Status speichern
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <p><strong>Beschreibung:</strong></p>
-                <p id="eventDetailsDescription"></p>
+                
+                <!-- Teilnehmerliste -->
+                <div class="mt-4">
+                    <h6>Teilnehmerliste</h6>
+                    <div id="participantsList">
+                        <div class="text-center">
+                            <div class="spinner-border spinner-border-sm" role="status">
+                                <span class="visually-hidden">Laden...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             {% if is_granted('ROLE_ADMIN') %}
             <div class="modal-footer">
@@ -238,11 +409,11 @@ Event Kalender
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const eventType = document.getElementById('eventType');
+        const calendarEventType = document.getElementById('calendarEventType');
         const gameFields = document.getElementById('gameFields');
         const gameFieldInputs = gameFields.querySelectorAll('select');
 
-        const eventTypeFilters = document.querySelectorAll('.event-type-filter');
+        const calendarEventTypeFilters = document.querySelectorAll('.event-type-filter');
         const editModal = document.getElementById('newEventModal')
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -342,7 +513,7 @@ Event Kalender
 
         // Event Handler für den Speichern-Button
         document.getElementById('saveEvent')?.addEventListener('click', async function() {
-            const calendarEventTypeId = document.getElementById('eventType').value;
+            const calendarEventTypeId = document.getElementById('calendarEventType').value;
             const formData = {
                 title: document.getElementById('eventTitle').value,
                 typeId: calendarEventTypeId,
@@ -397,40 +568,78 @@ Event Kalender
         async function updateUpcomingEvents() {
             const response = await fetch('{{ path('calendar_upcoming') }}');
             const events = await response.json();
+            console.log('Received events:', events);
+            
             const listGroup = document.querySelector('.list-group');
-            listGroup.innerHTML = events.map(event => `
+            if (!listGroup) {
+                console.error('List group element not found!');
+                return;
+            }
+            
+            const html = events.map(event => {
+                console.log('Processing event:', event);
+                
+                // Titel für Spiele generieren
+                let displayTitle = event.title || 'Unbenanntes Event';
+                if (event.game && event.game.homeTeam && event.game.awayTeam) {
+                    displayTitle = `${event.game.gameType?.name || 'Spiel'}: ${event.game.homeTeam.name} vs ${event.game.awayTeam.name}`;
+                }
+                
+                // Farben für dezente Gestaltung - gleiche Farben wie im Kalender
+                const eventColor = event.calendarEventType?.color || '#6c757d';
+                
+                return `
                 <div class="list-group-item list-group-item-action" role="button"
+                     style="background-color: ${eventColor}20; border-left: 4px solid ${eventColor};"
                      data-event='${JSON.stringify({
                         id: event.id,
                         title: event.title,
                         description: event.description,
                         start: event.startDate,
                         end: event.endDate,
-                        type: event.type,
-                        location: event.location
+                        type: event.calendarEventType,
+                        location: event.location,
+                        game: event.game
                     })}'>
                     <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1">${event.title}</h6>
+                        <h6 class="mb-1">${displayTitle}</h6>
                         <small>${formatDateTime(event.startDate)}</small>
                     </div>
                     <p class="mb-1">${event.description || ''}</p>
                     ${event.location ? `<small><i class="fas fa-map-marker-alt"></i> ${event.location.name}</small>` : ''}
                 </div>
-            `).join('');
+                `;
+            });
+            
+            listGroup.innerHTML = html.join('');
+
+            // Fade-in Animation für die neuen Elemente
+            document.querySelectorAll('.list-group-item').forEach((item, index) => {
+                item.classList.add('fade-in');
+                item.style.animationDelay = `${index * 0.1}s`;
+            });
 
             // Event-Handler nach Update neu hinzufügen
             document.querySelectorAll('.list-group-item-action').forEach(item => {
                 item.addEventListener('click', function() {
                     const eventData = JSON.parse(this.dataset.event);
+                    
+                    // Titel für Spiele generieren
+                    let displayTitle = eventData.title;
+                    if (eventData.game && eventData.game.homeTeam && eventData.game.awayTeam) {
+                        displayTitle = `${eventData.game.gameType?.name || 'Spiel'}: ${eventData.game.homeTeam.name} vs ${eventData.game.awayTeam.name}`;
+                    }
+                    
                     showEventDetails({
                         id: eventData.id,
-                        title: eventData.title,
+                        title: displayTitle,
                         start: new Date(eventData.start),
                         end: eventData.end ? new Date(eventData.end) : null,
                         extendedProps: {
                             description: eventData.description,
                             type: eventData.type,
-                            location: eventData.location
+                            location: eventData.location,
+                            game: eventData.game
                         }
                     });
                 });
@@ -443,7 +652,25 @@ Event Kalender
         // Event-Details Modal
         function showEventDetails(event) {
             const modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
-            document.getElementById('eventDetailsTitle').textContent = event.title;
+            const modalElement = document.getElementById('eventDetailsModal');
+            modalElement.dataset.eventId = event.id; // Event ID speichern
+            
+            // Titel für Spiele generieren
+            let displayTitle = event.title;
+            if (event.extendedProps.game && event.extendedProps.game.homeTeam && event.extendedProps.game.awayTeam) {
+                displayTitle = `${event.extendedProps.game.gameType?.name || 'Spiel'}: ${event.extendedProps.game.homeTeam.name} vs ${event.extendedProps.game.awayTeam.name}`;
+            }
+            
+            document.getElementById('eventDetailsTitle').textContent = displayTitle;
+            
+            // Event-Type anzeigen
+            if (event.extendedProps.type) {
+                const typeElement = document.getElementById('eventDetailsType');
+                typeElement.textContent = event.extendedProps.type.name;
+                typeElement.style.color = event.extendedProps.type.color;
+                typeElement.style.fontWeight = 'bold';
+            }
+            
             document.getElementById('eventDetailsDate').textContent = 
                 `${formatDateTime(event.start)}${event.end ? ' - ' + formatDateTime(event.end) : ''}`;
             document.getElementById('eventDetailsDescription').textContent = event.extendedProps.description || '';
@@ -460,10 +687,11 @@ Event Kalender
             }
 
             // Tooltip für Details
+            const isAdmin = {{ is_granted('ROLE_ADMIN') ? 'true' : 'false' }};
             new bootstrap.Tooltip(document.getElementById('eventDetailsDate'), {
                 title: 'Klicken Sie zum Bearbeiten',
                 placement: 'top',
-                enabled: {{ is_granted('ROLE_ADMIN') ? 'true' : 'false' }}
+                enabled: isAdmin
             });
 
             // Event-Buttons für Admins
@@ -471,7 +699,7 @@ Event Kalender
                 console.info(event);
                 document.getElementById('newEventForm').dataset.eventId = event.id;
                 document.getElementById('eventTitle').value = event.title;
-                document.getElementById('eventType').value = event.extendedProps.type?.id;
+                document.getElementById('calendarEventType').value = event.extendedProps.type?.id;
                 document.getElementById('eventStart').value = event.start.toISOString().slice(0, 16);
                 if (event.end) {
                     document.getElementById('eventEnd').value = event.end.toISOString().slice(0, 16);
@@ -507,13 +735,169 @@ Event Kalender
                 }
             });
 
+            // Teilnahme-Daten laden
+            loadParticipationData(event.id);
+
             modal.show();
         }
+
+        // Teilnahme-Daten laden
+        async function loadParticipationData(eventId) {
+            try {
+                // Verfügbare Status laden
+                const statusResponse = await fetch('/api/participation/statuses');
+                const statusData = await statusResponse.json();
+                
+                const statusSelect = document.getElementById('participationStatusSelect');
+                statusSelect.innerHTML = '<option value="">Status wählen...</option>';
+                statusData.statuses.forEach(status => {
+                    const option = document.createElement('option');
+                    option.value = status.id;
+                    option.textContent = status.name;
+                    statusSelect.appendChild(option);
+                });
+
+                // Event-Teilnahmen laden
+                const participationResponse = await fetch(`/api/participation/event/${eventId}`);
+                const participationData = await participationResponse.json();
+                
+                // Eigenen Status anzeigen
+                const currentUserId = {{ app.user ? app.user.id : 'null' }};
+                const currentUser = participationData.participations.find(p => p.user_id === currentUserId);
+                if (currentUser && currentUser.status) {
+                    const statusBadge = document.getElementById('currentParticipationStatus');
+                    statusBadge.textContent = currentUser.status.name;
+                    statusBadge.className = `badge`;
+                    statusBadge.style.backgroundColor = currentUser.status.color;
+                    
+                    // Status im Select vorauswählen
+                    statusSelect.value = currentUser.status.id;
+                    
+                    // Notiz anzeigen
+                    if (currentUser.note) {
+                        document.getElementById('participationNoteText').textContent = currentUser.note;
+                        document.getElementById('participationNote').style.display = 'block';
+                        document.getElementById('participationNoteInput').value = currentUser.note;
+                    }
+                } else {
+                    document.getElementById('currentParticipationStatus').textContent = 'Keine Angabe';
+                    document.getElementById('currentParticipationStatus').className = 'badge bg-secondary';
+                }
+
+                // Teilnehmerliste anzeigen
+                displayParticipantsList(participationData.participations);
+
+            } catch (error) {
+                console.error('Fehler beim Laden der Teilnahme-Daten:', error);
+                document.getElementById('participantsList').innerHTML = '<p class="text-danger">Fehler beim Laden der Teilnahmen</p>';
+            }
+        }
+
+        // Teilnehmerliste anzeigen
+        function displayParticipantsList(participations) {
+            const container = document.getElementById('participantsList');
+            
+            if (participations.length === 0) {
+                container.innerHTML = '<p class="text-muted">Noch keine Teilnahmen</p>';
+                return;
+            }
+
+            // Nach Status gruppieren
+            const grouped = participations.reduce((acc, p) => {
+                if (p.status) {
+                    const statusName = p.status.name;
+                    if (!acc[statusName]) acc[statusName] = [];
+                    acc[statusName].push(p);
+                }
+                return acc;
+            }, {});
+
+            let html = '';
+            Object.entries(grouped).forEach(([statusName, users]) => {
+                const status = users[0].status;
+                html += `
+                    <div class="mb-2">
+                        <h6>
+                            <span class="badge" style="background-color: ${status.color}">
+                                ${status.icon ? `<i class="fa fa-${status.icon}"></i> ` : ''}${statusName} (${users.length})
+                            </span>
+                        </h6>
+                        <ul class="list-unstyled ms-3">
+                `;
+                users.forEach(user => {
+                    html += `
+                        <li class="d-flex align-items-center mb-1">
+                            <small>
+                                ${user.user_name}
+                                ${user.is_team_player ? '<span class="badge bg-primary ms-1">Spieler</span>' : ''}
+                                ${user.note ? `<br><em class="text-muted">"${user.note}"</em>` : ''}
+                            </small>
+                        </li>
+                    `;
+                });
+                html += '</ul></div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Teilnahme speichern
+        document.getElementById('saveParticipation')?.addEventListener('click', async function() {
+            const eventId = document.querySelector('#eventDetailsModal').dataset.eventId;
+            const statusId = document.getElementById('participationStatusSelect').value;
+            const note = document.getElementById('participationNoteInput').value;
+
+            if (!statusId) {
+                alert('Bitte wählen Sie einen Status aus.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/participation/event/${eventId}/respond`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        status_id: statusId,
+                        note: note
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Teilnahme-Daten neu laden
+                    await loadParticipationData(eventId);
+                    
+                    // Erfolgsmeldung
+                    const button = this;
+                    const originalText = button.textContent;
+                    button.textContent = 'Gespeichert!';
+                    button.classList.remove('btn-primary');
+                    button.classList.add('btn-success');
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.classList.remove('btn-success');
+                        button.classList.add('btn-primary');
+                    }, 2000);
+                } else {
+                    alert(result.error || 'Fehler beim Speichern');
+                }
+            } catch (error) {
+                console.error('Fehler:', error);
+                alert('Fehler beim Speichern der Teilnahme');
+            }
+        });
         
         const updateEventVisibility = () => {
-            const selectedTypes = Array.from(eventTypeFilters)
+            const selectedTypes = Array.from(calendarEventTypeFilters)
                 .filter(cb => cb.checked)
                 .map(cb => cb.value);
+
+            // Filter-Status im localStorage speichern
+            localStorage.setItem('calendarEventTypeFilters', JSON.stringify(selectedTypes));
 
             // Kalender Events filtern
             calendar.getEvents().forEach(event => {
@@ -531,9 +915,25 @@ Event Kalender
             });
         };
 
-        eventTypeFilters.forEach(checkbox => {
+        // Filter-Status aus localStorage laden und anwenden
+        const loadFilterSettings = () => {
+            const savedFilters = localStorage.getItem('calendarEventTypeFilters');
+            if (savedFilters) {
+                const selectedTypes = JSON.parse(savedFilters);
+                calendarEventTypeFilters.forEach(checkbox => {
+                    checkbox.checked = selectedTypes.includes(checkbox.value);
+                });
+            }
+            // Filter anwenden
+            updateEventVisibility();
+        };
+
+        calendarEventTypeFilters.forEach(checkbox => {
             checkbox.addEventListener('change', updateEventVisibility);
         });
+
+        // Filter beim Laden der Seite wiederherstellen
+        loadFilterSettings();
 
         // Event-Handler für Upcoming Events
         document.querySelectorAll('.list-group-item-action').forEach(item => {
@@ -553,7 +953,7 @@ Event Kalender
             });
         });
 
-        eventType.addEventListener('change', function() {
+        calendarEventType.addEventListener('change', function() {
             const isGame = this.options[this.selectedIndex].value == calendarGameEventTypeId;
             gameFields.style.display = isGame ? 'block' : 'none';
             gameFieldInputs.forEach(input => input.required = isGame);
@@ -598,10 +998,13 @@ Event Kalender
         initSelect2('#eventLocation', 'location', 'Ort suchen...');
 
         editModal.addEventListener('shown.bs.modal', function (event) {
-            const isGame = eventType.options[eventType.selectedIndex].value == calendarGameEventTypeId;
+            const isGame = calendarEventType.options[calendarEventType.selectedIndex].value == calendarGameEventTypeId;
             gameFields.style.display = isGame ? 'block' : 'none';
             gameFieldInputs.forEach(input => input.required = isGame);
-        })
+        });
+
+        // Events beim Laden der Seite laden
+        updateUpcomingEvents();
     });
     </script>
 {% endblock %}

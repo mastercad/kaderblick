@@ -36,6 +36,11 @@ services:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
+    
+    # Configure DataFixtures as services with autowiring
+    App\DataFixtures\:
+        resource: '../src/DataFixtures/'
+        tags: ['doctrine.fixture.orm']
 
     App\Security\JWTUserChecker:
         tags:

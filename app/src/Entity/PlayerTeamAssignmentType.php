@@ -21,6 +21,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * injured      Verletzter Spieler          Aktuell nicht einsatzfähig.
  */
 #[ORM\Entity(repositoryClass: PlayerTeamAssignmentTypeRepository::class)]
+#[ORM\Table(name: 'player_team_assignment_types')]
 class PlayerTeamAssignmentType
 {
     #[ORM\Id]

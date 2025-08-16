@@ -6,6 +6,7 @@ use App\Repository\TeamGameStatsRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TeamGameStatsRepository::class)]
+#[ORM\Table(name: 'team_game_stats')]
 class TeamGameStats
 {
     #[ORM\Id]
@@ -15,11 +16,11 @@ class TeamGameStats
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Game::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'game_id', referencedColumnName: 'id', nullable: false)]
     private Game $game;
 
     #[ORM\ManyToOne(targetEntity: Team::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'team_id', referencedColumnName: 'id', nullable: false)]
     private Team $team;
 
     #[ORM\Column(type: 'integer', nullable: true)]

@@ -9,7 +9,7 @@ services:
     volumes:
       - ./app:/var/www/symfony
     environment:
-      DATABASE_URL: mysql://symfony:symfony@db:3306/symfony
+      DATABASE_URL: mysql://kaderblick:kaderblick@db:3306/kaderblick
       XDEBUG_MODE: develop,debug
       XDEBUG_CONFIG: "client_host=host.docker.internal client_port=9003"
       XDEBUG_LOG: /tmp/xdebug.log

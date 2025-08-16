@@ -13,6 +13,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CoachRepository::class)]
+#[ORM\Table(name: 'coaches')]
 class Coach
 {
     #[ORM\Id]

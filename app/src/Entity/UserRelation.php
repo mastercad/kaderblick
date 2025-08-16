@@ -6,7 +6,15 @@ use App\Repository\UserRelationRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: UserRelationRepository::class)]
-#[ORM\Table(name: 'user_relations')]
+#[ORM\Table(
+    name: 'user_relations',
+    indexes: [
+        new ORM\Index(name: 'idx_user_relations_user_id', columns: ['user_id']),
+        new ORM\Index(name: 'idx_user_relations_player_id', columns: ['player_id']),
+        new ORM\Index(name: 'idx_user_relations_coach_id', columns: ['coach_id']),
+        new ORM\Index(name: 'idx_user_relations_relation_type_id', columns: ['relation_type_id'])
+    ]
+)]
 class UserRelation
 {
     #[ORM\Id]
@@ -15,24 +23,20 @@ class UserRelation
     /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'relatedTo')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'relations')]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false)]
     private User $user;
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'relatedFrom')]
-    #[ORM\JoinColumn(nullable: true)]
-    private ?User $relatedUser = null;
-
     #[ORM\ManyToOne(targetEntity: Player::class)]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(name: 'player_id', referencedColumnName: 'id', nullable: true)]
     private ?Player $player = null;
 
     #[ORM\ManyToOne(targetEntity: Coach::class)]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(name: 'coach_id', referencedColumnName: 'id', nullable: true)]
     private ?Coach $coach = null;
 
     #[ORM\ManyToOne(targetEntity: RelationType::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'relation_type_id', referencedColumnName: 'id', nullable: false)]
     private RelationType $relationType;
 
     /** @var list<string> */
@@ -52,18 +56,6 @@ class UserRelation
     public function setUser(?User $user): self
     {
         $this->user = $user;
-
-        return $this;
-    }
-
-    public function getRelatedUser(): ?User
-    {
-        return $this->relatedUser;
-    }
-
-    public function setRelatedUser(?User $relatedUser): self
-    {
-        $this->relatedUser = $relatedUser;
 
         return $this;
     }

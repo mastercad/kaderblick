@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
+#[ORM\Table(name: 'leagues')]
 #[ORM\Entity(repositoryClass: LeagueRepository::class)]
 class League
 {

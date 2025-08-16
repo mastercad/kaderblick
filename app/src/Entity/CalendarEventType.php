@@ -7,7 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CalendarEventTypeRepository::class)]
-#[ORM\Table(name: 'calendar_event_types')] // Tabellenname anpassen
+#[ORM\Table(name: 'calendar_event_types')]
 class CalendarEventType
 {
     #[ORM\Id]
@@ -23,7 +23,7 @@ class CalendarEventType
 
     #[ORM\Column(length: 7)]
     #[Groups(['calendar_event_type:read', 'calendar_event:read'])]
-    private string $color = '#1a4789';  // Standard Blau
+    private string $color = '#1a4789';
 
     public function getId(): ?int
     {

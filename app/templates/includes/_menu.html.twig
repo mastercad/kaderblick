@@ -1,33 +1,35 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand" href="{{ path('app_dashboard_index') }}">Kaderblick</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+<nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%) !important; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;">
+    <div class="container" style="background: transparent !important;">
+        <a class="navbar-brand fw-bold" href="{{ path('app_dashboard_index') }}" style="font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+            <i class="fas fa-futbol me-2"></i>Kaderblick
+        </a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" style="outline: none; box-shadow: none;">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 {# Öffentliche Endpunkte #}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                        Öffentlich
+                    <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown" style="transition: all 0.3s ease; color: white !important; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                        <i class="fas fa-globe me-1"></i>Öffentlich
                     </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ path('calendar_index') }}">Kalender</a></li>
-                        <li><a class="dropdown-item" href="{{ path('api_teams_index') }}">Teams</a></li>
-                        <li><a class="dropdown-item" href="{{ path('api_games_index') }}">Spiele</a></li>
-                        <li><a class="dropdown-item" href="{{ path('api_locations_index') }}">Spielstätten</a></li>
+                    <ul class="dropdown-menu shadow-lg border-0" style="border-radius: 12px; background: white;">
+                        <li><a class="dropdown-item py-2" href="{{ path('calendar_index') }}"><i class="fas fa-calendar-alt me-2 text-primary"></i>Kalender</a></li>
+                        <li><a class="dropdown-item py-2" href="{{ path('api_teams_index') }}"><i class="fas fa-users me-2 text-success"></i>Teams</a></li>
+                        <li><a class="dropdown-item py-2" href="{{ path('api_games_index') }}"><i class="fas fa-trophy me-2 text-warning"></i>Spiele</a></li>
+                        <li><a class="dropdown-item py-2" href="{{ path('api_locations_index') }}"><i class="fas fa-map-marker-alt me-2 text-danger"></i>Spielstätten</a></li>
                     </ul>
                 </li>
 
                 {# Spieler-Endpunkte #}
                 {% if ( is_granted('ROLE_PLAYER') ) or ( is_granted('ROLE_ADMIN') ) %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            Spieler
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" style="transition: all 0.3s ease; color: white !important; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                            <i class="fas fa-running me-1"></i>Spieler
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ path('api_players_index') }}">Spielerübersicht</a></li>
-                            <li><a class="dropdown-item" href="{{ path('api_game_events_index') }}">Spielereignisse</a></li>
+                        <ul class="dropdown-menu shadow-lg border-0" style="border-radius: 12px;">
+                            <li><a class="dropdown-item py-2" href="{{ path('api_players_index') }}"><i class="fas fa-id-card me-2 text-info"></i>Spielerübersicht</a></li>
+                            <li><a class="dropdown-item py-2" href="{{ path('api_game_events_index') }}"><i class="fas fa-clipboard-list me-2 text-primary"></i>Spielereignisse</a></li>
                         </ul>
                     </li>
                 {% endif %}
@@ -35,16 +37,16 @@
                 {# Trainer-Endpunkte #}
                 {% if ( is_granted('ROLE_COACH' ) ) or ( is_granted('ROLE_ADMIN') ) %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            Trainer
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" style="transition: all 0.3s ease; color: white !important; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                            <i class="bi bi-person-badge me-1"></i>Trainer
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ path('api_teams_index') }}">Mannschaften</a></li>
-                            <li><a class="dropdown-item" href="{{ path('formations_index') }}">Aufstellungen</a></li>
-                            <li><a class="dropdown-item" href="{{ path('api_players_index') }}">Spieler</a></li>
-                            <li><a class="dropdown-item" href="{{ path('api_game_events_index') }}">Spielereignisse</a></li>
+                        <ul class="dropdown-menu shadow-lg border-0" style="border-radius: 12px;">
+                            <li><a class="dropdown-item py-2" href="{{ path('api_teams_index') }}"><i class="fas fa-users me-2 text-success"></i>Mannschaften</a></li>
+                            <li><a class="dropdown-item py-2" href="{{ path('formations_index') }}"><i class="fas fa-th me-2 text-warning"></i>Aufstellungen</a></li>
+                            <li><a class="dropdown-item py-2" href="{{ path('api_players_index') }}"><i class="fas fa-running me-2 text-info"></i>Spieler</a></li>
+                            <li><a class="dropdown-item py-2" href="{{ path('api_game_events_index') }}"><i class="fas fa-clipboard-list me-2 text-primary"></i>Spielereignisse</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ path('api_game_event_types_index') }}">Ereignistypen</a></li>
+                            <li><a class="dropdown-item py-2" href="{{ path('api_game_event_types_index') }}"><i class="fas fa-tags me-2 text-secondary"></i>Ereignistypen</a></li>
                         </ul>
                     </li>
                 {% endif %}
@@ -52,56 +54,61 @@
                 {# Admin-Endpunkte #}
                 {% if is_granted('ROLE_ADMIN') %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            Administration
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" style="transition: all 0.3s ease; color: white !important; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                            <i class="fas fa-cog me-1"></i>Administration
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><h6 class="dropdown-header">Stammdaten</h6></li>
-                            <li><a class="dropdown-item" href="{{ path('api_age_groups_index') }}">Altersgruppen</a></li>
-                            <li><a class="dropdown-item" href="{{ path('api_positions_index') }}">Positionen</a></li>
-                            <li><a class="dropdown-item" href="{{ path('api_strong_feet_index') }}">Füße</a></li>
-                            <li><a class="dropdown-item" href="{{ path('api_surface_types_index') }}">Beläge</a></li>
+                        <ul class="dropdown-menu shadow-lg border-0" style="border-radius: 12px; min-width: 250px;">
+                            <li><h6 class="dropdown-header text-primary"><i class="fas fa-database me-1"></i>Stammdaten</h6></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('api_age_groups_index') }}"><i class="fas fa-users me-2 text-muted"></i>Altersgruppen</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('api_positions_index') }}"><i class="fas fa-crosshairs me-2 text-muted"></i>Positionen</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('api_strong_feet_index') }}"><i class="fas fa-shoe-prints me-2 text-muted"></i>Füße</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('api_surface_types_index') }}"><i class="fas fa-layer-group me-2 text-muted"></i>Beläge</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('api_game_event_types_index') }}"><i class="fas fa-tags me-2 text-muted"></i>Ereignistypen</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><h6 class="dropdown-header">Verwaltung</h6></li>
-                            <li><a class="dropdown-item" href="{{ path('api_clubs_index') }}">Vereine</a></li>
-                            <li><a class="dropdown-item" href="{{ path('api_coaches_index') }}">Trainer</a></li>
-                            <li><a class="dropdown-item" href="{{ path('api_locations_index') }}">Spielstätten</a></li>
-                            <li><a class="dropdown-item" href="{{ path('api_teams_index') }}">Teams</a></li>
-                            <li><a class="dropdown-item" href="{{ path('admin_feedback_index') }}">Feedback</a></li>
+                            <li><h6 class="dropdown-header text-success"><i class="fas fa-tools me-1"></i>Verwaltung</h6></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('api_clubs_index') }}"><i class="fas fa-shield-alt me-2 text-muted"></i>Vereine</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('api_coaches_index') }}"><i class="bi bi-person-badge me-2 text-muted"></i>Trainer</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('api_locations_index') }}"><i class="fas fa-map-marker-alt me-2 text-muted"></i>Spielstätten</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('api_teams_index') }}"><i class="fas fa-users me-2 text-muted"></i>Teams</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('admin_feedback_index') }}"><i class="fas fa-comments me-2 text-muted"></i>Feedback</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('app_news_index') }}"><i class="fas fa-newspaper me-2 text-muted"></i>Neuigkeiten Management</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('admin_consistency_index') }}"><i class="fas fa-search me-2 text-muted"></i>Datenkonsistenz</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><h6 class="dropdown-header">Zuweisungen</h6></li>
-                            <li><a class="dropdown-item" href="{{ path('admin_users_index') }}">Benutzer</a></li>
-                            <li><a class="dropdown-item" href="{{ path('api_player_team_assignments_index') }}">Spieler zu Team</a></li>
-                            <li><a class="dropdown-item" href="{{ path('api_player_club_assignments_index') }}">Spieler zu Verein</a></li>
-                            <li><a class="dropdown-item" href="{{ path('api_coach_team_assignments_index') }}">Coach zu Team</a></li>
-                            <li><a class="dropdown-item" href="{{ path('api_coach_club_assignments_index') }}">Coach zu Verein</a></li>
-                            <li><a class="dropdown-item" href="{{ path('videos_upload_form') }}">Videos</a></li>
+                            <li><h6 class="dropdown-header text-warning"><i class="fas fa-link me-1"></i>Zuweisungen</h6></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('admin_users_index') }}"><i class="fas fa-user-cog me-2 text-muted"></i>Benutzer</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('api_player_team_assignments_index') }}"><i class="fas fa-user-plus me-2 text-muted"></i>Spieler zu Team</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('api_player_club_assignments_index') }}"><i class="fas fa-handshake me-2 text-muted"></i>Spieler zu Verein</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('api_coach_team_assignments_index') }}"><i class="bi bi-arrow-left-right me-2 text-muted"></i>Coach zu Team</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('api_coach_club_assignments_index') }}"><i class="fas fa-building me-2 text-muted"></i>Coach zu Verein</a></li>
+                            <li><a class="dropdown-item py-1" href="{{ path('videos_upload_form') }}"><i class="fas fa-video me-2 text-muted"></i>Videos</a></li>
                         </ul>
                     </li>
                 {% endif %}
             </ul>
             <ul class="navbar-nav">
-                <li class="nav-item">
-                    <button class="btn btn-primary btn-outline" id="installPWA">App installieren</button>
+                <li class="nav-item me-2">
+                    <button class="btn btn-light btn-sm rounded-pill shadow-sm" id="installPWA" style="transition: all 0.3s ease;">
+                        <i class="fas fa-download me-1"></i>App installieren
+                    </button>
                 </li>
-                <li class="nav-item">
-                    <button id="button_messages" class="btn btn-outline-light mx-2 d-none" onclick="window.location.href='{{ path('messages_index') }}'">
-                        <i class="fas fa-envelope"></i> Nachrichten
-                        <span id="unread_messages_count" class="badge bg-danger d-none">0</span>
+                <li class="nav-item me-2">
+                    <button id="button_messages" class="btn btn-light rounded-pill d-none" onclick="window.location.href='{{ path('messages_index') }}'" style="transition: all 0.3s ease; background: rgba(255, 255, 255, 0.9); border: 2px solid rgba(255, 255, 255, 0.3);">
+                        <i class="fas fa-envelope me-1"></i>Nachrichten
+                        <span id="unread_messages_count" class="badge bg-danger rounded-pill d-none">0</span>
+                    </button>
+                </li>
+                <li class="nav-item me-2">
+                    <button id="button_profile" class="btn btn-light rounded-pill d-none" data-bs-toggle="modal" data-bs-target="#profile_modal" style="transition: all 0.3s ease; background: rgba(255, 255, 255, 0.9); border: 2px solid rgba(255, 255, 255, 0.3);">
+                        <i class="fas fa-user me-1"></i>Profil
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button id="button_profile" class="btn btn-outline-light mx-2 d-none" data-bs-toggle="modal" data-bs-target="#profile_modal">
-                        <i class="fas fa-user"></i> Profil
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button id="button_register" class="btn btn-outline-light mx-2" data-bs-toggle="modal" data-bs-target="#auth_modal">
+                    <button id="button_register" class="btn btn-light mx-2" data-bs-toggle="modal" data-bs-target="#auth_modal" style="background: rgba(255, 255, 255, 0.9); border: 2px solid rgba(255, 255, 255, 0.3);">
                         Anmelden
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button id="button_logout" class="btn btn-outline-danger mx-2 d-none">
+                    <button id="button_logout" class="btn btn-danger mx-2 d-none" style="background: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%); border: none;">
                         Abmelden
                     </button>
                 </li>

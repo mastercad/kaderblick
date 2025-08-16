@@ -85,7 +85,7 @@ class UserRepository extends ServiceEntityRepository implements OptimizedReposit
     public function findBy(array $criteria, ?array $orderBy = null, ?int $limit = null, ?int $offset = null): array
     {
         $qb = $this->createQueryBuilder('u')
-            ->leftJoin('u.relatedTo', 'r')
+            ->leftJoin('u.relations', 'r')
             ->leftJoin('r.player', 'p')
             ->leftJoin('r.coach', 'c')
             ->leftJoin('r.relationType', 'rt')

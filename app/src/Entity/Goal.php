@@ -7,7 +7,14 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: GoalRepository::class)]
-#[ORM\Table(name: 'goals')]
+#[ORM\Table(
+    name: 'goals',
+    indexes: [
+        new ORM\Index(name: 'idx_goals_scorer_id', columns: ['scorer_id']),
+        new ORM\Index(name: 'idx_goals_game_id', columns: ['game_id']),
+        new ORM\Index(name: 'idx_goals_assist_by_id', columns: ['assist_by_id'])
+    ]
+)]
 class Goal
 {
     #[ORM\Id]
@@ -30,15 +37,16 @@ class Goal
 
     #[Groups(['goal:read'])]
     #[ORM\ManyToOne(targetEntity: Player::class, inversedBy: 'goals')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'scorer_id', referencedColumnName: 'id', nullable: false)]
     private Player $scorer;
 
     #[Groups(['goal:read'])]
     #[ORM\ManyToOne(targetEntity: Game::class, inversedBy: 'goals')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'game_id', referencedColumnName: 'id', nullable: false)]
     private ?Game $game = null;
 
     #[ORM\ManyToOne(targetEntity: Player::class, inversedBy: 'assistsProvided')]
+    #[ORM\JoinColumn(name: 'assist_by_id', referencedColumnName: 'id', nullable: true)]
     private ?Player $assistBy = null;
 
     public function getId(): ?int

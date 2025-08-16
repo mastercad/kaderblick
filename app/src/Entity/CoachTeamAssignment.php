@@ -9,6 +9,17 @@ use Symfony\Component\Serializer\Annotation\Context;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CoachTeamAssignmentRepository::class)]
+#[ORM\Table(
+    name: 'coach_team_assignments',
+    indexes: [
+        new ORM\Index(name: 'idx_coach_team_assignment_coach_id', columns: ['coach_id']),
+        new ORM\Index(name: 'idx_coach_team_assignment_team_id', columns: ['team_id']),
+        new ORM\Index(
+            name: 'idx_coach_team_assignment_coach_team_assignment_type_id',
+            columns: ['coach_team_assignment_type_id']
+        )
+    ]
+)]
 class CoachTeamAssignment
 {
     #[ORM\Id]
@@ -19,17 +30,17 @@ class CoachTeamAssignment
     private int $id;
 
     #[ORM\ManyToOne(targetEntity: Coach::class, inversedBy: 'coachTeamAssignments')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'coach_id', referencedColumnName: 'id', nullable: false)]
     #[Groups(['coach_team_assignment:read', 'team:read'])]
     private ?Coach $coach;
 
     #[ORM\ManyToOne(targetEntity: CoachTeamAssignmentType::class, inversedBy: 'coachTeamAssignments', cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(name: 'coach_team_assignment_type_id', referencedColumnName: 'id', nullable: true)]
     #[Groups(['coach_team_assignment:read'])]
     private ?CoachTeamAssignmentType $coachTeamAssignmentType = null;
 
     #[ORM\ManyToOne(targetEntity: Team::class, inversedBy: 'coachTeamAssignments')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'team_id', referencedColumnName: 'id', nullable: false)]
     // !!! NO team:read right to prevent circular reference in serialization !!!
     #[Groups(['coach_team_assignment:read', 'coach:read'])]
     private ?Team $team;

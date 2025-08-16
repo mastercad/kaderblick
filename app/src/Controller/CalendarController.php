@@ -18,13 +18,19 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\ConstraintViolationList;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
+#[IsGranted('IS_AUTHENTICATED')]
 #[Route('/calendar', name: 'calendar_')]
 class CalendarController extends AbstractController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly EmailNotificationService $emailService,
+        private readonly ValidatorInterface $validator
     ) {
     }
 
@@ -33,10 +39,10 @@ class CalendarController extends AbstractController
     {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
 
-        $calendarGameEventType = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Spiel']);
+        $calendarGameEventTypeSpiel = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Spiel']);
 
         return $this->render('calendar/index.html.twig', [
-            'calendarGameEventTypeId' => $calendarGameEventType?->getId(),
+            'calendarGameEventTypeId' => $calendarGameEventTypeSpiel?->getId(),
             'upcomingEvents' => $calendarEventRepository->findUpcoming(),
             'eventTypes' => $this->entityManager->getRepository(CalendarEventType::class)->findAll(),
             'locations' => $this->entityManager->getRepository(Location::class)->findAll(),
@@ -81,10 +87,10 @@ class CalendarController extends AbstractController
                         'name' => $calendarEvent->getGame()->getGameType()->getName()
                     ]
                 ] : null,
-                'type' => $calendarEvent->getEventType() ? [
-                    'id' => $calendarEvent->getEventType()->getId(),
-                    'name' => $calendarEvent->getEventType()->getName(),
-                    'color' => $calendarEvent->getEventType()->getColor()
+                'type' => $calendarEvent->getCalendarEventType() ? [
+                    'id' => $calendarEvent->getCalendarEventType()->getId(),
+                    'name' => $calendarEvent->getCalendarEventType()->getName(),
+                    'color' => $calendarEvent->getCalendarEventType()->getColor()
                 ] : null,
                 'location' => $calendarEvent->getLocation() ? [
                     'id' => $calendarEvent->getLocation()->getId(),
@@ -96,21 +102,32 @@ class CalendarController extends AbstractController
         return $this->json($formattedEvents);
     }
 
-    #[Route('/upcoming', name: 'upcoming', methods: ['GET'])]
-    public function retrieveUpcomingEvents(CalendarEventRepository $calendarEventRepository): JsonResponse
-    {
-        $calendarEvents = $calendarEventRepository->findUpcoming();
-
-        return $this->json($calendarEvents, 200, [], ['groups' => ['event:read']]);
-    }
-
     #[Route('/event', name: 'event_create', methods: ['POST'])]
-    public function createEvent(Request $request): JsonResponse
+    public function createEvent(Request $request, SerializerInterface $serializer): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
+        $data = $request->getContent();
+        $context = ['groups' => ['calendar_event:write']];
 
-        $calendarEvent = new CalendarEvent();
-        $this->updateEventFromData($calendarEvent, $data);
+        $calendarEvent = $serializer->deserialize(
+            $data,
+            CalendarEvent::class,
+            'json',
+            $context
+        );
+
+        $errors = $this->updateEventFromData($calendarEvent, json_decode($data, true));
+
+        $messages = [];
+        if (0 < count($errors)) {
+            foreach ($errors as $error) {
+                $messages[] = $error->getMessage();
+            }
+
+            return $this->json(
+                ['error' => implode(', ', $messages), 'success' => false],
+                400
+            );
+        }
 
         return $this->json(['success' => true]);
     }
@@ -150,6 +167,14 @@ class CalendarController extends AbstractController
         return $this->json(['success' => true]);
     }
 
+    #[Route('/upcoming', name: 'upcoming', methods: ['GET'])]
+    public function retrieveUpcomingEvents(CalendarEventRepository $calendarEventRepository): JsonResponse
+    {
+        $calendarEvents = $calendarEventRepository->findUpcoming();
+
+        return $this->json($calendarEvents, 200, [], ['groups' => ['calendar_event:read']]);
+    }
+
     /**
      * @param array{
      *     title?: string,
@@ -162,9 +187,12 @@ class CalendarController extends AbstractController
      *     awayTeamId?: string,
      *     gameTypeId?: string
      * } $data
+     *
+     * @return ConstraintViolationList<int, mixed>
      */
-    private function updateEventFromData(CalendarEvent $calendarEvent, array $data): void
+    private function updateEventFromData(CalendarEvent $calendarEvent, array $data): ConstraintViolationList
     {
+        $calendarEventTypeSpiel = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Spiel']);
         $calendarEvent->setTitle($data['title'] ?? $calendarEvent->getTitle());
         $calendarEvent->setDescription($data['description'] ?? null);
         $calendarEvent->setStartDate(new DateTime($data['startDate']));
@@ -173,51 +201,67 @@ class CalendarController extends AbstractController
             $calendarEvent->setEndDate(new DateTime($data['endDate']));
         }
 
-        if (isset($data['typeId'])) {
+        if ($data['typeId']) {
             $type = $this->entityManager->getReference(CalendarEventType::class, $data['typeId']);
-            $calendarEvent->setEventType($type);
+            $calendarEvent->setCalendarEventType($type);
         }
 
-        if (isset($data['locationId'])) {
+        if ($data['locationId']) {
             $location = $this->entityManager->getReference(Location::class, (int) $data['locationId']);
             $calendarEvent->setLocation($location);
         }
 
-        if (isset($data['homeTeamId'])) {
+        if (
+            $data['typeId']
+            && (int) $data['typeId'] === $calendarEventTypeSpiel->getId()
+        ) {
+            if (null === $calendarEvent->getGame()) {
+                $game = new Game();
+                $calendarEvent->setGame($game);
+                $game->setCalendarEvent($calendarEvent);
+                $this->entityManager->persist($game);
+            }
+        }
+
+        if (isset($data['homeTeamId']) && $data['homeTeamId']) {
             $homeTeam = $this->entityManager->getReference(Team::class, (int) $data['homeTeamId']);
-            if (null === $calendarEvent->getGame()) {
-                $game = new Game();
-                $calendarEvent->setGame($game);
-                $game->setCalendarEvent($calendarEvent);
-                $this->entityManager->persist($game);
-            }
-            $calendarEvent->getGame()->setHomeTeam($homeTeam);
+            $calendarEvent->getGame()?->setHomeTeam($homeTeam);
         }
 
-        if (isset($data['awayTeamId'])) {
+        if (isset($data['awayTeamId']) && $data['awayTeamId']) {
             $awayTeam = $this->entityManager->getReference(Team::class, (int) $data['awayTeamId']);
-            if (null === $calendarEvent->getGame()) {
-                $game = new Game();
-                $calendarEvent->setGame($game);
-                $game->setCalendarEvent($calendarEvent);
-                $this->entityManager->persist($game);
-            }
-            $calendarEvent->getGame()->setAwayTeam($awayTeam);
+            $calendarEvent->getGame()?->setAwayTeam($awayTeam);
         }
 
-        if (isset($data['gameTypeId'])) {
+        if (isset($data['gameTypeId']) && $data['gameTypeId']) {
             $gameType = $this->entityManager->getReference(GameType::class, (int) $data['gameTypeId']);
-            if (null === $calendarEvent->getGame()) {
-                $game = new Game();
-                $calendarEvent->setGame($game);
-                $game->setCalendarEvent($calendarEvent);
-                $this->entityManager->persist($game);
-            }
-            $calendarEvent->getGame()->setGameType($gameType);
+            $calendarEvent->getGame()?->setGameType($gameType);
+        }
+
+        if ($data['locationId']) {
+            $location = $this->entityManager->getReference(Location::class, (int) $data['locationId']);
+            $calendarEvent->getGame()?->setLocation($location);
         }
 
         $this->entityManager->persist($calendarEvent);
+
+        /** @var ConstraintViolationList $errors */
+        $errors = $this->validator->validate($calendarEvent);
+
+        if ($calendarEvent->getGame()) {
+            $gameErrors = $this->validator->validate($calendarEvent->getGame());
+            foreach ($gameErrors as $gameError) {
+                $errors->add($gameError);
+            }
+        }
+
+        if ($errors->count()) {
+            return $errors;
+        }
+
         $this->entityManager->flush();
+
+        return new ConstraintViolationList();
     }
 
     /** @return array<int, string> */

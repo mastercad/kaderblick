@@ -45,8 +45,6 @@ class LeagueFixtures extends Fixture implements FixtureGroupInterface
             'Kreisklasse C',
 
             'Regionalliga',
-            'Verbandsliga',
-            'Bezirksliga',
             'Kreisliga',
 
             // Frauen Bundesligen

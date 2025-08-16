@@ -82,10 +82,6 @@ class FormationTypeFixtures extends Fixture implements FixtureGroupInterface
                 'background' => ''
             ],
             [
-                'name' => 'handball',
-                'background' => ''
-            ],
-            [
                 'name' => 'korfball',
                 'background' => ''
             ],

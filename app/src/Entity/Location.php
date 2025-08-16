@@ -8,7 +8,15 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: LocationRepository::class)]
-#[ORM\UniqueConstraint(name: 'unique_location_name', columns: ['name'])]
+#[ORM\Table(
+    name: 'locations',
+    indexes: [
+        new ORM\Index(name: 'idx_location_surface_type_id', columns: ['surface_type_id'])
+    ],
+    uniqueConstraints: [
+        new ORM\UniqueConstraint(name: 'unique_location_name', columns: ['name'])
+    ]
+)]
 #[UniqueEntity(fields: ['name'], message: 'Dieser Name ist bereits vergeben.')]
 class Location
 {
@@ -36,7 +44,7 @@ class Location
     private ?int $capacity = null;
 
     #[ORM\ManyToOne(targetEntity: SurfaceType::class, inversedBy: 'locations')]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(name: 'surface_type_id', referencedColumnName: 'id', nullable: true)]
     #[Groups(['location:read', 'location:write'])]
     private ?SurfaceType $surfaceType = null;
 

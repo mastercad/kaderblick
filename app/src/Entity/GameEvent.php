@@ -20,22 +20,22 @@ class GameEvent
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Game::class, inversedBy: 'gameEvents')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'game_id', referencedColumnName: 'id', nullable: false)]
     #[Groups(['game_event:read', 'game_event:write', 'calendar_event:read'])]
     private Game $game;
 
     #[ORM\ManyToOne(targetEntity: GameEventType::class, inversedBy: 'gameEvents')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'game_event_type_id', referencedColumnName: 'id', nullable: false)]
     #[Groups(['game_event:read', 'game_event:write', 'game:read', 'calendar_event:read'])]
     private ?GameEventType $gameEventType;
 
     #[ORM\ManyToOne(targetEntity: Player::class, inversedBy: 'gameEvents')]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(name: 'player_id', referencedColumnName: 'id', nullable: true)]
     #[Groups(['game_event:read', 'game_event:write'])]
     private ?Player $player = null;
 
     #[ORM\ManyToOne(targetEntity: Team::class, inversedBy: 'gameEvents')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'team_id', referencedColumnName: 'id', nullable: false)]
     #[Groups(['game_event:read', 'game_event:write'])]
     private Team $team;
 
@@ -50,12 +50,12 @@ class GameEvent
 
     #[Groups(['game_event:read', 'game_event:write'])]
     #[ORM\ManyToOne(targetEntity: Player::class)]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(name: 'related_player_id', referencedColumnName: 'id', nullable: true)]
     private ?Player $relatedPlayer = null;
 
     #[Groups(['game_event:read', 'game_event:write'])]
     #[ORM\ManyToOne(targetEntity: SubstitutionReason::class)]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(name: 'substitution_reason_id', referencedColumnName: 'id', nullable: true)]
     private ?SubstitutionReason $substitutionReason = null;
 
     public function getId(): ?int

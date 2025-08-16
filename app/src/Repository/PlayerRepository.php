@@ -4,7 +4,6 @@ namespace App\Repository;
 
 use App\Entity\Player;
 use App\Entity\User;
-use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
@@ -36,25 +35,20 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
 
         $reachableRoles = $this->roleHierarchy->getReachableRoleNames($user->getRoles());
         if ($user && !in_array('ROLE_ADMIN', $reachableRoles)) {
-            if ($user->getClub()) {
-                $qb->join('p.playerClubAssignments', 'pca')
-                   ->andWhere('pca.club = :club')
-                   ->setParameter('club', $user->getClub());
+            // Über UserRelations die zugänglichen Player ermitteln
+            $playerIds = [];
+            foreach ($user->getRelations() as $relation) {
+                if ($relation->getPlayer()) {
+                    $playerIds[] = $relation->getPlayer()->getId();
+                }
             }
 
-            if ($user->getCoach()) {
-                $qb->join('p.playerTeamAssignments', 'pta')
-                   ->join('pta.team', 't')
-                   ->join('t.coachTeamAssignments', 'cta')
-                   ->andWhere('cta.coach = :coach')
-                   ->setParameter('coach', $user->getCoach());
-            }
-
-            if ($user->getPlayer()) {
-                $qb->join('p.playerTeamAssignments', 'pta')
-                   ->join('pta.team', 't')
-                   ->andWhere('pta.player = :player')
-                   ->setParameter('player', $user->getPlayer());
+            if (!empty($playerIds)) {
+                $qb->andWhere('p.id IN (:playerIds)')
+                   ->setParameter('playerIds', $playerIds);
+            } else {
+                // Keine Berechtigung für Player
+                $qb->andWhere('1 = 0'); // Keine Ergebnisse
             }
         }
 
@@ -66,16 +60,49 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
      */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
-        $now = new DateTime();
-
-        return $this->createQueryBuilder('p')
+        $qb = $this->createQueryBuilder('p')
             ->select('p', 'pta', 'pna')
             ->leftJoin('p.playerTeamAssignments', 'pta', 'WITH', 'pta.player = p')
             ->leftJoin('p.playerNationalityAssignments', 'pna', 'WITH', 'pna.player = p')
             ->orderBy('p.lastName', 'ASC')
-            ->addOrderBy('p.firstName', 'ASC')
-            ->getQuery()
-            ->getResult();
+            ->addOrderBy('p.firstName', 'ASC');
+
+        if ($user && !in_array('ROLE_ADMIN', $user->getRoles(), true)) {
+            $teamIds = [];
+            if ($user instanceof User) {
+                foreach ($user->getRelations() as $relation) {
+                    if ($relation->getPlayer()) {
+                        // Alle Teams, in denen dieser Player spielt
+                        foreach ($relation->getPlayer()->getPlayerTeamAssignments() as $pta) {
+                            $team = $pta->getTeam();
+                            if ($team) {
+                                $teamIds[] = $team->getId();
+                            }
+                        }
+                    }
+                    if ($relation->getCoach()) {
+                        // Alle Teams, die dieser Coach trainiert
+                        foreach ($relation->getCoach()->getCoachTeamAssignments() as $cta) {
+                            $team = $cta->getTeam();
+                            if ($team) {
+                                $teamIds[] = $team->getId();
+                            }
+                        }
+                    }
+                }
+            }
+            $teamIds = array_unique($teamIds);
+            if ($teamIds) {
+                $qb->join('p.playerTeamAssignments', 'pta_filter')
+                   ->andWhere('pta_filter.team IN (:teamIds)')
+                   ->setParameter('teamIds', $teamIds);
+            } else {
+                // User hat keine relevante Relation, keine Spieler anzeigen
+                $qb->andWhere('1 = 0');
+            }
+        }
+
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -117,26 +144,21 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
     {
         $qb = $this->createQueryBuilder('p');
 
-        if ($user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-            if ($user->getClub()) {
-                $qb->join('p.playerClubAssignments', 'pca')
-                   ->andWhere('pca.club = :club')
-                   ->setParameter('club', $user->getClub());
+        if ($user && !in_array('ROLE_ADMIN', $user->getRoles(), true)) {
+            // Über UserRelations die zugänglichen Player ermitteln
+            $playerIds = [];
+            foreach ($user->getRelations() as $relation) {
+                if ($relation->getPlayer()) {
+                    $playerIds[] = $relation->getPlayer()->getId();
+                }
             }
 
-            if ($user->getCoach()) {
-                $qb->join('p.playerTeamAssignments', 'pta')
-                   ->join('pta.team', 't')
-                   ->join('t.coachTeamAssignments', 'cta')
-                   ->andWhere('cta.coach = :coach')
-                   ->setParameter('coach', $user->getCoach());
-            }
-
-            if ($user->getPlayer()) {
-                $qb->join('p.playerTeamAssignments', 'pta')
-                   ->join('pta.team', 't')
-                   ->andWhere('pta.player = :player')
-                   ->setParameter('player', $user->getCoach());
+            if (!empty($playerIds)) {
+                $qb->andWhere('p.id IN (:playerIds)')
+                   ->setParameter('playerIds', $playerIds);
+            } else {
+                // Keine Berechtigung für Player
+                $qb->andWhere('1 = 0'); // Keine Ergebnisse
             }
         }
 

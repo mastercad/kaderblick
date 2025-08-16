@@ -55,71 +55,71 @@ class TeamFixtures extends Fixture implements DependentFixtureInterface, Fixture
             [
                 'name' => 'Team 4',
                 'age_group' => 'a_junioren',
-                'league' => 'a_junioren_bundesliga',
+                'league' => 'bundesliga',
                 'club' => 'club1',
             ],
             [
                 'name' => 'Team 5',
                 'age_group' => 'a_junioren',
-                'league' => 'a_junioren_regionalliga',
+                'league' => 'regionalliga',
                 'club' => 'club2',
             ],
             // B-Junioren verschiedene Ebenen
             [
                 'name' => 'Team 6',
                 'age_group' => 'b_junioren',
-                'league' => 'b_junioren_bundesliga',
+                'league' => 'bundesliga',
                 'club' => 'club1',
             ],
             [
                 'name' => 'Team 7',
                 'age_group' => 'b_junioren',
-                'league' => 'b_junioren_verbandsliga',
+                'league' => 'verbandsliga',
                 'club' => 'club3',
             ],
             // C-Junioren
             [
                 'name' => 'Team 8',
                 'age_group' => 'c_junioren',
-                'league' => 'c_junioren_regionalliga',
+                'league' => 'regionalliga',
                 'club' => 'club1',
             ],
             [
                 'name' => 'Team 9',
                 'age_group' => 'c_junioren',
-                'league' => 'c_junioren_bezirksliga',
+                'league' => 'bezirksliga',
                 'club' => 'club2',
             ],
             // D-Junioren
             [
                 'name' => 'Team 10',
                 'age_group' => 'd_junioren',
-                'league' => 'd_junioren_verbandsliga',
+                'league' => 'verbandsliga',
                 'club' => 'club1',
             ],
             [
                 'name' => 'Team 11',
                 'age_group' => 'd_junioren',
-                'league' => 'd_junioren_kreisliga',
+                'league' => 'kreisliga',
                 'club' => 'club4',
             ],
             // E bis G-Junioren in Kreisligen
             [
                 'name' => 'Team 12',
                 'age_group' => 'e_junioren',
-                'league' => 'e_junioren_kreisliga',
+                'league' => 'kreisliga',
                 'club' => 'club2',
             ],
             [
                 'name' => 'Team 13',
                 'age_group' => 'f_junioren',
-                'league' => 'f_junioren_kreisliga',
+                'league' => 'kreisliga',
                 'club' => 'club3',
             ],
             [
                 'name' => 'Team 14',
                 'age_group' => 'g_junioren',
-                'league' => 'g_junioren_kreisliga',
+                'league' => 'kreisliga',
                 'club' => 'club4',
             ],
             // Frauenmannschaften

@@ -10,6 +10,9 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: StrongFootRepository::class)]
+#[ORM\Table(name: 'strong_feet', uniqueConstraints: [
+    new ORM\UniqueConstraint(name: 'uniq_strong_foot_code', columns: ['code'])
+])]
 #[UniqueEntity(fields: ['code'], message: 'Dieser Code existiert bereits.')]
 class StrongFoot
 {

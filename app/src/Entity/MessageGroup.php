@@ -7,7 +7,12 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
-#[ORM\Table(name: 'message_groups')]
+#[ORM\Table(
+    name: 'message_groups',
+    indexes: [
+        new ORM\Index(name: 'idx_message_groups_owner_id', columns: ['owner_id'])
+    ]
+)]
 class MessageGroup
 {
     #[ORM\Id]
@@ -20,12 +25,33 @@ class MessageGroup
     private string $name;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(
+        name: 'owner_id',
+        referencedColumnName: 'id',
+        nullable: false,
+        onDelete: 'CASCADE'
+    )]
     private User $owner;
 
     /** @var Collection<int, User> */
     #[ORM\ManyToMany(targetEntity: User::class)]
-    #[ORM\JoinTable(name: 'message_group_members')]
+    #[ORM\JoinTable(
+        name: 'message_group_members',
+        joinColumns: [
+            new ORM\JoinColumn(
+                name: 'message_group_id',
+                referencedColumnName: 'id',
+                onDelete: 'CASCADE'
+            )
+        ],
+        inverseJoinColumns: [
+            new ORM\JoinColumn(
+                name: 'user_id',
+                referencedColumnName: 'id',
+                onDelete: 'CASCADE'
+            )
+        ]
+    )]
     private Collection $members;
 
     public function __construct()

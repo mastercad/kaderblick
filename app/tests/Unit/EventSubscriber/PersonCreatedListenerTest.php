@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Tests\Unit\EventSubscriber;
+namespace Tests\Unit\EventSubscriber;
 
 use App\Entity\Coach;
 use App\Entity\Player;

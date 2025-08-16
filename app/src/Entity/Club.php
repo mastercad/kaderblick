@@ -9,7 +9,12 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ClubRepository::class)]
-#[ORM\Table(name: 'clubs')]
+#[ORM\Table(
+    name: 'clubs',
+    indexes: [
+        new ORM\Index(name: 'idx_clubs_location_id', columns: ['location_id'])
+    ]
+)]
 class Club
 {
     #[ORM\Id]
@@ -33,19 +38,16 @@ class Club
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $stadiumName = null;
 
-    /** @deprecated use Location */
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $city = null;
-
-    /** @deprecated use Location */
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $country = null;
-
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $logoUrl = null;
 
     #[ORM\ManyToOne(targetEntity: Location::class)]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(
+        name: 'location_id',
+        referencedColumnName: 'id',
+        nullable: true,
+        onDelete: 'SET NULL'
+    )]
     #[Groups(['club:read', 'club:write'])]
     private ?Location $location = null;
 
@@ -133,26 +135,6 @@ class Club
     public function setStadiumName(?string $stadiumName): void
     {
         $this->stadiumName = $stadiumName;
-    }
-
-    public function getCity(): ?string
-    {
-        return $this->city;
-    }
-
-    public function setCity(?string $city): void
-    {
-        $this->city = $city;
-    }
-
-    public function getCountry(): ?string
-    {
-        return $this->country;
-    }
-
-    public function setCountry(?string $country): void
-    {
-        $this->country = $country;
     }
 
     public function setLogoUrl(?string $logoUrl): void

@@ -36,7 +36,7 @@
                         </td>
                         <td>
                             {% set assignments = [] %}
-                            {% for relation in user.relatedTo %}
+                            {% for relation in user.relations %}
                                 {% if relation.player %}
                                     {% set assignments = assignments|merge([
                                         relation.relationType.name ~ ' von ' ~ relation.player.fullName

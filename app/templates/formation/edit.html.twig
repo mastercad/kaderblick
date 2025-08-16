@@ -40,8 +40,16 @@
         .player-number {
             font-weight: bold;
         }
-        .formation-preview {
-            margin-top: 20px;
+        .available-player {
+            cursor: pointer;
+        }
+        .available-player button:hover {
+            background-color: #007bff;
+            color: white;
+        }
+        .player-selected {
+            background-color: #28a745 !important;
+            color: white !important;
         }
     </style>
 {% endblock %}
@@ -57,12 +65,49 @@
                 </div>
                 
                 <div class="mb-3">
-                    <button class="btn btn-primary" id="addPlayer">Spieler hinzufügen</button>
+                    <button class="btn btn-secondary" id="addGenericPlayer">Generischen Spieler hinzufügen</button>
                     <button class="btn btn-success" id="saveFormation">Speichern</button>
                 </div>
             </div>
             
             <div class="col-md-4">
+                {% if not availablePlayers.singleTeam %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        Team auswählen
+                    </div>
+                    <div class="card-body">
+                        <select class="form-select" id="teamSelector">
+                            <option value="">Bitte Team auswählen...</option>
+                            {% for team in availablePlayers.teams %}
+                                <option value="{{ team.id }}">{{ team.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="card">
+                    <div class="card-header">
+                        Verfügbare Spieler
+                    </div>
+                    <div class="card-body" id="availablePlayers">
+                        {% if availablePlayers.singleTeam %}
+                            {% for playerData in availablePlayers.players %}
+                                {% set player = playerData.player %}
+                                {% set shirtNumber = playerData.shirtNumber %}
+                                <div class="available-player mb-2" data-player-id="{{ player.id }}" data-player-name="{{ player.fullName }}" data-shirt-number="{{ shirtNumber }}">
+                                    <button class="btn btn-outline-primary btn-sm w-100" onclick="addPlayerToFormation({{ player.id }}, '{{ player.fullName }}', {{ shirtNumber ?: 'null' }})">
+                                        {% if shirtNumber %}#{{ shirtNumber }}{% else %}?{% endif %} {{ player.fullName }}
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted" id="noTeamSelected">Bitte zuerst ein Team auswählen.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
                 <div class="card">
                     <div class="card-header">
                         Spielerliste
@@ -86,6 +131,19 @@
             </div>
         </div>
     </div>
+
+    <!-- Toast für Speicher-Feedback -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="saveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Aufstellung</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Aufstellung erfolgreich gespeichert!
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block javascripts %}
@@ -93,29 +151,145 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const pitch = document.getElementById('formationPitch');
-            const addPlayerBtn = document.getElementById('addPlayer');
+            const addGenericPlayerBtn = document.getElementById('addGenericPlayer');
             const saveBtn = document.getElementById('saveFormation');
             const formationCode = document.getElementById('formationCode');
+            const teamSelector = document.getElementById('teamSelector');
             
             let players = [];
             let nextPlayerNumber = 1;
+            let availablePlayersData = [];
+            
+            // Team-Selector Event (falls mehrere Teams vorhanden)
+            if (teamSelector) {
+                teamSelector.addEventListener('change', function() {
+                    const teamId = this.value;
+                    if (teamId) {
+                        loadTeamPlayers(teamId);
+                    } else {
+                        clearAvailablePlayers();
+                    }
+                });
+            }
             
             // Initiale Spieler laden, falls vorhanden
             {% if formation.formationData.players is defined %}
                 players = {{ formation.formationData.players|json_encode|raw }};
+                // Für bestehende Daten Rückwärtskompatibilität sicherstellen
+                players.forEach(player => {
+                    if (!player.hasOwnProperty('displayNumber')) {
+                        player.displayNumber = player.isRealPlayer ? player.number : `G${player.number}`;
+                    }
+                    if (!player.hasOwnProperty('isRealPlayer')) {
+                        player.isRealPlayer = !!player.playerId;
+                    }
+                });
                 nextPlayerNumber = players.length > 0 ? 
                     Math.max(...players.map(p => p.number)) + 1 : 1;
                 renderPlayers();
             {% endif %}
             
-            // Spieler hinzufügen
-            addPlayerBtn.addEventListener('click', function() {
+            // Funktion zum Laden der Spieler eines Teams
+            function loadTeamPlayers(teamId) {
+                fetch(`{{ path('formation_team_players', {'teamId': 'TEAM_ID'}) }}`.replace('TEAM_ID', teamId))
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            console.error('Fehler beim Laden der Spieler:', data.error);
+                            return;
+                        }
+                        
+                        availablePlayersData = data.players;
+                        renderAvailablePlayers();
+                    })
+                    .catch(error => {
+                        console.error('Fehler beim Laden der Spieler:', error);
+                    });
+            }
+            
+            // Verfügbare Spieler anzeigen
+            function renderAvailablePlayers() {
+                const container = document.getElementById('availablePlayers');
+                container.innerHTML = '';
+                
+                availablePlayersData.forEach(player => {
+                    const playerDiv = document.createElement('div');
+                    playerDiv.className = 'available-player mb-2';
+                    playerDiv.dataset.playerId = player.id;
+                    playerDiv.dataset.playerName = player.name;
+                    playerDiv.dataset.shirtNumber = player.shirtNumber || '';
+                    
+                    const button = document.createElement('button');
+                    button.className = 'btn btn-outline-primary btn-sm w-100';
+                    const shirtDisplay = player.shirtNumber ? `#${player.shirtNumber} ` : '? ';
+                    button.textContent = `${shirtDisplay}${player.name}`;
+                    button.onclick = () => addPlayerToFormation(player.id, player.name, player.shirtNumber);
+                    
+                    // Prüfen ob Spieler bereits in der Formation ist
+                    const existingPlayer = players.find(p => p.playerId === player.id);
+                    if (existingPlayer) {
+                        button.classList.add('player-selected');
+                        button.disabled = true;
+                    }
+                    
+                    playerDiv.appendChild(button);
+                    container.appendChild(playerDiv);
+                });
+            }
+            
+            // Verfügbare Spieler leeren
+            function clearAvailablePlayers() {
+                const container = document.getElementById('availablePlayers');
+                const noTeamSelected = document.getElementById('noTeamSelected');
+                if (noTeamSelected) {
+                    container.innerHTML = '<p class="text-muted" id="noTeamSelected">Bitte zuerst ein Team auswählen.</p>';
+                } else {
+                    container.innerHTML = '';
+                }
+                availablePlayersData = [];
+            }
+            
+            // Spieler aus verfügbarer Liste zur Formation hinzufügen
+            window.addPlayerToFormation = function(playerId, playerName, shirtNumber = null) {
+                // Prüfen ob Spieler bereits hinzugefügt wurde
+                const existingPlayer = players.find(p => p.playerId === playerId);
+                if (existingPlayer) {
+                    return;
+                }
+                
                 const player = {
                     id: Date.now(),
-                    number: nextPlayerNumber++,
+                    number: shirtNumber || nextPlayerNumber++,
+                    displayNumber: shirtNumber || `G${nextPlayerNumber - 1}`,
                     x: 50,
                     y: 50,
-                    name: `Spieler ${nextPlayerNumber-1}`
+                    name: playerName,
+                    playerId: playerId,
+                    isRealPlayer: !!playerId
+                };
+                players.push(player);
+                renderPlayers();
+                
+                // Button als ausgewählt markieren
+                const button = document.querySelector(`[data-player-id="${playerId}"] button`);
+                if (button) {
+                    button.classList.add('player-selected');
+                    button.disabled = true;
+                }
+            };
+            
+            // Generischen Spieler hinzufügen (alte Funktionalität beibehalten)
+            addGenericPlayerBtn.addEventListener('click', function() {
+                const genericNumber = nextPlayerNumber++;
+                const player = {
+                    id: Date.now(),
+                    number: genericNumber,
+                    displayNumber: `G${genericNumber}`,
+                    x: 50,
+                    y: 50,
+                    name: `Spieler ${genericNumber}`,
+                    playerId: null, // Kein echter Spieler
+                    isRealPlayer: false
                 };
                 players.push(player);
                 renderPlayers();
@@ -130,7 +304,7 @@
                     playerEl.style.left = `${player.x}%`;
                     playerEl.style.top = `${player.y}%`;
                     playerEl.dataset.id = player.id;
-                    playerEl.innerHTML = `<span class="player-number">${player.number}</span>`;
+                    playerEl.innerHTML = `<span class="player-number">${player.displayNumber || player.number}</span>`;
                     
                     // Drag & Drop
                     makeDraggable(playerEl, player);
@@ -149,12 +323,18 @@
                 players.forEach(player => {
                     const playerItem = document.createElement('div');
                     playerItem.className = 'd-flex justify-content-between align-items-center mb-2';
+                    const playerTypeIcon = player.isRealPlayer ? 
+                        '<i class="bi bi-person-fill text-success ms-2" title="Echter Spieler"></i>' : 
+                        '<i class="bi bi-person-plus-fill text-muted ms-2" title="Generischer Spieler"></i>';
+                    const displayNumber = player.displayNumber || player.number;
+                    
                     playerItem.innerHTML = `
-                        <div>
-                            <span class="badge bg-primary me-2">${player.number}</span>
+                        <div class="d-flex align-items-center">
+                            <span class="badge ${player.isRealPlayer ? 'bg-success' : 'bg-secondary'} me-2">${displayNumber}</span>
                             <input type="text" class="form-control form-control-sm d-inline-block w-auto" 
                                    value="${player.name}" data-id="${player.id}" 
-                                   onchange="updatePlayerName(this)">
+                                   onchange="updatePlayerName(this)" ${player.playerId ? 'readonly' : ''}>
+                            ${playerTypeIcon}
                         </div>
                         <button class="btn btn-sm btn-danger" onclick="removePlayer(${player.id})">
                             <i class="bi bi-trash"></i>
@@ -204,18 +384,45 @@
             
             // Spieler entfernen
             window.removePlayer = function(id) {
+                const player = players.find(p => p.id === id);
+                if (player && player.playerId) {
+                    // Button wieder aktivieren, falls es ein echter Spieler war
+                    const button = document.querySelector(`[data-player-id="${player.playerId}"] button`);
+                    if (button) {
+                        button.classList.remove('player-selected');
+                        button.disabled = false;
+                    }
+                }
+                
                 players = players.filter(player => player.id !== id);
                 renderPlayers();
             };
             
-            // Spielername aktualisieren
+            // Spielername aktualisieren (nur für generische Spieler)
             window.updatePlayerName = function(input) {
                 const id = parseInt(input.dataset.id);
                 const player = players.find(p => p.id === id);
-                if (player) {
+                if (player && !player.playerId) { // Nur generische Spieler können umbenannt werden
                     player.name = input.value;
                 }
             };
+            
+            // Initiale Anzeige der verfügbaren Spieler falls nur ein Team
+            {% if availablePlayers.singleTeam and availablePlayers.players|length > 0 %}
+                // Spielerdaten für Single-Team setzen
+                availablePlayersData = [
+                    {% for playerData in availablePlayers.players %}
+                    {% set player = playerData.player %}
+                    {% set shirtNumber = playerData.shirtNumber %}
+                    {
+                        id: {{ player.id }},
+                        name: "{{ player.fullName }}",
+                        shirtNumber: {{ shirtNumber ?: 'null' }}
+                    }{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                ];
+                renderAvailablePlayers();
+            {% endif %}
             
             // Aufstellung speichern
             saveBtn.addEventListener('click', function() {

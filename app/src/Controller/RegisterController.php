@@ -3,8 +3,6 @@
 namespace App\Controller;
 
 use ApiPlatform\Metadata\UrlGeneratorInterface;
-use App\Entity\Coach;
-use App\Entity\Player;
 use App\Entity\User;
 use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -104,16 +102,8 @@ class RegisterController extends AbstractController
              ->setVerificationToken(null)
              ->setVerificationExpires(null);
 
-        // Automatische Zuordnung prüfen
-        $player = $this->em->getRepository(Player::class)->findOneBy(['email' => $user->getEmail()]);
-        if ($player) {
-            $user->setPlayer($player);
-        }
-
-        $coach = $this->em->getRepository(Coach::class)->findOneBy(['email' => $user->getEmail()]);
-        if ($coach) {
-            $user->setCoach($coach);
-        }
+        // Automatische Zuordnung prüfen wird jetzt über UserRelations gemacht
+        // Diese Legacy-Implementierung wird entfernt
 
         $this->em->flush();
 

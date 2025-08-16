@@ -13,7 +13,13 @@ use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PlayerRepository::class)]
-#[ORM\Table(name: 'players')]
+#[ORM\Table(
+    name: 'players',
+    indexes: [
+        new ORM\Index(name: 'idx_players_strong_foot_id', columns: ['strong_foot_id']),
+        new ORM\Index(name: 'idx_players_main_position_id', columns: ['main_position_id'])
+    ]
+)]
 class Player
 {
     #[ORM\Id]
@@ -69,18 +75,44 @@ class Player
 
     #[Groups(['player:read', 'player:write'])]
     #[ORM\ManyToOne(targetEntity: StrongFoot::class, inversedBy: 'players')]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(
+        name: 'strong_foot_id',
+        referencedColumnName: 'id',
+        nullable: true,
+        onDelete: 'SET NULL'
+    )]
     private ?StrongFoot $strongFoot = null;
 
     #[Groups(['player:read', 'player:write'])]
     #[ORM\ManyToOne(targetEntity: Position::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(
+        name: 'main_position_id',
+        referencedColumnName: 'id',
+        nullable: false,
+        onDelete: 'CASCADE'
+    )]
     private Position $mainPosition;
 
     /** @var Collection<int, Position> */
     #[Groups(['player:read', 'player:write'])]
     #[ORM\ManyToMany(targetEntity: Position::class)]
-    #[ORM\JoinTable(name: 'player_alternative_positions')]
+    #[ORM\JoinTable(
+        name: 'player_alternative_positions',
+        joinColumns: [
+            new ORM\JoinColumn(
+                name: 'player_id',
+                referencedColumnName: 'id',
+                onDelete: 'CASCADE'
+            )
+        ],
+        inverseJoinColumns: [
+            new ORM\JoinColumn(
+                name: 'position_id',
+                referencedColumnName: 'id',
+                onDelete: 'CASCADE'
+            )
+        ]
+    )]
     private Collection $alternativePositions;
 
     /** @var Collection<int, Goal> */

@@ -5,6 +5,13 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
+#[ORM\Table(
+    name: 'formations',
+    indexes: [
+        new ORM\Index(name: 'idx_formation_user_id', columns: ['user_id']),
+        new ORM\Index(name: 'idx_formation_formation_type_id', columns: ['formation_type_id'])
+    ]
+)]
 class Formation
 {
     #[ORM\Id]
@@ -21,9 +28,21 @@ class Formation
     private array $formationData = [];
 
     #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(
+        name: 'user_id',
+        referencedColumnName: 'id',
+        nullable: true,
+        onDelete: 'SET NULL'
+    )]
     private ?User $user = null;
 
-    #[ORM\ManyToOne(targetEntity: FormationType::class)]
+    #[ORM\ManyToOne(targetEntity: FormationType::class, inversedBy: 'formations')]
+    #[ORM\JoinColumn(
+        name: 'formation_type_id',
+        referencedColumnName: 'id',
+        nullable: true,
+        onDelete: 'SET NULL'
+    )]
     private ?FormationType $formationType = null;
 
     public function getId(): ?int

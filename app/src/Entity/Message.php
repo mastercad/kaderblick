@@ -8,7 +8,12 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
-#[ORM\Table(name: 'messages')]
+#[ORM\Table(
+    name: 'messages',
+    indexes: [
+        new ORM\Index(name: 'idx_messages_sender_id', columns: ['sender_id'])
+    ]
+)]
 class Message
 {
     #[ORM\Id]
@@ -18,12 +23,33 @@ class Message
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(
+        name: 'sender_id',
+        referencedColumnName: 'id',
+        nullable: false,
+        onDelete: 'CASCADE'
+    )]
     private User $sender;
 
     /** @var Collection<int, User> */
     #[ORM\ManyToMany(targetEntity: User::class)]
-    #[ORM\JoinTable(name: 'message_recipients')]
+    #[ORM\JoinTable(
+        name: 'message_recipients',
+        joinColumns: [
+            new ORM\JoinColumn(
+                name: 'message_id',
+                referencedColumnName: 'id',
+                onDelete: 'CASCADE'
+            )
+        ],
+        inverseJoinColumns: [
+            new ORM\JoinColumn(
+                name: 'user_id',
+                referencedColumnName: 'id',
+                onDelete: 'CASCADE'
+            )
+        ]
+    )]
     private Collection $recipients;
 
     #[ORM\Column(length: 255)]

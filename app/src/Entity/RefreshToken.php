@@ -10,6 +10,15 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity()]
+#[ORM\Table(
+    name: 'refresh_tokens',
+    indexes: [
+        new ORM\Index(name: 'idx_refresh_token_user_id', columns: ['user_id'])
+    ],
+    uniqueConstraints: [
+        new ORM\UniqueConstraint(name: 'uniq_refresh_token_token', columns: ['token'])
+    ]
+)]
 class RefreshToken
 {
     #[ORM\Id]
@@ -22,7 +31,12 @@ class RefreshToken
     private string $token;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(
+        name: 'user_id',
+        referencedColumnName: 'id',
+        nullable: false,
+        onDelete: 'CASCADE'
+    )]
     private UserInterface $user;
 
     #[ORM\Column(type: 'datetime')]

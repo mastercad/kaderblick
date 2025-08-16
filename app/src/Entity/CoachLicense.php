@@ -8,6 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CoachLicenseRepository::class)]
+#[ORM\Table(name: 'coach_licenses')]
 class CoachLicense
 {
     #[ORM\Id]

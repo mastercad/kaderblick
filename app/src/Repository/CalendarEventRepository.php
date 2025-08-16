@@ -29,9 +29,13 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
     public function findUpcoming(int $limit = 5): array
     {
         return $this->createQueryBuilder('ce')
-            ->select('ce', 'cet', 'l')
+            ->select('ce', 'cet', 'l', 'g', 'ht', 'at', 'gt')
             ->leftJoin('ce.calendarEventType', 'cet')
             ->leftJoin('ce.location', 'l')
+            ->leftJoin('ce.game', 'g')
+            ->leftJoin('g.homeTeam', 'ht')
+            ->leftJoin('g.awayTeam', 'at')
+            ->leftJoin('g.gameType', 'gt')
             ->where('ce.startDate >= :now')
             ->setParameter('now', new DateTime())
             ->orderBy('ce.startDate', 'ASC')

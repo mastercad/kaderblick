@@ -9,6 +9,7 @@ use Symfony\Component\Serializer\Annotation\Context;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: PlayerTeamAssignmentRepository::class)]
+#[ORM\Table(name: 'player_team_assignments')]
 class PlayerTeamAssignment
 {
     #[ORM\Id]
@@ -19,17 +20,17 @@ class PlayerTeamAssignment
     private int $id;
 
     #[ORM\ManyToOne(targetEntity: Player::class, inversedBy: 'playerTeamAssignments')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'player_id', referencedColumnName: 'id', nullable: false)]
     #[Groups(['player_team_assignment:read', 'team:read'])]
     private ?Player $player;
 
     #[ORM\ManyToOne(targetEntity: PlayerTeamAssignmentType::class, inversedBy: 'playerTeamAssignments', cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(name: 'player_team_assignment_type_id', referencedColumnName: 'id', nullable: true)]
     #[Groups(['player_team_assignment:read'])]
     private ?PlayerTeamAssignmentType $playerTeamAssignmentType = null;
 
     #[ORM\ManyToOne(targetEntity: Team::class, inversedBy: 'playerTeamAssignments')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'team_id', referencedColumnName: 'id', nullable: false)]
     // !!! NO team:read right to prevent circular reference in serialization !!!
     #[Groups(['player_team_assignment:read', 'player:read'])]
     private ?Team $team;
