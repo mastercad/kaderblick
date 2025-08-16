@@ -99,7 +99,7 @@ class CustomSchemaTool extends SchemaTool
      * Detects instances of ClassMetadata that don't need to be processed in the SchemaTool context.
      *
      * @param ClassMetadata<object> $class
-     * @param array<string, bool> $processedClasses
+     * @param array<string, bool>   $processedClasses
      */
     private function processingNotRequired(
         ClassMetadata $class,
@@ -116,7 +116,7 @@ class CustomSchemaTool extends SchemaTool
      * Resolves fields in index mapping to column names.
      *
      * @param ClassMetadata<object> $class
-     * @param mixed[] $indexData index or unique constraint data
+     * @param mixed[]               $indexData index or unique constraint data
      *
      * @return list<string> Column names from combined fields and columns mappings
      */

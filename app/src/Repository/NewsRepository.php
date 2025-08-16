@@ -44,30 +44,24 @@ class NewsRepository extends ServiceEntityRepository implements NewsRepositoryIn
             if ($relation->getPlayer()) {
                 foreach ($relation->getPlayer()->getPlayerTeamAssignments() as $pta) {
                     $team = $pta->getTeam();
-                    if ($team) {
-                        $teamIds[] = $team->getId();
-                        // Auch die Vereine der Teams hinzufügen
-                        foreach ($team->getClubs() as $club) {
-                            $clubIds[] = $club->getId();
-                        }
+                    $teamIds[] = $team->getId();
+                    // Auch die Vereine der Teams hinzufügen
+                    foreach ($team->getClubs() as $club) {
+                        $clubIds[] = $club->getId();
                     }
                 }
                 foreach ($relation->getPlayer()->getPlayerClubAssignments() as $pca) {
                     $club = $pca->getClub();
-                    if ($club) {
-                        $clubIds[] = $club->getId();
-                    }
+                    $clubIds[] = $club->getId();
                 }
             }
             if ($relation->getCoach()) {
                 foreach ($relation->getCoach()->getCoachTeamAssignments() as $cta) {
                     $team = $cta->getTeam();
-                    if ($team) {
-                        $teamIds[] = $team->getId();
-                        // Auch die Vereine der Teams hinzufügen
-                        foreach ($team->getClubs() as $club) {
-                            $clubIds[] = $club->getId();
-                        }
+                    $teamIds[] = $team->getId();
+                    // Auch die Vereine der Teams hinzufügen
+                    foreach ($team->getClubs() as $club) {
+                        $clubIds[] = $club->getId();
                     }
                 }
                 foreach ($relation->getCoach()->getCoachClubAssignments() as $cca) {

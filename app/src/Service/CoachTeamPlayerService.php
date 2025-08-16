@@ -28,7 +28,7 @@ class CoachTeamPlayerService
                 foreach ($coach->getCoachTeamAssignments() as $assignment) {
                     if ($this->isCurrentAssignment($assignment->getStartDate(), $assignment->getEndDate())) {
                         $team = $assignment->getTeam();
-                        if ($team && !in_array($team, $teams, true)) {
+                        if (!in_array($team, $teams, true)) {
                             $teams[] = $team;
                         }
                     }
@@ -51,12 +51,10 @@ class CoachTeamPlayerService
         foreach ($team->getPlayerTeamAssignments() as $assignment) {
             if ($this->isCurrentAssignment($assignment->getStartDate(), $assignment->getEndDate())) {
                 $player = $assignment->getPlayer();
-                if ($player) {
-                    $players[] = [
-                        'player' => $player,
-                        'shirtNumber' => $assignment->getShirtNumber()
-                    ];
-                }
+                $players[] = [
+                    'player' => $player,
+                    'shirtNumber' => $assignment->getShirtNumber()
+                ];
             }
         }
 

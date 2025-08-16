@@ -63,17 +63,13 @@ class DataConsistencyService
             // Alle Teams des Coaches sammeln
             $assignedTeams = [];
             foreach ($coach->getCoachTeamAssignments() as $assignment) {
-                if ($assignment->getTeam()) {
-                    $assignedTeams[] = $assignment->getTeam();
-                }
+                $assignedTeams[] = $assignment->getTeam();
             }
 
             // Alle Vereine des Coaches sammeln
             $assignedClubIds = [];
             foreach ($coach->getCoachClubAssignments() as $assignment) {
-                if ($assignment->getClub()) {
-                    $assignedClubIds[] = $assignment->getClub()->getId();
-                }
+                $assignedClubIds[] = $assignment->getClub()->getId();
             }
 
             // Prüfen welche Vereine über Teams zugeordnet sein sollten
@@ -111,17 +107,13 @@ class DataConsistencyService
             // Alle Teams des Spielers sammeln
             $assignedTeams = [];
             foreach ($player->getPlayerTeamAssignments() as $assignment) {
-                if ($assignment->getTeam()) {
-                    $assignedTeams[] = $assignment->getTeam();
-                }
+                $assignedTeams[] = $assignment->getTeam();
             }
 
             // Alle Vereine des Spielers sammeln
             $assignedClubIds = [];
             foreach ($player->getPlayerClubAssignments() as $assignment) {
-                if ($assignment->getClub()) {
-                    $assignedClubIds[] = $assignment->getClub()->getId();
-                }
+                $assignedClubIds[] = $assignment->getClub()->getId();
             }
 
             // Prüfen welche Vereine über Teams zugeordnet sein sollten

@@ -55,17 +55,13 @@ class CoachRepository extends ServiceEntityRepository implements OptimizedReposi
                     if ($relation->getPlayer()) {
                         foreach ($relation->getPlayer()->getPlayerTeamAssignments() as $pta) {
                             $team = $pta->getTeam();
-                            if ($team) {
-                                $teamIds[] = $team->getId();
-                            }
+                            $teamIds[] = $team->getId();
                         }
                     }
                     if ($relation->getCoach()) {
                         foreach ($relation->getCoach()->getCoachTeamAssignments() as $cta) {
                             $team = $cta->getTeam();
-                            if ($team) {
-                                $teamIds[] = $team->getId();
-                            }
+                            $teamIds[] = $team->getId();
                         }
                     }
                 }

@@ -51,9 +51,7 @@ class NewsController extends AbstractController
                     }
                     foreach ($relation->getPlayer()->getPlayerTeamAssignments() as $pta) {
                         $team = $pta->getTeam();
-                        if ($team) {
-                            $teamIds[] = $team->getId();
-                        }
+                        $teamIds[] = $team->getId();
                     }
                 }
                 if ($relation->getCoach()) {
@@ -65,9 +63,7 @@ class NewsController extends AbstractController
                     }
                     foreach ($relation->getCoach()->getCoachTeamAssignments() as $cta) {
                         $team = $cta->getTeam();
-                        if ($team) {
-                            $teamIds[] = $team->getId();
-                        }
+                        $teamIds[] = $team->getId();
                     }
                 }
             }
@@ -90,11 +86,11 @@ class NewsController extends AbstractController
     #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
     public function create(Request $request): Response
     {
-        /** @var User $user */
         $user = $this->getUser();
+        assert($user instanceof User);
         if (
-            !$user
-            || (!in_array('ROLE_ADMIN', $user->getRoles(), true) && !in_array('ROLE_SUPER_ADMIN', $user->getRoles(), true))
+            !in_array('ROLE_ADMIN', $user->getRoles(), true)
+            && !in_array('ROLE_SUPER_ADMIN', $user->getRoles(), true)
         ) {
             throw $this->createAccessDeniedException();
         }
@@ -155,29 +151,21 @@ class NewsController extends AbstractController
                 if ($relation->getPlayer()) {
                     foreach ($relation->getPlayer()->getPlayerTeamAssignments() as $pta) {
                         $team = $pta->getTeam();
-                        if ($team) {
-                            $teams[$team->getId()] = $team;
-                        }
+                        $teams[$team->getId()] = $team;
                     }
                     foreach ($relation->getPlayer()->getPlayerClubAssignments() as $pca) {
                         $club = $pca->getClub();
-                        if ($club) {
-                            $clubs[$club->getId()] = $club;
-                        }
+                        $clubs[$club->getId()] = $club;
                     }
                 }
                 if ($relation->getCoach()) {
                     foreach ($relation->getCoach()->getCoachTeamAssignments() as $cta) {
                         $team = $cta->getTeam();
-                        if ($team) {
-                            $teams[$team->getId()] = $team;
-                        }
+                        $teams[$team->getId()] = $team;
                     }
                     foreach ($relation->getCoach()->getCoachClubAssignments() as $cca) {
                         $club = $cca->getClub();
-                        if ($club) {
-                            $clubs[$club->getId()] = $club;
-                        }
+                        $clubs[$club->getId()] = $club;
                     }
                 }
             }

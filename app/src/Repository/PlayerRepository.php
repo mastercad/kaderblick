@@ -75,18 +75,14 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
                         // Alle Teams, in denen dieser Player spielt
                         foreach ($relation->getPlayer()->getPlayerTeamAssignments() as $pta) {
                             $team = $pta->getTeam();
-                            if ($team) {
-                                $teamIds[] = $team->getId();
-                            }
+                            $teamIds[] = $team->getId();
                         }
                     }
                     if ($relation->getCoach()) {
                         // Alle Teams, die dieser Coach trainiert
                         foreach ($relation->getCoach()->getCoachTeamAssignments() as $cta) {
                             $team = $cta->getTeam();
-                            if ($team) {
-                                $teamIds[] = $team->getId();
-                            }
+                            $teamIds[] = $team->getId();
                         }
                     }
                 }
