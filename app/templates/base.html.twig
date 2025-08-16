@@ -21,6 +21,8 @@
     <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.css' />
     <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@5.11.3/main.css' />
     <link rel='stylesheet' href='/css/app.css' />
+    <link rel='stylesheet' href='/css/components.css' />
+    <link rel='stylesheet' href='/css/calendar.css' />
 
     <link rel="manifest" href="/manifest.json">
 
@@ -34,10 +36,6 @@
 
     <link rel="apple-touch-icon" href="/images/icon.png">
     <link rel="favicon" href="/favicon.ico">
-
-    <style>
-        /* Nur noch spezielle Styles die nicht zentralisiert werden können */
-    </style>
 
     {% block stylesheets %}{% endblock %}
 </head>
@@ -860,6 +858,8 @@
     </div>
 </div>
 {% endif %}
+
+{% block additional_content %}{% endblock %}
 
 </body>
 </html>

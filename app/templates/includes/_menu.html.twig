@@ -1,9 +1,9 @@
-<nav class="navbar navbar-expand-lg navbar-dark navbar-kaderblick">
-    <div class="container" style="background: transparent !important;">
+<nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+    <div class="container">
         <a class="navbar-brand fw-bold navbar-brand-kaderblick" href="{{ path('app_dashboard_index') }}">
             <i class="fas fa-futbol me-2"></i>Kaderblick
         </a>
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" style="outline: none; box-shadow: none;">
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
@@ -13,7 +13,7 @@
                     <a class="nav-link dropdown-toggle position-relative nav-link-kaderblick" href="#" role="button" data-bs-toggle="dropdown">
                         <i class="fas fa-globe me-1"></i>Öffentlich
                     </a>
-                    <ul class="dropdown-menu shadow-lg border-0" style="border-radius: 12px;">
+                    <ul class="dropdown-menu dropdown-menu-custom">
                         <li><a class="dropdown-item py-2" href="{{ path('calendar_index') }}"><i class="fas fa-calendar-alt me-2 text-primary"></i>Kalender</a></li>
                         <li><a class="dropdown-item py-2" href="{{ path('api_teams_index') }}"><i class="fas fa-users me-2 text-success"></i>Teams</a></li>
                         <li><a class="dropdown-item py-2" href="{{ path('api_games_index') }}"><i class="fas fa-trophy me-2 text-warning"></i>Spiele</a></li>
@@ -27,7 +27,7 @@
                         <a class="nav-link dropdown-toggle nav-link-kaderblick" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-running me-1"></i>Spieler
                         </a>
-                        <ul class="dropdown-menu shadow-lg border-0" style="border-radius: 12px;">
+                        <ul class="dropdown-menu dropdown-menu-custom">
                             <li><a class="dropdown-item py-2" href="{{ path('api_players_index') }}"><i class="fas fa-id-card me-2 text-info"></i>Spielerübersicht</a></li>
                             <li><a class="dropdown-item py-2" href="{{ path('api_game_events_index') }}"><i class="fas fa-clipboard-list me-2 text-primary"></i>Spielereignisse</a></li>
                         </ul>
@@ -40,7 +40,7 @@
                                                 <a class="nav-link dropdown-toggle nav-link-kaderblick" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-users-cog me-1"></i>Trainer
                         </a>
-                        <ul class="dropdown-menu shadow-lg border-0" style="border-radius: 12px;">
+                        <ul class="dropdown-menu dropdown-menu-custom">
                             <li><a class="dropdown-item py-2" href="{{ path('api_teams_index') }}"><i class="fas fa-users me-2 text-success"></i>Mannschaften</a></li>
                             <li><a class="dropdown-item py-2" href="{{ path('formations_index') }}"><i class="fas fa-th me-2 text-warning"></i>Aufstellungen</a></li>
                             <li><a class="dropdown-item py-2" href="{{ path('api_players_index') }}"><i class="fas fa-running me-2 text-info"></i>Spieler</a></li>

@@ -15,7 +15,7 @@
     
     {% if news is empty %}
         <div class="text-center py-5">
-            <i class="bi bi-newspaper text-muted" style="font-size: 3rem;"></i>
+            <i class="bi bi-newspaper text-muted icon-placeholder"></i>
             <p class="text-muted mt-3">Keine News verfügbar.</p>
             {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN') %}
                 <a href="{{ path('app_news_create') }}" class="btn btn-outline-primary">

@@ -5,12 +5,7 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <style>
-        /* Nur noch spezielle Formation-Edit Styles */
-        .formation-background {
-            background-image: url('{% if formation.formationType.backgroundPath %}{{ '/images/formation/' ~ formation.formationType.backgroundPath }}{% else %}'/images/formation/default_formation_background.png')}} {% endif %}');
-        }
-    </style>
+    <link href='/css/formation.css' rel='stylesheet' />
 {% endblock %}
 
 {% block body %}

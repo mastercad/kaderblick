@@ -3,6 +3,11 @@
 
 {% block title %}Teamaufstellungen{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <link href='/css/formation.css' rel='stylesheet' />
+{% endblock %}
+
 {% block body %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -22,7 +27,7 @@
                             <span class="badge bg-secondary">{{ formation.formationType.name|capitalize }}</span>
                         </div>
                         <div class="card-body">
-                            <div class="formation-preview mb-3"
+                            <div class="formation-preview formation-background mb-3"
                                  style="background-image: url('{% if formation.formationType.backgroundPath %}{{ '/images/formation/' ~ formation.formationType.backgroundPath }}{% else %}'/images/formation/default_formation_background.png')}} {% endif %}');"
                                 >
                                 {% for player in formation.formationData.players|default([]) %}

@@ -1,0 +1,256 @@
+/* ==========================================================================
+   Kaderblick - Komponenten Styles
+   ========================================================================== */
+
+/* Card Components */
+.card {
+    border: none;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: var(--container-bg);
+    color: var(--text-color);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px var(--shadow-color);
+}
+
+.card-header {
+    background: var(--header-gradient);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    border: none;
+    padding: 1rem 1.5rem;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+/* Event and Calendar Components */
+.event-type-color {
+    --event-color: #667eea; /* Default color, wird über CSS-Custom-Properties überschrieben */
+}
+
+.event-list-item {
+    border-left: 4px solid var(--event-color);
+    background-color: color-mix(in srgb, var(--event-color) 5%, transparent);
+}
+
+.event-badge {
+    background-color: var(--event-color) !important;
+    color: white;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.event-type-filter-label {
+    color: var(--event-color);
+}
+
+/* Form Components */
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    background: var(--container-bg);
+    color: var(--text-color);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    background: var(--container-bg);
+    color: var(--text-color);
+}
+
+.form-check {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.form-check:hover {
+    background-color: var(--hover-bg);
+}
+
+.form-check-input:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+/* Button Components */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+    background: var(--button-primary);
+    border: none;
+}
+
+/* Modal Components */
+.modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    background: var(--container-bg);
+    color: var(--text-color);
+}
+
+.modal-header {
+    background: var(--header-gradient);
+    color: white;
+    border-radius: 16px 16px 0 0;
+    border: none;
+}
+
+.modal-body {
+    background: var(--container-bg);
+    color: var(--text-color);
+}
+
+.modal-footer {
+    background: var(--container-bg);
+    border: none;
+    border-radius: 0 0 16px 16px;
+}
+
+/* Navigation Components */
+.navbar-custom {
+    background: var(--navbar-gradient) !important;
+    box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+.navbar-custom .navbar-toggler {
+    border: 0;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.dropdown-menu-custom {
+    border-radius: 12px;
+    border: 0;
+    box-shadow: 0 8px 25px var(--shadow-color);
+    background: var(--container-bg);
+}
+
+.pwa-install-button {
+    transition: all 0.3s ease;
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-color);
+}
+
+/* List Components */
+.list-group-item {
+    border: none;
+    border-radius: 10px !important;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    background: var(--container-bg);
+    color: var(--text-color);
+}
+
+.list-group-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.list-group-item h6 {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.list-group-item small {
+    color: var(--text-color);
+    opacity: 0.7;
+    font-weight: 500;
+}
+
+/* Progress Components */
+.progress-bar-custom {
+    transition: width 0.3s ease;
+    background: var(--button-primary);
+}
+
+/* Loading and Spinner */
+.spinner-border {
+    color: #667eea;
+}
+
+.loading-container {
+    text-align: center;
+    padding: 2rem;
+}
+
+.loading-message {
+    margin-left: 0.5rem;
+    display: inline-block;
+    color: var(--text-color);
+}
+
+/* Badge Components */
+.badge {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+.text-center-block {
+    text-align: center;
+}
+
+.break-all {
+    word-break: break-all;
+}
+
+.max-width-300 {
+    max-width: 300px;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .list-group-item:hover {
+        transform: none;
+    }
+    
+    .btn:hover {
+        transform: none;
+    }
+}

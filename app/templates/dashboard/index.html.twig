@@ -13,19 +13,13 @@
         </button>
     </div>
 
-    <style>
-        #widgetGrid {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: flex-start;
-        }
-        .widget-item .card {
-            height: 100%; /* Nur volle Höhe für die Card */
-        }
-    </style>
+{% block stylesheets %}
+    {{ parent() }}
+    <link href='/css/dashboard.css' rel='stylesheet' />
+{% endblock %}
 
     <div id="widgetContainer">
-        <div class="row" id="widgetGrid">
+        <div class="row widget-grid" id="widgetGrid">
             {% for widget in widgets %}
                 <div class="col-md-{{ widget.width }} mb-4 widget-item" data-widget-id="{{ widget.id }}">
                     <div class="card h-100">

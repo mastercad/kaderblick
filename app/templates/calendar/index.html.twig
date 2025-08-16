@@ -1,209 +1,14 @@
 {% extends 'base.html.twig' %}
 
+{% block title %}
+Event Kalender
+{% endblock %}
+        
 {% block stylesheets %}
     {{ parent() }}
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.css' rel='stylesheet' />
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href='/css/calendar.css' rel='stylesheet' />
-{% endblock %}
-
-{% block title %}
-Event Kalender
-{% endblock %}
-        
-        /* Moderne Card-Styles */
-        .card {
-            border: none;
-            box-shadow: 0 4px 6px var(--shadow-color);
-            border-radius: 12px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            background: var(--container-bg);
-            color: var(--text-color);
-        }
-        
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px var(--shadow-color);
-        }
-        
-        .card-header {
-            background: var(--header-gradient);
-            color: white;
-            border-radius: 12px 12px 0 0 !important;
-            border: none;
-            padding: 1rem 1.5rem;
-        }
-        
-        .card-header h5 {
-            margin: 0;
-            font-weight: 600;
-        }
-        
-        /* Filter-Bereich verschönern */
-        .form-check {
-            margin: 0.5rem 0;
-            padding: 0.5rem;
-            border-radius: 8px;
-            transition: background-color 0.2s ease;
-        }
-        
-        .form-check:hover {
-            background-color: var(--hover-bg);
-        }
-        
-        .form-check-input:checked {
-            background-color: var(--bs-primary);
-            border-color: var(--bs-primary);
-        }
-        
-        /* Event-Liste verschönern */
-        .list-group-item {
-            border: none;
-            border-radius: 10px !important;
-            margin-bottom: 0.5rem;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 4px var(--shadow-color);
-            background: var(--container-bg);
-            color: var(--text-color);
-        }
-        
-        .list-group-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 4px 8px var(--shadow-color);
-        }
-        
-        .list-group-item h6 {
-            color: var(--text-color);
-            font-weight: 600;
-        }
-        
-        .list-group-item small {
-            color: var(--text-color);
-            opacity: 0.7;
-            font-weight: 500;
-        }
-        
-        /* Kalender-Container */
-        #calendar {
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px var(--shadow-color);
-            background: var(--container-bg);
-        }
-        
-        /* FullCalendar Dark Mode Support */
-        [data-bs-theme="dark"] .fc {
-            background: var(--container-bg);
-            color: var(--text-color);
-        }
-        
-        [data-bs-theme="dark"] .fc-header-toolbar {
-            background: var(--container-bg);
-        }
-        
-        [data-bs-theme="dark"] .fc-daygrid-day {
-            background: var(--container-bg);
-            border-color: var(--border-color);
-        }
-        
-        [data-bs-theme="dark"] .fc-daygrid-day-number {
-            color: var(--text-color);
-        }
-        
-        [data-bs-theme="dark"] .fc-col-header-cell {
-            background: var(--container-bg);
-            color: var(--text-color);
-            border-color: var(--border-color);
-        }
-        
-        [data-bs-theme="dark"] .fc-button-primary {
-            background: var(--button-primary);
-            border-color: #4a6741;
-        }
-        
-        [data-bs-theme="dark"] .fc-button-primary:hover {
-            background: linear-gradient(135deg, #5a7c50 0%, #6a8c60 100%);
-        }
-        
-        /* Button-Styles */
-        .btn {
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-        
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-        }
-        
-        /* Modal verschönern */
-        .modal-content {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        
-        .modal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 16px 16px 0 0;
-            border: none;
-        }
-        
-        /* Spinner ansprechender */
-        .spinner-border {
-            color: #667eea;
-        }
-        
-        /* Responsive Verbesserungen */
-        @media (max-width: 768px) {
-            .card {
-                margin-bottom: 1rem;
-            }
-            
-            .list-group-item:hover {
-                transform: none;
-            }
-        }
-        
-        /* Animationen für Ladevorgang */
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* Badge-Styles im Modal */
-        .badge {
-            border-radius: 6px;
-            font-weight: 500;
-        }
-        
-        /* Form-Styles */
-        .form-control, .form-select {
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-    </style>
-{% endblock %}
-
-{% block title %}
-Event Kalender
 {% endblock %}
 
 {% block body %}
@@ -224,8 +29,8 @@ Event Kalender
                                    id="type{{ type.id }}" 
                                    checked
                                    data-color="{{ type.color }}">
-                            <label class="form-check-label" for="type{{ type.id }}"
-                                   style="color: {{ type.color }}">
+                            <label class="form-check-label event-type-filter-label" for="type{{ type.id }}"
+                                   style="--event-color: {{ type.color }}">
                                 {{ type.name }}
                             </label>
                         </div>
@@ -298,7 +103,7 @@ Event Kalender
                         </div>
 
                         {# Spiel-spezifische Felder #}
-                        <div id="gameFields" style="display: none;">
+                        <div id="gameFields" class="hidden">
                             <h3>Spieldetails</h3>
                             <div class="mb-3">
                                 <label>Heimmannschaft</label>
@@ -364,73 +169,7 @@ Event Kalender
     </div>
 {% endif %}
 
-{# Event-Details Modal hinzufügen #}
-<div class="modal fade" id="eventDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="eventDetailsTitle"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <p><strong>Typ:</strong> <span id="eventDetailsType"></span></p>
-                        <p><strong>Termin:</strong> <span id="eventDetailsDate"></span></p>
-                        <div id="eventDetailsLocationContainer">
-                            <p><strong>Ort:</strong> <span id="eventDetailsLocation"></span></p>
-                        </div>
-                        <p><strong>Beschreibung:</strong></p>
-                        <p id="eventDetailsDescription"></p>
-                    </div>
-                    <div class="col-md-6">
-                        <div id="participationSection">
-                            <h6>Teilnahme</h6>
-                            <div id="participationStatus" class="mb-3">
-                                <p>Ihr Status: <span id="currentParticipationStatus" class="badge"></span></p>
-                                <div id="participationNote" style="display: none;">
-                                    <small class="text-muted" id="participationNoteText"></small>
-                                </div>
-                            </div>
-                            <div id="participationForm">
-                                <div class="mb-3">
-                                    <label for="participationStatusSelect" class="form-label">Status ändern:</label>
-                                    <select class="form-select" id="participationStatusSelect">
-                                        <option value="">Laden...</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="participationNoteInput" class="form-label">Notiz (optional):</label>
-                                    <textarea class="form-control" id="participationNoteInput" rows="2" placeholder="Zusätzliche Informationen..."></textarea>
-                                </div>
-                                <button type="button" class="btn btn-primary btn-sm" id="saveParticipation">
-                                    Status speichern
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Teilnehmerliste -->
-                <div class="mt-4">
-                    <h6>Teilnehmerliste</h6>
-                    <div id="participantsList">
-                        <div class="text-center">
-                            <div class="spinner-border spinner-border-sm" role="status">
-                                <span class="visually-hidden">Laden...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% if is_granted('ROLE_ADMIN') %}
-            <div class="modal-footer">
-                <button type="button" class="btn btn-danger" id="deleteEvent">Löschen</button>
-                <button type="button" class="btn btn-primary" id="editEvent">Bearbeiten</button>
-            </div>
-            {% endif %}
-        </div>
-    </div>
+</div>
 </div>
 
 {% endblock %}
@@ -623,8 +362,8 @@ Event Kalender
                 const eventColor = event.calendarEventType?.color || '#6c757d';
                 
                 return `
-                <div class="list-group-item list-group-item-action" role="button"
-                     style="background-color: ${eventColor}20; border-left: 4px solid ${eventColor};"
+                <div class="list-group-item list-group-item-action event-list-item" role="button"
+                     style="--event-color: ${eventColor}"
                      data-event='${JSON.stringify({
                         id: event.id,
                         title: event.title,
@@ -685,9 +424,19 @@ Event Kalender
 
         // Event-Details Modal
         function showEventDetails(event) {
-            const modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
             const modalElement = document.getElementById('eventDetailsModal');
+            if (!modalElement) {
+                console.error('Modal element not found');
+                return;
+            }
+            
             modalElement.dataset.eventId = event.id; // Event ID speichern
+            
+            // Modal Instanz abrufen oder erstellen
+            let modal = bootstrap.Modal.getInstance(modalElement);
+            if (!modal) {
+                modal = new bootstrap.Modal(modalElement);
+            }
             
             // Titel für Spiele generieren
             let displayTitle = event.title;
@@ -852,7 +601,7 @@ Event Kalender
                 html += `
                     <div class="mb-2">
                         <h6>
-                            <span class="badge" style="background-color: ${status.color}">
+                            <span class="badge event-badge" style="--event-color: ${status.color}">
                                 ${status.icon ? `<i class="fa fa-${status.icon}"></i> ` : ''}${statusName} (${users.length})
                             </span>
                         </h6>
@@ -1041,4 +790,75 @@ Event Kalender
         updateUpcomingEvents();
     });
     </script>
+{% endblock %}
+
+{% block additional_content %}
+{# Event-Details Modal außerhalb der Container für korrekten Z-Index #}
+<div class="modal fade" id="eventDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventDetailsTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Typ:</strong> <span id="eventDetailsType"></span></p>
+                        <p><strong>Termin:</strong> <span id="eventDetailsDate"></span></p>
+                        <div id="eventDetailsLocationContainer">
+                            <p><strong>Ort:</strong> <span id="eventDetailsLocation"></span></p>
+                        </div>
+                        <p><strong>Beschreibung:</strong></p>
+                        <p id="eventDetailsDescription"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <div id="participationSection">
+                            <h6>Teilnahme</h6>
+                            <div id="participationStatus" class="mb-3">
+                                <p>Ihr Status: <span id="currentParticipationStatus" class="badge"></span></p>
+                                <div id="participationNote" class="hidden">
+                                    <small class="text-muted" id="participationNoteText"></small>
+                                </div>
+                            </div>
+                            <div id="participationForm">
+                                <div class="mb-3">
+                                    <label for="participationStatusSelect" class="form-label">Status ändern:</label>
+                                    <select class="form-select" id="participationStatusSelect">
+                                        <option value="">Laden...</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="participationNoteInput" class="form-label">Notiz (optional):</label>
+                                    <textarea class="form-control" id="participationNoteInput" rows="2" placeholder="Zusätzliche Informationen..."></textarea>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm" id="saveParticipation">
+                                    Status speichern
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Teilnehmerliste -->
+                <div class="mt-4">
+                    <h6>Teilnehmerliste</h6>
+                    <div id="participantsList">
+                        <div class="text-center">
+                            <div class="spinner-border spinner-border-sm" role="status">
+                                <span class="visually-hidden">Laden...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% if is_granted('ROLE_ADMIN') %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="deleteEvent">Löschen</button>
+                <button type="button" class="btn btn-primary" id="editEvent">Bearbeiten</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}
