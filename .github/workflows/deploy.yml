@@ -101,12 +101,9 @@ jobs:
             docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
           fi
           
-          # Schema erstellen
-          # docker compose exec -T api bin/console doctrine:schema:create --env=test
-
           docker compose exec -T api bin/console doctrine:migrations:migrate --env=test
 
-          docker compose exec api bin/console doctrine:fixtures:load --env=test --group=master --group=test
+          docker compose exec -T api bin/console doctrine:fixtures:load -n --env=test --group=master --group=test
 
       - name: run PHP-CS-Fixer
         run: docker compose exec -T api ./vendor/bin/php-cs-fixer --config=.php-cs-fixer.dist.php fix --dry-run --diff --ansi

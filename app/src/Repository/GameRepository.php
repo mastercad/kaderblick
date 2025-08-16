@@ -35,7 +35,7 @@ class GameRepository extends ServiceEntityRepository implements OptimizedReposit
             ->leftJoin('g.awayTeam', 'at')
             ->leftJoin('g.location', 'l')
             ->leftJoin('g.gameEvents', 'ge')
-            ->orderBy('g.date', 'DESC')
+            ->orderBy('ge.timestamp', 'DESC')
             ->getQuery()
             ->getResult();
     }
@@ -58,7 +58,7 @@ class GameRepository extends ServiceEntityRepository implements OptimizedReposit
             ->getArrayResult();
 
         return $this->createQueryBuilder('g')
-            ->select('g.id, g.date, g.homeScore, g.awayScore, g.status')
+            ->select('g.id, ge.timestamp, g.homeScore, g.awayScore, g.status')
             ->addSelect('ht.id as homeTeam_id, ht.name as homeTeam_name')
             ->addSelect('at.id as awayTeam_id, at.name as awayTeam_name')
             ->addSelect('l.name as location_name')
@@ -70,7 +70,7 @@ class GameRepository extends ServiceEntityRepository implements OptimizedReposit
             ->where('t IS IN (:availableTeams)')
             ->setParameter('availableTeams', $availableTeams)
             ->groupBy('g.id, ht.id, at.id, l.name')
-            ->orderBy('g.date', 'DESC')
+            ->orderBy('ge.timestamp', 'DESC')
             ->getQuery()
             ->getResult();
     }
@@ -100,7 +100,7 @@ class GameRepository extends ServiceEntityRepository implements OptimizedReposit
     public function fetchOptimizedEntry(int $id, ?UserInterface $user = null): ?array
     {
         return $this->createQueryBuilder('g')
-            ->select('g.id, g.date, g.homeScore, g.awayScore, g.status, g.report')
+            ->select('g.id, ge.timestamp, g.homeScore, g.awayScore, g.status, g.report')
             ->addSelect('ht.id as homeTeam_id, ht.name as homeTeam_name')
             ->addSelect('at.id as awayTeam_id, at.name as awayTeam_name')
             ->addSelect('l.id as location_id, l.name as location_name')
