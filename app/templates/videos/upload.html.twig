@@ -1,5 +1,10 @@
 {% extends 'base.html.twig' %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <link href='/css/upload.css' rel='stylesheet' />
+{% endblock %}
+
 {% block body %}
 <div class="container mt-4">
     <div class="row">
@@ -55,7 +60,7 @@
                         <div id="uploadStatus" class="d-none">
                             <h5>Gesamtfortschritt</h5>
                             <div class="progress mb-3">
-                                <div class="progress-bar" id="totalProgress" role="progressbar" style="width: 0%">0%</div>
+                                <div class="progress-bar progress-bar-custom" id="totalProgress" role="progressbar" style="width: 0%">0%</div>
                             </div>
                             
                             <div id="fileProgresses">
@@ -138,7 +143,7 @@ function updateFilesList(filesInput) {
         fileDiv.innerHTML = `
             <div class="flex-grow-1">
                 <div class="file-info">
-                    <strong class="text-truncate" style="max-width: 300px;" title="${file.name}">
+                    <strong class="text-truncate max-width-300" title="${file.name}">
                         ${file.name}
                     </strong>
                     <span class="file-size ms-2">${file.size}</span>
@@ -300,8 +305,8 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
                         </div>
                         <span class="badge bg-info">Warte...</span>
                     </div>
-                    <div class="progress" style="height: 5px;">
-                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    <div class="progress upload-progress">
+                        <div class="progress-bar progress-bar-custom" role="progressbar" style="width: 0%"></div>
                     </div>
                 `;
                 fileProgresses.appendChild(fileProgressDiv);
