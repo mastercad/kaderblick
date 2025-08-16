@@ -23,29 +23,10 @@
                         </div>
                         <div class="card-body">
                             <div class="formation-preview mb-3"
-                                 style="height: 150px;
-                                        position: relative;
-                                        background-color: #e9ecef;
-                                        background-image: url('{% if formation.formationType.backgroundPath %}{{ '/images/formation/' ~ formation.formationType.backgroundPath }}{% else %}'/images/formation/default_formation_background.png')}} {% endif %}');
-                                        background-position: center;
-                                        background-size: cover;
-                                        border-radius: 5px;"
+                                 style="background-image: url('{% if formation.formationType.backgroundPath %}{{ '/images/formation/' ~ formation.formationType.backgroundPath }}{% else %}'/images/formation/default_formation_background.png')}} {% endif %}');"
                                 >
                                 {% for player in formation.formationData.players|default([]) %}
-                                    <div style="position: absolute; 
-                                                left: {{ player.x }}%; 
-                                                top: {{ player.y }}%; 
-                                                width: 20px; 
-                                                height: 20px; 
-                                                background-color: #0d6efd;
-                                                border-radius: 50%; 
-                                                transform: translate(-50%, -50%);
-                                                display: flex; 
-                                                align-items: center; 
-                                                justify-content: center;
-                                                color: white;
-                                                font-size: 0.7rem;
-                                                font-weight: bold;">
+                                    <div class="formation-player" style="left: {{ player.x }}%; top: {{ player.y }}%;">
                                         {{ player.number }}
                                     </div>
                                 {% endfor %}

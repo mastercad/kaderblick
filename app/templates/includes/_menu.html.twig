@@ -1,6 +1,6 @@
-<nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%) !important; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;">
+<nav class="navbar navbar-expand-lg navbar-dark navbar-kaderblick">
     <div class="container" style="background: transparent !important;">
-        <a class="navbar-brand fw-bold" href="{{ path('app_dashboard_index') }}" style="font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+        <a class="navbar-brand fw-bold navbar-brand-kaderblick" href="{{ path('app_dashboard_index') }}">
             <i class="fas fa-futbol me-2"></i>Kaderblick
         </a>
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" style="outline: none; box-shadow: none;">
@@ -10,10 +10,10 @@
             <ul class="navbar-nav me-auto">
                 {# Öffentliche Endpunkte #}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown" style="transition: all 0.3s ease; color: white !important; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                    <a class="nav-link dropdown-toggle position-relative nav-link-kaderblick" href="#" role="button" data-bs-toggle="dropdown">
                         <i class="fas fa-globe me-1"></i>Öffentlich
                     </a>
-                    <ul class="dropdown-menu shadow-lg border-0" style="border-radius: 12px; background: white;">
+                    <ul class="dropdown-menu shadow-lg border-0" style="border-radius: 12px;">
                         <li><a class="dropdown-item py-2" href="{{ path('calendar_index') }}"><i class="fas fa-calendar-alt me-2 text-primary"></i>Kalender</a></li>
                         <li><a class="dropdown-item py-2" href="{{ path('api_teams_index') }}"><i class="fas fa-users me-2 text-success"></i>Teams</a></li>
                         <li><a class="dropdown-item py-2" href="{{ path('api_games_index') }}"><i class="fas fa-trophy me-2 text-warning"></i>Spiele</a></li>
@@ -24,7 +24,7 @@
                 {# Spieler-Endpunkte #}
                 {% if ( is_granted('ROLE_PLAYER') ) or ( is_granted('ROLE_ADMIN') ) %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" style="transition: all 0.3s ease; color: white !important; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                        <a class="nav-link dropdown-toggle nav-link-kaderblick" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-running me-1"></i>Spieler
                         </a>
                         <ul class="dropdown-menu shadow-lg border-0" style="border-radius: 12px;">
@@ -37,8 +37,8 @@
                 {# Trainer-Endpunkte #}
                 {% if ( is_granted('ROLE_COACH' ) ) or ( is_granted('ROLE_ADMIN') ) %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" style="transition: all 0.3s ease; color: white !important; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
-                            <i class="bi bi-person-badge me-1"></i>Trainer
+                                                <a class="nav-link dropdown-toggle nav-link-kaderblick" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-users-cog me-1"></i>Trainer
                         </a>
                         <ul class="dropdown-menu shadow-lg border-0" style="border-radius: 12px;">
                             <li><a class="dropdown-item py-2" href="{{ path('api_teams_index') }}"><i class="fas fa-users me-2 text-success"></i>Mannschaften</a></li>
@@ -54,7 +54,7 @@
                 {# Admin-Endpunkte #}
                 {% if is_granted('ROLE_ADMIN') %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" style="transition: all 0.3s ease; color: white !important; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                        <a class="nav-link dropdown-toggle nav-link-kaderblick" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-cog me-1"></i>Administration
                         </a>
                         <ul class="dropdown-menu shadow-lg border-0" style="border-radius: 12px; min-width: 250px;">
@@ -92,24 +92,24 @@
                     </button>
                 </li>
                 <li class="nav-item me-2">
-                    <button id="button_messages" class="btn btn-light rounded-pill d-none" onclick="window.location.href='{{ path('messages_index') }}'" style="transition: all 0.3s ease; background: rgba(255, 255, 255, 0.9); border: 2px solid rgba(255, 255, 255, 0.3);">
-                        <i class="fas fa-envelope me-1"></i>Nachrichten
-                        <span id="unread_messages_count" class="badge bg-danger rounded-pill d-none">0</span>
+                                        <button id="button_messages" class="btn btn-light rounded-pill d-none btn-navbar-light" onclick="window.location.href='{{ path('messages_index') }}'">
+                        <i class="fas fa-envelope"></i>
+                        <span class="badge bg-danger rounded-pill ms-1 d-none" id="unread_messages_count"></span>
                     </button>
                 </li>
                 <li class="nav-item me-2">
-                    <button id="button_profile" class="btn btn-light rounded-pill d-none" data-bs-toggle="modal" data-bs-target="#profile_modal" style="transition: all 0.3s ease; background: rgba(255, 255, 255, 0.9); border: 2px solid rgba(255, 255, 255, 0.3);">
-                        <i class="fas fa-user me-1"></i>Profil
+                                        <button id="button_profile" class="btn btn-light rounded-pill d-none btn-navbar-light" data-bs-toggle="modal" data-bs-target="#profile_modal">
+                        <i class="fas fa-user"></i>
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button id="button_register" class="btn btn-light mx-2" data-bs-toggle="modal" data-bs-target="#auth_modal" style="background: rgba(255, 255, 255, 0.9); border: 2px solid rgba(255, 255, 255, 0.3);">
+                    <button id="button_register" class="btn btn-light mx-2 btn-navbar-light" data-bs-toggle="modal" data-bs-target="#auth_modal">
                         Anmelden
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button id="button_logout" class="btn btn-danger mx-2 d-none" style="background: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%); border: none;">
-                        Abmelden
+                                        <button id="button_logout" class="btn btn-danger mx-2 d-none btn-navbar-logout">
+                        <i class="fas fa-sign-out-alt"></i> Abmelden
                     </button>
                 </li>
             </ul>

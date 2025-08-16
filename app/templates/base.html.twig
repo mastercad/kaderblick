@@ -16,11 +16,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}Mein Dashboard{% endblock %}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.css' rel='stylesheet' />
-    <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@5.11.3/main.css' rel='stylesheet' />
-    <link href='/css/app.css' rel='stylesheet' />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.css' />
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@5.11.3/main.css' />
+    <link rel='stylesheet' href='/css/app.css' />
 
     <link rel="manifest" href="/manifest.json">
 
@@ -36,227 +36,7 @@
     <link rel="favicon" href="/favicon.ico">
 
     <style>
-        /* Globale moderne Styles für die gesamte Website */
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        /* Container-Verbesserungen */
-        .container:not(.navbar .container) {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            margin-top: 2rem;
-            margin-bottom: 2rem;
-            padding: 2rem;
-        }
-        
-        /* Navigation Hover-Effekte */
-        .nav-link:hover {
-            transform: translateY(-2px);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        .dropdown-item:hover {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            transform: translateX(5px);
-        }
-        
-        /* Z-Index Fixes für Dropdown und Modals */
-        .navbar {
-            z-index: 1030 !important;
-        }
-        
-        .dropdown-menu {
-            z-index: 1040 !important;
-        }
-        
-        .modal-backdrop {
-            z-index: 1050 !important;
-        }
-        
-        .modal {
-            z-index: 1060 !important;
-        }
-        
-        .modal-dialog {
-            z-index: 1061 !important;
-        }
-        
-        .modal-content {
-            z-index: 1062 !important;
-            position: relative;
-        }
-        
-        /* Button-Hover-Effekte in Navigation */
-        .navbar .btn:hover {
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
-        }
-        
-        /* Allgemeine Card-Verbesserungen für alle Seiten */
-        .card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-            transition: all 0.3s ease;
-            overflow: hidden;
-        }
-        
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
-        }
-        
-        .card-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            font-weight: 600;
-        }
-        
-        /* Tabellen modernisieren */
-        .table {
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-        }
-        
-        .table thead th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            font-weight: 600;
-        }
-        
-        .table tbody tr:hover {
-            background-color: rgba(102, 126, 234, 0.1);
-            transform: scale(1.01);
-        }
-        
-        /* Button-Verbesserungen */
-        .btn {
-            border-radius: 10px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border: none;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        }
-        
-        .btn-warning {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%);
-        }
-        
-        /* Form-Verbesserungen */
-        .form-control, .form-select {
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-            transform: scale(1.02);
-        }
-        
-        /* Badge-Styles */
-        .badge {
-            border-radius: 8px;
-            font-weight: 500;
-        }
-        
-        /* Animationen */
-        @keyframes slideInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .fade-in {
-            animation: slideInUp 0.6s ease-out;
-        }
-        
-        /* Alert-Verbesserungen */
-        .alert {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-        }
-        
-        /* Mobile Optimierungen */
-        @media (max-width: 768px) {
-            .container {
-                margin: 1rem;
-                padding: 1rem;
-                border-radius: 12px;
-            }
-            
-            .card:hover {
-                transform: none;
-            }
-            
-            .table tbody tr:hover {
-                transform: none;
-            }
-        }
-        
-        /* Fußball-spezifische Akzente */
-        .football-accent {
-            position: relative;
-        }
-        
-        .football-accent::before {
-            content: '⚽';
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            font-size: 0.8rem;
-            opacity: 0.7;
-        }
-        
-        /* Scroll-Verbesserungen */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-        }
+        /* Nur noch spezielle Styles die nicht zentralisiert werden können */
     </style>
 
     {% block stylesheets %}{% endblock %}
@@ -264,59 +44,23 @@
 <body>
     {% include 'includes/_menu.html.twig' %}
 
-<div class="container mt-4">
+<div class="container main-container mt-4">
     {% block body %}{% endblock %}
-    
-    <div id="modalContainer"></div>
-    
-    {% if ( is_granted('ROLE_USER') ) %}
-    {# Floating Feedback Button #}
-    <div id="feedback_button" class="position-fixed bottom-0 end-0 m-4">
-        <button class="btn btn-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#feedback_modal">
-            <i class="fas fa-comment-dots"></i>
-        </button>
-    </div>
+</div>
 
-    {# Feedback Modal #}
-    <div class="modal fade" id="feedback_modal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Feedback</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="feedbackForm">
-                        <div class="mb-3">
-                            <label class="form-label">Feedback-Typ</label>
-                            <select class="form-select" id="feedbackType" required>
-                                <option value="bug">Fehler melden</option>
-                                <option value="feature">Verbesserungsvorschlag</option>
-                                <option value="question">Frage</option>
-                                <option value="other">Sonstiges</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Ihre Nachricht</label>
-                            <textarea class="form-control" id="feedbackMessage" rows="4" required></textarea>
-                        </div>
-                        <div class="form-check mb-3">
-                            <input type="checkbox" class="form-check-input" id="feedbackScreenshot">
-                            <label class="form-check-label" for="feedbackScreenshot">Screenshot anhängen</label>
-                        </div>
-                        <div id="feedbackPreview" class="d-none mb-3">
-                            <img id="feedbackScreenshotPreview" class="img-fluid">
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
-                    <button type="button" class="btn btn-primary" id="submitFeedback">Senden</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
+<!-- Floating Feedback Button -->
+{% if ( is_granted('ROLE_USER') ) %}
+<div id="feedback_button" class="position-fixed bottom-0 end-0 m-4">
+    <button class="btn btn-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#feedback_modal">
+        <i class="fas fa-comment-dots"></i>
+    </button>
+</div>
+{% endif %}
+
+<!-- Modal Container - AUSSERHALB des Hauptcontainers -->
+<div id="modalContainer"></div>
+
+<!-- JavaScript und Scripte -->
 
     <div class="modal fade" id="auth_modal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -979,6 +723,144 @@
   </script>
   #}
   {% block javascripts %}{% endblock %}
+
+<!-- Alle Modals - AUSSERHALB aller Container für korrektes Z-Index Verhalten -->
+{% if ( is_granted('ROLE_USER') ) %}
+<!-- Feedback Modal -->
+<div class="modal fade" id="feedback_modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Feedback</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="feedbackForm">
+                    <div class="mb-3">
+                        <label class="form-label">Feedback-Typ</label>
+                        <select class="form-select" id="feedbackType" required>
+                            <option value="bug">Fehler melden</option>
+                            <option value="feature">Verbesserungsvorschlag</option>
+                            <option value="question">Frage</option>
+                            <option value="other">Sonstiges</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ihre Nachricht</label>
+                        <textarea class="form-control" id="feedbackMessage" rows="4" required></textarea>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="feedbackScreenshot">
+                        <label class="form-check-label" for="feedbackScreenshot">Screenshot anhängen</label>
+                    </div>
+                    <div id="feedbackPreview" class="d-none mb-3">
+                        <img id="feedbackScreenshotPreview" class="img-fluid">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-primary" id="submitFeedback">Senden</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Auth Modal -->
+<div class="modal fade" id="auth_modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <ul class="nav nav-tabs" id="authTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login"
+                                type="button" role="tab">Login</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register"
+                                type="button" role="tab">Registrieren</button>
+                    </li>
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body">
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="login" role="tabpanel">
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label for="loginEmail" class="form-label">E-Mail</label>
+                                <input type="email" class="form-control" id="loginEmail" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="loginPassword" class="form-label">Passwort</label>
+                                <input type="password" class="form-control" id="loginPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Login</button>
+                        </form>
+                    </div>
+                    <div class="tab-pane fade" id="register" role="tabpanel">
+                        <form id="registerForm">
+                            <div class="mb-3">
+                                <label for="registerName" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="registerName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="registerEmail" class="form-label">E-Mail</label>
+                                <input type="email" class="form-control" id="registerEmail" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="registerPassword" class="form-label">Passwort</label>
+                                <input type="password" class="form-control" id="registerPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">Registrieren</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer d-block text-center">
+                <div id="authMessage" class="text-muted small"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if ( is_granted('ROLE_USER') ) %}
+<!-- Profile Modal -->
+<div class="modal fade" id="profile_modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Profil bearbeiten</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body">
+                <form id="profileForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="profileFirstName" class="form-label">Vorname</label>
+                            <input type="text" class="form-control" id="profileFirstName" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="profileLastName" class="form-label">Nachname</label>
+                            <input type="text" class="form-control" id="profileLastName" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="profileEmail" class="form-label">E-Mail</label>
+                        <input type="email" class="form-control" id="profileEmail" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-primary" id="saveProfile">Speichern</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 </body>
 </html>
 

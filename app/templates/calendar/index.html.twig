@@ -4,34 +4,30 @@
     {{ parent() }}
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.css' rel='stylesheet' />
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <style>
-        .fc-event {
-            opacity: 0.85;
-            transition: opacity 0.2s;
-        }
-        .fc-event:hover {
-            opacity: 1;
-        }
-        .fc-timeGridDay-view .fc-event {
-            border-radius: 3px;
-            margin: 1px 0;
-        }
+    <link href='/css/calendar.css' rel='stylesheet' />
+{% endblock %}
+
+{% block title %}
+Event Kalender
+{% endblock %}
         
         /* Moderne Card-Styles */
         .card {
             border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            box-shadow: 0 4px 6px var(--shadow-color);
             border-radius: 12px;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background: var(--container-bg);
+            color: var(--text-color);
         }
         
         .card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 8px 15px var(--shadow-color);
         }
         
         .card-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--header-gradient);
             color: white;
             border-radius: 12px 12px 0 0 !important;
             border: none;
@@ -52,7 +48,7 @@
         }
         
         .form-check:hover {
-            background-color: rgba(0, 0, 0, 0.05);
+            background-color: var(--hover-bg);
         }
         
         .form-check-input:checked {
@@ -66,21 +62,24 @@
             border-radius: 10px !important;
             margin-bottom: 0.5rem;
             transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 4px var(--shadow-color);
+            background: var(--container-bg);
+            color: var(--text-color);
         }
         
         .list-group-item:hover {
             transform: translateX(5px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px var(--shadow-color);
         }
         
         .list-group-item h6 {
-            color: #2c3e50;
+            color: var(--text-color);
             font-weight: 600;
         }
         
         .list-group-item small {
-            color: #6c757d;
+            color: var(--text-color);
+            opacity: 0.7;
             font-weight: 500;
         }
         
@@ -88,7 +87,42 @@
         #calendar {
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            box-shadow: 0 4px 6px var(--shadow-color);
+            background: var(--container-bg);
+        }
+        
+        /* FullCalendar Dark Mode Support */
+        [data-bs-theme="dark"] .fc {
+            background: var(--container-bg);
+            color: var(--text-color);
+        }
+        
+        [data-bs-theme="dark"] .fc-header-toolbar {
+            background: var(--container-bg);
+        }
+        
+        [data-bs-theme="dark"] .fc-daygrid-day {
+            background: var(--container-bg);
+            border-color: var(--border-color);
+        }
+        
+        [data-bs-theme="dark"] .fc-daygrid-day-number {
+            color: var(--text-color);
+        }
+        
+        [data-bs-theme="dark"] .fc-col-header-cell {
+            background: var(--container-bg);
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
+        
+        [data-bs-theme="dark"] .fc-button-primary {
+            background: var(--button-primary);
+            border-color: #4a6741;
+        }
+        
+        [data-bs-theme="dark"] .fc-button-primary:hover {
+            background: linear-gradient(135deg, #5a7c50 0%, #6a8c60 100%);
         }
         
         /* Button-Styles */

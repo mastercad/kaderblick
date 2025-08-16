@@ -32,5 +32,6 @@
     <file>tests/</file>
 
     <exclude-pattern>config/secrets/*</exclude-pattern>
+    <exclude-pattern>src/Doctrine/CustomTable.php</exclude-pattern>
 
 </ruleset>
