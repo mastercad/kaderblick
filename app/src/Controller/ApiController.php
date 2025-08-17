@@ -94,7 +94,9 @@ abstract class ApiController extends AbstractController
 
         $meta = $this->em->getClassMetadata($entityClass);
 
-        $schema = [];
+        $schema = [
+            'columns' => array_merge($this->relevantColumns, $this->additionalColumns)
+        ];
 
         foreach ($meta->fieldMappings as $field => $mapping) {
             if ('id' == $field) {

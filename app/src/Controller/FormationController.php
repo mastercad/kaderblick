@@ -49,10 +49,6 @@ class FormationController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             /** @var User $user */
             $user = $this->getUser();
-
-            if (null === $user) {
-                $user = $this->entityManager->getRepository(User::class)->find(1);
-            }
             $formation->setUser($user);
             $em->persist($formation);
             $em->flush();
@@ -79,10 +75,6 @@ class FormationController extends AbstractController
 
         /** @var User $user */
         $user = $this->getUser();
-
-        if (null === $user) {
-            $user = $this->entityManager->getRepository(User::class)->find(1);
-        }
         $availablePlayers = $this->coachTeamPlayerService->resolveAvailablePlayersForCoach($user);
 
         return $this->render('formation/edit.html.twig', [
@@ -96,11 +88,6 @@ class FormationController extends AbstractController
     {
         /** @var User $user */
         $user = $this->getUser();
-
-        if (null === $user) {
-            $user = $this->entityManager->getRepository(User::class)->find(1);
-        }
-
         // Prüfen ob der User berechtigt ist, auf dieses Team zuzugreifen
         $teams = $this->coachTeamPlayerService->collectCoachTeams($user);
         $team = null;
