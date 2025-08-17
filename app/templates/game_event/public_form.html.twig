@@ -1,0 +1,146 @@
+{% extends 'base.html.twig' %}
+{% block title %}Spielereignis erfassen{% endblock %}
+{% block body %}
+<div class="container my-3">
+  <h5>Neues Spielereignis erfassen</h5>
+  <form id="gameEventForm" class="row g-2">
+    <div class="col-12">
+      <select class="form-select" name="team" id="teamSelect" required>
+        <option value="">Team wählen…</option>
+        {% for team in teams %}
+          <option value="{{ team.id }}">{{ team.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12">
+      <select class="form-select" name="eventType" required>
+        <option value="">Event-Typ wählen…</option>
+        {% for type in eventTypes %}
+          <option value="{{ type.id }}" data-icon="{{ type.icon }}" data-color="{{ type.color }}">{{ type.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12">
+      <select class="form-select" name="player" id="playerSelect" required>
+        <option value="">Spieler wählen…</option>
+        {# Spieler werden per JS nachgeladen #}
+      </select>
+    </div>
+    <div class="col-12" id="relatedPlayerField" style="display:none;">
+      <select class="form-select" name="relatedPlayer" id="relatedPlayerSelect">
+        <option value="">Zweiter Spieler (bei Wechsel)…</option>
+        {# Spieler werden per JS nachgeladen #}
+      </select>
+    </div>
+    <div class="col-12" id="reasonField" style="display:none;">
+      <select class="form-select" name="reason" id="reasonInput">
+        <option value="">Grund für Wechsel wählen…</option>
+        {% for reason in substitutionReasons %}
+          <option value="{{ reason.id }}">{{ reason.name }}{% if reason.description %} – {{ reason.description }}{% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6">
+      <input type="number" class="form-control" name="minute" min="1" max="120" placeholder="Minute" required>
+    </div>
+    <div class="col-6">
+      <input type="text" class="form-control" name="description" placeholder="Beschreibung (optional)">
+    </div>
+    <div class="col-12 d-grid">
+      <button class="btn btn-success" type="submit">Event speichern</button>
+    </div>
+  </form>
+  <div id="eventList" class="mt-4">
+    <!-- Hier werden die bisherigen Events als Liste angezeigt -->
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+const form = document.getElementById('gameEventForm');
+const relatedField = document.getElementById('relatedPlayerField');
+const eventTypeSelect = form.querySelector('select[name="eventType"]');
+const eventList = document.getElementById('eventList');
+const teamSelect = document.getElementById('teamSelect');
+const playerSelect = document.getElementById('playerSelect');
+const relatedPlayerSelect = document.getElementById('relatedPlayerSelect');
+
+function updateRelatedField() {
+    const selected = eventTypeSelect.options[eventTypeSelect.selectedIndex];
+    const typeText = selected.textContent.toLowerCase();
+
+    /* TODO den quatsch hier solider bauen, in dem ich aus dem backend die relevanten IDs mit übergebe */
+    const showRelated = ["wechsel", "einwechsel", "einwechs", "auswechs", "auswechsel", "sub"].some(key => typeText.includes(key));
+    relatedField.style.display = showRelated ? '' : 'none';
+    reasonField.style.display = showRelated ? '' : 'none';
+  
+    reasonInput.required = showRelated;
+}
+eventTypeSelect.addEventListener('change', updateRelatedField);
+
+function loadPlayers(teamId) {
+  if (!teamId) {
+    playerSelect.innerHTML = '<option value="">Spieler wählen…</option>';
+    relatedPlayerSelect.innerHTML = '<option value="">Zweiter Spieler (bei Wechsel)…</option>';
+    return;
+  }
+  axios.get(window.location.origin + '/api/team/' + teamId + '/players')
+    .then(res => {
+      let options = '<option value="">Spieler wählen…</option>';
+      let relOptions = '<option value="">Zweiter Spieler (bei Wechsel)…</option>';
+      res.data.forEach(player => {
+        options += `<option value="${player.id}">#${player.shirtNumber} ${player.fullName}</option>`;
+        relOptions += `<option value="${player.id}">#${player.shirtNumber} ${player.fullName}</option>`;
+      });
+      playerSelect.innerHTML = options;
+      relatedPlayerSelect.innerHTML = relOptions;
+    });
+}
+
+teamSelect.addEventListener('change', function() {
+  loadPlayers(this.value);
+});
+
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  const formData = new FormData(form);
+  // Sende reason nur, wenn sichtbar
+  if (reasonField.style.display !== 'none') {
+    formData.set('reason', reasonInput.value);
+  } else {
+    formData.delete('reason');
+  }
+  const data = Object.fromEntries(formData);
+  axios.post(window.location.origin + '/api/game/{{ game.id }}/event', data)
+    .then(() => {
+      form.reset();
+      updateRelatedField();
+      loadEvents();
+    });
+});
+const reasonField = document.getElementById('reasonField');
+const reasonInput = document.getElementById('reasonInput');
+
+function loadEvents() {
+  axios.get(window.location.origin + '/api/game/{{ game.id }}/events')
+    .then(res => {
+      eventList.innerHTML = res.data.map(ev => `
+        <div class="card mb-2" style="border-left: 5px solid ${ev.typeColor}">
+          <div class="card-body py-2 px-3 d-flex align-items-center">
+            <span class="me-2"><i class="${ev.typeIcon}"></i></span>
+            <span class="fw-bold">${ev.type}</span>
+            <span class="mx-2">${ev.minute}'.'</span>
+            <span>${ev.player}${ev.relatedPlayer ? ' ↔ ' + ev.relatedPlayer : ''}</span>
+            <span class="ms-auto text-muted small">${ev.description || ''}</span>
+          </div>
+        </div>
+      `).join('');
+    });
+}
+
+// Initial: Spieler für erstes Team laden, falls vorausgewählt
+if (teamSelect.value) {
+  loadPlayers(teamSelect.value);
+}
+loadEvents();
+</script>
+{% endblock %}

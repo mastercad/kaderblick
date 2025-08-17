@@ -23,14 +23,18 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
+
+use App\Repository\ParticipationRepository;
 #[IsGranted('IS_AUTHENTICATED')]
 #[Route('/calendar', name: 'api_calendar_')]
+
 class CalendarController extends AbstractController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly EmailNotificationService $emailService,
-        private readonly ValidatorInterface $validator
+        private readonly ValidatorInterface $validator,
+        private readonly ParticipationRepository $participationRepository
     ) {
     }
 
@@ -54,17 +58,35 @@ class CalendarController extends AbstractController
     #[Route('/events', name: 'events', methods: ['GET'])]
     public function retrieveEvents(Request $request, CalendarEventRepository $calendarEventRepository): JsonResponse
     {
-        $start = new DateTime($request->query->get('start'));
-        $end = new DateTime($request->query->get('end'));
+        $start = new \DateTime($request->query->get('start'));
+        $end = new \DateTime($request->query->get('end'));
 
         $calendarEvents = $calendarEventRepository->findBetweenDates($start, $end);
+        $user = $this->getUser();
 
-        $formattedEvents = array_map(function ($calendarEvent) {
+        $formattedEvents = array_map(function ($calendarEvent) use ($user) {
             $endDate = $calendarEvent->getEndDate();
             if (!$endDate) {
-                $endDate = new DateTime();
+                $endDate = new \DateTime();
                 $endDate->setTimestamp($calendarEvent->getStartDate()->getTimestamp());
                 $endDate->modify('23:59:59');
+            }
+
+            // Participation-Status für eingeloggten User holen
+            $participationStatus = null;
+            if ($user) {
+                $participation = $this->participationRepository->findByUserAndEvent($user, $calendarEvent);
+                if ($participation && $participation->getStatus()) {
+                    $participationStatus = [
+                        'id' => $participation->getStatus()->getId(),
+                        'name' => $participation->getStatus()->getName(),
+                        'code' => $participation->getStatus()->getCode(),
+                        'icon' => $participation->getStatus()->getIcon(),
+                        'color' => $participation->getStatus()->getColor(),
+                    ];
+                } else {
+                    $participationStatus = null;
+                }
             }
 
             return [
@@ -74,6 +96,7 @@ class CalendarController extends AbstractController
                 'end' => $endDate->format('Y-m-d\TH:i:s'),
                 'description' => $calendarEvent->getDescription(),
                 'game' => $calendarEvent->getGame() ? [
+                    'id' => $calendarEvent->getGame()->getId(),
                     'homeTeam' => [
                         'id' => $calendarEvent->getGame()->getHomeTeam()->getId(),
                         'name' => $calendarEvent->getGame()->getHomeTeam()->getName()
@@ -95,7 +118,8 @@ class CalendarController extends AbstractController
                 'location' => $calendarEvent->getLocation() ? [
                     'id' => $calendarEvent->getLocation()->getId(),
                     'name' => $calendarEvent->getLocation()->getName()
-                ] : null
+                ] : null,
+                'participation_status' => $participationStatus,
             ];
         }, $calendarEvents);
 

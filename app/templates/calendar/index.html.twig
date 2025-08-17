@@ -380,7 +380,6 @@
                     if (eventType) {
                         info.el.style.backgroundColor = eventType.color;
                         info.el.style.borderColor = eventType.color;
-                        
                         // Add hover effects
                         info.el.addEventListener('mouseenter', function() {
                             this.style.opacity = '0.8';
@@ -390,12 +389,31 @@
                         });
                     }
                 }
+
+                // Add participation status icon (CSS only)
+                const status = info.event.extendedProps.participation_status;
+                let iconHtml = '';
                 
-                // Add tooltip
+                if (status.icon) {
+                    iconHtml = `<span class="event-status-icon" style="position: absolute; top: 0px; right: 0px;" title="${status.name}"><i class="fa fa-${status.icon}"></i></span>`;
+                } else if (status.code) {
+                    iconHtml = `<span class="event-status-dot" title="${status.name}" style="background:${status.color||'#888'}; position: absolute; top: 0px; right: 0px;"></span>`;
+                }
+                
+                if (! iconHtml) {
+                    const iconHtml = `<span class="event-status-icon" style="position: absolute; top: 0px; right: 0px;" title="Keine Antwort"><i class="fas fa-question-circle text-secondary"></i></span>`;
+                }
+
+//                const titleEl = info.el.querySelector('.fc-event-title') || info.el;
+//                titleEl.insertAdjacentHTML('afterbegin', iconHtml + ' ');
+                const titleEl = info.el.querySelector('.fc-daygrid-event-harness') || info.el;
+                titleEl.insertAdjacentHTML("beforeend", iconHtml);
+                
                 if (info.event.extendedProps.description) {
                     info.el.title = info.event.extendedProps.description;
                 }
             },
+
             eventMouseEnter: function(info) {
                 // Enhanced tooltip could be added here
                 console.log('Mouse enter event:', info.event.title);
@@ -786,32 +804,32 @@
         // Details Modal öffnen
         function openDetailsModal(event) {
             const content = document.getElementById('eventDetailsContent');
+
             let html = `<h6>${event.title}</h6>`;
-            
+
             if (event.start) {
                 html += `<p><strong>Start:</strong> ${event.start.toLocaleString('de-DE')}</p>`;
             }
-            
             if (event.end) {
                 html += `<p><strong>Ende:</strong> ${event.end.toLocaleString('de-DE')}</p>`;
             }
-            
             if (event.extendedProps.description) {
                 html += `<p><strong>Beschreibung:</strong> ${event.extendedProps.description}</p>`;
             }
-            
             if (event.extendedProps.location) {
                 html += `<p><strong>Ort:</strong> ${event.extendedProps.location.name}</p>`;
             }
-            
-            if (event.extendedProps.game) {
-                const game = event.extendedProps.game;
-                html += `<h6 class="mt-3">Spiel-Details</h6>`;
-                if (game.homeTeam) html += `<p><strong>Heim:</strong> ${game.homeTeam.name}</p>`;
-                if (game.awayTeam) html += `<p><strong>Auswärts:</strong> ${game.awayTeam.name}</p>`;
-                if (game.gameType) html += `<p><strong>Typ:</strong> ${game.gameType.name}</p>`;
+
+            console.log(event);
+
+            // Button für Spielereignis erfassen
+            if (event.extendedProps.type && event.extendedProps.type.id == calendarGameEventTypeId) {
+                html += `<div class=\"mt-3\">
+                    <a href=\"/game/${event.extendedProps.game.id}/events\" class=\"btn btn-success\" target=\"_blank\">
+                        <i class=\"fas fa-futbol me-1\"></i>Spielereignis erfassen
+                    </a>
+                </div>`;
             }
-            
             content.innerHTML = html;
             
             // Teilnahme-Sektion anzeigen

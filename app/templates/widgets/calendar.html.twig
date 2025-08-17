@@ -15,14 +15,19 @@
             right: 'next'
         },
         events: '{{ path('api_calendar_events') }}',
-        dayCellDidMount: function(info) {
-            console.log(info);
-            const date = new Date(info.date);
-            const cellEl = info.el;
-            cellEl.style.cursor = 'pointer';
-            cellEl.addEventListener('click', () => {
-                window.location.href = `/calendar?view=day&date=${convertDate(date)}`;
-            });
+        eventDidMount: function(info) {
+            // Participation status icon (CSS only)
+            const status = info.event.extendedProps.participation_status;
+            let iconHtml = '';
+            if (status && status.icon) {
+                iconHtml = `<span class=\"event-status-icon\" title=\"${status.name}\"><i class=\"${status.icon}\"></i></span>`;
+            } else if (status && status.code) {
+                iconHtml = `<span class=\"event-status-dot event-status-dot--custom\" title=\"${status.name}\" style=\"background:${status.color||'#888'}\"></span>`;
+            } else {
+                iconHtml = `<span class=\"event-status-icon\" title=\"Keine Antwort\"><i class=\"fas fa-question-circle text-secondary\"></i></span>`;
+            }
+            const titleEl = info.el.querySelector('.fc-event-title') || info.el;
+            titleEl.insertAdjacentHTML('afterbegin', iconHtml + ' ');
         },
     });
     calendar.render();
