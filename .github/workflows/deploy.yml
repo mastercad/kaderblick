@@ -225,14 +225,19 @@ jobs:
             echo "Starte neuen Staging für vorbereitungen"
             PMA_PORT=18081 API_PORT=18000 VUE_PORT=18080 docker compose -p staging up -d --build --force-recreate api vue-frontend
 
-            ##### WORKAROUND FÜR FIXTURES #######
+            ###### WORKAROUND FÜR FIXTURES ######
+            sed -i 's/^APP_ENV=prod$/APP_ENV=dev/' .env
             docker compose -p staging exec -T api env APP_ENV=dev composer install --dev
-            
+
             echo "Starte migrations"
             docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
 
             echo "Spiele Fixtures für stammdaten ein"
             docker compose -p staging exec -T api bin/console doctrine:fixtures:load -n --group=master
+
+            sed -i 's/^APP_ENV=dev$/APP_ENV=prod/' .env
+
+            ###### ENDE WORKAROUND FÜR FIXTURES ######
 
             echo "Starte composer install"
             docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
