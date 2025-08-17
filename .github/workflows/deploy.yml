@@ -232,7 +232,7 @@ jobs:
             docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
 
             echo "Spiele Fixtures für stammdaten ein"
-            docker compose -p staging exec -T api bin/console doctrine:fixtures:load -n --env=prod --group=master
+            docker compose -p staging exec -T api bin/console doctrine:fixtures:load -n --group=master
 
             echo "Starte composer install"
             docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
