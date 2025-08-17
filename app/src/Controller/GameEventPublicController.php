@@ -4,12 +4,10 @@ namespace App\Controller;
 
 use App\Entity\Game;
 use App\Entity\GameEvent;
-use App\Entity\GameEventType;
-use App\Entity\Player;
 use App\Repository\GameEventRepository;
-use App\Repository\GameRepository;
 use App\Repository\GameEventTypeRepository;
 use App\Repository\PlayerRepository;
+use App\Repository\SubstitutionReasonRepository;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,16 +24,14 @@ class GameEventPublicController extends AbstractController
         GameEventTypeRepository $eventTypeRepo,
         PlayerRepository $playerRepo,
         GameEventRepository $eventRepo,
-        \App\Repository\SubstitutionReasonRepository $substitutionReasonRepo
+        SubstitutionReasonRepository $substitutionReasonRepo
     ): Response {
         $eventTypes = $eventTypeRepo->findAll();
-        // Spieler beider Teams (Heim & Auswärts) über PlayerTeamAssignment (nur aktive Zuordnungen)
         $teams = array_filter([$game->getHomeTeam(), $game->getAwayTeam()]);
-        $players = method_exists($playerRepo, 'findActiveByTeams')
-            ? $playerRepo->findActiveByTeams($teams)
-            : [];
+        $players = $playerRepo->findActiveByTeams($teams);
         $events = $eventRepo->findBy(['game' => $game], ['timestamp' => 'ASC']);
         $substitutionReasons = $substitutionReasonRepo->fetchFullList();
+
         return $this->render('game_event/public_form.html.twig', [
             'game' => $game,
             'eventTypes' => $eventTypes,
@@ -53,7 +49,7 @@ class GameEventPublicController extends AbstractController
         EntityManagerInterface $em,
         PlayerRepository $playerRepo,
         GameEventTypeRepository $eventTypeRepo,
-        \App\Repository\SubstitutionReasonRepository $substitutionReasonRepo
+        SubstitutionReasonRepository $substitutionReasonRepo
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
         if (!$data) {
@@ -64,11 +60,11 @@ class GameEventPublicController extends AbstractController
         $eventType = $eventTypeRepo->find($data['eventType'] ?? null);
         $event->setGameEventType($eventType);
         $event->setPlayer($playerRepo->find($data['player'] ?? null));
-        // Nur bei Wechsel-Ereignissen (Code oder Name enthält "wechsel") den zweiten Spieler setzen
+
         $isSubstitution = false;
         if ($eventType) {
             $name = mb_strtolower($eventType->getName());
-            $code = method_exists($eventType, 'getCode') ? mb_strtolower($eventType->getCode()) : '';
+            $code = mb_strtolower($eventType->getCode());
             $isSubstitution = str_contains($name, 'wechsel') || str_contains($code, 'sub');
         }
         if ($isSubstitution && !empty($data['relatedPlayer'])) {
@@ -76,16 +72,15 @@ class GameEventPublicController extends AbstractController
         } else {
             $event->setRelatedPlayer(null);
         }
-        // Team des Spielers für das aktuelle Spiel ermitteln (über PlayerTeamAssignment)
+
         $player = $event->getPlayer();
         $team = null;
         if ($player) {
             $assignments = $player->getPlayerTeamAssignments();
             foreach ($assignments as $pta) {
-                // Nur aktive Zuordnungen (ohne Enddatum oder Enddatum in der Zukunft)
                 $ptaTeam = $pta->getTeam();
                 $ptaEnd = $pta->getEndDate();
-                $isActive = ($ptaEnd === null) || ($ptaEnd >= new \DateTime());
+                $isActive = (null === $ptaEnd) || ($ptaEnd >= new DateTime());
                 if ($isActive && ($ptaTeam === $game->getHomeTeam() || $ptaTeam === $game->getAwayTeam())) {
                     $team = $ptaTeam;
                     break;
@@ -94,9 +89,9 @@ class GameEventPublicController extends AbstractController
         }
         $event->setTeam($team);
         $event->setTimestamp(
-            (new DateTime())->setTime(0, 0)->modify('+' . ((int)($data['minute'] ?? 1)) . ' minutes')
+            (new DateTime())->setTime(0, 0)->modify('+' . ((int) ($data['minute'] ?? 1)) . ' minutes')
         );
-        // Grund für Wechsel als Beschreibung, falls vorhanden
+
         if ($isSubstitution && !empty($data['reason'])) {
             $reasonEntity = $substitutionReasonRepo->find($data['reason']);
             $event->setDescription($reasonEntity ? $reasonEntity->getName() : $data['reason']);
@@ -105,6 +100,7 @@ class GameEventPublicController extends AbstractController
         }
         $em->persist($event);
         $em->flush();
+
         return $this->json(['success' => true]);
     }
 
@@ -119,12 +115,13 @@ class GameEventPublicController extends AbstractController
                 'type' => $event->getGameEventType()?->getName(),
                 'typeIcon' => $event->getGameEventType()?->getIcon(),
                 'typeColor' => $event->getGameEventType()?->getColor(),
-                'minute' => $event->getTimestamp()?->format('i'),
+                'minute' => $event->getTimestamp()->format('i'),
                 'player' => $event->getPlayer()?->getFullName(),
                 'relatedPlayer' => $event->getRelatedPlayer()?->getFullName(),
                 'description' => $event->getDescription(),
             ];
         }
+
         return $this->json($result);
     }
 }

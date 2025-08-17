@@ -7,6 +7,7 @@ use App\Entity\GameEvent;
 use App\Entity\GameEventType;
 use App\Entity\Player;
 use App\Entity\Team;
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Faker\Factory;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -43,6 +44,7 @@ class GenerateFakeGameEventsCommand extends Command
 
         if (empty($games) || empty($eventTypes) || empty($players) || empty($teams)) {
             $output->writeln('<error>Es fehlen Spiele, Eventtypen, Spieler oder Teams!</error>');
+
             return Command::FAILURE;
         }
 
@@ -50,12 +52,20 @@ class GenerateFakeGameEventsCommand extends Command
         $count = 0;
         foreach ($games as $game) {
             $gameTeams = [$game->getHomeTeam(), $game->getAwayTeam()];
-            $gamePlayers = array_filter($players, fn($p) => in_array($p->getTeams()[0] ?? null, $gameTeams, true));
+            $gamePlayers = array_filter($players, function ($player) use ($gameTeams) {
+                foreach ($player->getPlayerTeamAssignments() as $assignment) {
+                    if (in_array($assignment->getTeam(), $gameTeams, true)) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+
             if (empty($gamePlayers)) {
                 continue;
             }
 
-            for ($i = 0; $i < $eventsPerGame; $i++) {
+            for ($i = 0; $i < $eventsPerGame; ++$i) {
                 $eventType = $faker->randomElement($eventTypes);
                 $team = $faker->randomElement($gameTeams);
                 $player = $faker->randomElement($gamePlayers);
@@ -64,23 +74,25 @@ class GenerateFakeGameEventsCommand extends Command
                 $event->setGameEventType($eventType);
                 $event->setTeam($team);
                 $event->setPlayer($player);
-                $startDate = $game->getCalendarEvent()?->getStartDate() ?? new \DateTime();
+                /** @var DateTime $startDate */
+                $startDate = $game->getCalendarEvent()?->getStartDate() ?? new DateTime();
                 $eventMinute = $faker->numberBetween(1, 90);
                 $event->setTimestamp((clone $startDate)->modify('+' . $eventMinute . ' minutes'));
                 $event->setDescription($faker->optional(0.5)->sentence(6));
-                // Bei Wechseln: relatedPlayer setzen
+
                 if (in_array($eventType->getCode(), ['substitution_in', 'substitution_out'], true)) {
-                    $otherPlayers = array_filter($gamePlayers, fn($p) => $p !== $player);
+                    $otherPlayers = array_filter($gamePlayers, fn ($otherPlayer) => $otherPlayer !== $player);
                     $related = $faker->randomElement($otherPlayers ?: $gamePlayers);
                     $event->setRelatedPlayer($related);
                 }
                 $this->em->persist($event);
-                $count++;
+                ++$count;
             }
         }
         $this->em->flush();
 
         $output->writeln('<info>Fertig! Es wurden ' . $count . ' GameEvents generiert.</info>');
+
         return Command::SUCCESS;
     }
 }

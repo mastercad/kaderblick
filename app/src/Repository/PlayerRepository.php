@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Player;
+use App\Entity\Team;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -25,13 +26,17 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
     }
 
     /**
-     * Finde alle Spieler, die aktuell (ohne Enddatum oder Enddatum in der Zukunft) einer der beiden Teams zugeordnet sind
+     * Finde alle Spieler, die aktuell (ohne Enddatum oder Enddatum in der Zukunft) einer der beiden Teams zugeordnet sind.
+     *
      * @param Team[] $teams
+     *
      * @return Player[]
      */
     public function findActiveByTeams(array $teams): array
     {
-        if (empty($teams)) return [];
+        if (empty($teams)) {
+            return [];
+        }
 
         $qb = $this->createQueryBuilder('p')
             ->distinct()
@@ -39,6 +44,7 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
             ->andWhere('pta.team IN (:teams)')
             ->andWhere('(pta.endDate IS NULL OR pta.endDate >= CURRENT_DATE())')
             ->setParameter('teams', $teams);
+
         return $qb->getQuery()->getResult();
     }
 

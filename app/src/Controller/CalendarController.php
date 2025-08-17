@@ -10,6 +10,7 @@ use App\Entity\Location;
 use App\Entity\Team;
 use App\Entity\User;
 use App\Repository\CalendarEventRepository;
+use App\Repository\ParticipationRepository;
 use App\Service\EmailNotificationService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,11 +24,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-
-use App\Repository\ParticipationRepository;
 #[IsGranted('IS_AUTHENTICATED')]
 #[Route('/calendar', name: 'api_calendar_')]
-
 class CalendarController extends AbstractController
 {
     public function __construct(
@@ -58,35 +56,34 @@ class CalendarController extends AbstractController
     #[Route('/events', name: 'events', methods: ['GET'])]
     public function retrieveEvents(Request $request, CalendarEventRepository $calendarEventRepository): JsonResponse
     {
-        $start = new \DateTime($request->query->get('start'));
-        $end = new \DateTime($request->query->get('end'));
+        $start = new DateTime($request->query->get('start'));
+        $end = new DateTime($request->query->get('end'));
 
         $calendarEvents = $calendarEventRepository->findBetweenDates($start, $end);
+        /** @var User $user */
         $user = $this->getUser();
 
         $formattedEvents = array_map(function ($calendarEvent) use ($user) {
             $endDate = $calendarEvent->getEndDate();
             if (!$endDate) {
-                $endDate = new \DateTime();
+                $endDate = new DateTime();
                 $endDate->setTimestamp($calendarEvent->getStartDate()->getTimestamp());
                 $endDate->modify('23:59:59');
             }
 
             // Participation-Status für eingeloggten User holen
             $participationStatus = null;
-            if ($user) {
-                $participation = $this->participationRepository->findByUserAndEvent($user, $calendarEvent);
-                if ($participation && $participation->getStatus()) {
-                    $participationStatus = [
-                        'id' => $participation->getStatus()->getId(),
-                        'name' => $participation->getStatus()->getName(),
-                        'code' => $participation->getStatus()->getCode(),
-                        'icon' => $participation->getStatus()->getIcon(),
-                        'color' => $participation->getStatus()->getColor(),
-                    ];
-                } else {
-                    $participationStatus = null;
-                }
+            $participation = $this->participationRepository->findByUserAndEvent($user, $calendarEvent);
+            if ($participation && $participation->getStatus()) {
+                $participationStatus = [
+                    'id' => $participation->getStatus()->getId(),
+                    'name' => $participation->getStatus()->getName(),
+                    'code' => $participation->getStatus()->getCode(),
+                    'icon' => $participation->getStatus()->getIcon(),
+                    'color' => $participation->getStatus()->getColor(),
+                ];
+            } else {
+                $participationStatus = null;
             }
 
             return [

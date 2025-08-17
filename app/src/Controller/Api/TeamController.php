@@ -16,9 +16,8 @@ class TeamController extends AbstractController
         $result = [];
         foreach ($players as $player) {
             $shirtNumber = '';
-            // Suche die PlayerTeamAssignment für dieses Team
             foreach ($player->getPlayerTeamAssignments() as $pta) {
-                if ($pta->getTeam() && $pta->getTeam()->getId() === $team->getId()) {
+                if ($pta->getTeam()->getId() === $team->getId()) {
                     $shirtNumber = $pta->getShirtNumber();
                     break;
                 }
@@ -29,6 +28,7 @@ class TeamController extends AbstractController
                 'shirtNumber' => $shirtNumber,
             ];
         }
+
         return $this->json($result);
     }
 }

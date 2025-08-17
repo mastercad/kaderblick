@@ -87,6 +87,7 @@ abstract class ApiController extends AbstractController
     {
         /** @var class-string $entityClass */
         $entityClass = 'App\\Entity\\' . $entity;
+        $schema = [];
 
         if (!class_exists($entityClass)) {
             return new JsonResponse(['error' => 'Entity unknown'], 403);
@@ -161,9 +162,9 @@ abstract class ApiController extends AbstractController
                 foreach ($data as $row) {
                     $allColumns = array_merge($allColumns, array_keys((array) $row));
                 }
+
                 return array_values(array_unique($allColumns));
             })($data);
-
 
         $data['header'] = array_merge($relevantColumns, $this->additionalColumns);
 
