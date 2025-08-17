@@ -356,9 +356,7 @@ const modalTemplates = {
   {% endif %}
 };
 
-// Initialize the enhanced modal system
 document.addEventListener('DOMContentLoaded', function() {
-  // Flash Message Handling
   {% for message in app.flashes('verification_success') %}
       const modalHtml = `
           <div class="modal" id="successModal" tabindex="-1">
@@ -388,17 +386,14 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 100);
   {% endfor %}
 
-  // Wait for Modal Manager to be ready
   setTimeout(() => {
     if (window.ModalManager) {
-      // Register all modal templates
       Object.keys(modalTemplates).forEach(modalId => {
         window.ModalManager.registerModal(modalId, modalTemplates[modalId]);
       });
       
       console.log('All global modals registered successfully');
       
-      // Initialize modal functionality after registration
       initializeModalFunctionality();
     } else {
       console.error('Modal Manager not available');
@@ -414,7 +409,6 @@ function initializeModalFunctionality() {
   const registerForm = document.getElementById('registerForm');
   const authMessage = document.getElementById('authMessage');
 
-  // Login Form Handler
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -437,7 +431,6 @@ function initializeModalFunctionality() {
     });
   }
 
-  // Register Form Handler
   if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -460,7 +453,6 @@ function initializeModalFunctionality() {
     });
   }
 
-  // Logout Handler für Dropdown-Link (falls noch alte Buttons existieren)
   function handleLogout() {
     return fetch('{{ path('api_logout' )}}')
     .then(response => {
@@ -484,7 +476,11 @@ function initializeModalFunctionality() {
     });
   }
 
-  // Entfernt: Alte Button Event-Handler - Logout erfolgt jetzt über Link
+  Array.from(document.getElementsByClassName('btn-navbar-logout')).forEach(button => {
+    button.addEventListener('click', () => {
+      return handleLogout();
+    });
+  });
 
   // Load user profile for modal only
   async function loadUserProfile() {

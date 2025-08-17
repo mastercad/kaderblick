@@ -920,3 +920,7 @@
     border-bottom-width: 1px;
   }
 }
+
+.modal .bootstrap-select .dropdown-menu {
+  z-index: 2000 !important;
+}

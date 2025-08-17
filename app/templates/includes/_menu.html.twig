@@ -8,51 +8,39 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
-                {# Öffentliche Endpunkte #}
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle position-relative nav-link-kaderblick" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-globe me-1"></i>Öffentlich
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-custom">
-                        <li><a class="dropdown-item py-2" href="{{ path('api_calendar_index') }}"><i class="fas fa-calendar-alt me-2 text-primary"></i>Kalender</a></li>
-                        <li><a class="dropdown-item py-2" href="{{ path('api_teams_index') }}"><i class="fas fa-users me-2 text-success"></i>Teams</a></li>
-                        <li><a class="dropdown-item py-2" href="{{ path('api_games_index') }}"><i class="fas fa-trophy me-2 text-warning"></i>Spiele</a></li>
-                        <li><a class="dropdown-item py-2" href="{{ path('api_locations_index') }}"><i class="fas fa-map-marker-alt me-2 text-danger"></i>Spielstätten</a></li>
-                    </ul>
-                </li>
 
-                {# Spieler-Endpunkte #}
-                {% if ( is_granted('ROLE_PLAYER') ) or ( is_granted('ROLE_ADMIN') ) %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle nav-link-kaderblick" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-running me-1"></i>Spieler
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-custom">
-                            <li><a class="dropdown-item py-2" href="{{ path('api_players_index') }}"><i class="fas fa-id-card me-2 text-info"></i>Spielerübersicht</a></li>
-                            <li><a class="dropdown-item py-2" href="{{ path('api_game_events_index') }}"><i class="fas fa-clipboard-list me-2 text-primary"></i>Spielereignisse</a></li>
-                        </ul>
-                    </li>
-                {% endif %}
 
-                {# Trainer-Endpunkte #}
-                {% if ( is_granted('ROLE_COACH' ) ) or ( is_granted('ROLE_ADMIN') ) %}
-                    <li class="nav-item dropdown">
-                                                <a class="nav-link dropdown-toggle nav-link-kaderblick" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-users-cog me-1"></i>Trainer
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-custom">
-                            <li><a class="dropdown-item py-2" href="{{ path('api_teams_index') }}"><i class="fas fa-users me-2 text-success"></i>Mannschaften</a></li>
-                            <li><a class="dropdown-item py-2" href="{{ path('formations_index') }}"><i class="fas fa-th me-2 text-warning"></i>Aufstellungen</a></li>
-                            <li><a class="dropdown-item py-2" href="{{ path('api_players_index') }}"><i class="fas fa-running me-2 text-info"></i>Spieler</a></li>
-                            <li><a class="dropdown-item py-2" href="{{ path('api_game_events_index') }}"><i class="fas fa-clipboard-list me-2 text-primary"></i>Spielereignisse</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item py-2" href="{{ path('api_game_event_types_index') }}"><i class="fas fa-tags me-2 text-secondary"></i>Ereignistypen</a></li>
-                        </ul>
-                    </li>
+                {# Gäste: nur öffentliche Menüpunkte #}
+                {% if not is_granted('IS_AUTHENTICATED_FULLY') %}
+                    <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_calendar_index') }}"><i class="fas fa-calendar-alt me-1"></i>Kalender</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_teams_index') }}"><i class="fas fa-users me-1"></i>Teams</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_games_index') }}"><i class="fas fa-trophy me-1"></i>Spiele</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_locations_index') }}"><i class="fas fa-map-marker-alt me-1"></i>Spielstätten</a></li>
+                {% else %}
+                    {# Eingeloggte User: gemeinsame Menüpunkte #}
+                    <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_calendar_index') }}"><i class="fas fa-calendar-alt me-1"></i>Kalender</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_teams_index') }}"><i class="fas fa-users me-1"></i>Teams</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_games_index') }}"><i class="fas fa-trophy me-1"></i>Spiele</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_locations_index') }}"><i class="fas fa-map-marker-alt me-1"></i>Spielstätten</a></li>
+
+                    {# Spieler-Relation: eigene Spielereignisse und Spielerübersicht #}
+                    {% if app.user and app.user.userRelations is defined and app.user.userRelations|filter(r => r.type == 'spieler')|length > 0 %}
+                        <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_game_events_index') }}"><i class="fas fa-clipboard-list me-1"></i>Meine Spielereignisse</a></li>
+                        <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_players_index') }}"><i class="fas fa-id-card me-1"></i>Spielerübersicht</a></li>
+                    {% endif %}
+
+                    {# Coach-Relation: Mannschaften, Aufstellungen, Spieler, Spielereignisse, Ereignistypen #}
+                    {% if app.user and app.user.userRelations is defined and app.user.userRelations|filter(r => r.type == 'coach')|length > 0 %}
+                        <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_teams_index') }}"><i class="fas fa-users me-1"></i>Mannschaften</a></li>
+                        <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('formations_index') }}"><i class="fas fa-th me-1"></i>Aufstellungen</a></li>
+                        <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_players_index') }}"><i class="fas fa-running me-1"></i>Spieler</a></li>
+                        <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_game_events_index') }}"><i class="fas fa-clipboard-list me-1"></i>Spielereignisse</a></li>
+                        <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_game_event_types_index') }}"><i class="fas fa-tags me-1"></i>Ereignistypen</a></li>
+                    {% endif %}
                 {% endif %}
 
                 {# Admin-Endpunkte #}
-                {% if is_granted('ROLE_ADMIN') %}
+                {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPERADMIN') %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle nav-link-kaderblick" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-cog me-1"></i>Administration
@@ -99,6 +87,12 @@
                     <li class="nav-item d-lg-none">
                         <button class="nav-link btn btn-link w-100 text-start justify-content-start" data-bs-toggle="modal" data-bs-target="#profile_modal">
                             <i class="fas fa-user me-2"></i>Profil
+                        </button>
+                    </li>
+                    <li class="nav-item d-lg-none">
+                        <button class="nav-link text-danger btn btn-navbar-logout w-100 text-start justify-content-start" id="button_logout">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Abmelden
                         </button>
                     </li>
                 {% endif %}
@@ -153,10 +147,10 @@
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item text-danger" href="/logout">
+                                <button class="dropdown-item text-danger btn btn-navbar-logout">
                                     <i class="fas fa-sign-out-alt me-2"></i>
                                     Abmelden
-                                </a>
+                                </button>
                             </li>
                         </ul>
                     </li>
