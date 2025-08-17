@@ -225,6 +225,14 @@ jobs:
             echo "Starte neuen Staging für vorbereitungen"
             PMA_PORT=18081 API_PORT=18000 VUE_PORT=18080 docker compose -p staging up -d --build --force-recreate api vue-frontend
             
+            echo "Starte migrations"
+            docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
+
+            ##### WORKAROUND FÜR FIXTURES #######
+            echo "Spiele Fixtures für stammdaten ein"
+            docker compose -p staging exec -T api env APP_ENV=dev composer install --dev
+            docker compose -p staging exec -T api bin/console doctrine:fixtures:load -n --env=prod --group=master
+
             echo "Starte composer install"
             docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
 
@@ -235,15 +243,6 @@ jobs:
             if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
               docker compose -p staging exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
             fi
-
-            echo "Starte migrations"
-            docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
-
-            ##### WORKAROUND FÜR FIXTURES #######
-            echo "Spiele Fixtures für stammdaten ein"
-            docker compose -p staging exec -T api env APP_ENV=dev composer install --dev
-            docker compose -p staging exec -T api bin/console doctrine:fixtures:load -n --env=prod --group=master
-            docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
 
             # Vor Aktivierung alte Production-Container stoppen
             echo "Stoppe aktuelle production"
