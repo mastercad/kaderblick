@@ -58,6 +58,7 @@ class GenerateFakeGameEventsCommand extends Command
                         return true;
                     }
                 }
+
                 return false;
             });
 
