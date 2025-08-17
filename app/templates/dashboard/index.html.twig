@@ -13,11 +13,6 @@
         </button>
     </div>
 
-{% block stylesheets %}
-    {{ parent() }}
-    <link href='/css/dashboard.css' rel='stylesheet' />
-{% endblock %}
-
     <div id="widgetContainer">
         <div class="row widget-grid" id="widgetGrid">
             {% for widget in widgets %}
@@ -50,44 +45,16 @@
             {% endfor %}
         </div>
     </div>
+{% endif %}
 </div>
 
-{# Modal für neues Widget #}
-<div class="modal fade" id="addWidgetModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Widget hinzufügen</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="list-group">
-                    <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="calendar">
-                        <i class="fas fa-calendar"></i> Kalender
-                    </button>
-                    <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="stats">
-                        <i class="fas fa-chart-bar"></i> Statistiken
-                    </button>
-                    <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="messages">
-                        <i class="fas fa-envelope"></i> Nachrichten
-                    </button>
-                    <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="news">
-                        <i class="fas fa-newspaper"></i> News
-                    </button>
-                    <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="upcoming_events">
-                        <i class="fas fa-newspaper"></i> Anstehende Veranstaltungen
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
     {% if ( is_granted('ROLE_USER') ) %}
+    <!-- Dashboard Modal System -->
+    <script src="/js/dashboard-modals.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script>
 

@@ -1,0 +1,13 @@
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Court background -->
+  <rect width="400" height="300" fill="#4682B4" stroke="white" stroke-width="3"/>
+  
+  <!-- Goal area (6m) -->
+  <path d="M 0 69 L 64 69 Q 64 150 64 231 L 0 231" fill="none" stroke="white" stroke-width="2"/>
+  
+  <!-- Free throw line (9m) -->
+  <path d="M 0 45 Q 126 75 126 150 Q 126 225 0 255" fill="none" stroke="white" stroke-width="2"/>
+  
+  <!-- Penalty spot (7m) -->
+  <circle cx="28" cy="150" r="2" fill="white"/>
+</svg>

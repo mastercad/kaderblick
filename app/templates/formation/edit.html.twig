@@ -3,18 +3,21 @@
 
 {% block title %}Aufstellung bearbeiten{% endblock %}
 
-{% block stylesheets %}
-    {{ parent() }}
-    <link href='/css/formation.css' rel='stylesheet' />
-{% endblock %}
-
 {% block body %}
     <div class="container mt-4">
         <h1>{{ formation.name }} <small class="text-muted">Aufstellung bearbeiten</small></h1>
         
         <div class="row">
-            <div class="col-md-8">
-                <div class="pitch formation-background" id="formationPitch">
+            <div class="col-12 col-lg-8">
+                <div class="pitch formation-background sports-field editable {{ formation.formationType.cssClass|default('field-default') }}" 
+                     id="formationPitch"
+                     {% if formation.formationType.backgroundPath %}
+                     style="background-image: url('/images/formation/{{ formation.formationType.backgroundPath }}');"
+                     data-background-image="{{ formation.formationType.backgroundPath }}"
+                     {% else %}
+                     style="background-image: url('/images/formation/fussballfeld_haelfte.jpg');"
+                     data-background-image="fussballfeld_haelfte.jpg"
+                     {% endif %}>
                     {# Spieler werden hier per JavaScript hinzugefügt #}
                 </div>
                 
@@ -24,7 +27,7 @@
                 </div>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-12 col-lg-4">
                 {% if not availablePlayers.singleTeam %}
                 <div class="card mb-3">
                     <div class="card-header">
@@ -41,7 +44,7 @@
                 </div>
                 {% endif %}
 
-                <div class="card">
+                <div class="card mb-3">
                     <div class="card-header">
                         Verfügbare Spieler
                     </div>
@@ -62,7 +65,7 @@
                     </div>
                 </div>
                 
-                <div class="card">
+                <div class="card mb-3">
                     <div class="card-header">
                         Spielerliste
                     </div>
@@ -71,7 +74,7 @@
                     </div>
                 </div>
                 
-                <div class="card mt-3">
+                <div class="card mb-3">
                     <div class="card-header">
                         Aufstellungs-Code
                     </div>
@@ -109,6 +112,41 @@
             const saveBtn = document.getElementById('saveFormation');
             const formationCode = document.getElementById('formationCode');
             const teamSelector = document.getElementById('teamSelector');
+            
+            // Feld-Proportionen basierend auf Hintergrundbild anpassen
+            function adjustPitchProportions() {
+                const backgroundImage = pitch.dataset.backgroundImage;
+                if (backgroundImage) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const aspectRatio = this.width / this.height;
+                        const maxWidth = pitch.parentElement.clientWidth - 40; // 40px margin
+                        const maxHeight = 600; // Maximale Höhe
+                        
+                        let width, height;
+                        if (aspectRatio > 1) {
+                            // Querformat
+                            width = Math.min(maxWidth, maxHeight * aspectRatio);
+                            height = width / aspectRatio;
+                        } else {
+                            // Hochformat oder quadratisch
+                            height = Math.min(maxHeight, maxWidth / aspectRatio);
+                            width = height * aspectRatio;
+                        }
+                        
+                        pitch.style.width = width + 'px';
+                        pitch.style.height = height + 'px';
+                        pitch.style.backgroundSize = 'cover';
+                        pitch.style.backgroundPosition = 'center';
+                        pitch.style.backgroundRepeat = 'no-repeat';
+                    };
+                    img.src = `/images/formation/${backgroundImage}`;
+                }
+            }
+            
+            // Proportionen beim Laden und bei Fenstergröße-Änderung anpassen
+            adjustPitchProportions();
+            window.addEventListener('resize', adjustPitchProportions);
             
             let players = [];
             let nextPlayerNumber = 1;
@@ -232,15 +270,45 @@
                 }
             };
             
+            // Freie Position für neuen Spieler finden
+            function findFreePosition() {
+                const gridSize = 15; // 15% Abstand zwischen Spielern
+                const startX = 15;   // Beginne bei 15% vom linken Rand
+                const startY = 15;   // Beginne bei 15% vom oberen Rand
+                
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 5; col++) {
+                        const x = startX + (col * gridSize);
+                        const y = startY + (row * gridSize);
+                        
+                        // Prüfe ob Position bereits belegt ist
+                        const isOccupied = players.some(player => 
+                            Math.abs(player.x - x) < 10 && Math.abs(player.y - y) < 10
+                        );
+                        
+                        if (!isOccupied && x <= 85 && y <= 85) {
+                            return { x, y };
+                        }
+                    }
+                }
+                
+                // Fallback: Zufällige Position
+                return { 
+                    x: 20 + Math.random() * 60, 
+                    y: 20 + Math.random() * 60 
+                };
+            }
+
             // Generischen Spieler hinzufügen (alte Funktionalität beibehalten)
             addGenericPlayerBtn.addEventListener('click', function() {
                 const genericNumber = nextPlayerNumber++;
+                const position = findFreePosition();
                 const player = {
                     id: Date.now(),
                     number: genericNumber,
                     displayNumber: `G${genericNumber}`,
-                    x: 50,
-                    y: 50,
+                    x: position.x,
+                    y: position.y,
                     name: `Spieler ${genericNumber}`,
                     playerId: null, // Kein echter Spieler
                     isRealPlayer: false
@@ -254,7 +322,7 @@
                 pitch.innerHTML = '';
                 players.forEach(player => {
                     const playerEl = document.createElement('div');
-                    playerEl.className = 'player';
+                    playerEl.className = 'formation-player';
                     playerEl.style.left = `${player.x}%`;
                     playerEl.style.top = `${player.y}%`;
                     playerEl.dataset.id = player.id;
@@ -283,14 +351,14 @@
                     const displayNumber = player.displayNumber || player.number;
                     
                     playerItem.innerHTML = `
-                        <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center flex-grow-1 me-2">
                             <span class="badge ${player.isRealPlayer ? 'bg-success' : 'bg-secondary'} me-2">${displayNumber}</span>
-                            <input type="text" class="form-control form-control-sm d-inline-block w-auto" 
+                            <input type="text" class="form-control form-control-sm flex-grow-1" 
                                    value="${player.name}" data-id="${player.id}" 
                                    onchange="updatePlayerName(this)" ${player.playerId ? 'readonly' : ''}>
                             ${playerTypeIcon}
                         </div>
-                        <button class="btn btn-sm btn-danger" onclick="removePlayer(${player.id})">
+                        <button class="btn btn-sm btn-danger flex-shrink-0" onclick="removePlayer(${player.id})">
                             <i class="bi bi-trash"></i>
                         </button>
                     `;
@@ -305,6 +373,7 @@
                 
                 element.addEventListener('mousedown', function(e) {
                     isDragging = true;
+                    element.classList.add('dragging');
                     offsetX = e.clientX - element.getBoundingClientRect().left;
                     offsetY = e.clientY - element.getBoundingClientRect().top;
                     element.style.cursor = 'grabbing';
@@ -332,6 +401,7 @@
                 
                 document.addEventListener('mouseup', function() {
                     isDragging = false;
+                    element.classList.remove('dragging');
                     element.style.cursor = 'move';
                 });
             }

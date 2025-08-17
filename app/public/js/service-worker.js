@@ -1,5 +1,10 @@
 const CACHE_NAME = 'kaderblick-pwa-cache-v1';
-const urlsToCache = ['/', '/css/app.css', '/js/app.js', '/icon-192x192.png'];
+const urlsToCache = [
+  '/',
+  '/css/app.css',
+  '/js/app.js',
+  '/images/icon_512x512.png'
+];
 
 // Installations-Event (Caching)
 self.addEventListener('install', event => {

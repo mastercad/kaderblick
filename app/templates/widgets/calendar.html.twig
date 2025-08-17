@@ -14,7 +14,7 @@
             center: 'title',
             right: 'next'
         },
-        events: '{{ path('calendar_events') }}',
+        events: '{{ path('api_calendar_events') }}',
         dayCellDidMount: function(info) {
             console.log(info);
             const date = new Date(info.date);

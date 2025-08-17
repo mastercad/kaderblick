@@ -1,0 +1,315 @@
+/* ==========================================================================
+   CSS Custom Properties (Variables) - Central Theme System - CLEANED
+   ========================================================================== */
+
+:root {
+  /* ==========================================================================
+     Global Design Tokens (Theme-Independent)
+     ========================================================================== */
+  
+  /* Font System - Enhanced with Modern Web Fonts */
+  --font-family-base: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'SF Mono', Consolas, 'Liberation Mono', Courier, monospace;
+  --font-family-display: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;   /* 12px */
+  --font-size-sm: 0.875rem;  /* 14px */
+  --font-size-base: 1rem;    /* 16px */
+  --font-size-lg: 1.125rem;  /* 18px */
+  --font-size-xl: 1.25rem;   /* 20px */
+  --font-size-2xl: 1.5rem;   /* 24px */
+  --font-size-3xl: 1.875rem; /* 30px */
+  --font-size-4xl: 2.25rem;  /* 36px */
+  
+  /* Line Heights */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* Spacing Scale - 8px base */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+  --space-20: 5rem;    /* 80px */
+  
+  /* Border Radius */
+  --radius-sm: 0.25rem;   /* 4px */
+  --radius-md: 0.5rem;    /* 8px */
+  --radius-lg: 0.75rem;   /* 12px */
+  --radius-xl: 1rem;      /* 16px */
+  --radius-2xl: 1.5rem;   /* 24px */
+  --radius-full: 9999px;  /* circular */
+  
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 300ms ease-in-out;
+  --transition-slow: 500ms ease-in-out;
+  
+  /* Z-Index Scale */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
+  
+  /* Common spacing patterns */
+  --section-padding: var(--space-8) var(--space-6);
+  --card-padding: var(--space-6);
+  --button-padding: var(--space-3) var(--space-6);
+  --input-padding: var(--space-3) var(--space-4);
+  
+  /* Common sizing patterns */
+  --header-height: 4rem;
+  --sidebar-width: 16rem;
+  --modal-max-width: 32rem;
+  --container-max-width: 80rem;
+  
+  /* Animation durations */
+  --duration-instant: 0ms;
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 500ms;
+  --duration-slower: 750ms;
+}
+
+/* ==========================================================================
+   Light Theme (Default)
+   ========================================================================== */
+
+:root,
+[data-bs-theme="light"] {
+  /* Semantic Colors - Football Theme Based - Enhanced */
+  --color-primary: #10b981;        /* More vibrant emerald green */
+  --color-primary-hover: #059669;
+  --color-primary-light: #d1fae5;
+  --color-primary-dark: #047857;
+  
+  --color-secondary: #6b7280;      /* Modern neutral gray */
+  --color-secondary-hover: #4b5563;
+  --color-secondary-light: #f3f4f6;
+  --color-secondary-dark: #374151;
+  
+  --color-success: #10b981;        /* Keep consistent with primary */
+  --color-success-hover: #059669;
+  --color-success-light: #d1fae5;
+  --color-success-dark: #047857;
+  
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-warning-light: #fef3c7;
+  --color-warning-dark: #b45309;
+  
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-danger-light: #fecaca;
+  --color-danger-dark: #b91c1c;
+  
+  --color-info: #0ea5e9;           /* Sky blue for info, distinct from primary */
+  --color-info-hover: #0284c7;
+  --color-info-light: #e0f2fe;
+  --color-info-dark: #0369a1;
+  
+  /* Surface Colors - LIGHT MODE */
+  --surface-base: #ffffff;
+  --surface-subtle: #f8fafc;
+  --surface-muted: #f1f5f9;
+  --surface-emphasized: #e2e8f0;
+  
+  /* Text Colors - LIGHT MODE */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+  --text-inverse: #ffffff;
+  
+  /* Border Colors - LIGHT MODE */
+  --border-base: #e2e8f0;
+  --border-muted: #f1f5f9;
+  --border-emphasized: #cbd5e1;
+  
+  /* Interactive States - LIGHT MODE */
+  --hover-bg: rgba(34, 197, 94, 0.05);      /* Green hover */
+  --focus-ring: rgba(34, 197, 94, 0.2);     /* Green focus ring */
+  
+  /* Football Theme Colors */
+  --football-primary: #10b981;     /* Modern emerald green */
+  --football-secondary: #059669;   /* Darker green */
+  --football-accent: #f59e0b;      /* Amber for highlights */
+  --football-field: #10b981;       /* Field color */
+  
+  /* Gradients - Light Mode - Enhanced */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  --gradient-secondary: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-dark) 100%);
+  --gradient-success: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
+  --gradient-warning: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning-dark) 100%);
+  --gradient-danger: linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%);
+  --gradient-info: linear-gradient(135deg, var(--color-info) 0%, var(--color-info-dark) 100%);
+  --gradient-football: linear-gradient(135deg, var(--football-primary) 0%, var(--football-secondary) 100%);
+  
+  /* Modern Gradient Effects */
+  --gradient-hero: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  --gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+  --gradient-glass: linear-gradient(145deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+  
+  /* Card Header Gradients - Light Mode */
+  --gradient-card-header: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  --gradient-card-header-subtle: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  
+  /* Body & Layout - Light Mode */
+  --body-bg: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  --container-bg: rgba(255, 255, 255, 0.95);
+  --navbar-bg: var(--gradient-football);
+  --header-bg: var(--gradient-card-header);
+  
+  /* Shadows - Light Mode */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* ==========================================================================
+   Dark Theme
+   ========================================================================== */
+
+[data-bs-theme="dark"],
+.dark-mode {
+  /* Semantic Colors - Dark Mode with Enhanced Green Theme */
+  --color-primary: #34d399;        /* Brighter emerald for dark mode */
+  --color-primary-hover: #10b981;
+  --color-primary-light: #064e3b;
+  --color-primary-dark: #059669;
+  
+  --color-secondary: #94a3b8;
+  --color-secondary-hover: #cbd5e1;
+  --color-secondary-light: #1e293b;
+  --color-secondary-dark: #64748b;
+  
+  --color-success: #34d399;        /* Keep consistent with primary */
+  --color-success-hover: #10b981;
+  --color-success-light: #064e3b;
+  --color-success-dark: #059669;
+  
+  --color-warning: #fbbf24;
+  --color-warning-hover: #f59e0b;
+  --color-warning-light: #78350f;
+  --color-warning-dark: #92400e;
+  
+  --color-danger: #f87171;
+  --color-danger-hover: #ef4444;
+  --color-danger-light: #7f1d1d;
+  --color-danger-dark: #991b1b;
+  
+  --color-info: #38bdf8;           /* Sky blue for info */
+  --color-info-hover: #0ea5e9;
+  --color-info-light: #0c4a6e;
+  --color-info-dark: #0369a1;
+  
+  /* Surface Colors - DARK MODE */
+  --surface-base: #0f172a;
+  --surface-subtle: #1e293b;
+  --surface-muted: #334155;
+  --surface-emphasized: #475569;
+  
+  /* Text Colors - DARK MODE */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-subtle: #64748b;
+  --text-inverse: #0f172a;
+  
+  /* Border Colors - DARK MODE */
+  --border-base: #334155;
+  --border-muted: #1e293b;
+  --border-emphasized: #475569;
+  
+  /* Interactive States - DARK MODE */
+  --hover-bg: rgba(74, 222, 128, 0.1);      /* Green hover for dark mode */
+  --focus-ring: rgba(74, 222, 128, 0.3);    /* Green focus ring */
+  
+  /* Football Theme Colors - Dark variants */
+  --football-primary: #34d399;     /* Brighter emerald for dark */
+  --football-secondary: #10b981;   /* Standard emerald */
+  --football-accent: #fbbf24;      /* Warmer amber */
+  --football-field: #065f46;       /* Darker field for contrast */
+  
+  /* Gradients - Dark Mode - Enhanced */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  --gradient-secondary: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-dark) 100%);
+  --gradient-success: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
+  --gradient-warning: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning-dark) 100%);
+  --gradient-danger: linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%);
+  --gradient-info: linear-gradient(135deg, var(--color-info) 0%, var(--color-info-dark) 100%);
+  --gradient-football: linear-gradient(135deg, var(--football-primary) 0%, var(--football-secondary) 100%);
+  
+  /* Modern Dark Mode Gradient Effects */
+  --gradient-hero: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+  --gradient-card: linear-gradient(145deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.7) 100%);
+  --gradient-glass: linear-gradient(145deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+  
+  /* Card Header Gradients - Dark mode green theme */
+  --gradient-card-header: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+  --gradient-card-header-subtle: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+  
+  /* Body & Layout - Dark Mode */
+  --body-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  --container-bg: rgba(30, 41, 59, 0.95);
+  --navbar-bg: var(--gradient-football);
+  --header-bg: var(--gradient-card-header);
+  
+  /* Shadow adjustments for dark mode */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* ==========================================================================
+   Dynamic Component Variables
+   ========================================================================== */
+
+/* Event Color System - Uses CSS custom properties for dynamic theming */
+.event-themed {
+  --event-bg: color-mix(in srgb, var(--event-color) 10%, transparent);
+  --event-border: var(--event-color);
+  --event-text: var(--event-color);
+}
+
+/* Formation Position Variables */
+.formation-player {
+  --player-bg: var(--surface-base);
+  --player-border: var(--color-primary);
+  --player-text: var(--text-primary);
+  --player-shadow: var(--shadow-md);
+}
+
+.formation-player.selected {
+  --player-bg: var(--color-primary);
+  --player-text: var(--text-inverse);
+}
+
+/* Progress Bar Theming */
+.progress-themed {
+  --progress-bg: var(--surface-muted);
+  --progress-fill: var(--gradient-primary);
+}

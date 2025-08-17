@@ -1,0 +1,589 @@
+/* ==========================================================================
+   Calendar Components - Modern Event Management System
+   ========================================================================== */
+
+/* ==========================================================================
+   Calendar Container - Card-like styling to match other components
+   ========================================================================== */
+
+.calendar-container {
+    background: var(--gradient-card);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: all var(--transition-base);
+    color: var(--text-primary);
+    backdrop-filter: blur(20px);
+    position: relative;
+}
+
+.calendar-container:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-2xl);
+}
+
+.calendar-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient-glass);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+    pointer-events: none;
+}
+
+.calendar-container:hover::before {
+    opacity: 1;
+}
+
+#calendar {
+    position: relative;
+    z-index: 1;
+}
+
+/* ==========================================================================
+   FullCalendar Theme Integration
+   ========================================================================== */
+
+/* Calendar header */
+.fc-header-toolbar {
+    background: var(--header-bg);
+    padding: var(--space-6);
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border-base);
+}
+
+.fc-toolbar-title {
+    color: var(--text-inverse);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Calendar buttons */
+.fc-button-primary {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--text-inverse);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-4);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--transition-fast);
+}
+
+.fc-button-primary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+.fc-button-primary:disabled {
+    opacity: 0.5;
+    transform: none;
+}
+
+.fc-button-active {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* ==========================================================================
+   Calendar Grid & Cells
+   ========================================================================== */
+
+/* Day cells */
+.fc-daygrid-day {
+    background: var(--surface-base);
+    border-color: var(--border-base);
+    transition: background-color var(--transition-fast);
+}
+
+.fc-daygrid-day:hover {
+    background: var(--hover-bg);
+}
+
+.fc-daygrid-day.fc-day-today {
+    background: var(--color-primary-light);
+    position: relative;
+}
+
+.fc-daygrid-day.fc-day-today::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--color-primary);
+}
+
+/* Day numbers */
+.fc-daygrid-day-number {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+    padding: var(--space-2);
+    transition: color var(--transition-fast);
+}
+
+.fc-day-today .fc-daygrid-day-number {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-bold);
+}
+
+/* Column headers */
+.fc-col-header-cell {
+    background: var(--surface-subtle);
+    color: var(--text-secondary);
+    border-color: var(--border-base);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: var(--space-3);
+}
+
+/* ==========================================================================
+   Event Styling with CSS Variables
+   ========================================================================== */
+
+/* Base event styling */
+.fc-event {
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    padding: var(--space-1) var(--space-2);
+    margin: 1px;
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    opacity: 0.9;
+}
+
+.fc-event:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    z-index: 10;
+    opacity: 1;
+}
+
+/* Event with dynamic color theming */
+.fc-event.event-themed {
+    background: var(--event-color) !important;
+    color: var(--text-inverse) !important;
+    border-left: 4px solid color-mix(in srgb, var(--event-color) 80%, black) !important;
+}
+
+/* Event types with semantic colors */
+.fc-event.event-match {
+    background: var(--color-danger) !important;
+    color: var(--text-inverse) !important;
+}
+
+.fc-event.event-training {
+    background: var(--color-success) !important;
+    color: var(--text-inverse) !important;
+}
+
+.fc-event.event-meeting {
+    background: var(--color-info) !important;
+    color: var(--text-inverse) !important;
+}
+
+.fc-event.event-other {
+    background: var(--color-secondary) !important;
+    color: var(--text-inverse) !important;
+}
+
+/* Event content */
+.fc-event-title {
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-tight);
+}
+
+.fc-event-time {
+    font-weight: var(--font-weight-normal);
+    opacity: 0.9;
+}
+
+/* ==========================================================================
+   Event Type Filters
+   ========================================================================== */
+
+.event-filters {
+    background: var(--surface-base);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-base);
+}
+
+.filter-title {
+    margin: 0 0 var(--space-4) 0;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.event-type-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.event-type-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-subtle);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    user-select: none;
+}
+
+.event-type-filter:hover {
+    background: var(--hover-bg);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.event-type-filter.active {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary-dark);
+}
+
+.event-type-color {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.event-type-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.event-type-count {
+    background: var(--surface-muted);
+    color: var(--text-secondary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    margin-left: auto;
+}
+
+.event-type-filter.active .event-type-count {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+}
+
+/* ==========================================================================
+   Calendar Filter Integration (Legacy Support)
+   ========================================================================== */
+
+.calendar-filter .form-check {
+    margin: var(--space-2) 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    transition: background-color var(--transition-fast);
+}
+
+.calendar-filter .form-check:hover {
+    background-color: var(--hover-bg);
+}
+
+.calendar-filter .form-check-input:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+/* ==========================================================================
+   Event List View
+   ========================================================================== */
+
+.calendar-events .list-group-item {
+    border: none;
+    border-radius: var(--radius-lg) !important;
+    margin-bottom: var(--space-2);
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+    background: var(--surface-base);
+    color: var(--text-primary);
+    padding: var(--space-4);
+}
+
+.calendar-events .list-group-item:hover {
+    transform: translateX(2px);
+    box-shadow: var(--shadow-md);
+}
+
+.calendar-events .list-group-item h6 {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--space-2);
+}
+
+.calendar-events .list-group-item small {
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-normal);
+}
+
+/* Event-themed list items */
+.calendar-events .event-list-item {
+    border-left: 4px solid var(--event-color);
+    background: color-mix(in srgb, var(--event-color) 5%, transparent);
+}
+
+.event-badge {
+    background: var(--event-color, var(--color-primary)) !important;
+    color: var(--text-inverse);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+/* ==========================================================================
+   Dark Mode Calendar Adaptations
+   ========================================================================== */
+
+[data-bs-theme="dark"] .fc {
+    background: var(--surface-base);
+    color: var(--text-primary);
+}
+
+[data-bs-theme="dark"] .fc-daygrid-day {
+    background: var(--surface-base);
+    border-color: var(--border-base);
+}
+
+[data-bs-theme="dark"] .fc-col-header-cell {
+    background: var(--surface-subtle);
+    color: var(--text-secondary);
+    border-color: var(--border-base);
+}
+
+[data-bs-theme="dark"] .fc-daygrid-day-number {
+    color: var(--text-primary);
+}
+
+[data-bs-theme="dark"] .fc-day-today {
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--surface-base));
+}
+
+[data-bs-theme="dark"] .fc-button-primary {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--text-inverse);
+}
+
+[data-bs-theme="dark"] .fc-button-primary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ==========================================================================
+   Responsive Calendar Design
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    #calendar {
+        border-radius: var(--radius-lg);
+        margin: var(--space-4);
+    }
+    
+    .fc-header-toolbar {
+        padding: var(--space-4);
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+    
+    .fc-toolbar-title {
+        font-size: var(--font-size-xl);
+        order: -1;
+    }
+    
+    .fc-button-group {
+        display: flex;
+        justify-content: center;
+    }
+    
+    .fc-event {
+        font-size: var(--font-size-xs);
+        padding: 1px var(--space-1);
+    }
+    
+    .event-filters {
+        margin: var(--space-4);
+        padding: var(--space-4);
+    }
+    
+    .event-type-filters {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    
+    .calendar-events .list-group-item {
+        padding: var(--space-3);
+    }
+    
+    /* Disable hover transforms on mobile */
+    .fc-event:hover,
+    .calendar-events .list-group-item:hover,
+    .event-type-filter:hover {
+        transform: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .fc-daygrid-day-number {
+        font-size: var(--font-size-xs);
+    }
+    
+    .fc-col-header-cell {
+        font-size: var(--font-size-xs);
+        padding: var(--space-2);
+    }
+    
+    .fc-event {
+        margin: 0;
+        border-radius: var(--radius-sm);
+    }
+}
+
+/* ==========================================================================
+   Calendar Loading States
+   ========================================================================== */
+
+.calendar-loading {
+    position: relative;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-base);
+    border-radius: var(--radius-xl);
+}
+
+.calendar-loading::after {
+    content: '';
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-base);
+    border-top-color: var(--color-primary);
+    border-radius: var(--radius-full);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ==========================================================================
+   Event Creation & Editing
+   ========================================================================== */
+
+.calendar-event-form {
+    background: var(--surface-base);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-base);
+}
+
+.event-color-picker {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin: var(--space-3) 0;
+}
+
+.color-option {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--border-base);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-md);
+}
+
+.color-option.selected {
+    border-color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.color-option.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-inverse);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-sm);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* ==========================================================================
+   Accessibility Improvements
+   ========================================================================== */
+
+.fc-event:focus-visible,
+.event-type-filter:focus-visible,
+.color-option:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .fc-event {
+        border: 2px solid currentColor;
+    }
+    
+    .event-type-filter {
+        border-width: 2px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .fc-event,
+    .event-type-filter,
+    .calendar-events .list-group-item,
+    .color-option {
+        transition: none;
+    }
+    
+    .fc-event:hover,
+    .event-type-filter:hover,
+    .calendar-events .list-group-item:hover,
+    .color-option:hover {
+        transform: none;
+    }
+    
+    .calendar-loading::after {
+        animation: none;
+    }
+}

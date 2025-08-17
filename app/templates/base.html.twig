@@ -1,4 +1,4 @@
-{# templates/base.html.twig #}
+{# templates/base.html.twig - Refactored with Professional Modal Management #}
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -14,15 +14,29 @@
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}Mein Dashboard{% endblock %}</title>
+    <title>{% block title %}Kaderblick - Modernes Fußball-Management{% endblock %}</title>
+    
+    <!-- Modern Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.css' />
     <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@5.11.3/main.css' />
+    
+    <!-- Modern CSS Architecture -->
     <link rel='stylesheet' href='/css/app.css' />
-    <link rel='stylesheet' href='/css/components.css' />
-    <link rel='stylesheet' href='/css/calendar.css' />
+    <link rel='stylesheet' href='/css/glass-theme.css' />
+    <link rel='stylesheet' href='/css/modal-system.css' />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/css/variables.css" as="style" />
+    <link rel="preload" href="/css/base.css" as="style" />
+    <link rel="preload" href="/css/components.css" as="style" />
+    <link rel="preload" href="/css/modal-system.css" as="style" />
 
     <link rel="manifest" href="/manifest.json">
 
@@ -55,812 +69,744 @@
 </div>
 {% endif %}
 
-<!-- Modal Container - AUSSERHALB des Hauptcontainers -->
-<div id="modalContainer"></div>
+<!-- Global Alert Container for JS/API feedback -->
+<div id="globalAlertContainer" class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 2000; min-width: 320px; max-width: 90vw;"></div>
 
-<!-- JavaScript und Scripte -->
+<!-- Professional Modal Container - AUSSERHALB des Hauptcontainers -->
+<div id="modalContainer" class="modal-container-root"></div>
 
+<!-- JavaScript Libraries -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/de.js'></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/i18n/defaults-de_DE.min.js"></script>
+
+<!-- Modal Management System -->
+<script src="/js/modal-manager.js"></script>
+<script src="/js/modal-template-generator.js"></script>
+
+<script>
+/**
+ * Enhanced Modal System Integration
+ * Professional JavaScript for dynamic modal management
+ */
+
+// Global functions that need to be accessible
+function isLoggedIn() {
+  return fetch('{{ path('api_about_me' )}}')
+  .then(response => {
+    if (response.status === 200) {
+      return response.json();
+    } else {
+      throw new Error('Not logged in');
+    }
+  })
+  .then(user => {
+    return true;
+  })
+  .catch(error => {
+    return false;
+  });
+}
+
+// Entfernt: updateNavbar() - nicht mehr nötig mit Server-side Rendering
+
+async function updateUnreadMessagesCount() {
+    try {
+        const response = await fetchWithRefresh('{{ path('api_messages_unread_count') }}');
+        if (response.ok) {
+            const data = await response.json();
+            const badge = document.getElementById('unread_messages_count');
+            if (data.count > 0) {
+                badge.textContent = data.count;
+                badge.classList.remove('d-none');
+            } else {
+                badge.classList.add('d-none');
+            }
+        }
+    } catch (error) {
+        console.error('Fehler beim Laden der ungelesenen Nachrichten:', error);
+    }
+}
+
+function handleLoginSuccess(token) {
+  // Nach Login einfach neu laden - Server-side Rendering regelt alles
+  if (window.ModalManager) {
+    window.ModalManager.hideModal('auth_modal');
+  }
+  location.href=location.href;
+}
+
+// Modal HTML Templates
+const modalTemplates = {
+  auth_modal: `
     <div class="modal fade" id="auth_modal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <ul class="nav nav-tabs" id="authTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login"
-                      type="button" role="tab">Login</button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register"
-                      type="button" role="tab">Registrieren</button>
-            </li>
-          </ul>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
-        </div>
-
-        <div class="modal-body">
-          <div class="tab-content">
-            <!-- Login Tab -->
-            <div class="tab-pane fade show active" id="login" role="tabpanel">
-              <form id="loginForm">
-                <div class="mb-3">
-                  <label for="loginEmail" class="form-label">E-Mail</label>
-                  <input type="email" class="form-control" id="loginEmail" required>
-                </div>
-                <div class="mb-3">
-                  <label for="loginPassword" class="form-label">Passwort</label>
-                  <input type="password" class="form-control" id="loginPassword" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100">Login</button>
-              </form>
-            </div>
-
-            <!-- Register Tab -->
-            <div class="tab-pane fade" id="register" role="tabpanel">
-              <form id="registerForm">
-                <div class="mb-3">
-                  <label for="registerName" class="form-label">Name</label>
-                  <input type="text" class="form-control" id="registerName" required>
-                </div>
-                <div class="mb-3">
-                  <label for="registerEmail" class="form-label">E-Mail</label>
-                  <input type="email" class="form-control" id="registerEmail" required>
-                </div>
-                <div class="mb-3">
-                  <label for="registerPassword" class="form-label">Passwort</label>
-                  <input type="password" class="form-control" id="registerPassword" required>
-                </div>
-                <button type="submit" class="btn btn-success w-100">Registrieren</button>
-              </form>
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <ul class="nav nav-tabs" id="authTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab">Login</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button" role="tab">Registrieren</button>
+              </li>
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+          </div>
+          <div class="modal-body">
+            <div class="tab-content">
+              <div class="tab-pane fade show active" id="login" role="tabpanel">
+                <form id="loginForm">
+                  <div class="mb-3">
+                    <label for="loginEmail" class="form-label">E-Mail</label>
+                    <input type="email" class="form-control" id="loginEmail" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="loginPassword" class="form-label">Passwort</label>
+                    <input type="password" class="form-control" id="loginPassword" required>
+                  </div>
+                  <button type="submit" class="btn btn-primary w-100">Login</button>
+                </form>
+              </div>
+              <div class="tab-pane fade" id="register" role="tabpanel">
+                <form id="registerForm">
+                  <div class="mb-3">
+                    <label for="registerName" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="registerName" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="registerEmail" class="form-label">E-Mail</label>
+                    <input type="email" class="form-control" id="registerEmail" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="registerPassword" class="form-label">Passwort</label>
+                    <input type="password" class="form-control" id="registerPassword" required>
+                  </div>
+                  <button type="submit" class="btn btn-success w-100">Registrieren</button>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div class="modal-footer d-block text-center">
-          <div id="authMessage" class="text-muted small"></div>
+          <div class="modal-footer d-block text-center">
+            <div id="authMessage" class="text-muted small"></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-
-    {% if ( is_granted('ROLE_USER') ) %}
+  `,
+  
+  {% if ( is_granted('ROLE_USER') ) %}
+  profile_modal: `
     <div class="modal fade" id="profile_modal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Profil bearbeiten</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Profil bearbeiten</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+          </div>
+          <div class="modal-body">
+            <form id="profileForm">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="profileFirstName" class="form-label">Vorname</label>
+                  <input type="text" class="form-control" id="profileFirstName" required>
                 </div>
-                <div class="modal-body">
-                    <form id="profileForm">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="profileFirstName" class="form-label">Vorname</label>
-                                <input type="text" class="form-control" id="profileFirstName" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="profileLastName" class="form-label">Nachname</label>
-                                <input type="text" class="form-control" id="profileLastName" required>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12 mb-3">
-                                <label for="profileEmail" class="form-label">E-Mail</label>
-                                <input type="email" class="form-control" id="profileEmail" required>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="profileHeight" class="form-label">Körpergröße (cm)</label>
-                                <input type="number" class="form-control" id="profileHeight">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="profileWeight" class="form-label">Gewicht (kg)</label>
-                                <input type="number" class="form-control" id="profileWeight">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="profileShoeSize" class="form-label">Schuhgröße (EU)</label>
-                                <input type="number" step="0.5" class="form-control" id="profileShoeSize">
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="profileShirtSize" class="form-label">T-Shirt Größe</label>
-                                <select class="form-select" id="profileShirtSize">
-                                    <option value="">Bitte wählen</option>
-                                    <option value="XS">XS</option>
-                                    <option value="S">S</option>
-                                    <option value="M">M</option>
-                                    <option value="L">L</option>
-                                    <option value="XL">XL</option>
-                                    <option value="XXL">XXL</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="profilePantsSize" class="form-label">Hosengröße</label>
-                                <select class="form-select" id="profilePantsSize">
-                                    <option value="">Bitte wählen</option>
-                                    <option value="XS">XS</option>
-                                    <option value="S">S</option>
-                                    <option value="M">M</option>
-                                    <option value="L">L</option>
-                                    <option value="XL">XL</option>
-                                    <option value="XXL">XXL</option>
-                                    <option value="28/30">28/30</option>
-                                    <option value="30/30">30/30</option>
-                                    <option value="32/30">32/30</option>
-                                    <option value="34/30">34/30</option>
-                                    <option value="36/30">36/30</option>
-                                    <option value="28/32">28/32</option>
-                                    <option value="30/32">30/32</option>
-                                    <option value="32/32">32/32</option>
-                                    <option value="34/32">34/32</option>
-                                    <option value="36/32">36/32</option>
-                                </select>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="mb-3">
-                            <h6>Passwort ändern</h6>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="profileNewPassword" class="form-label">Neues Passwort</label>
-                                    <input type="password" class="form-control" id="profileNewPassword">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="profileConfirmPassword" class="form-label">Passwort bestätigen</label>
-                                    <input type="password" class="form-control" id="profileConfirmPassword">
-                                </div>
-                            </div>
-                        </div>
-                        <div id="profileMessage" class="alert d-none"></div>
-                        <div class="mb-3">
-                          <h6>Theme</h6>
-                          <div class="dropdown">
-                            <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                              Theme
-                            </button>
-                            <ul class="dropdown-menu">
-                              <li><a class="dropdown-item" href="#" data-theme="system">System</a></li>
-                              <li><a class="dropdown-item" href="#" data-theme="light">Light</a></li>
-                              <li><a class="dropdown-item" href="#" data-theme="dark">Dark</a></li>
-                            </ul>
-                          </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Speichern</button>
-                    </form>
+                <div class="col-md-6 mb-3">
+                  <label for="profileLastName" class="form-label">Nachname</label>
+                  <input type="text" class="form-control" id="profileLastName" required>
                 </div>
-            </div>
+              </div>
+              <div class="row">
+                <div class="col-12 mb-3">
+                  <label for="profileEmail" class="form-label">E-Mail</label>
+                  <input type="email" class="form-control" id="profileEmail" required>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label for="profileHeight" class="form-label">Körpergröße (cm)</label>
+                  <input type="number" class="form-control" id="profileHeight">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="profileWeight" class="form-label">Gewicht (kg)</label>
+                  <input type="number" class="form-control" id="profileWeight">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="profileShoeSize" class="form-label">Schuhgröße (EU)</label>
+                  <input type="number" step="0.5" class="form-control" id="profileShoeSize">
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="profileShirtSize" class="form-label">T-Shirt Größe</label>
+                  <select class="form-select" id="profileShirtSize">
+                    <option value="">Bitte wählen</option>
+                    <option value="XS">XS</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                    <option value="XXL">XXL</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="profilePantsSize" class="form-label">Hosengröße</label>
+                  <select class="form-select" id="profilePantsSize">
+                    <option value="">Bitte wählen</option>
+                    <option value="XS">XS</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                    <option value="XXL">XXL</option>
+                    <option value="28/30">28/30</option>
+                    <option value="30/30">30/30</option>
+                    <option value="32/30">32/30</option>
+                    <option value="34/30">34/30</option>
+                    <option value="36/30">36/30</option>
+                    <option value="28/32">28/32</option>
+                    <option value="30/32">30/32</option>
+                    <option value="32/32">32/32</option>
+                    <option value="34/32">34/32</option>
+                    <option value="36/32">36/32</option>
+                  </select>
+                </div>
+              </div>
+              <hr>
+              <div class="mb-3">
+                <h6>Passwort ändern</h6>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="profileNewPassword" class="form-label">Neues Passwort</label>
+                    <input type="password" class="form-control" id="profileNewPassword">
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="profileConfirmPassword" class="form-label">Passwort bestätigen</label>
+                    <input type="password" class="form-control" id="profileConfirmPassword">
+                  </div>
+                </div>
+              </div>
+              <div id="profileMessage" class="alert d-none"></div>
+              <div class="mb-3">
+                <h6>Theme</h6>
+                <div class="dropdown">
+                  <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    Theme
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" data-theme="system">System</a></li>
+                    <li><a class="dropdown-item" href="#" data-theme="light">Light</a></li>
+                    <li><a class="dropdown-item" href="#" data-theme="dark">Dark</a></li>
+                  </ul>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">Speichern</button>
+            </form>
+          </div>
         </div>
+      </div>
     </div>
-    {% endif %}
-</div>
+  `,
 
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.js'></script>
-  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/de.js'></script>
+  feedback_modal: `
+    <div class="modal fade" id="feedback_modal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Feedback</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="feedbackForm">
+              <div class="mb-3">
+                <label class="form-label">Feedback-Typ</label>
+                <select class="form-select" id="feedbackType" required>
+                  <option value="bug">Fehler melden</option>
+                  <option value="feature">Verbesserungsvorschlag</option>
+                  <option value="question">Frage</option>
+                  <option value="other">Sonstiges</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Ihre Nachricht</label>
+                <textarea class="form-control" id="feedbackMessage" rows="4" required></textarea>
+              </div>
+              <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="feedbackScreenshot">
+                <label class="form-check-label" for="feedbackScreenshot">Screenshot anhängen</label>
+              </div>
+              <div id="feedbackPreview" class="d-none mb-3">
+                <img id="feedbackScreenshotPreview" class="img-fluid">
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+            <button type="button" class="btn btn-primary" id="submitFeedback">Senden</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+  {% endif %}
+};
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/i18n/defaults-de_DE.min.js"></script>
-  <script>
-
-    function isLoggedIn() {
-      return fetch('{{ path('api_about_me' )}}')
-      .then(response => {
-        if (response.status === 200) {
-          return response.json();
-        } else {
-          throw new Error('Not logged in');
-        }
-      })
-      .then(user => {
-        return true;
-      })
-      .catch(error => {
-        return false;
-      });
-    }
-
-    function updateNavbar() {
-      isLoggedIn().then(loggedIn => {
-        if (loggedIn) {
-          document.getElementById('button_logout').classList.remove('d-none'); 
-          document.getElementById('button_profile').classList.remove('d-none');
-          document.getElementById('button_messages').classList.remove('d-none');
-          document.getElementById('button_register').classList.add('d-none');
-          updateUnreadMessagesCount();
-        } else {
-          document.getElementById('button_logout').classList.add('d-none'); 
-          document.getElementById('button_profile').classList.add('d-none');
-          document.getElementById('button_messages').classList.add('d-none');
-          document.getElementById('button_register').classList.remove('d-none');
-        }
-      });
-    }
-
-    async function updateUnreadMessagesCount() {
-        try {
-            const response = await fetchWithRefresh('{{ path('api_messages_unread_count') }}');
-            if (response.ok) {
-                const data = await response.json();
-                const badge = document.getElementById('unread_messages_count');
-                if (data.count > 0) {
-                    badge.textContent = data.count;
-                    badge.classList.remove('d-none');
-                } else {
-                    badge.classList.add('d-none');
-                }
-            }
-        } catch (error) {
-            console.error('Fehler beim Laden der ungelesenen Nachrichten:', error);
-        }
-    }
-
-    function handleLoginSuccess(token) {
-      updateNavbar();
-
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('auth_modal')).hide();
-
-      location.href=location.href;
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      // Flash Message Handling
-      {% for message in app.flashes('verification_success') %}
-          const modalHtml = `
-              <div class="modal" id="successModal" tabindex="-1">
-                  <div class="modal-dialog">
-                      <div class="modal-content">
-                          <div class="modal-header">
-                              <h5 class="modal-title">Account aktiviert</h5>
-                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                          </div>
-                          <div class="modal-body">
-                              <p>{{ message }}</p>
-                          </div>
-                          <div class="modal-footer">
-                              <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
-                          </div>
+// Initialize the enhanced modal system
+document.addEventListener('DOMContentLoaded', function() {
+  // Flash Message Handling
+  {% for message in app.flashes('verification_success') %}
+      const modalHtml = `
+          <div class="modal" id="successModal" tabindex="-1">
+              <div class="modal-dialog">
+                  <div class="modal-content">
+                      <div class="modal-header">
+                          <h5 class="modal-title">Account aktiviert</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                          <p>{{ message }}</p>
+                      </div>
+                      <div class="modal-footer">
+                          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
                       </div>
                   </div>
               </div>
-          `;
-          document.getElementById('modalContainer').innerHTML = modalHtml;
-          const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-          successModal.show();
-      {% endfor %}
-
-      // Rest des existierenden Codes
-      const loginForm = document.getElementById('loginForm');
-      const registerForm = document.getElementById('registerForm');
-      const authMessage = document.getElementById('authMessage');
-
-      loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-
-        const res = await fetch('{{ path('api_login') }}', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ email: email, password: password })
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          authMessage.textContent = 'Login erfolgreich!';
-          handleLoginSuccess(data.token);
-        } else {
-          authMessage.textContent = data.message || 'Login fehlgeschlagen';
+          </div>
+      `;
+      
+      // Wait for Modal Manager to be ready
+      setTimeout(() => {
+        if (window.ModalManager) {
+          window.ModalManager.registerModal('successModal', modalHtml);
+          window.ModalManager.showModal('successModal');
         }
+      }, 100);
+  {% endfor %}
+
+  // Wait for Modal Manager to be ready
+  setTimeout(() => {
+    if (window.ModalManager) {
+      // Register all modal templates
+      Object.keys(modalTemplates).forEach(modalId => {
+        window.ModalManager.registerModal(modalId, modalTemplates[modalId]);
+      });
+      
+      console.log('All global modals registered successfully');
+      
+      // Initialize modal functionality after registration
+      initializeModalFunctionality();
+    } else {
+      console.error('Modal Manager not available');
+    }
+  }, 100);
+});
+
+/**
+ * Initialize all modal-related functionality
+ */
+function initializeModalFunctionality() {
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+  const authMessage = document.getElementById('authMessage');
+
+  // Login Form Handler
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+
+      const res = await fetch('{{ path('api_login') }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email: email, password: password })
       });
 
-      registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('registerEmail').value;
-        const password = document.getElementById('registerPassword').value;
-        const name = document.getElementById('registerName').value;
-
-        const res = await fetch('{{ path('api_register') }}', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ email: email, name: name, password: password })
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          authMessage.textContent = 'Registrierung erfolgreich! Bitte E-Mail bestätigen.';
-        } else {
-          authMessage.textContent = data.message || 'Registrierung fehlgeschlagen';
-        }
-      });
-
-      document.getElementById('button_logout').addEventListener('click', () => {
-        return fetch('{{ path('api_logout' )}}')
-        .then(response => {
-          if (response.status === 200) {
-            location.href ='/';
-            return response.json();
-          } else {
-            console.error(response);
-            throw new Error('Not logged out');
-          }
-        })
-        .then(user => {
-          console.log('Logged out');
-          console.log(user);
-          return true;
-        })
-        .catch(error => {
-          console.log('Not logged out');
-          console.error(error);
-          return false;
-        });
-
-        updateNavbar();
-      });
-
-      const profileForm = document.getElementById('profileForm');
-        
-      async function loadUserProfile() {
-          try {
-              const response = await fetch('{{ path('api_about_me') }}', {
-                  method: 'GET',
-                  headers: {
-                      'Content-Type': 'application/json'
-                  },
-                  credentials: 'include'
-              });
-              
-              if (response.ok) {
-                  const userData = await response.json();
-                  document.getElementById('profileFirstName').value = userData.firstName || '';
-                  document.getElementById('profileLastName').value = userData.lastName || '';
-                  document.getElementById('profileEmail').value = userData.email || '';
-                  document.getElementById('profileHeight').value = userData.height || '';
-                  document.getElementById('profileWeight').value = userData.weight || '';
-                  document.getElementById('profileShoeSize').value = userData.shoeSize || '';
-                  document.getElementById('profileShirtSize').value = userData.shirtSize || '';
-                  document.getElementById('profilePantsSize').value = userData.pantsSize || '';
-                  
-                  // Debug-Ausgabe
-                  console.log('Geladene Benutzerdaten:', userData);
-              } else {
-                  console.error('Fehler beim Laden des Profils:', response.status);
-              }
-          } catch (error) {
-              console.error('Fehler beim Laden des Profils:', error);
-          }
-      }
-
-      document.getElementById('button_profile').addEventListener('click', loadUserProfile);
-
-      profileForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const messageDiv = document.getElementById('profileMessage');
-          const newPassword = document.getElementById('profileNewPassword').value;
-          const confirmPassword = document.getElementById('profileConfirmPassword').value;
-
-          if (newPassword && newPassword !== confirmPassword) {
-              messageDiv.textContent = 'Die Passwörter stimmen nicht überein!';
-              messageDiv.classList.remove('d-none', 'alert-success');
-              messageDiv.classList.add('alert-danger');
-              return;
-          }
-
-          const userData = {
-              firstName: document.getElementById('profileFirstName').value,
-              lastName: document.getElementById('profileLastName').value,
-              email: document.getElementById('profileEmail').value,
-              height: document.getElementById('profileHeight').value,
-              weight: document.getElementById('profileWeight').value,
-              shoeSize: document.getElementById('profileShoeSize').value,
-              shirtSize: document.getElementById('profileShirtSize').value,
-              pantsSize: document.getElementById('profilePantsSize').value,
-              password: newPassword || undefined
-          };
-
-          try {
-              const response = await fetchWithRefresh('{{ path('api_update_profile') }}', {
-                  method: 'PUT',
-                  body: JSON.stringify(userData)
-              });
-
-              const data = await response.json();
-              
-              if (response.ok) {
-                  messageDiv.textContent = 'Profil erfolgreich aktualisiert!';
-                  messageDiv.classList.remove('d-none', 'alert-danger');
-                  messageDiv.classList.add('alert-success');
-                  
-                  if (data.emailVerificationRequired) {
-                      messageDiv.textContent += ' Bitte bestätigen Sie Ihre neue E-Mail-Adresse.';
-                  }
-              } else {
-                  messageDiv.textContent = data.message || 'Fehler beim Aktualisieren des Profils';
-                  messageDiv.classList.remove('d-none', 'alert-success');
-                  messageDiv.classList.add('alert-danger');
-              }
-          } catch (error) {
-              console.error('Fehler:', error);
-              messageDiv.textContent = 'Ein Fehler ist aufgetreten';
-              messageDiv.classList.remove('d-none', 'alert-success');
-              messageDiv.classList.add('alert-danger');
-          }
-      });
-
-      updateNavbar();
-
-      // Feedback Funktionalität
-      document.getElementById('submitFeedback').addEventListener('click', async function() {
-          const formData = new FormData();
-          formData.append('type', document.getElementById('feedbackType').value);
-          formData.append('message', document.getElementById('feedbackMessage').value);
-          formData.append('url', window.location.toString());
-          formData.append('userAgent', navigator.userAgent);
-
-          if (document.getElementById('feedbackScreenshot').checked) {
-              const screenshotDataUrl = document.getElementById('feedbackScreenshotPreview').src;
-              if (screenshotDataUrl) {
-                  const response = await fetch(screenshotDataUrl);
-                  const blob = await response.blob();
-                  formData.append('screenshot', blob, 'screenshot.png');
-              }
-          }
-
-          try {
-              const response = await fetch('{{ path('api_feedback_create') }}', {
-                  method: 'POST',
-                  body: formData
-              });
-
-              if (response.ok) {
-                  bootstrap.Modal.getInstance(document.getElementById('feedback_modal')).hide();
-                  document.getElementById('feedbackType').value = 'bug';
-                  document.getElementById('feedbackMessage').value = '';
-                  document.getElementById('feedbackScreenshot').checked = false;
-                  document.getElementById('feedbackPreview').classList.add('d-none');
-                  alert('Vielen Dank für Ihr Feedback!');
-              } else {
-                  const data = await response.json();
-                  alert(data.message || 'Fehler beim Senden des Feedbacks');
-              }
-          } catch (error) {
-              console.error('Feedback error:', error);
-              alert('Fehler beim Senden des Feedbacks');
-          }
-      });
-
-      // Screenshot Funktionalität
-      document.getElementById('feedbackScreenshot').addEventListener('change', function() {
-          if (this.checked) {
-              captureScreenshot();
-          } else {
-              document.getElementById('feedbackPreview').classList.add('d-none');
-          }
-      });
-
-      async function captureScreenshot() {
-          try {
-              const stream = await navigator.mediaDevices.getDisplayMedia({ preferCurrentTab: true });
-              const video = document.createElement('video');
-              video.srcObject = stream;
-              await video.play();
-
-              const canvas = document.createElement('canvas');
-              canvas.width = video.videoWidth;
-              canvas.height = video.videoHeight;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(video, 0, 0);
-
-              stream.getTracks().forEach(track => track.stop());
-
-              const screenshotDataUrl = canvas.toDataURL('image/png');
-              document.getElementById('feedbackScreenshotPreview').src = screenshotDataUrl;
-              document.getElementById('feedbackPreview').classList.remove('d-none');
-          } catch (err) {
-              console.error('Screenshot error:', err);
-              alert('Screenshot konnte nicht erstellt werden');
-              document.getElementById('feedbackScreenshot').checked = false;
-          }
-      }
-
-      async function registerServiceWorker() {
-          try {
-              const registration = await navigator.serviceWorker.register('/js/service-worker.js');
-              const response = await fetch('{{ path("app_push_key") }}');
-              const data = await response.json();
-              
-              const subscription = await registration.pushManager.subscribe({
-                  userVisibleOnly: true,
-                  applicationServerKey: data.key
-              });
-
-              await fetch('{{ path("app_push_subscribe") }}', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(subscription)
-              }).then((response) => {
-                if (response.status >= 400 && response.status < 600) {
-                  throw new Error("Bad response from server - " + response.status + " : " + response.statusText);
-                }
-                return response;
-              }).then((returnedResponse) => {
-                console.log(returnedResponse);
-              }).catch((error) => {
-                console.log(error)
-              });;
-          } catch (error) {
-              console.error('Push registration failed:', error);
-          }
-      }
-
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
-          registerServiceWorker();
-      }
-
-      // PWA logic:
-      const installButton = document.getElementById('installPWA');
-      let deferredPrompt;
-
-      function isPWAInstalled() {
-        return (
-          window.matchMedia('(display-mode: standalone)').matches ||
-          window.navigator.standalone || 
-          document.referrer.includes('android-app://')
-        );
-      }
-
-      installButton.style.display = 'none';
-
-      if (!isPWAInstalled()) {
-        window.addEventListener('beforeinstallprompt', (e) => {
-          e.preventDefault();
-          deferredPrompt = e;
-          installButton.style.display = 'block';
-        });
-
-        installButton.addEventListener('click', async () => {
-          if (!deferredPrompt) {
-            console.info("DEFERRED PROMPT IST NICHT DEFINIERT!");
-            return
-          };
-          
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          console.log(`Installation ${outcome}`);
-          installButton.style.display = 'none';
-        });
+      const data = await res.json();
+      if (res.ok) {
+        authMessage.textContent = 'Login erfolgreich!';
+        handleLoginSuccess(data.token);
       } else {
-        console.info("Kaderblick bereits als PWA installiert!");
+        authMessage.textContent = data.message || 'Login fehlgeschlagen';
       }
     });
+  }
 
-    async function fetchWithRefresh(url, options = {}) {
-      let accessToken = localStorage.getItem('access_token');
+  // Register Form Handler
+  if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      const name = document.getElementById('registerName').value;
 
-      let response = await fetch(url, {
-        ...options,
+      const res = await fetch('{{ path('api_register') }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email: email, name: name, password: password })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        showGlobalAlert(data.message || 'Registrierung fehlgeschlagen', 'danger');
+      } else {
+        showGlobalAlert('Registrierung erfolgreich! Bitte E-Mail bestätigen.', 'success');
+      }
+    });
+  }
+
+  // Logout Handler für Dropdown-Link (falls noch alte Buttons existieren)
+  function handleLogout() {
+    return fetch('{{ path('api_logout' )}}')
+    .then(response => {
+      if (response.status === 200) {
+        location.href ='/';
+        return response.json();
+      } else {
+        console.error(response);
+        throw new Error('Not logged out');
+      }
+    })
+    .then(user => {
+      console.log('Logged out');
+      console.log(user);
+      return true;
+    })
+    .catch(error => {
+      console.log('Not logged out');
+      console.error(error);
+      return false;
+    });
+  }
+
+  // Entfernt: Alte Button Event-Handler - Logout erfolgt jetzt über Link
+
+  // Load user profile for modal only
+  async function loadUserProfile() {
+    try {
+      const response = await fetch('{{ path('api_about_me') }}', {
+        method: 'GET',
         headers: {
-          ...(options.headers || {}),
-          'Content-Type': 'application/json',
-          'Authorization': accessToken ? `Bearer ${accessToken}` : '',
+          'Content-Type': 'application/json'
         },
         credentials: 'include'
       });
-
-      if (response.status === 401) {
-        const refreshResponse = await fetch('/api/token/refresh', {
-          method: 'POST',
-          credentials: 'include',
-        });
-
-        if (refreshResponse.ok) {
-          const data = await refreshResponse.json();
-          localStorage.setItem('access_token', data.token);
-
-          return fetch(url, {
-            ...options,
-            headers: {
-              ...(options.headers || {}),
-              'Authorization': `Bearer ${data.token}`,
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include'
-          });
-        } else {
-          alert('Session abgelaufen, bitte neu anmelden.');
-          localStorage.removeItem('access_token');
-          window.location.href = '/';
-          return;
-        }
-      }
-
-      return response;
-    }
-
-    // Theme
-    document.addEventListener('DOMContentLoaded', () => {
-      const themeSwitcher = document.querySelectorAll('[data-theme]');
-      const savedTheme = localStorage.getItem('theme') || 'system';
       
-      // Theme beim Laden setzen
-      setTheme(savedTheme);
-
-      // Event-Listener für Theme-Buttons
-      themeSwitcher.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const theme = e.target.getAttribute('data-theme');
-          setTheme(theme);
-          localStorage.setItem('theme', theme);
-        });
-      });
-
-      // Theme anwenden
-      function setTheme(theme) {
-        if (theme === 'system') {
-          const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-          document.documentElement.setAttribute('data-bs-theme', systemTheme);
-        } else {
-          document.documentElement.setAttribute('data-bs-theme', theme);
-        }
+      if (response.ok) {
+        const user = await response.json();
+        console.log('User data:', user); // Debug
+        
+        // Update profile modal fields only
+        const emailField = document.getElementById('profileEmail');
+        const firstNameField = document.getElementById('profileFirstName');
+        const lastNameField = document.getElementById('profileLastName');
+        const heightField = document.getElementById('profileHeight');
+        const weightField = document.getElementById('profileWeight');
+        const shoeSizeField = document.getElementById('profileShoeSize');
+        const shirtSizeField = document.getElementById('profileShirtSize');
+        const pantsSizeField = document.getElementById('profilePantsSize');
+        
+        if (emailField) emailField.value = user.email || '';
+        if (firstNameField) firstNameField.value = user.firstName || '';
+        if (lastNameField) lastNameField.value = user.lastName || '';
+        if (heightField) heightField.value = user.height || '';
+        if (weightField) weightField.value = user.weight || '';
+        if (shoeSizeField) shoeSizeField.value = user.shoeSize || '';
+        if (shirtSizeField) shirtSizeField.value = user.shirtSize || '';
+        if (pantsSizeField) pantsSizeField.value = user.pantsSize || '';
+        
+        console.log('Geladene Benutzerdaten:', user);
+      } else {
+        console.error('Fehler beim Laden des Profils:', response.status);
       }
+    } catch (error) {
+      console.error('Failed to load user profile:', error);
+    }
+  }
 
-      // Reagiere auf System-Theme-Änderungen
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-        if (localStorage.getItem('theme') === 'system') {
-          setTheme('system');
+  // Profile Form Functionality
+  const profileForm = document.getElementById('profileForm');
+  
+  // Load profile when modal opens
+  const profileModal = document.getElementById('profile_modal');
+  if (profileModal) {
+    profileModal.addEventListener('show.bs.modal', loadUserProfile);
+  }
+  
+  // Remove duplicate function - bereits oben definiert
+
+  const profileButton = document.getElementById('button_profile');
+  if (profileButton) {
+    profileButton.addEventListener('click', loadUserProfile);
+  }
+
+  if (profileForm) {
+    profileForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const messageDiv = document.getElementById('profileMessage');
+        const newPassword = document.getElementById('profileNewPassword').value;
+        const confirmPassword = document.getElementById('profileConfirmPassword').value;
+
+        if (newPassword && newPassword !== confirmPassword) {
+            showGlobalAlert('Die Passwörter stimmen nicht überein!', 'danger');
+            return;
         }
-      });
+
+        const userData = {
+            firstName: document.getElementById('profileFirstName').value,
+            lastName: document.getElementById('profileLastName').value,
+            email: document.getElementById('profileEmail').value,
+            height: document.getElementById('profileHeight').value,
+            weight: document.getElementById('profileWeight').value,
+            shoeSize: document.getElementById('profileShoeSize').value,
+            shirtSize: document.getElementById('profileShirtSize').value,
+            pantsSize: document.getElementById('profilePantsSize').value,
+            password: newPassword || undefined
+        };
+
+        try {
+            const response = await fetchWithRefresh('{{ path('api_update_profile') }}', {
+                method: 'PUT',
+                body: JSON.stringify(userData)
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                messageDiv.textContent = 'Profil erfolgreich aktualisiert!';
+                messageDiv.classList.remove('d-none', 'alert-danger');
+                messageDiv.classList.add('alert-success');
+                
+                if (data.emailVerificationRequired) {
+                    messageDiv.textContent += ' Bitte bestätigen Sie Ihre neue E-Mail-Adresse.';
+                }
+            } else {
+                messageDiv.textContent = data.message || 'Fehler beim Aktualisieren des Profils';
+                messageDiv.classList.remove('d-none', 'alert-success');
+                messageDiv.classList.add('alert-danger');
+            }
+        } catch (error) {
+            console.error('Fehler:', error);
+            messageDiv.textContent = 'Ein Fehler ist aufgetreten';
+            messageDiv.classList.remove('d-none', 'alert-success');
+            messageDiv.classList.add('alert-danger');
+        }
     });
-  </script>
-  {#<script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
-  <script>
-    OneSignal.init({ appId: "kaderblick", autoRegister: true, notifyButton: { enable: true }, allowLocalhostAsSecureOrigin" });
-  </script>
-  #}
-  {% block javascripts %}{% endblock %}
+  }
 
-<!-- Alle Modals - AUSSERHALB aller Container für korrektes Z-Index Verhalten -->
-{% if ( is_granted('ROLE_USER') ) %}
-<!-- Feedback Modal -->
-<div class="modal fade" id="feedback_modal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Feedback</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="feedbackForm">
-                    <div class="mb-3">
-                        <label class="form-label">Feedback-Typ</label>
-                        <select class="form-select" id="feedbackType" required>
-                            <option value="bug">Fehler melden</option>
-                            <option value="feature">Verbesserungsvorschlag</option>
-                            <option value="question">Frage</option>
-                            <option value="other">Sonstiges</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Ihre Nachricht</label>
-                        <textarea class="form-control" id="feedbackMessage" rows="4" required></textarea>
-                    </div>
-                    <div class="form-check mb-3">
-                        <input type="checkbox" class="form-check-input" id="feedbackScreenshot">
-                        <label class="form-check-label" for="feedbackScreenshot">Screenshot anhängen</label>
-                    </div>
-                    <div id="feedbackPreview" class="d-none mb-3">
-                        <img id="feedbackScreenshotPreview" class="img-fluid">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
-                <button type="button" class="btn btn-primary" id="submitFeedback">Senden</button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
+  {% if ( is_granted('ROLE_USER') ) %}
+  // Feedback Functionality
+  const submitFeedbackButton = document.getElementById('submitFeedback');
+  if (submitFeedbackButton) {
+    submitFeedbackButton.addEventListener('click', async function() {
+        const formData = new FormData();
+        formData.append('type', document.getElementById('feedbackType').value);
+        formData.append('message', document.getElementById('feedbackMessage').value);
+        formData.append('url', window.location.toString());
+        formData.append('userAgent', navigator.userAgent);
 
-<!-- Auth Modal -->
-<div class="modal fade" id="auth_modal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <ul class="nav nav-tabs" id="authTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login"
-                                type="button" role="tab">Login</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register"
-                                type="button" role="tab">Registrieren</button>
-                    </li>
-                </ul>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
-            </div>
-            <div class="modal-body">
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="login" role="tabpanel">
-                        <form id="loginForm">
-                            <div class="mb-3">
-                                <label for="loginEmail" class="form-label">E-Mail</label>
-                                <input type="email" class="form-control" id="loginEmail" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="loginPassword" class="form-label">Passwort</label>
-                                <input type="password" class="form-control" id="loginPassword" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100">Login</button>
-                        </form>
-                    </div>
-                    <div class="tab-pane fade" id="register" role="tabpanel">
-                        <form id="registerForm">
-                            <div class="mb-3">
-                                <label for="registerName" class="form-label">Name</label>
-                                <input type="text" class="form-control" id="registerName" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="registerEmail" class="form-label">E-Mail</label>
-                                <input type="email" class="form-control" id="registerEmail" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="registerPassword" class="form-label">Passwort</label>
-                                <input type="password" class="form-control" id="registerPassword" required>
-                            </div>
-                            <button type="submit" class="btn btn-success w-100">Registrieren</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer d-block text-center">
-                <div id="authMessage" class="text-muted small"></div>
-            </div>
-        </div>
-    </div>
-</div>
+        if (document.getElementById('feedbackScreenshot').checked) {
+            const screenshotDataUrl = document.getElementById('feedbackScreenshotPreview').src;
+            if (screenshotDataUrl) {
+                const response = await fetch(screenshotDataUrl);
+                const blob = await response.blob();
+                formData.append('screenshot', blob, 'screenshot.png');
+            }
+        }
 
-{% if ( is_granted('ROLE_USER') ) %}
-<!-- Profile Modal -->
-<div class="modal fade" id="profile_modal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Profil bearbeiten</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
-            </div>
-            <div class="modal-body">
-                <form id="profileForm">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="profileFirstName" class="form-label">Vorname</label>
-                            <input type="text" class="form-control" id="profileFirstName" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="profileLastName" class="form-label">Nachname</label>
-                            <input type="text" class="form-control" id="profileLastName" required>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="profileEmail" class="form-label">E-Mail</label>
-                        <input type="email" class="form-control" id="profileEmail" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
-                <button type="button" class="btn btn-primary" id="saveProfile">Speichern</button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
+        try {
+            const response = await fetch('{{ path('api_feedback_create') }}', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                window.ModalManager.hideModal('feedback_modal');
+                document.getElementById('feedbackType').value = 'bug';
+                document.getElementById('feedbackMessage').value = '';
+                document.getElementById('feedbackScreenshot').checked = false;
+                document.getElementById('feedbackPreview').classList.add('d-none');
+                alert('Vielen Dank für Ihr Feedback!');
+            } else {
+                const data = await response.json();
+                alert(data.message || 'Fehler beim Senden des Feedbacks');
+            }
+        } catch (error) {
+            console.error('Feedback error:', error);
+            alert('Fehler beim Senden des Feedbacks');
+        }
+    });
+  }
+
+  // Screenshot Functionality
+  const screenshotCheckbox = document.getElementById('feedbackScreenshot');
+  if (screenshotCheckbox) {
+    screenshotCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            captureScreenshot();
+        } else {
+            document.getElementById('feedbackPreview').classList.add('d-none');
+        }
+    });
+  }
+
+  async function captureScreenshot() {
+      try {
+          const stream = await navigator.mediaDevices.getDisplayMedia({ preferCurrentTab: true });
+          const video = document.createElement('video');
+          video.srcObject = stream;
+          await video.play();
+
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0);
+
+          stream.getTracks().forEach(track => track.stop());
+
+          const screenshotDataUrl = canvas.toDataURL('image/png');
+          document.getElementById('feedbackScreenshotPreview').src = screenshotDataUrl;
+          document.getElementById('feedbackPreview').classList.remove('d-none');
+      } catch (err) {
+          console.error('Screenshot error:', err);
+          alert('Screenshot konnte nicht erstellt werden');
+          document.getElementById('feedbackScreenshot').checked = false;
+      }
+  }
+  {% endif %}
+
+  // Initialize functionality - Navbar wird server-side gerendert
+  updateUnreadMessagesCount();
+
+  // Service Worker Registration
+  async function registerServiceWorker() {
+      try {
+          const registration = await navigator.serviceWorker.register('/js/service-worker.js');
+          const response = await fetch('{{ path("app_push_key") }}');
+          const data = await response.json();
+          
+          const subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: data.key
+          });
+
+          await fetch('{{ path("app_push_subscribe") }}', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(subscription)
+          }).then((response) => {
+            if (response.status >= 400 && response.status < 600) {
+              throw new Error("Bad response from server - " + response.status + " : " + response.statusText);
+            }
+            return response.json();
+          }).then((responseData) => {
+            console.log("Success subscribing to push notifications", responseData);
+          });
+      } catch (error) {
+          console.error('Service Worker registration failed:', error);
+      }
+  }
+
+  // Theme Management
+  const themeSwitcher = document.querySelectorAll('[data-theme]');
+  const savedTheme = localStorage.getItem('theme') || 'system';
+  
+  // Theme beim Laden setzen
+  setTheme(savedTheme);
+
+  // Event-Listener für Theme-Buttons
+  themeSwitcher.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const theme = e.target.getAttribute('data-theme');
+      setTheme(theme);
+      localStorage.setItem('theme', theme);
+    });
+  });
+
+  // Theme anwenden
+  function setTheme(theme) {
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-bs-theme', systemTheme);
+    } else {
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    }
+  }
+
+  // Reagiere auf System-Theme-Änderungen
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (localStorage.getItem('theme') === 'system') {
+      setTheme('system');
+    }
+  });
+
+  // Register service worker if supported
+  if ('serviceWorker' in navigator) {
+    registerServiceWorker();
+  }
+}
+
+// Global fetchWithRefresh function
+async function fetchWithRefresh(url, options = {}) {
+    const defaultOptions = {
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+    };
+    
+    const requestOptions = {
+        ...defaultOptions,
+        ...options,
+        headers: {
+            ...defaultOptions.headers,
+            ...options.headers
+        }
+    };
+    
+    try {
+        const response = await fetch(url, requestOptions);
+        return response;
+    } catch (error) {
+        console.error('Fetch error:', error);
+        throw error;
+    }
+}
+
+// Global Alert Helper
+function showGlobalAlert(message, type = 'info', timeout = 4000) {
+    const container = document.getElementById('globalAlertContainer');
+    if (!container) return;
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show shadow mb-2`;
+    alert.role = 'alert';
+    alert.innerHTML = `
+        <span>${message}</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    container.appendChild(alert);
+    setTimeout(() => {
+        if (alert.parentNode) alert.classList.remove('show');
+        setTimeout(() => alert.remove(), 500);
+    }, timeout);
+}
+</script>
+
+<!-- Glass Theme Toggle -->
+<script src="/js/glass-theme.js"></script>
+
+{% block javascripts %}{% endblock %}
 
 {% block additional_content %}{% endblock %}
 
+<!-- CSS Variables Helper JavaScript -->
+<script src="/js/css-variables-helper.js"></script>
+
 </body>
 </html>
-

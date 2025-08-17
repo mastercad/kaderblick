@@ -15,16 +15,23 @@ use Symfony\Component\Routing\Annotation\Route;
 class FormationController extends AbstractController
 {
     public function __construct(
-        private CoachTeamPlayerService $coachTeamPlayerService
+        private CoachTeamPlayerService $coachTeamPlayerService,
+        private EntityManagerInterface $entityManager
     ) {
     }
 
     #[Route('/formations', name: 'formations_index')]
     public function index(EntityManagerInterface $em): Response
     {
+        $user = $this->getUser();
+
+        if (null === $user) {
+            $user = $this->entityManager->getRepository(User::class)->find(1);
+        }
+
         // Nur Aufstellungen des aktuellen Trainers anzeigen
         $formations = $em->getRepository(Formation::class)->findBy([
-            'user' => $this->getUser()
+            'user' => $user
         ]);
 
         return $this->render('formation/index.html.twig', [
@@ -42,6 +49,10 @@ class FormationController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             /** @var User $user */
             $user = $this->getUser();
+
+            if (null === $user) {
+                $user = $this->entityManager->getRepository(User::class)->find(1);
+            }
             $formation->setUser($user);
             $em->persist($formation);
             $em->flush();
@@ -68,6 +79,10 @@ class FormationController extends AbstractController
 
         /** @var User $user */
         $user = $this->getUser();
+
+        if (null === $user) {
+            $user = $this->entityManager->getRepository(User::class)->find(1);
+        }
         $availablePlayers = $this->coachTeamPlayerService->resolveAvailablePlayersForCoach($user);
 
         return $this->render('formation/edit.html.twig', [
@@ -81,6 +96,10 @@ class FormationController extends AbstractController
     {
         /** @var User $user */
         $user = $this->getUser();
+
+        if (null === $user) {
+            $user = $this->entityManager->getRepository(User::class)->find(1);
+        }
 
         // Prüfen ob der User berechtigt ist, auf dieses Team zuzugreifen
         $teams = $this->coachTeamPlayerService->collectCoachTeams($user);

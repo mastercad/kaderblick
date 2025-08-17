@@ -1,0 +1,329 @@
+/* ==========================================================================
+   Modal Management System - Professional CSS
+   Clean and minimal modal styling without z-index chaos
+   ========================================================================== */
+
+/* Modal Container Root - Outside main content flow */
+.modal-container-root {
+    position: relative;
+    pointer-events: none;
+}
+
+/* Enhanced Modal Base Styles */
+.modal {
+    /* Ensure proper positioning */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    /* Remove background - Bootstrap backdrop handles this */
+    background-color: transparent;
+    
+    /* Smooth transitions */
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Re-enable pointer events */
+    pointer-events: auto;
+}
+
+/* Modal Dialog Improvements */
+.modal-dialog {
+    position: relative;
+    margin: 1.75rem auto;
+    max-width: 500px;
+    pointer-events: none;
+    
+    /* Enhanced centering */
+    display: flex;
+    align-items: center;
+    min-height: calc(100vh - 3.5rem);
+}
+
+/* Modal Content - Glass morphism effect */
+.modal-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    color: var(--bs-modal-color);
+    pointer-events: auto;
+    
+    /* Enhanced styling */
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    
+    /* Smooth transitions */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(0.95);
+    opacity: 0;
+}
+
+/* Dark theme support */
+[data-bs-theme="dark"] .modal-content {
+    background: rgba(33, 37, 41, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--bs-gray-100);
+}
+
+/* Modal Show Animation */
+.modal.show .modal-content {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Modal Header Enhancements */
+.modal-header {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid rgba(var(--bs-border-color-rgb), 0.1);
+    border-top-left-radius: var(--radius-lg, 12px);
+    border-top-right-radius: var(--radius-lg, 12px);
+    
+    /* Glass effect for header */
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+[data-bs-theme="dark"] .modal-header {
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Modal Title */
+.modal-title {
+    margin-bottom: 0;
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: var(--bs-emphasis-color);
+}
+
+/* Close Button Enhancements */
+.modal-header .btn-close {
+    padding: 0.5rem;
+    margin: -0.5rem -0.5rem -0.5rem auto;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-header .btn-close:hover {
+    background: rgba(0, 0, 0, 0.2);
+    transform: scale(1.1);
+}
+
+[data-bs-theme="dark"] .modal-header .btn-close {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .modal-header .btn-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Modal Body */
+.modal-body {
+    position: relative;
+    flex: 1 1 auto;
+    padding: 1.5rem;
+}
+
+/* Modal Footer */
+.modal-footer {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 1rem 1.5rem 1.5rem;
+    border-top: 1px solid rgba(var(--bs-border-color-rgb), 0.1);
+    border-bottom-right-radius: var(--radius-lg, 12px);
+    border-bottom-left-radius: var(--radius-lg, 12px);
+    gap: 0.5rem;
+}
+
+[data-bs-theme="dark"] .modal-footer {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive Modal Sizes */
+@media (min-width: 576px) {
+    .modal-dialog {
+        max-width: 500px;
+        margin: 1.75rem auto;
+    }
+    
+    .modal-sm {
+        max-width: 300px;
+    }
+}
+
+@media (min-width: 992px) {
+    .modal-lg,
+    .modal-xl {
+        max-width: 800px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .modal-xl {
+        max-width: 1140px;
+    }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 575.98px) {
+    .modal-dialog {
+        margin: 0.5rem;
+        min-height: calc(100vh - 1rem);
+    }
+    
+    .modal-content {
+        border-radius: var(--radius-md, 8px);
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/* Modal Backdrop - Let Bootstrap handle z-index */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    transition: backdrop-filter 0.3s ease;
+}
+
+.modal-backdrop.show {
+    backdrop-filter: blur(4px);
+}
+
+/* Body Classes for Modal State */
+body.modal-open {
+    overflow: hidden;
+    padding-right: 0;
+}
+
+/* Prevent scrollbar jump on modal open */
+body.modal-open .main-container {
+    filter: blur(0);
+    transition: filter 0.3s ease;
+}
+
+body.modal-open .main-container.modal-blur {
+    filter: blur(2px);
+}
+
+/* Enhanced Form Elements in Modals */
+.modal .form-control,
+.modal .form-select {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+    backdrop-filter: blur(10px);
+    transition: all 0.2s ease;
+}
+
+.modal .form-control:focus,
+.modal .form-select:focus {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+[data-bs-theme="dark"] .modal .form-control,
+[data-bs-theme="dark"] .modal .form-select {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--bs-gray-100);
+}
+
+[data-bs-theme="dark"] .modal .form-control:focus,
+[data-bs-theme="dark"] .modal .form-select:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--bs-primary);
+}
+
+/* Animation Keyframes */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes modalFadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+}
+
+/* Performance Optimizations */
+.modal {
+    contain: layout style paint;
+}
+
+.modal-dialog {
+    will-change: transform;
+}
+
+/* Accessibility Enhancements */
+.modal:focus {
+    outline: none;
+}
+
+.modal-header .btn-close:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .modal-content {
+        border: 2px solid var(--bs-border-color);
+        background: var(--bs-body-bg);
+        backdrop-filter: none;
+    }
+    
+    .modal-backdrop {
+        backdrop-filter: none;
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .modal,
+    .modal-content,
+    .modal-backdrop {
+        transition: none;
+    }
+    
+    .modal-content {
+        animation: none;
+    }
+}

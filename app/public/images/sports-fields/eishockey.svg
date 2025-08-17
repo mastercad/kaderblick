@@ -1,0 +1,21 @@
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Rink background -->
+  <rect width="400" height="300" fill="#F0F8FF" stroke="#FF0000" stroke-width="3" rx="50"/>
+  
+  <!-- Center line -->
+  <line x1="200" y1="0" x2="200" y2="300" stroke="#FF0000" stroke-width="2"/>
+  
+  <!-- Center face-off circle -->
+  <circle cx="200" cy="150" r="40" fill="none" stroke="#0000FF" stroke-width="2"/>
+  <circle cx="200" cy="150" r="2" fill="#FF0000"/>
+  
+  <!-- Goal crease (left) -->
+  <path d="M 40 135 Q 40 100 40 135 Q 40 200 40 165" fill="none" stroke="#0000FF" stroke-width="2"/>
+  <path d="M 0 135 L 40 135 Q 70 135 70 150 Q 70 165 40 165 L 0 165" fill="none" stroke="#0000FF" stroke-width="2"/>
+  
+  <!-- Face-off spots -->
+  <circle cx="120" cy="120" r="2" fill="#FF0000"/>
+  <circle cx="120" cy="180" r="2" fill="#FF0000"/>
+  <circle cx="280" cy="120" r="2" fill="#FF0000"/>
+  <circle cx="280" cy="180" r="2" fill="#FF0000"/>
+</svg>

@@ -1,0 +1,15 @@
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Court background -->
+  <rect width="400" height="300" fill="#F4A460" stroke="white" stroke-width="3"/>
+  
+  <!-- Net -->
+  <line x1="397" y1="0" x2="397" y2="300" stroke="#333" stroke-width="4"/>
+  
+  <!-- Attack line -->
+  <line x1="280" y1="0" x2="280" y2="300" stroke="white" stroke-width="2"/>
+  
+  <!-- Service area divisions -->
+  <line x1="280" y1="75" x2="400" y2="75" stroke="white" stroke-width="1"/>
+  <line x1="280" y1="150" x2="400" y2="150" stroke="white" stroke-width="1"/>
+  <line x1="280" y1="225" x2="400" y2="225" stroke="white" stroke-width="1"/>
+</svg>

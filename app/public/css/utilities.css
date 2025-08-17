@@ -1,0 +1,417 @@
+/* ==========================================================================
+   Utility Classes - Common Patterns & Helpers
+   ========================================================================== */
+
+/* ==========================================================================
+   CSS Variables Helper Classes
+   ========================================================================== */
+
+/* Event color utilities - replaces inline style="--event-color: ..." */
+.event-color-red { --event-color: #ef4444; }
+.event-color-blue { --event-color: var(--color-info); }
+.event-color-green { --event-color: #22c55e; }
+.event-color-yellow { --event-color: #eab308; }
+.event-color-purple { --event-color: #a855f7; }
+.event-color-orange { --event-color: #f97316; }
+.event-color-pink { --event-color: #ec4899; }
+.event-color-teal { --event-color: #14b8a6; }
+.event-color-indigo { --event-color: #6366f1; }
+.event-color-gray { --event-color: #6b7280; }
+
+/* Dynamic event color utility - to be used with JavaScript */
+.dynamic-event-color {
+    --event-color: var(--dynamic-color, var(--color-primary));
+}
+
+/* ==========================================================================
+   Position Utilities (replaces inline positioning)
+   ========================================================================== */
+
+/* Dynamic positioning for formation players */
+.position-dynamic {
+    left: var(--x-pos, 0%);
+    top: var(--y-pos, 0%);
+}
+
+/* Common absolute positions */
+.position-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.position-top-left {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.position-top-right {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+.position-bottom-left {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+}
+
+.position-bottom-right {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+/* ==========================================================================
+   Width & Height Utilities
+   ========================================================================== */
+
+/* Width utilities for progress bars and dynamic content */
+.w-0 { width: 0% !important; }
+.w-5 { width: 5% !important; }
+.w-10 { width: 10% !important; }
+.w-15 { width: 15% !important; }
+.w-20 { width: 20% !important; }
+.w-25 { width: 25% !important; }
+.w-30 { width: 30% !important; }
+.w-35 { width: 35% !important; }
+.w-40 { width: 40% !important; }
+.w-45 { width: 45% !important; }
+.w-50 { width: 50% !important; }
+.w-55 { width: 55% !important; }
+.w-60 { width: 60% !important; }
+.w-65 { width: 65% !important; }
+.w-70 { width: 70% !important; }
+.w-75 { width: 75% !important; }
+.w-80 { width: 80% !important; }
+.w-85 { width: 85% !important; }
+.w-90 { width: 90% !important; }
+.w-95 { width: 95% !important; }
+.w-100 { width: 100% !important; }
+
+/* Min width utilities */
+.min-w-0 { min-width: 0 !important; }
+.min-w-100 { min-width: 100px !important; }
+.min-w-150 { min-width: 150px !important; }
+.min-w-200 { min-width: 200px !important; }
+.min-w-250 { min-width: 250px !important; }
+.min-w-300 { min-width: 300px !important; }
+.min-w-400 { min-width: 400px !important; }
+
+/* Max width utilities */
+.max-w-none { max-width: none !important; }
+.max-w-300 { max-width: 300px !important; }
+.max-w-400 { max-width: 400px !important; }
+.max-w-500 { max-width: 500px !important; }
+.max-w-600 { max-width: 600px !important; }
+.max-w-700 { max-width: 700px !important; }
+.max-w-800 { max-width: 800px !important; }
+
+/* ==========================================================================
+   Display Utilities
+   ========================================================================== */
+
+.display-none { display: none !important; }
+.display-block { display: block !important; }
+.display-inline { display: inline !important; }
+.display-inline-block { display: inline-block !important; }
+.display-flex { display: flex !important; }
+.display-inline-flex { display: inline-flex !important; }
+.display-grid { display: grid !important; }
+.display-table { display: table !important; }
+
+/* Responsive display utilities */
+@media (max-width: 768px) {
+    .display-md-none { display: none !important; }
+    .display-md-block { display: block !important; }
+    .display-md-flex { display: flex !important; }
+}
+
+@media (max-width: 480px) {
+    .display-sm-none { display: none !important; }
+    .display-sm-block { display: block !important; }
+    .display-sm-flex { display: flex !important; }
+}
+
+/* ==========================================================================
+   Visibility & Opacity Utilities
+   ========================================================================== */
+
+.visible { visibility: visible !important; }
+.invisible { visibility: hidden !important; }
+
+.opacity-0 { opacity: 0 !important; }
+.opacity-25 { opacity: 0.25 !important; }
+.opacity-50 { opacity: 0.5 !important; }
+.opacity-75 { opacity: 0.75 !important; }
+.opacity-100 { opacity: 1 !important; }
+
+/* ==========================================================================
+   Color Utilities
+   ========================================================================== */
+
+/* Text colors using CSS variables */
+.text-primary-color { color: var(--color-primary) !important; }
+.text-secondary-color { color: var(--color-secondary) !important; }
+.text-success-color { color: var(--color-success) !important; }
+.text-warning-color { color: var(--color-warning) !important; }
+.text-danger-color { color: var(--color-danger) !important; }
+.text-info-color { color: var(--color-info) !important; }
+
+/* Background colors using CSS variables */
+.bg-primary-color { background-color: var(--color-primary) !important; }
+.bg-secondary-color { background-color: var(--color-secondary) !important; }
+.bg-success-color { background-color: var(--color-success) !important; }
+.bg-warning-color { background-color: var(--color-warning) !important; }
+.bg-danger-color { background-color: var(--color-danger) !important; }
+.bg-info-color { background-color: var(--color-info) !important; }
+
+/* Background with light variants */
+.bg-primary-light { background-color: var(--color-primary-light) !important; }
+.bg-secondary-light { background-color: var(--color-secondary-light) !important; }
+.bg-success-light { background-color: var(--color-success-light) !important; }
+.bg-warning-light { background-color: var(--color-warning-light) !important; }
+.bg-danger-light { background-color: var(--color-danger-light) !important; }
+.bg-info-light { background-color: var(--color-info-light) !important; }
+
+/* Football theme colors */
+.text-football { color: var(--football-primary) !important; }
+.bg-football { background-color: var(--football-primary) !important; }
+.border-football { border-color: var(--football-primary) !important; }
+
+/* ==========================================================================
+   Border Utilities
+   ========================================================================== */
+
+.border-primary-color { border-color: var(--color-primary) !important; }
+.border-secondary-color { border-color: var(--color-secondary) !important; }
+.border-success-color { border-color: var(--color-success) !important; }
+.border-warning-color { border-color: var(--color-warning) !important; }
+.border-danger-color { border-color: var(--color-danger) !important; }
+.border-info-color { border-color: var(--color-info) !important; }
+
+/* Border radius utilities */
+.rounded-none { border-radius: 0 !important; }
+.rounded-sm { border-radius: var(--radius-sm) !important; }
+.rounded { border-radius: var(--radius-md) !important; }
+.rounded-lg { border-radius: var(--radius-lg) !important; }
+.rounded-xl { border-radius: var(--radius-xl) !important; }
+.rounded-2xl { border-radius: var(--radius-2xl) !important; }
+.rounded-full { border-radius: var(--radius-full) !important; }
+
+/* ==========================================================================
+   Shadow Utilities
+   ========================================================================== */
+
+.shadow-none { box-shadow: none !important; }
+.shadow-sm { box-shadow: var(--shadow-sm) !important; }
+.shadow { box-shadow: var(--shadow-md) !important; }
+.shadow-lg { box-shadow: var(--shadow-lg) !important; }
+.shadow-xl { box-shadow: var(--shadow-xl) !important; }
+.shadow-2xl { box-shadow: var(--shadow-2xl) !important; }
+
+/* ==========================================================================
+   Spacing Utilities (using CSS variables)
+   ========================================================================== */
+
+/* Margin utilities */
+.m-auto { margin: auto !important; }
+.m-1 { margin: var(--space-1) !important; }
+.m-2 { margin: var(--space-2) !important; }
+.m-3 { margin: var(--space-3) !important; }
+.m-4 { margin: var(--space-4) !important; }
+.m-5 { margin: var(--space-5) !important; }
+.m-6 { margin: var(--space-6) !important; }
+.m-8 { margin: var(--space-8) !important; }
+
+/* Margin top */
+.mt-1 { margin-top: var(--space-1) !important; }
+.mt-2 { margin-top: var(--space-2) !important; }
+.mt-3 { margin-top: var(--space-3) !important; }
+.mt-4 { margin-top: var(--space-4) !important; }
+.mt-5 { margin-top: var(--space-5) !important; }
+.mt-6 { margin-top: var(--space-6) !important; }
+.mt-8 { margin-top: var(--space-8) !important; }
+
+/* Margin bottom */
+.mb-1 { margin-bottom: var(--space-1) !important; }
+.mb-2 { margin-bottom: var(--space-2) !important; }
+.mb-3 { margin-bottom: var(--space-3) !important; }
+.mb-4 { margin-bottom: var(--space-4) !important; }
+.mb-5 { margin-bottom: var(--space-5) !important; }
+.mb-6 { margin-bottom: var(--space-6) !important; }
+.mb-8 { margin-bottom: var(--space-8) !important; }
+
+/* Padding utilities */
+.p-1 { padding: var(--space-1) !important; }
+.p-2 { padding: var(--space-2) !important; }
+.p-3 { padding: var(--space-3) !important; }
+.p-4 { padding: var(--space-4) !important; }
+.p-5 { padding: var(--space-5) !important; }
+.p-6 { padding: var(--space-6) !important; }
+.p-8 { padding: var(--space-8) !important; }
+
+/* ==========================================================================
+   Typography Utilities
+   ========================================================================== */
+
+/* Font weights using CSS variables */
+.font-light { font-weight: var(--font-weight-light) !important; }
+.font-normal { font-weight: var(--font-weight-normal) !important; }
+.font-medium { font-weight: var(--font-weight-medium) !important; }
+.font-semibold { font-weight: var(--font-weight-semibold) !important; }
+.font-bold { font-weight: var(--font-weight-bold) !important; }
+
+/* Font sizes using CSS variables */
+.text-xs { font-size: var(--font-size-xs) !important; }
+.text-sm { font-size: var(--font-size-sm) !important; }
+.text-base { font-size: var(--font-size-base) !important; }
+.text-lg { font-size: var(--font-size-lg) !important; }
+.text-xl { font-size: var(--font-size-xl) !important; }
+.text-2xl { font-size: var(--font-size-2xl) !important; }
+.text-3xl { font-size: var(--font-size-3xl) !important; }
+.text-4xl { font-size: var(--font-size-4xl) !important; }
+
+/* Line heights */
+.leading-tight { line-height: var(--line-height-tight) !important; }
+.leading-normal { line-height: var(--line-height-normal) !important; }
+.leading-relaxed { line-height: var(--line-height-relaxed) !important; }
+
+/* ==========================================================================
+   Transition Utilities
+   ========================================================================== */
+
+.transition-none { transition: none !important; }
+.transition-fast { transition: all var(--transition-fast) !important; }
+.transition-base { transition: all var(--transition-base) !important; }
+.transition-slow { transition: all var(--transition-slow) !important; }
+
+.transition-colors { transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast) !important; }
+.transition-transform { transition: transform var(--transition-fast) !important; }
+.transition-opacity { transition: opacity var(--transition-fast) !important; }
+
+/* ==========================================================================
+   Transform Utilities
+   ========================================================================== */
+
+.transform { transform: translateZ(0) !important; } /* Enable GPU acceleration */
+.transform-none { transform: none !important; }
+.scale-0 { transform: scale(0) !important; }
+.scale-50 { transform: scale(0.5) !important; }
+.scale-75 { transform: scale(0.75) !important; }
+.scale-90 { transform: scale(0.9) !important; }
+.scale-95 { transform: scale(0.95) !important; }
+.scale-100 { transform: scale(1) !important; }
+.scale-105 { transform: scale(1.05) !important; }
+.scale-110 { transform: scale(1.1) !important; }
+.scale-125 { transform: scale(1.25) !important; }
+
+/* ==========================================================================
+   Flexbox Utilities
+   ========================================================================== */
+
+.flex-row { flex-direction: row !important; }
+.flex-col { flex-direction: column !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+.flex-nowrap { flex-wrap: nowrap !important; }
+
+.justify-start { justify-content: flex-start !important; }
+.justify-center { justify-content: center !important; }
+.justify-end { justify-content: flex-end !important; }
+.justify-between { justify-content: space-between !important; }
+.justify-around { justify-content: space-around !important; }
+
+.items-start { align-items: flex-start !important; }
+.items-center { align-items: center !important; }
+.items-end { align-items: flex-end !important; }
+.items-stretch { align-items: stretch !important; }
+
+.flex-1 { flex: 1 1 0% !important; }
+.flex-auto { flex: 1 1 auto !important; }
+.flex-initial { flex: 0 1 auto !important; }
+.flex-none { flex: none !important; }
+
+/* ==========================================================================
+   Grid Utilities
+   ========================================================================== */
+
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+.grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+.grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+.grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
+.grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)) !important; }
+
+.col-span-1 { grid-column: span 1 / span 1 !important; }
+.col-span-2 { grid-column: span 2 / span 2 !important; }
+.col-span-3 { grid-column: span 3 / span 3 !important; }
+.col-span-4 { grid-column: span 4 / span 4 !important; }
+.col-span-6 { grid-column: span 6 / span 6 !important; }
+.col-span-full { grid-column: 1 / -1 !important; }
+
+.gap-1 { gap: var(--space-1) !important; }
+.gap-2 { gap: var(--space-2) !important; }
+.gap-3 { gap: var(--space-3) !important; }
+.gap-4 { gap: var(--space-4) !important; }
+.gap-6 { gap: var(--space-6) !important; }
+.gap-8 { gap: var(--space-8) !important; }
+
+/* ==========================================================================
+   Interaction Utilities
+   ========================================================================== */
+
+.cursor-auto { cursor: auto !important; }
+.cursor-default { cursor: default !important; }
+.cursor-pointer { cursor: pointer !important; }
+.cursor-wait { cursor: wait !important; }
+.cursor-text { cursor: text !important; }
+.cursor-move { cursor: move !important; }
+.cursor-not-allowed { cursor: not-allowed !important; }
+
+.select-none { user-select: none !important; }
+.select-text { user-select: text !important; }
+.select-all { user-select: all !important; }
+
+.pointer-events-none { pointer-events: none !important; }
+.pointer-events-auto { pointer-events: auto !important; }
+
+/* ==========================================================================
+   State Utilities
+   ========================================================================== */
+
+.group:hover .group-hover\:block { display: block !important; }
+.group:hover .group-hover\:hidden { display: none !important; }
+.group:hover .group-hover\:opacity-100 { opacity: 1 !important; }
+.group:hover .group-hover\:opacity-0 { opacity: 0 !important; }
+
+/* Focus states */
+.focus\:outline-none:focus { outline: none !important; }
+.focus\:ring:focus { box-shadow: 0 0 0 3px var(--focus-ring) !important; }
+
+/* ==========================================================================
+   Responsive Utilities
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .md\:hidden { display: none !important; }
+    .md\:block { display: block !important; }
+    .md\:flex { display: flex !important; }
+    .md\:grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+    .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    .md\:text-sm { font-size: var(--font-size-sm) !important; }
+    .md\:p-4 { padding: var(--space-4) !important; }
+    .md\:m-4 { margin: var(--space-4) !important; }
+}
+
+@media (max-width: 480px) {
+    .sm\:hidden { display: none !important; }
+    .sm\:block { display: block !important; }
+    .sm\:flex { display: flex !important; }
+    .sm\:grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+    .sm\:text-xs { font-size: var(--font-size-xs) !important; }
+    .sm\:p-2 { padding: var(--space-2) !important; }
+    .sm\:m-2 { margin: var(--space-2) !important; }
+}

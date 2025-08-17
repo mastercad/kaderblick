@@ -46,7 +46,12 @@ abstract class ApiController extends AbstractController
     /** @var array<string, array<int>> */
     protected array $relationEntries = [];
     protected string $urlPart = '';
-
+    /** @var array<int, string> */
+    protected array $relevantColumns = [];
+    /** @var array<int, string> */
+    private array $additionalColumns = [
+        'options'
+    ];
     /** @var array<int, Error> */
     private array $errors = [];
     private string $permissionPrefix = '';

@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20250815202127 extends AbstractMigration
+final class Version20250816075652 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -521,6 +521,7 @@ final class Version20250815202127 extends AbstractMigration
               id INT AUTO_INCREMENT NOT NULL,
               name VARCHAR(50) NOT NULL,
               background_path VARCHAR(255) NOT NULL,
+              css_class VARCHAR(100) DEFAULT NULL,
               default_positions JSON DEFAULT NULL COMMENT '(DC2Type:json)',
               PRIMARY KEY(id)
             ) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB

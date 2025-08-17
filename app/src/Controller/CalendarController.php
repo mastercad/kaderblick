@@ -24,7 +24,7 @@ use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[IsGranted('IS_AUTHENTICATED')]
-#[Route('/calendar', name: 'calendar_')]
+#[Route('/calendar', name: 'api_calendar_')]
 class CalendarController extends AbstractController
 {
     public function __construct(

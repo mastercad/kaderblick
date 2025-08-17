@@ -1,0 +1,293 @@
+/* ==========================================================================
+   Sports Field Components - Modern CSS Implementation
+   ========================================================================== */
+
+/* Base sports field styling with modern CSS variables */
+.sports-field {
+    position: relative;
+    width: 100%;
+    min-height: 400px;
+    background: var(--football-field);
+    background-image: 
+        linear-gradient(90deg, rgba(255,255,255,0.1) 50%, transparent 50%),
+        linear-gradient(rgba(255,255,255,0.1) 50%, transparent 50%);
+    background-size: 20px 20px;
+    border: 2px solid var(--football-secondary);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    transition: all var(--transition-base);
+    background-attachment: local;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+/* ==========================================================================
+   Field Type Variations
+   ========================================================================== */
+
+/* Football Field (Soccer) */
+.field-football,
+.field-default {
+    background-image: url('/images/formation/fussballfeld_haelfte.jpg');
+    background-color: var(--football-field);
+}
+
+/* Basketball Field */
+.field-basketball {
+    background-image: url('/images/formation/fussballfeld_haelfte.jpg'); /* Fallback */
+    background-color: #d97706; /* Orange court */
+    border-color: #ea580c;
+}
+
+/* Volleyball Field */
+.field-volleyball {
+    background-image: url('/images/formation/volleyball_haelfte.jpg');
+    background-color: #eab308; /* Sand color */
+    border-color: #ca8a04;
+}
+
+/* Handball Field */
+.field-handball {
+    background-color: var(--color-info); /* Sky blue court */
+    border-color: var(--color-info-hover);
+}
+
+/* Tennis Field */
+.field-tennis {
+    background-color: var(--football-primary); /* Green court */
+    border-color: var(--football-secondary);
+}
+
+/* Ice Hockey Rink */
+.field-eishockey {
+    background-color: #f8fafc; /* Ice white */
+    border: 2px solid #ef4444; /* Red boards */
+}
+
+/* American Football Field */
+.field-american-football {
+    background-color: var(--football-primary); /* Green field */
+    border-color: var(--football-secondary);
+}
+
+/* Other fields (non-football) */
+.field-andere {
+    background: var(--gradient-primary);
+    border-color: var(--color-primary);
+}
+
+/* ==========================================================================
+   Field Markings & Lines (CSS-based)
+   ========================================================================== */
+
+/* Add field markings for better visual representation */
+.sports-field::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+/* Football field markings */
+.field-football::after {
+    background-image: 
+        /* Center line */
+        linear-gradient(to right, transparent 49%, white 49%, white 51%, transparent 51%),
+        /* Center circle */
+        radial-gradient(circle at center, transparent 15%, white 15%, white 16%, transparent 16%),
+        /* Goal areas */
+        linear-gradient(to bottom, transparent 20%, white 20%, white 21%, transparent 21%),
+        linear-gradient(to bottom, transparent 79%, white 79%, white 80%, transparent 80%);
+    background-size: 100% 100%, 100px 100px, 100% 100%, 100% 100%;
+    background-position: center;
+}
+
+/* Basketball court markings */
+.field-basketball::after {
+    background-image: 
+        /* Center line */
+        linear-gradient(to right, transparent 49%, white 49%, white 51%, transparent 51%),
+        /* Three-point line arcs */
+        radial-gradient(ellipse at top center, transparent 25%, white 25%, white 26%, transparent 26%),
+        radial-gradient(ellipse at bottom center, transparent 25%, white 25%, white 26%, transparent 26%);
+    background-size: 100% 100%, 100% 60%, 100% 60%;
+    background-position: center, center top, center bottom;
+}
+
+/* ==========================================================================
+   Dark Mode Adaptations
+   ========================================================================== */
+
+[data-bs-theme="dark"] .sports-field {
+    border-color: var(--border-emphasized);
+}
+
+[data-bs-theme="dark"] .sports-field::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Ensure field markings are visible in dark mode */
+[data-bs-theme="dark"] .sports-field::after {
+    z-index: 2;
+    opacity: 0.5;
+}
+
+/* ==========================================================================
+   Formation Integration
+   ========================================================================== */
+
+/* Make sure formation players are above field markings */
+.sports-field .formation-player {
+    z-index: 10;
+    position: absolute;
+}
+
+/* Field selection indicator */
+.sports-field.selected {
+    border: 3px solid var(--color-primary);
+    box-shadow: 
+        var(--shadow-lg),
+        0 0 0 3px var(--focus-ring);
+}
+
+/* ==========================================================================
+   Interactive States
+   ========================================================================== */
+
+.sports-field:hover {
+    transform: scale(1.01);
+    box-shadow: var(--shadow-xl);
+}
+
+.sports-field.interactive {
+    cursor: pointer;
+}
+
+.sports-field.interactive:active {
+    transform: scale(0.99);
+}
+
+/* ==========================================================================
+   Size Variations
+   ========================================================================== */
+
+.sports-field-sm {
+    min-height: 250px;
+}
+
+.sports-field-lg {
+    min-height: 600px;
+}
+
+.sports-field-xl {
+    min-height: 800px;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .sports-field {
+        min-height: 300px;
+        border-radius: var(--radius-md);
+    }
+    
+    .sports-field:hover {
+        transform: none;
+    }
+    
+    .sports-field-lg {
+        min-height: 400px;
+    }
+    
+    .sports-field-xl {
+        min-height: 500px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sports-field {
+        min-height: 250px;
+        margin: var(--space-2);
+    }
+    
+    .sports-field-sm {
+        min-height: 200px;
+    }
+}
+
+/* ==========================================================================
+   Animation & Transitions
+   ========================================================================== */
+
+.sports-field {
+    transition: 
+        transform var(--transition-base),
+        box-shadow var(--transition-base),
+        border-color var(--transition-fast);
+}
+
+/* Field switching animation */
+.sports-field.changing {
+    animation: fieldSwitch var(--duration-base) ease-in-out;
+}
+
+@keyframes fieldSwitch {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.98); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* ==========================================================================
+   Accessibility Improvements
+   ========================================================================== */
+
+.sports-field[role="button"] {
+    cursor: pointer;
+}
+
+.sports-field:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .sports-field {
+        border-width: 3px;
+    }
+    
+    .sports-field::after {
+        opacity: 0.8;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .sports-field {
+        transition: none;
+    }
+    
+    .sports-field:hover {
+        transform: none;
+    }
+    
+    .changing {
+        animation: none;
+    }
+}

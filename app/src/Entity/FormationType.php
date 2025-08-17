@@ -21,6 +21,9 @@ class FormationType
     #[ORM\Column(length: 255)]
     private string $backgroundPath = 'default-field.jpg';
 
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $cssClass = null;
+
     /** @var array<string, mixed>|null $defaultPositions */
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $defaultPositions = null;
@@ -59,6 +62,18 @@ class FormationType
     public function setBackgroundPath(string $backgroundPath): self
     {
         $this->backgroundPath = $backgroundPath;
+
+        return $this;
+    }
+
+    public function getCssClass(): ?string
+    {
+        return $this->cssClass;
+    }
+
+    public function setCssClass(?string $cssClass): self
+    {
+        $this->cssClass = $cssClass;
 
         return $this;
     }

@@ -1,0 +1,13 @@
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Default field background -->
+  <rect width="400" height="300" fill="#667eea" stroke="white" stroke-width="3"/>
+  
+  <!-- Center line -->
+  <line x1="200" y1="0" x2="200" y2="300" stroke="white" stroke-width="2"/>
+  
+  <!-- Center circle -->
+  <circle cx="200" cy="150" r="50" fill="none" stroke="white" stroke-width="2"/>
+  
+  <!-- Center spot -->
+  <circle cx="200" cy="150" r="3" fill="white"/>
+</svg>
