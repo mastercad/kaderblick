@@ -112,9 +112,11 @@
 
         const firstRow = data[0];
         const relationDefinition = data['relations'];
-        const columns = Object.keys(firstRow)
+        const headerDefinition = data['header'];
 
-        columns.forEach(column => {
+//        const columns = Object.keys(firstRow)
+
+        headerDefinition.forEach(column => {
           const th = document.createElement('th');
           th.textContent = column;
           headerTr.appendChild(th);
@@ -132,9 +134,14 @@
             const tr = document.createElement('tr');
             
             // Über die Werte im Objekt iterieren
-            Object.entries(row).forEach(([entryKey, entryValue]) => {
+            Object.entries(headerDefinition).forEach(([entryKey, entryValue]) => {
+              if ('options' === entryValue) {
+                return;
+              }
+              
+//            Object.entries(row).forEach(([entryKey, entryValue]) => {
               const td = document.createElement('td');
-              td.innerHTML = retrieveEntityValue(relationDefinition, entryKey, entryValue);
+              td.innerHTML = retrieveEntityValue(relationDefinition, entryValue, row[entryValue] ?? '');
               tr.appendChild(td);
             });
 

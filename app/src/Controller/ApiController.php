@@ -94,10 +94,6 @@ abstract class ApiController extends AbstractController
 
         $meta = $this->em->getClassMetadata($entityClass);
 
-        $schema = [
-            'columns' => array_merge($this->relevantColumns, $this->additionalColumns)
-        ];
-
         foreach ($meta->fieldMappings as $field => $mapping) {
             if ('id' == $field) {
                 continue;
@@ -156,8 +152,21 @@ abstract class ApiController extends AbstractController
         $context = ['groups' => [$this->permissionPrefix . ':read']];
 
         $json = $this->serializer->serialize($entries, 'json', $context);
+        $data = json_decode($json, true);
 
-        $data = json_decode($json);
+        $relevantColumns = !empty($this->relevantColumns)
+            ? $this->relevantColumns
+            : (static function (array $data): array {
+                $allColumns = [];
+                foreach ($data as $row) {
+                    $allColumns = array_merge($allColumns, array_keys((array) $row));
+                }
+                return array_values(array_unique($allColumns));
+            })($data);
+
+
+        $data['header'] = array_merge($relevantColumns, $this->additionalColumns);
+
         $json = json_encode(array_merge($data, ['relations' => $this->relations]));
 
         return new JsonResponse($json, 200, [], true);
