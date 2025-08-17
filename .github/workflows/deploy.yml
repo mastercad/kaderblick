@@ -241,7 +241,7 @@ jobs:
 
             ##### WORKAROUND FÜR FIXTURES #######
             echo "Spiele Fixtures für stammdaten ein"
-            docker compose -p staging exec -T api env APP_ENV=dev composer install
+            docker compose -p staging exec -T api env APP_ENV=dev composer install --dev
             docker compose -p staging exec -T api bin/console doctrine:fixtures:load -n --env=prod --group=master
             docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
 
