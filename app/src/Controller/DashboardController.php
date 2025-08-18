@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\DashboardWidget;
+use App\Entity\ReportDefinition;
 use App\Entity\User;
 use App\Repository\CalendarEventRepository;
 use App\Repository\DashboardWidgetRepository;
@@ -99,13 +100,33 @@ class DashboardController extends AbstractController
     }
 
     #[IsGranted('IS_AUTHENTICATED')]
-    #[Route('widget', name: 'widget_create', methods: ['PUT'])]
+    #[Route('/widget', name: 'widget_create', methods: ['PUT'])]
     public function createWidget(Request $request, EntityManagerInterface $em, PushNotificationService $pushNotificationService): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
+        $type = $data['type'] ?? null;
+        $type = strtolower($type);
 
-        if (!isset($data['type'])) {
+        if (empty($type)) {
             return $this->json(['error' => 'Widget type is required'], 400);
+        }
+
+        $reportId = $data['reportId'] ?? null;
+        $position = $data['position'] ?? 0;
+        $width = $data['width'] ?? 4;
+        $report = null;
+
+        if ('report' === $type) {
+            if (empty($reportId)) {
+                return $this->json(['error' => 'Report ID is required'], 400);
+            }
+
+            /** @var User $user */
+            $user = $this->getUser();
+            $report = $em->getRepository(ReportDefinition::class)->find($reportId);
+            if (null === $report) {
+                return $this->json(['error' => 'Report not found'], 404);
+            }
         }
 
         /** @var User $user */
@@ -120,10 +141,11 @@ class DashboardController extends AbstractController
         $widget = new DashboardWidget();
         $widget->setUser($user);
         $widget->setType($data['type']);
-        $widget->setPosition($data['position'] ?? 0);
-        $widget->setWidth($data['width'] ?? 4);
+        $widget->setPosition($position);
+        $widget->setWidth($width);
         $widget->setConfig($data['config'] ?? []);
         $widget->setEnabled(true);
+        $widget->setReportDefinition($report);
 
         $em->persist($widget);
         $em->flush();
@@ -135,7 +157,8 @@ class DashboardController extends AbstractController
                 'type' => $widget->getType(),
                 'position' => $widget->getPosition(),
                 'width' => $widget->getWidth(),
-                'config' => $widget->getConfig()
+                'config' => $widget->getConfig(),
+                'reportId' => $widget->getReportDefinition() ? $widget->getReportDefinition()->getId() : null
             ]
         ]);
     }
@@ -175,6 +198,9 @@ class DashboardController extends AbstractController
             'news' => $this->renderView('widgets/news.html.twig', [
                 'widget' => $widget,
                 'news' => $this->newsRepo->findForUser($user)
+            ]),
+            'report' => $this->renderView('widgets/report.html.twig', [
+                'widget' => $widget
             ]),
             default => 'Widget type not implemented yet'
         };

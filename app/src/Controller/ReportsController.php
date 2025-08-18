@@ -16,7 +16,7 @@ class ReportsController extends AbstractController
         return $this->render('report/index.html.twig');
     }
 
-    #[Route('/api/report', name: 'api_report_data', methods: ['GET'])]
+    #[Route('/api/reports', name: 'api_reports_show', methods: ['GET'])]
     public function reports(Request $request): JsonResponse
     {
         $diagramType = $request->query->get('diagramType', 'bar');

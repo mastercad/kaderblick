@@ -30,6 +30,9 @@ const dashboardModalTemplates = {
               <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="upcoming_events">
                 <i class="fas fa-newspaper"></i> Anstehende Veranstaltungen
               </button>
+              <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="report" id="openReportWidgetFlow">
+                <i class="fas fa-file-alt"></i> Report Widget
+              </button>
             </div>
           </div>
         </div>
@@ -63,19 +66,105 @@ function initializeDashboardModalFunctionality() {
   // Widget add button handlers
   const addWidgetButtons = document.querySelectorAll('.btn-add-widget');
   addWidgetButtons.forEach(button => {
-    button.addEventListener('click', function() {
-      const widgetType = this.dataset.widgetType;
-      createWidget(widgetType);
-      window.ModalManager.hideModal('addWidgetModal');
-    });
+    if (button.dataset.widgetType === 'report') {
+      button.addEventListener('click', function() {
+        window.ModalManager.hideModal('addWidgetModal');
+        // Nach dem Schließen das Report-Auswahl-Modal öffnen
+        setTimeout(() => {
+          loadReportsLazy();
+          window.ModalManager.showModal('selectReportModal');
+        }, 300);
+      });
+    } else {
+      button.addEventListener('click', function() {
+        const widgetType = this.dataset.widgetType;
+        createWidget(widgetType);
+        window.ModalManager.hideModal('addWidgetModal');
+      });
+    }
   });
 }
 
-async function createWidget(type) {
-    await fetch('{{ path("app_dashboard_widget_create") }}', {
+// Report-Auswahl-Modal (nur Grundgerüst, muss ggf. noch als ModalTemplate registriert werden)
+if (!dashboardModalTemplates.selectReportModal) {
+  dashboardModalTemplates.selectReportModal = `
+    <div class="modal fade" id="selectReportModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Report auswählen</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div id="reportListLoading" class="text-center my-3" style="display:none;">
+              <div class="spinner-border" role="status"><span class="visually-hidden">Laden...</span></div>
+            </div>
+            <div id="reportListContainer">
+              <!-- Dynamisch per JS geladen -->
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+            <button type="button" class="btn btn-primary" id="addReportWidgetsBtn">Hinzufügen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function loadReportsLazy() {
+  const container = document.getElementById('reportListContainer');
+  const loading = document.getElementById('reportListLoading');
+  if (!container || !loading) return;
+  container.innerHTML = '';
+  loading.style.display = '';
+  fetch('/api/report/available')
+    .then(r => r.json())
+    .then(data => {
+      loading.style.display = 'none';
+      if (!Array.isArray(data)) { container.innerHTML = '<div class="alert alert-danger">Fehler beim Laden</div>'; return; }
+      if (data.length === 0) { container.innerHTML = '<div class="alert alert-info">Keine Reports verfügbar</div>'; return; }
+      container.innerHTML = data.map(report =>
+        `<div class="form-check">
+          <input class="form-check-input" type="checkbox" value="${report.id}" id="report${report.id}">
+          <label class="form-check-label" for="report${report.id}">
+            ${report.name} <span class="badge bg-${report.isTemplate ? 'info' : 'secondary'}">${report.isTemplate ? 'Template' : 'Eigen'}</span>
+          </label>
+        </div>`
+      ).join('');
+    })
+    .catch(() => { loading.style.display = 'none'; container.innerHTML = '<div class="alert alert-danger">Fehler beim Laden</div>'; });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Report-Widget Hinzufügen-Button im Modal
+  const dashboardModalsReady = () => {
+    if (window.ModalManager && window.ModalManager.registerModal) {
+      window.ModalManager.registerModal('selectReportModal', dashboardModalTemplates.selectReportModal);
+      // Button-Handler für Report-Auswahl
+      document.body.addEventListener('click', function(e) {
+        if (e.target && e.target.id === 'addReportWidgetsBtn') {
+          const checked = document.querySelectorAll('#reportListContainer input[type="checkbox"]:checked');
+          const ids = Array.from(checked).map(cb => cb.value);
+          if (ids.length > 0) {
+            ids.forEach(id => createWidget('report', id));
+          }
+          window.ModalManager.hideModal('selectReportModal');
+        }
+      });
+    } else {
+      setTimeout(dashboardModalsReady, 100);
+    }
+  };
+  dashboardModalsReady();
+});
+
+async function createWidget(type, reportId) {
+    await fetch('/widget', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: type })
+            body: JSON.stringify({ type: type, reportId: reportId })
     }).then((response) => {
         if (response.status >= 400 && response.status < 600) {
             throw new Error("Bad response from server - " + response.status + " : " + response.statusText);
@@ -89,84 +178,21 @@ async function createWidget(type) {
     });
 }
 
-/**
- * Add a new widget to the dashboard
- */
-async function addWidget(widgetType) {
-  try {
-    const response = await fetch('/api/dashboard/widgets', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ type: widgetType })
+async function addWidget(widgetId) {
+    await fetch('/widget/' + widgetId, {
+      method: 'GET'
+    }).then((response) => {
+      if (response.status >= 400 && response.status < 600) {
+        throw new Error("Bad response from server - " + response.status + " : " + response.statusText);
+      }
+      return response.text();
+    }).then((html) => {
+      const widgetElement = createWidgetFromHtml(html, widgetId);
+      loadWidgetContent(widgetElement);
+      document.getElementById('widgetGrid').appendChild(widgetElement);
+    }).catch((error) => {
+      console.error(error);
     });
-
-    if (response.ok) {
-      const widget = await response.json();
-      
-      // Create widget element
-      const widgetElement = createWidgetElement(widget);
-      
-      // Add to grid
-      const grid = document.getElementById('widgetGrid');
-      grid.appendChild(widgetElement);
-      
-      // Load widget content
-      await loadWidgetContent(widgetElement);
-      
-      // Update positions
-      updateWidgetPositions();
-      
-    } else {
-      alert('Fehler beim Hinzufügen des Widgets');
-    }
-  } catch (error) {
-    console.error('Add widget error:', error);
-    alert('Fehler beim Hinzufügen des Widgets');
-  }
-}
-
-/**
- * Create a new widget element
- */
-function createWidgetElement(widget) {
-  const widgetHtml = `
-    <div class="col-lg-6 col-xl-4 widget-item" data-widget-id="${widget.id}" data-widget-type="${widget.type}">
-      <div class="card h-100">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="card-title mb-0">${getWidgetTitle(widget.type)}</h6>
-          <div class="dropdown">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-              <i class="fas fa-cog"></i>
-            </button>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item btn-widget-settings" href="#" data-widget-id="${widget.id}">Einstellungen</a></li>
-              <li><a class="dropdown-item btn-widget-remove" href="#" data-widget-id="${widget.id}">Entfernen</a></li>
-            </ul>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="widget-content" id="widget-content-${widget.id}">
-            <div class="text-center">
-              <div class="spinner-border spinner-border-sm" role="status">
-                <span class="visually-hidden">Laden...</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  const wrapper = document.createElement('div');
-  wrapper.innerHTML = widgetHtml.trim();
-  const element = wrapper.firstChild;
-  
-  // Add event listeners
-  addWidgetEventListeners(element);
-  
-  return element;
 }
 
 /**
@@ -264,6 +290,66 @@ async function loadWidgetContent(widgetElement) {
     console.error('Load widget content error:', error);
     contentContainer.innerHTML = '<p class="text-muted">Fehler beim Laden des Inhalts</p>';
   }
+}
+
+async function loadWidgetContent(widgetElement) {
+    const widgetContent = widgetElement.querySelector('.widget-content');
+    const widgetId = widgetElement.dataset.widgetId;
+    try {
+        const response = await fetch(`/widget/${widgetId}/content`);
+        if (response.ok) {
+            const html = await response.text();
+            widgetContent.innerHTML = html;
+            
+            // Führe eventuell eingebettetes Script manuell aus, da sie beim laden nicht direkt ausgeführt werden
+            const scripts = widgetContent.querySelectorAll('script');
+            scripts.forEach(oldScript => {
+                const newScript = document.createElement('script');
+                // Kopiere alle Attribute
+                Array.from(oldScript.attributes).forEach(attr => {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+                if (oldScript.src) {
+                    // Externe Skripte nachladen
+                    newScript.src = oldScript.src;
+                    document.body.appendChild(newScript);
+                } else {
+                    // Nur Inline-Skripte mit JS-Code ausführen
+                    newScript.textContent = oldScript.textContent;
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Widget loading error:', error);
+        widgetContent.innerHTML = '<div class="alert alert-danger">Widget konnte nicht geladen werden</div>';
+    }
+}
+
+// Widget-Updates
+function updateWidgetPositions() {
+    const widgets = [];
+    document.querySelectorAll('.widget-item').forEach((widget, index) => {
+        const width = parseInt(widget.className.match(/col-md-(\d+)/)[1]);
+        widgets.push({
+            id: widget.dataset.widgetId,
+            position: index,
+            width: width
+        });
+    });
+
+    fetch('{{ path("app_dashboard_widget_update") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ widgets: widgets })
+    }).catch(error => console.error('Error:', error));
+}
+  
+function createWidgetFromHtml(htmlString, widgetId) {
+    const container = document.createElement('div');
+    container.innerHTML = htmlString.trim();
+
+    return container.firstElementChild;
 }
 
 /**

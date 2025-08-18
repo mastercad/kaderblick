@@ -14,6 +14,10 @@ class DashboardWidget
     /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
+    #[ORM\ManyToOne(targetEntity: ReportDefinition::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?ReportDefinition $reportDefinition = null;
+
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'widgets')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
@@ -114,6 +118,17 @@ class DashboardWidget
     {
         $this->enabled = $enabled;
 
+        return $this;
+    }
+
+    public function getReportDefinition(): ?ReportDefinition
+    {
+        return $this->reportDefinition;
+    }
+
+    public function setReportDefinition(?ReportDefinition $reportDefinition): self
+    {
+        $this->reportDefinition = $reportDefinition;
         return $this;
     }
 }
