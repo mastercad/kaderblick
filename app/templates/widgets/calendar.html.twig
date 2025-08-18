@@ -16,18 +16,28 @@
         },
         events: '{{ path('api_calendar_events') }}',
         eventDidMount: function(info) {
-            // Participation status icon (CSS only)
+            console.log(info);
+            console.log("Date: ", info.event.start);
             const status = info.event.extendedProps.participation_status;
-            let iconHtml = '';
-            if (status && status.icon) {
-                iconHtml = `<span class=\"event-status-icon\" title=\"${status.name}\"><i class=\"${status.icon}\"></i></span>`;
-            } else if (status && status.code) {
-                iconHtml = `<span class=\"event-status-dot event-status-dot--custom\" title=\"${status.name}\" style=\"background:${status.color||'#888'}\"></span>`;
-            } else {
-                iconHtml = `<span class=\"event-status-icon\" title=\"Keine Antwort\"><i class=\"fas fa-question-circle text-secondary\"></i></span>`;
+
+            if (status.icon) {
+                iconHtml = `<span class="event-status-icon" style="position: absolute; top: 0px; right: 0px;" title="${status.name}"><i class="fa fa-${status.icon}"></i></span>`;
+            } else if (status.code) {
+                iconHtml = `<span class="event-status-dot" title="${status.name}" style="background:${status.color||'#888'}; position: absolute; top: 0px; right: 0px;"></span>`;
             }
-            const titleEl = info.el.querySelector('.fc-event-title') || info.el;
-            titleEl.insertAdjacentHTML('afterbegin', iconHtml + ' ');
+            
+            if (! iconHtml) {
+                const iconHtml = `<span class="event-status-icon" style="position: absolute; top: 0px; right: 0px;" title="Keine Antwort"><i class="fas fa-question-circle text-secondary"></i></span>`;
+            }
+
+            const titleEl = info.el.querySelector('.fc-daygrid-event-harness') || info.el;
+            titleEl.insertAdjacentHTML("beforeend", iconHtml);
+            const date = new Date(info.event.start);
+            const cellEl = info.el;
+            cellEl.style.cursor = 'pointer';
+            cellEl.addEventListener('click', () => {
+                window.location.href = `/calendar?view=day&date=${convertDate(date)}`;
+            });
         },
     });
     calendar.render();

@@ -1,7 +1,7 @@
 {% if events|length > 0 %}
     <div class="list-group">
         {% for event in events %}
-            <div class="list-group-item event-list-item dynamic-event-color" data-event-color="{{ event.calendarEventType.color }}">
+            <div class="list-group-item event-list-item dynamic-event-color" data-event-color="{{ event.calendarEventType.color }}" style="border-left: 4px solid {{ event.calendarEventType.color }}">
                 <div class="row align-items-center">
                     <div class="col-8">
                         <h6 class="mb-1">{{ event.title }}</h6>
