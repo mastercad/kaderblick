@@ -14,7 +14,7 @@
     <script>
     (function() {
         const chartId = '{{ widget.id|json_encode }}';
-        const apiUrl = '/api/report-data/' + chartId;
+        const apiUrl = '/api/report/widget/' + chartId + '/data';
         const canvas = document.getElementById('report-canvas-' + chartId);
         const errorDiv = document.getElementById('report-error-' + chartId);
         if (!canvas) return;
