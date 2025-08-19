@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use DateTimeInterface;
+
 class ReportFieldAliasService
 {
     /**
@@ -30,6 +32,16 @@ class ReportFieldAliasService
             ],
             'eventType' => [
                 'label' => 'Ereignistyp',
+                'value' => static function ($event) {
+                    if (method_exists($event, 'getGameEventType')) {
+                        $type = $event->getGameEventType();
+                        if ($type && method_exists($type, 'getName')) {
+                            return $type->getName();
+                        }
+                    }
+
+                    return null;
+                },
                 'entity' => 'GameEvent',
                 'field' => 'gameEventType',
                 'type' => 'relation',
@@ -55,20 +67,18 @@ class ReportFieldAliasService
                         $calendarEvent = $event->getGame()->getCalendarEvent();
                         if ($calendarEvent && method_exists($calendarEvent, 'getStartDate')) {
                             $date = $calendarEvent->getStartDate();
-                            if ($date instanceof \DateTimeInterface) {
+                            if ($date instanceof DateTimeInterface) {
                                 // Format für Chart: z.B. "Y-m-d H:i"
                                 return $date->format('Y-m-d H:i');
                             }
                         }
                     }
+
                     return null;
                 },
                 'entity' => 'Game',
                 'field' => 'startDate',
                 'type' => 'date',
-            ],
-            'eventType' => [
-                'label' => 'Ereignistyp'
             ],
             'homeTeam' => [
                 'label' => 'Heimteam',

@@ -38,10 +38,7 @@
                         type: chartType,
                         data: {
                             labels: data.labels,
-                                datasets: [{
-                                    label: data.diagramType.charAt(0).toUpperCase() + data.diagramType.slice(1),
-                                    data: data.values,
-                                }]
+                            datasets: data.datasets
                         }
                     }
                 );
