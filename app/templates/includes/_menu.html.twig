@@ -9,7 +9,6 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
 
-
                 {# Gäste: nur öffentliche Menüpunkte #}
                 {% if not is_granted('IS_AUTHENTICATED_FULLY') %}
                     <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_calendar_index') }}"><i class="fas fa-calendar-alt me-1"></i>Kalender</a></li>
@@ -22,7 +21,6 @@
                     <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_teams_index') }}"><i class="fas fa-users me-1"></i>Teams</a></li>
                     <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_games_index') }}"><i class="fas fa-trophy me-1"></i>Spiele</a></li>
                     <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_locations_index') }}"><i class="fas fa-map-marker-alt me-1"></i>Spielstätten</a></li>
-
 
                     {# Reports: für alle eingeloggten User #}
                     <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('app_report_list') }}"><i class="fas fa-chart-bar me-1"></i>Reports</a></li>
@@ -101,8 +99,8 @@
                     </li>
                 {% else %}
                     {# Login Button für Gäste #}
-                    <li class="nav-item">
-                        <button class="btn btn-light" onclick="const modalManager = (window.modalManager || window.ModalManager); modalManager.showModal('auth_modal')">
+                    <li class="nav-item d-lg-none">
+                        <button class="nav-link btn btn-link w-100 text-start justify-content-start" onclick="const modalManager = (window.modalManager || window.ModalManager); modalManager.showModal('auth_modal')">
                             <i class="fas fa-sign-in-alt me-1"></i>
                             Anmelden
                         </button>
