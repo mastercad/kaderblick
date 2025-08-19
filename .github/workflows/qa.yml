@@ -1,11 +1,15 @@
 name: Quality Assurance
 
 on:
-  push:
-    branches:
-      - '**'
+#  push:
+#    branches:
+#      - '**'
   pull_request:
   workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality-assurance:
