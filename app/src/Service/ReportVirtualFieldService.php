@@ -47,7 +47,7 @@ class ReportVirtualFieldService
             $end = $game->getEndTime() ?? null;
             if (!$start) {
                 continue;
-            }   
+            }
             if (!$in) {
                 $in = $start;
             }
