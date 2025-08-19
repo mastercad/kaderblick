@@ -48,12 +48,27 @@ class ReportFieldAliasService
                 'field' => 'description',
                 'type' => 'string',
             ],
-            // Game fields
             'gameDate' => [
                 'label' => 'Spieldatum',
+                'value' => static function ($event) {
+                    if (method_exists($event, 'getGame') && $event->getGame() && method_exists($event->getGame(), 'getCalendarEvent')) {
+                        $calendarEvent = $event->getGame()->getCalendarEvent();
+                        if ($calendarEvent && method_exists($calendarEvent, 'getStartDate')) {
+                            $date = $calendarEvent->getStartDate();
+                            if ($date instanceof \DateTimeInterface) {
+                                // Format für Chart: z.B. "Y-m-d H:i"
+                                return $date->format('Y-m-d H:i');
+                            }
+                        }
+                    }
+                    return null;
+                },
                 'entity' => 'Game',
-                'field' => 'date',
+                'field' => 'startDate',
                 'type' => 'date',
+            ],
+            'eventType' => [
+                'label' => 'Ereignistyp'
             ],
             'homeTeam' => [
                 'label' => 'Heimteam',

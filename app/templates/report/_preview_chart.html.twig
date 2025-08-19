@@ -1,0 +1,67 @@
+{# Echte Chart-Vorschau für den Report-Builder #}
+<div class="report-widget-preview">
+    <h4>{{ report.name ?: 'Neuer Report' }}</h4>
+    <button type="button" id="swap-axes-btn" class="btn btn-sm btn-outline-secondary mb-2">X/Y-Achsen tauschen</button>
+    <canvas id="report-preview-canvas" height="180"></canvas>
+    <script>
+    (function() {
+        let labels = {{ labels|json_encode|raw }};
+        let datasets = (
+            {{ datasets|json_encode|raw }}
+        ).map((ds, i) => Object.assign({
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }, ds));
+        let swapped = false;
+        function renderChart() {
+            const ctx = document.getElementById('report-preview-canvas').getContext('2d');
+            if (!ctx) return;
+            if (window.reportPreviewChart) {
+                window.reportPreviewChart.destroy();
+            }
+            window.reportPreviewChart = new Chart(ctx, {
+                type: '{{ diagramType|e('js') }}',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } }
+                }
+            });
+        }
+        document.getElementById('swap-axes-btn').addEventListener('click', function() {
+            swapped = !swapped;
+            if (swapped) {
+                // Drehe Matrix: labels = alle Dataset-Labels, datasets = pro altem Label die Werte
+                const newLabels = datasets.map(ds => ds.label);
+                const newDatasets = labels.map((lbl, i) => {
+                    return {
+                        label: lbl,
+                        data: datasets.map(ds => ds.data[i]),
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    };
+                });
+                labels = newLabels;
+                datasets = newDatasets;
+            } else {
+                // Original zurücksetzen
+                labels = {{ labels|json_encode|raw }};
+                datasets = (
+                    {{ datasets|json_encode|raw }}
+                ).map((ds, i) => Object.assign({
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }, ds));
+            }
+            renderChart();
+        });
+        renderChart();
+    })();
+    </script>
+</div>

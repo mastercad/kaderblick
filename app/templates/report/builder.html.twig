@@ -1,54 +1,315 @@
-{#
-    templates/report/builder.html.twig
-    Report builder form for creating/editing user reports and templates.
-#}
 
 {% extends 'base.html.twig' %}
 
 {% block title %}Report Builder{% endblock %}
 
 {% block body %}
-<h1>{{ report is defined and report.id ? 'Edit Report' : 'Create Report' }}</h1>
-<form method="post" action="{{ form_action }}">
-    <div class="mb-3">
-        <label for="name" class="form-label">Name</label>
-        <input type="text" class="form-control" id="name" name="name" value="{{ report.name|default('') }}" required>
-    </div>
-    <div class="mb-3">
-        <label for="description" class="form-label">Description</label>
-        <textarea class="form-control" id="description" name="description">{{ report.description|default('') }}</textarea>
-    </div>
-    <div class="mb-3">
-        <label for="diagramType" class="form-label">Diagram Type</label>
-        <select class="form-select" id="diagramType" name="config[diagramType]">
-            <option value="bar" {{ (report.config.diagramType|default('bar')) == 'bar' ? 'selected' : '' }}>Bar</option>
-            <option value="line" {{ (report.config.diagramType|default('bar')) == 'line' ? 'selected' : '' }}>Line</option>
-            <option value="pie" {{ (report.config.diagramType|default('bar')) == 'pie' ? 'selected' : '' }}>Pie</option>
-        </select>
-    </div>
-    <div class="mb-3">
-        <label for="xField" class="form-label">X-Achse</label>
-        <select class="form-select" id="xField" name="config[xField]">
-            {% for key, alias in fieldAliases %}
-                <option value="{{ key }}" {{ (report.config.xField|default('player')) == key ? 'selected' : '' }}>{{ alias.label }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="mb-3">
-        <label for="yField" class="form-label">Y-Achse</label>
-        <select class="form-select" id="yField" name="config[yField]">
-            {% for key, alias in fieldAliases %}
-                <option value="{{ key }}" {{ (report.config.yField|default('goals')) == key ? 'selected' : '' }}>{{ alias.label }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    {# Add filter fields as needed #}
-    {% if is_granted('ROLE_ADMIN') %}
-        <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" id="isTemplate" name="isTemplate" value="1" {{ report.isTemplate ? 'checked' : '' }}>
-            <label class="form-check-label" for="isTemplate">Save as template (visible for all users)</label>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Linke Spalte: Benutzte Felder & Verfügbare Spalten -->
+        <div class="col-md-3 border-end pt-3">
+            <div class="mb-4">
+                <h6 class="text-primary">Benutzte Felder</h6>
+                <div class="mb-2 small">
+                <div class="mb-2">
+                    <strong>Gruppierung:</strong>
+                    <div id="drop-group" class="dropzone border rounded p-2 mb-1 bg-white d-flex flex-wrap gap-1" data-axis="group" style="min-height:2.2em; min-width: 80px;">
+                        <!-- Group chips will be rendered here -->
+                    </div>
+                </div>
+                    <div class="mb-2">
+                        <strong>X-Achse:</strong>
+                        <div id="drop-x" class="dropzone border rounded p-2 mb-1 bg-white" data-axis="x" style="min-height:2.2em;">
+                            {{ fieldAliases[report.config.xField|default('player')].label ?? '-' }}
+                        </div>
+                    </div>
+                    <div>
+                        <strong>Y-Achse:</strong>
+                        <div id="drop-y" class="dropzone border rounded p-2 bg-white" data-axis="y" style="min-height:2.2em;">
+                            {{ fieldAliases[report.config.yField|default('goals')].label ?? '-' }}
+                        </div>
+                    </div>
+                </div>
+                {# Platz für Filter/Gruppierung, wenn gewünscht #}
+            </div>
+            <div>
+                <h6>Verfügbare Spalten</h6>
+                <ul class="list-group mb-3">
+                    {% for key, alias in fieldAliases %}
+                        <li class="list-group-item small" draggable="true" data-key="{{ key }}">{{ alias.label }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
-    {% endif %}
-    <button type="submit" class="btn btn-primary">Save</button>
-</form>
+        <!-- Rechte Spalte: Builder und Vorschau -->
+        <div class="col-md-9">
+            <form method="post" action="{{ form_action }}" id="report-builder-form">
+                <div id="groupByInputs"></div>
+                <div class="row align-items-end g-2 mt-3 mb-2">
+                    <div class="col-md-4">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ report.name|default('') }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="diagramType" class="form-label">Diagrammtyp</label>
+                        <select class="form-select" id="diagramType" name="config[diagramType]">
+                            <option value="bar" {{ (report.config.diagramType|default('bar')) == 'bar' ? 'selected' : '' }}>Balken</option>
+                            <option value="line" {{ (report.config.diagramType|default('bar')) == 'line' ? 'selected' : '' }}>Linie</option>
+                            <option value="pie" {{ (report.config.diagramType|default('bar')) == 'pie' ? 'selected' : '' }}>Kreis</option>
+                        </select>
+                    </div>
+                    <!-- X/Y-Achse Drop-Zonen als Hidden Inputs -->
+                    <input type="hidden" id="xField" name="config[xField]" value="{{ report.config.xField|default('player') }}">
+                    <input type="hidden" id="yField" name="config[yField]" value="{{ report.config.yField|default('goals') }}">
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-8">
+                        <label for="description" class="form-label">Beschreibung</label>
+                        <textarea class="form-control" id="description" name="description">{{ report.description|default('') }}</textarea>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        {% if is_granted('ROLE_ADMIN') %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isTemplate" name="isTemplate" value="1" {{ report.isTemplate ? 'checked' : '' }}>
+                                <label class="form-check-label" for="isTemplate">Als Vorlage speichern</label>
+                            </div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary ms-3">Speichern</button>
+                    </div>
+                </div>
+            </form>
+            <div class="position-relative border rounded p-3 bg-light" style="min-height:320px;">
+                <div id="report-preview-loader" class="position-absolute top-50 start-50 translate-middle" style="display:none;z-index:2;">
+                    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Lädt...</span></div>
+                </div>
+                <div id="report-preview-error" class="alert alert-danger py-2 px-3 mb-2" style="display:none;"></div>
+                <div id="report-preview"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Gruppierung: Nur noch Chips und groupByFields
+    const dropGroup = document.getElementById('drop-group');
+    const groupByInputsDiv = document.getElementById('groupByInputs');
+    let groupByFields = [];
+
+    function renderGroupChips() {
+        dropGroup.innerHTML = '';
+        groupByInputsDiv.innerHTML = '';
+        // Nur eindeutige, nicht-leere Felder
+        const uniqueFields = Array.from(new Set(groupByFields)).filter(Boolean);
+        uniqueFields.forEach(key => {
+            // Chip
+            const chip = document.createElement('span');
+            chip.className = 'group-chip badge bg-primary text-white d-flex align-items-center';
+            chip.style.cursor = 'pointer';
+            chip.dataset.key = key;
+            chip.textContent = document.querySelector('[data-key="' + key + '"]')?.textContent || key;
+            // Remove button
+            const removeBtn = document.createElement('span');
+            removeBtn.className = 'ms-1';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.style.cursor = 'pointer';
+            removeBtn.onclick = function(e) {
+                e.stopPropagation();
+                removeGroupField(key);
+            };
+            chip.appendChild(removeBtn);
+            dropGroup.appendChild(chip);
+            // Hidden input
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'config[groupBy][]';
+            input.value = key;
+            groupByInputsDiv.appendChild(input);
+        });
+        if (uniqueFields.length === 0) {
+            dropGroup.innerHTML = '<span class="text-muted">-</span>';
+        }
+        // Debug-Ausgabe
+        console.log('[DEBUG] groupByFields:', groupByFields);
+        console.log('[DEBUG] generierte Inputs:', Array.from(groupByInputsDiv.querySelectorAll('input')).map(i => i.value));
+    }
+
+    function addGroupField(key) {
+        if (!groupByFields.includes(key) && key) {
+            groupByFields.push(key);
+        }
+        renderGroupChips();
+        updatePreview();
+    }
+    function removeGroupField(key) {
+        groupByFields = groupByFields.filter(k => k !== key);
+        renderGroupChips();
+        updatePreview();
+    }
+
+    dropGroup.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('bg-info', 'text-white');
+    });
+    dropGroup.addEventListener('dragleave', function(e) {
+        this.classList.remove('bg-info', 'text-white');
+    });
+    dropGroup.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('bg-info', 'text-white');
+        const type = e.dataTransfer.getData('type');
+        if (type === 'field') {
+            const key = e.dataTransfer.getData('text/plain');
+            addGroupField(key);
+        }
+    });
+
+    // Initial render of group chips from backend config
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if report.config.groupBy is defined and report.config.groupBy is iterable %}
+            groupByFields = {{ report.config.groupBy|json_encode|raw }};
+        {% else %}
+            groupByFields = [];
+        {% endif %}
+        renderGroupChips();
+        updatePreview();
+    });
+
+    // Drag & Drop für Felder auf X/Y-Achse und Achsen-Tausch
+    function getGroupByFields() {
+        // Returns array of field keys
+        return Array.from(dropGroup.querySelectorAll('.group-chip')).map(chip => chip.dataset.key);
+    }
+
+    // ...nur die robuste Version von renderGroupChips, addGroupField, removeGroupField bleibt erhalten...
+
+    const availableFields = document.querySelectorAll('#available-fields li, ul.list-group.mb-3 li[draggable]');
+    const dropX = document.getElementById('drop-x');
+    const dropY = document.getElementById('drop-y');
+    const xFieldInput = document.getElementById('xField');
+    const yFieldInput = document.getElementById('yField');
+
+    availableFields.forEach(item => {
+        item.addEventListener('dragstart', function(e) {
+            e.dataTransfer.setData('text/plain', this.getAttribute('data-key'));
+            e.dataTransfer.setData('type', 'field');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+    });
+
+//    addGroupField(key);
+
+    [dropX, dropY].forEach(dropzone => {
+
+        // Initial render of group chips from backend config
+        document.addEventListener('DOMContentLoaded', function() {
+            // If backend provides groupBy as array, set input value
+            {% if report.config.groupBy is defined and report.config.groupBy is iterable %}
+                groupByFields = {{ report.config.groupBy|json_encode|raw }};
+            {% endif %}
+            renderGroupChips();
+        });
+        
+        dropzone.addEventListener('dragstart', function(e) {
+            // Ermögliche Drag von Dropzone selbst (für Achsen-Tausch)
+            e.dataTransfer.setData('axis', this.dataset.axis);
+            e.dataTransfer.setData('type', 'axis');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        dropzone.setAttribute('draggable', 'true');
+
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('bg-info', 'text-white');
+        });
+        dropzone.addEventListener('dragleave', function(e) {
+            this.classList.remove('bg-info', 'text-white');
+        });
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('bg-info', 'text-white');
+            const type = e.dataTransfer.getData('type');
+            if (type === 'field') {
+                const key = e.dataTransfer.getData('text/plain');
+                if (this.dataset.axis === 'x') {
+                    xFieldInput.value = key;
+                    this.textContent = document.querySelector('[data-key="' + key + '"]').textContent;
+                } else {
+                    yFieldInput.value = key;
+                    this.textContent = document.querySelector('[data-key="' + key + '"]').textContent;
+                }
+                updatePreview();
+            } else if (type === 'axis') {
+                // Achsen tauschen
+                const fromAxis = e.dataTransfer.getData('axis');
+                if ((this.dataset.axis === 'x' && fromAxis === 'y') || (this.dataset.axis === 'y' && fromAxis === 'x')) {
+                    // Werte tauschen
+                    const xVal = xFieldInput.value;
+                    const yVal = yFieldInput.value;
+                    xFieldInput.value = yVal;
+                    yFieldInput.value = xVal;
+                    // Labels tauschen
+                    const xLabel = document.querySelector('[data-key="' + yVal + '"]')?.textContent || '-';
+                    const yLabel = document.querySelector('[data-key="' + xVal + '"]')?.textContent || '-';
+                    dropX.textContent = xLabel;
+                    dropY.textContent = yLabel;
+                    updatePreview();
+                }
+            }
+        });
+    });
+
+    // Vorschau bei Änderungen im Formular automatisch laden
+    const form = document.getElementById('report-builder-form');
+    const previewDiv = document.getElementById('report-preview');
+    const loader = document.getElementById('report-preview-loader');
+    const errorDiv = document.getElementById('report-preview-error');
+    let previewTimeout;
+
+    function updatePreview() {
+        // Vor jedem Preview-Request: Chips & Inputs synchronisieren
+        renderGroupChips();
+        // Debug-Ausgabe: Inputs im Formular
+        const debugInputs = Array.from(form.querySelectorAll('input[name="config[groupBy][]"]')).map(i => i.value);
+        console.log('[DEBUG] Inputs im Form vor Preview:', debugInputs);
+        loader.style.display = 'block';
+        errorDiv.style.display = 'none';
+        previewDiv.innerHTML = '';
+        const formData = new FormData(form);
+        fetch('/reports/preview', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            loader.style.display = 'none';
+            if (data.error) {
+                errorDiv.textContent = data.error;
+                errorDiv.style.display = 'block';
+            } else if (data.preview) {
+                previewDiv.innerHTML = data.preview;
+                // Script aus Vorschau extrahieren und ausführen
+                const scripts = previewDiv.querySelectorAll('script');
+                scripts.forEach(script => {
+                    try {
+                        eval(script.innerText);
+                    } catch (e) {
+                        console.error('Vorschau-Skriptfehler:', e);
+                    }
+                });
+            }
+        })
+        .catch(err => {
+            loader.style.display = 'none';
+            errorDiv.textContent = 'Fehler beim Laden der Vorschau.';
+            errorDiv.style.display = 'block';
+        });
+    }
+
+    form.addEventListener('input', function(e) {
+        clearTimeout(previewTimeout);
+        previewTimeout = setTimeout(updatePreview, 300);
+    });
+</script>
 {% endblock %}

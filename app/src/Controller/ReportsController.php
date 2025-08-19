@@ -15,6 +15,125 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 class ReportsController extends AbstractController
 {
+    #[Route('/reports/preview', name: 'app_report_preview', methods: ['POST'])]
+    public function preview(Request $request, EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+        $fieldAliases = ReportFieldAliasService::fieldAliases();
+        $data = $request->request->all();
+        $report = new ReportDefinition();
+        $report->setName($data['name'] ?? '');
+        $report->setDescription($data['description'] ?? null);
+        $config = [
+            'diagramType' => $data['config']['diagramType'] ?? 'bar',
+            'xField' => $data['config']['xField'] ?? 'player',
+            'yField' => $data['config']['yField'] ?? 'goals',
+            // Accept groupBy as array, fallback to empty array
+            'groupBy' => $data['config']['groupBy'] ?? [],
+        ];
+        if (!isset($fieldAliases[$config['xField']])) {
+            $config['xField'] = array_key_first($fieldAliases);
+        }
+        if (!isset($fieldAliases[$config['yField']])) {
+            $config['yField'] = array_key_first($fieldAliases);
+        }
+        // groupBy: ensure array
+        if (!is_array($config['groupBy'])) {
+            $config['groupBy'] = $config['groupBy'] ? [$config['groupBy']] : [];
+        }
+        $report->setConfig($config);
+        $report->setIsTemplate(false);
+        $report->setUser($user);
+
+        // Aggregation logic with multi-grouping support
+        $xField = $config['xField'] ?? 'player';
+        $yField = $config['yField'] ?? 'goals';
+        $diagramType = $config['diagramType'] ?? 'bar';
+        $groupBy = $config['groupBy'] ?? [];
+        $filters = $config['filters'] ?? [];
+
+        $qb = $em->getRepository(\App\Entity\GameEvent::class)->createQueryBuilder('e');
+        if (isset($filters['team'])) {
+            $qb->andWhere('e.team = :team')->setParameter('team', $filters['team']);
+        }
+        if (isset($filters['eventType'])) {
+            $qb->andWhere('e.gameEventType = :eventType')->setParameter('eventType', $filters['eventType']);
+        }
+        if (isset($filters['dateFrom'])) {
+            $qb->andWhere('e.timestamp >= :dateFrom')->setParameter('dateFrom', new \DateTimeImmutable($filters['dateFrom']));
+        }
+        if (isset($filters['dateTo'])) {
+            $qb->andWhere('e.timestamp <= :dateTo')->setParameter('dateTo', new \DateTimeImmutable($filters['dateTo']));
+        }
+        $events = $qb->getQuery()->getResult();
+
+        // Flexible Aggregation für beliebige X/Y (auch kategorisch)
+        $xValues = [];
+        $yValues = [];
+        $matrix = [];
+        $xyDebug = [];
+        foreach ($events as $event) {
+            $x = $this->retrieveFieldValue($event, $xField);
+            $y = $this->retrieveFieldValue($event, $yField);
+            $xyDebug[] = ['x' => $x, 'y' => $y];
+            $xValues[$x] = true;
+            $yValues[$y] = true;
+            if (!isset($matrix[$x][$y])) {
+                $matrix[$x][$y] = 0;
+            }
+            $matrix[$x][$y] += 1;
+        }
+        $xLabels = array_keys($xValues);
+        $yLabels = array_keys($yValues);
+        sort($xLabels);
+        sort($yLabels);
+
+        // IMMER vollständige Matrix: Labels = X, Datasets = Y
+        $labels = $xLabels;
+        $datasets = [];
+        foreach ($yLabels as $yVal) {
+            $data = [];
+            foreach ($xLabels as $xVal) {
+                $data[] = $matrix[$xVal][$yVal] ?? 0;
+            }
+            $datasets[] = [
+                'label' => (string)$yVal,
+                'data' => $data,
+            ];
+        }
+        $previewHtml = $this->renderView('report/_preview_chart.html.twig', [
+            'report' => $report,
+            'labels' => $labels,
+            'datasets' => $datasets,
+            'diagramType' => $diagramType,
+        ]);
+        // Debug-Ausgabe als Teil der Response
+        return $this->json([
+            'preview' => $previewHtml,
+            'debug_labels' => $labels,
+            'debug_datasets' => $datasets,
+            'debug_xy' => $xyDebug,
+        ]);
+    }
+
+    // Hilfsmethode für Vorschau wie in Api/ReportController
+    private function retrieveFieldValue($event, string $field): mixed
+    {
+        $fieldAliases = \App\Service\ReportFieldAliasService::fieldAliases();
+        if (isset($fieldAliases[$field]['value']) && is_callable($fieldAliases[$field]['value'])) {
+            return $fieldAliases[$field]['value']($event);
+        }
+        $getter = 'get' . ucfirst($field);
+        if (method_exists($event, $getter)) {
+            $value = $event->$getter();
+            if (is_object($value) && method_exists($value, '__toString')) {
+                return (string) $value;
+            }
+            return $value;
+        }
+        return null;
+    }
+    
     #[Route('/reports', name: 'app_report_list', methods: ['GET'])]
     public function list(EntityManagerInterface $em): Response
     {
@@ -41,6 +160,7 @@ class ReportsController extends AbstractController
         if ($isEdit && (!$report || ($report->getUser() && $report->getUser() !== $user && !$this->isGranted('ROLE_ADMIN')))) {
             throw $this->createAccessDeniedException();
         }
+        
         if ($request->isMethod('POST')) {
             $data = $request->request->all();
             $report->setName($data['name'] ?? '');
@@ -65,6 +185,7 @@ class ReportsController extends AbstractController
                 $report->setIsTemplate(false);
                 $report->setUser($user);
             }
+
             $em->persist($report);
             $em->flush();
 
