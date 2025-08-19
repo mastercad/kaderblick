@@ -13,7 +13,7 @@ class ReportDataService
     }
 
     /**
-     * Generiert die Datenstruktur für einen Report (Labels, Datasets, Debug) anhand der Report-Definition.
+     * Generiert die Datenstruktur für einen Report (Labels, Datasets) anhand der Report-Definition.
      *
      * @param array<string, mixed> $config Report-Konfiguration (xField, yField, groupBy, filters, diagramType)
      *

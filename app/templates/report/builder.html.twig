@@ -129,9 +129,6 @@
         if (uniqueFields.length === 0) {
             dropGroup.innerHTML = '<span class="text-muted">-</span>';
         }
-        // Debug-Ausgabe
-        console.log('[DEBUG] groupByFields:', groupByFields);
-        console.log('[DEBUG] generierte Inputs:', Array.from(groupByInputsDiv.querySelectorAll('input')).map(i => i.value));
     }
 
     function addGroupField(key) {
@@ -269,9 +266,6 @@
     function updatePreview() {
         // Vor jedem Preview-Request: Chips & Inputs synchronisieren
         renderGroupChips();
-        // Debug-Ausgabe: Inputs im Formular
-        const debugInputs = Array.from(form.querySelectorAll('input[name="config[groupBy][]"]')).map(i => i.value);
-        console.log('[DEBUG] Inputs im Form vor Preview:', debugInputs);
         loader.style.display = 'block';
         errorDiv.style.display = 'none';
         previewDiv.innerHTML = '';
