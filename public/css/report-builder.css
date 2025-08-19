@@ -1,0 +1,5 @@
+.dropzone.bg-info.text-white {
+  box-shadow: 0 0 0 0.2rem #0dcaf0;
+  transform: scale(1.04);
+  transition: box-shadow 0.15s, transform 0.15s;
+}

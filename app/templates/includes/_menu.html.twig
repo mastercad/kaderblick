@@ -23,6 +23,10 @@
                     <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_games_index') }}"><i class="fas fa-trophy me-1"></i>Spiele</a></li>
                     <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_locations_index') }}"><i class="fas fa-map-marker-alt me-1"></i>Spielstätten</a></li>
 
+
+                    {# Reports: für alle eingeloggten User #}
+                    <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('app_report_list') }}"><i class="fas fa-chart-bar me-1"></i>Reports</a></li>
+
                     {# Spieler-Relation: eigene Spielereignisse und Spielerübersicht #}
                     {% if app.user and app.user.userRelations is defined and app.user.userRelations|filter(r => r.type == 'spieler')|length > 0 %}
                         <li class="nav-item"><a class="nav-link nav-link-kaderblick" href="{{ path('api_game_events_index') }}"><i class="fas fa-clipboard-list me-1"></i>Meine Spielereignisse</a></li>
@@ -93,6 +97,14 @@
                         <button class="nav-link text-danger btn btn-navbar-logout w-100 text-start justify-content-start" id="button_logout">
                             <i class="fas fa-sign-out-alt me-2"></i>
                             Abmelden
+                        </button>
+                    </li>
+                {% else %}
+                    {# Login Button für Gäste #}
+                    <li class="nav-item">
+                        <button class="btn btn-light" onclick="const modalManager = (window.modalManager || window.ModalManager); modalManager.showModal('auth_modal')">
+                            <i class="fas fa-sign-in-alt me-1"></i>
+                            Anmelden
                         </button>
                     </li>
                 {% endif %}

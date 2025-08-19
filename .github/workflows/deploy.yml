@@ -1,123 +1,18 @@
-name: Deploy to AlfahostingMore actions
+name: Deploy to Alfahosting
 
 on:
   push:
-    branches: [ main ]
+    branches: 
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality-assurance:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Cache Composer vendors
-        uses: actions/cache@v3
-        with:
-          path: vendor
-          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
-          
-      - name: prepare Test Env
-        run: |
-          # prepare database container 
-
-          cp app/.env.dist app/.env
-          echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> app/.env
-          sed -i 's/^APP_ENV=.*/APP_ENV=test/' app/.env
-
-          docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
-          
-          docker volume inspect kaderblick-data >/dev/null 2>&1 || docker volume create kaderblick-data
-
-          if docker ps --filter "name=kaderblick-db" --filter "status=running" | grep -q kaderblick-db; then
-            echo "DB Container läuft"
-          else
-            docker volume inspect kaderblick-db-data || docker volume create kaderblick-db-data
-            docker compose -f docker-compose.db.yml up -d --build --force-recreate db
-          fi
-          
-          # Warte auf DB-Container mit Timeout
-          timeout=90
-          elapsed=0
-          while true; do
-            status=`docker inspect -f {{.State.Health.Status}} kaderblick-db`
-            
-            case "$status" in
-              "healthy")
-                echo "DB Container ist bereit!"
-                break
-                ;;
-              "unhealthy")
-                echo "DB Container ist fehlerhaft - Details:"
-                docker logs kaderblick-db
-                docker inspect kaderblick-db
-                exit 1
-                ;;
-              "starting")
-                if [ "$elapsed" -ge "$timeout" ]; then
-                  echo "Container startet zu lange (Timeout nach ${timeout}s) - Details:"
-                  docker logs kaderblick-db
-                  docker inspect kaderblick-db
-                  exit 1
-                fi
-                ;;
-              *)
-                echo "Unerwarteter Status '$status' - Details:"
-                docker logs kaderblick-db
-                docker inspect kaderblick-db
-                exit 1
-                ;;
-            esac
-            
-            echo "Warte auf DB-Container (${elapsed}/${timeout}s)... Status: $status"
-            sleep 2
-            elapsed=$((elapsed+2))
-          done
-
-          # Test-Datenbank und Rechte erstellen
-          docker compose -f docker-compose.db.yml exec -T db mariadb -uroot -proot -e "
-            CREATE DATABASE IF NOT EXISTS kaderblick_test;
-            CREATE USER IF NOT EXISTS 'kaderblick'@'%' IDENTIFIED BY 'kaderblick';
-            GRANT ALL PRIVILEGES ON kaderblick_test.* TO 'kaderblick'@'%';
-            FLUSH PRIVILEGES;
-          "
-          
-          docker compose up -d --build --force-recreate api vue-frontend
-
-          docker compose exec -T api composer install
-
-          mkdir -p app/config/secrets/test
-          # echo "<?php return \"${{ secrets.DEV_DECRYPT_KEY }}\"; ?>" > app/config/secrets/test/test.decrypt.private.php
-          echo '${{ secrets.DEV_DECRYPT_KEY }}' | base64 -d > app/config/secrets/test/test.decrypt.private.php
-          chmod 600 app/config/secrets/test/test.decrypt.private.php
-
-          echo "Decrypt secrets"
-          docker compose exec -T api bin/console secrets:decrypt-to-local --env=test --force
-
-          mkdir -p "app/config/jwt"
-
-          if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
-            docker compose exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
-          fi
-          
-          docker compose exec -T api bin/console doctrine:migrations:migrate --env=test
-
-          docker compose exec -T api bin/console doctrine:fixtures:load -n --env=test --group=master --group=test
-
-      - name: run PHP-CS-Fixer
-        run: docker compose exec -T api ./vendor/bin/php-cs-fixer --config=.php-cs-fixer.dist.php fix --dry-run --diff --ansi
-
-      - name: run PHP-CS
-        run: docker compose exec -T api ./vendor/bin/phpcs
-
-      - name: run PHPStan
-        run: docker compose exec -T api ./vendor/bin/phpstan analyse
-
-      - name: run PHPUnit
-        run: docker compose exec -T api ./vendor/bin/phpunit
-
-    
+    uses: ./.github/workflows/qa.yml
+  
   deployment:
     runs-on: ubuntu-latest
     needs: quality-assurance

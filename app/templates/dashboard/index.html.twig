@@ -13,6 +13,31 @@
         </button>
     </div>
 
+
+        {# Report Auswahl Modal #}
+        <div class="modal fade" id="selectReportModal" tabindex="-1" aria-labelledby="selectReportModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="selectReportModalLabel">Report auswählen</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="reportListLoading" class="text-center my-3" style="display:none;">
+                            <div class="spinner-border" role="status"><span class="visually-hidden">Laden...</span></div>
+                        </div>
+                        <div id="reportListContainer">
+                            <!-- Dynamisch per JS geladen -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                        <button type="button" class="btn btn-primary" id="addReportWidgetsBtn">Hinzufügen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     <div id="widgetContainer">
         <div class="row widget-grid" id="widgetGrid">
             {% for widget in widgets %}
@@ -57,7 +82,6 @@
     <script src="/js/dashboard-modals.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script>
-
         document.addEventListener('DOMContentLoaded', function() {
             const grid = document.getElementById('widgetGrid');
             
@@ -97,101 +121,8 @@
 
             // Für beide Event-Typen registrieren
             document.addEventListener('pointerup', handleWidgetInteraction);
-
-            document.querySelectorAll('.btn-add-widget').forEach(button => {
-                button.addEventListener('click', async function() {
-                    createWidget(this.dataset.widgetType);
-                });
-            });
         });
 
-        async function createWidget(type) {
-            await fetch('{{ path("app_dashboard_widget_create") }}', {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ type: type })
-            }).then((response) => {
-                if (response.status >= 400 && response.status < 600) {
-                  throw new Error("Bad response from server - " + response.status + " : " + response.statusText);
-                }
-                return response;
-            }).then((returnedResponse) => returnedResponse.json()
-            ).then((data) => {
-                addWidget(data.widget.id);
-            }).catch((error) => {
-                console.log(error)
-            });
-        }
-
-        async function addWidget(widgetId) {
-            // TODO hier vielleicht noch umbauen in "path generate by name", war mir jetzt zu viel aufwand für den quatsch
-            await fetch('/widget/' + widgetId, {
-                  method: 'GET'
-            }).then((response) => {
-                if (response.status >= 400 && response.status < 600) {
-                  throw new Error("Bad response from server - " + response.status + " : " + response.statusText);
-                }
-                return response.text();
-            }).then((html) => {
-                const widgetElement = createWidgetFromHtml(html, widgetId);
-                loadWidgetContent(widgetElement);
-                document.getElementById('widgetGrid').appendChild(widgetElement);
-            }).catch((error) => {
-                console.error(error);
-            });
-        }
-
-        // Widget-Updates
-        function updateWidgetPositions() {
-            const widgets = [];
-            document.querySelectorAll('.widget-item').forEach((widget, index) => {
-                const width = parseInt(widget.className.match(/col-md-(\d+)/)[1]);
-                widgets.push({
-                    id: widget.dataset.widgetId,
-                    position: index,
-                    width: width
-                });
-            });
-
-            fetch('{{ path("app_dashboard_widget_update") }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ widgets: widgets })
-            }).catch(error => console.error('Error:', error));
-        }
-
-        async function loadWidgetContent(widgetElement) {
-            const widgetContent = widgetElement.querySelector('.widget-content');
-            const widgetId = widgetElement.dataset.widgetId;
-            try {
-                const response = await fetch(`/widget/${widgetId}/content`);
-                if (response.ok) {
-                    const html = await response.text();
-                    widgetContent.innerHTML = html;
-                    
-                    // Führe eventuell eingebettetes Script manuell aus, da sie beim laden nicht direkt ausgeführt werden
-                    const scripts = widgetContent.getElementsByTagName('script');
-                    Array.from(scripts).forEach(script => {
-                        const newScript = document.createElement('script');
-                        Array.from(script.attributes).forEach(attr => {
-                            newScript.setAttribute(attr.name, attr.value);
-                        });
-                        newScript.appendChild(document.createTextNode(script.innerHTML));
-                        script.parentNode.replaceChild(newScript, script);
-                    });
-                }
-            } catch (error) {
-                console.error('Widget loading error:', error);
-                widgetContent.innerHTML = '<div class="alert alert-danger">Widget konnte nicht geladen werden</div>';
-            }
-        }
-        
-        function createWidgetFromHtml(htmlString, widgetId) {
-            const container = document.createElement('div');
-            container.innerHTML = htmlString.trim();
-
-            return container.firstElementChild;
-        }
 
         async function handleDelete(button) {
             if (!confirm('Widget wirklich entfernen?')) return;
