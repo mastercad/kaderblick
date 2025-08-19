@@ -8,6 +8,7 @@ on:
 jobs:
   quality-assurance:
     uses: ./.github/workflows/qa.yml
+    secrets: inherit
   
   deployment:
     runs-on: ubuntu-latest
