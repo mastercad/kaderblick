@@ -32,13 +32,7 @@ class NewsController extends AbstractController
         $user = $this->getUser();
         $news = $this->newsRepository->findForUser($user);
 
-        // Debug Information - kann später entfernt werden
-        $debugInfo = [];
         if ($user instanceof User) {
-            $debugInfo['userId'] = $user->getId();
-            $debugInfo['userEmail'] = $user->getEmail();
-            $debugInfo['relationCount'] = $user->getRelations()->count();
-
             $clubIds = [];
             $teamIds = [];
             foreach ($user->getRelations() as $relation) {
@@ -67,19 +61,11 @@ class NewsController extends AbstractController
                     }
                 }
             }
-            $debugInfo['clubIds'] = array_unique($clubIds);
-            $debugInfo['teamIds'] = array_unique($teamIds);
         }
-
-        // Alle News für Debug-Zwecke
-        $allNews = $this->em->getRepository(\App\Entity\News::class)->findAll();
-        $debugInfo['allNewsCount'] = count($allNews);
-        $debugInfo['filteredNewsCount'] = count($news);
 
         return $this->render('news/index.html.twig', [
             'news' => $news,
-            'user' => $user,
-            'debugInfo' => $debugInfo, // Temporär für Debugging
+            'user' => $user
         ]);
     }
 

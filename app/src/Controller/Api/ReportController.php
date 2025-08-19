@@ -61,10 +61,7 @@ class ReportController extends AbstractController
         return $this->json([
             'labels' => $reportData['labels'],
             'datasets' => $reportData['datasets'],
-            'diagramType' => $config['diagramType'] ?? 'bar',
-            'debug_labels' => $reportData['debug_labels'],
-            'debug_datasets' => $reportData['debug_datasets'],
-            'debug_xy' => $reportData['debug_xy'],
+            'diagramType' => $config['diagramType'] ?? 'bar'
         ]);
     }
 

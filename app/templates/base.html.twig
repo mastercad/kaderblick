@@ -503,7 +503,6 @@ function initializeModalFunctionality() {
       
       if (response.ok) {
         const user = await response.json();
-        console.log('User data:', user); // Debug
         
         // Update profile modal fields only
         const emailField = document.getElementById('profileEmail');
@@ -523,8 +522,6 @@ function initializeModalFunctionality() {
         if (shoeSizeField) shoeSizeField.value = user.shoeSize || '';
         if (shirtSizeField) shirtSizeField.value = user.shirtSize || '';
         if (pantsSizeField) pantsSizeField.value = user.pantsSize || '';
-        
-        console.log('Geladene Benutzerdaten:', user);
       } else {
         console.error('Fehler beim Laden des Profils:', response.status);
       }

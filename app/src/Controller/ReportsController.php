@@ -55,10 +55,7 @@ class ReportsController extends AbstractController
         ]);
 
         return $this->json([
-            'preview' => $previewHtml,
-            'debug_labels' => $reportData['debug_labels'],
-            'debug_datasets' => $reportData['debug_datasets'],
-            'debug_xy' => $reportData['debug_xy'],
+            'preview' => $previewHtml
         ]);
     }
 
