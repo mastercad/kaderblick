@@ -56,6 +56,7 @@ class ReportWidgetController extends AbstractController
         }
         $em->remove($widget);
         $em->flush();
+
         return $this->json(['status' => 'success']);
     }
 }

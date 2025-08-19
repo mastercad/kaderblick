@@ -7,6 +7,8 @@ class ReportFieldAliasService
     /**
      * Returns a list of user-friendly report field aliases and their mapping to entity fields.
      * This can be extended for more entities and relations.
+     *
+     * @return array<string, array<string, mixed>>
      */
     public static function fieldAliases(): array
     {

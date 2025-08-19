@@ -3,8 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\ReportDefinition;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Entity\User;
 use App\Service\ReportFieldAliasService;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,18 +22,20 @@ class ReportController extends AbstractController
         $repo = $em->getRepository(ReportDefinition::class);
         $templates = $repo->findBy(['isTemplate' => true]);
         $userReports = $repo->findBy(['user' => $user]);
+
         return $this->render('report/list.html.twig', [
             'templates' => $templates,
             'userReports' => $userReports
         ]);
     }
 
-    #[Route('/reports/builder/{id}', name: 'app_report_builder', requirements: ['id' => '\\d+'], defaults: ['id' => null], methods: ['GET','POST'])]
-    public function builder(Request $request, EntityManagerInterface $em, int $id = null): Response
+    #[Route('/reports/builder/{id}', name: 'app_report_builder', requirements: ['id' => '\\d+'], defaults: ['id' => null], methods: ['GET', 'POST'])]
+    public function builder(Request $request, EntityManagerInterface $em, ?int $id = null): Response
     {
+        /** @var User $user */
         $user = $this->getUser();
         $repo = $em->getRepository(ReportDefinition::class);
-        $isEdit = $id !== null;
+        $isEdit = null !== $id;
         $report = $isEdit ? $repo->find($id) : new ReportDefinition();
         $fieldAliases = ReportFieldAliasService::fieldAliases();
         if ($isEdit && (!$report || ($report->getUser() && $report->getUser() !== $user && !$this->isGranted('ROLE_ADMIN')))) {
@@ -64,8 +67,10 @@ class ReportController extends AbstractController
             }
             $em->persist($report);
             $em->flush();
+
             return $this->redirectToRoute('app_report_list');
         }
+
         return $this->render('report/builder.html.twig', [
             'report' => $report,
             'form_action' => $isEdit ? $this->generateUrl('app_report_builder', ['id' => $id]) : $this->generateUrl('app_report_builder'),
@@ -84,12 +89,14 @@ class ReportController extends AbstractController
         $em->remove($report);
         $em->flush();
         $this->addFlash('success', 'Report deleted.');
+
         return $this->redirectToRoute('app_report_list');
     }
 
     #[Route('/reports/add-widget/{id}', name: 'app_report_add_widget', requirements: ['id' => '\d+'], methods: ['GET'])]
     public function addWidget(int $id, EntityManagerInterface $em): Response
     {
+        /** @var User $user */
         $user = $this->getUser();
         $report = $em->getRepository(ReportDefinition::class)->find($id);
         if (!$report) {
@@ -105,6 +112,7 @@ class ReportController extends AbstractController
         $em->persist($widget);
         $em->flush();
         $this->addFlash('success', 'Report widget added to your dashboard.');
+
         return $this->redirectToRoute('app_dashboard_index');
     }
 }

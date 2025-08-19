@@ -2,11 +2,10 @@
 
 namespace App\Entity;
 
-use App\Entity\User;
-use Doctrine\ORM\Mapping as ORM;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'report_definitions')]
@@ -15,6 +14,7 @@ class ReportDefinition
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
@@ -27,6 +27,7 @@ class ReportDefinition
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
 
+    /** @var array<string, mixed> $config */
     #[ORM\Column(type: 'json')]
     private array $config = [];
 
@@ -66,6 +67,7 @@ class ReportDefinition
     public function setUser(?User $user): self
     {
         $this->user = $user;
+
         return $this;
     }
 
@@ -77,6 +79,7 @@ class ReportDefinition
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -88,17 +91,25 @@ class ReportDefinition
     public function setDescription(?string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getConfig(): array
     {
         return $this->config;
     }
 
+    /**
+     * @param array<string, mixed> $config
+     */
     public function setConfig(array $config): self
     {
         $this->config = $config;
+
         return $this;
     }
 
@@ -110,6 +121,7 @@ class ReportDefinition
     public function setIsTemplate(bool $isTemplate): self
     {
         $this->isTemplate = $isTemplate;
+
         return $this;
     }
 
@@ -121,6 +133,7 @@ class ReportDefinition
     public function setCreatedAt(DateTimeImmutable $createdAt): self
     {
         $this->createdAt = $createdAt;
+
         return $this;
     }
 
@@ -132,9 +145,13 @@ class ReportDefinition
     public function setUpdatedAt(DateTimeImmutable $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
+
         return $this;
     }
 
+    /**
+     * @return Collection<int, DashboardWidget>
+     */
     public function getWidgets(): Collection
     {
         return $this->widgets;

@@ -129,6 +129,7 @@ class DashboardWidget
     public function setReportDefinition(?ReportDefinition $reportDefinition): self
     {
         $this->reportDefinition = $reportDefinition;
+
         return $this;
     }
 }

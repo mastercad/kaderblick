@@ -14,18 +14,19 @@ class ReportConfigValidator
      * Validates and completes a report config array.
      * Throws \InvalidArgumentException if required fields are missing and cannot be defaulted.
      *
-     * @param array $config
-     * @return array Validated and completed config
+     * @param array<string, mixed> $config
+     *
+     * @return array<string, mixed> Validated and completed config
      */
     public function validate(array $config): array
     {
         $validated = $config;
         foreach (self::DEFAULTS as $key => $default) {
-            if (!isset($validated[$key]) || $validated[$key] === '') {
+            if (!isset($validated[$key]) || '' === $validated[$key]) {
                 $validated[$key] = $default;
             }
         }
-        // Add further validation logic as needed
+
         return $validated;
     }
 }

@@ -38,6 +38,7 @@ class ReportController extends AbstractController
                 'isTemplate' => false
             ];
         }
+
         return $this->json($result);
     }
 
@@ -49,6 +50,7 @@ class ReportController extends AbstractController
         $repo = $em->getRepository(ReportDefinition::class);
         $templates = $repo->findBy(['isTemplate' => true]);
         $userReports = $repo->findBy(['user' => $user]);
+
         return $this->json([
             'templates' => $templates,
             'userReports' => $userReports
@@ -72,6 +74,7 @@ class ReportController extends AbstractController
         $report->setIsTemplate(false);
         $em->persist($report);
         $em->flush();
+
         return $this->json(['status' => 'success', 'id' => $report->getId()]);
     }
 
@@ -94,6 +97,7 @@ class ReportController extends AbstractController
             $report->setConfig($data['config']);
         }
         $em->flush();
+
         return $this->json(['status' => 'success']);
     }
 
@@ -107,6 +111,7 @@ class ReportController extends AbstractController
         }
         $em->remove($report);
         $em->flush();
+
         return $this->json(['status' => 'success']);
     }
 }

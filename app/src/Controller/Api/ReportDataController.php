@@ -8,9 +8,9 @@ use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/api/report-data')]
 #[IsGranted('ROLE_USER')]
@@ -20,7 +20,7 @@ class ReportDataController extends AbstractController
     public function getData(int $widgetId, EntityManagerInterface $em, Request $request): JsonResponse
     {
         $widget = $em->getRepository(DashboardWidget::class)->find($widgetId);
-        if (!$widget || $widget->getUser() !== $this->getUser() || $widget->getType() !== 'report') {
+        if (!$widget || $widget->getUser() !== $this->getUser() || 'report' !== $widget->getType()) {
             return $this->json(['error' => 'Not found or access denied'], 404);
         }
         $report = $widget->getReportDefinition();
@@ -78,10 +78,12 @@ class ReportDataController extends AbstractController
         if (method_exists($event, $getter)) {
             $value = $event->$getter();
             if (is_object($value) && method_exists($value, '__toString')) {
-                return (string)$value;
+                return (string) $value;
             }
+
             return $value;
         }
+
         return null;
     }
 }
