@@ -121,14 +121,14 @@ class GameEventPublicController extends AbstractController
                 'playerId' => $event->getPlayer()?->getId(),
                 'relatedPlayer' => $event->getRelatedPlayer()?->getFullName(),
                 'relatedPlayerId' => $event->getRelatedPlayer()?->getId(),
-                'teamId' => $event->getTeam()?->getId(),
+                'teamId' => $event->getTeam()->getId(),
                 'description' => $event->getDescription(),
-                // 'reasonId' => ... // falls du das Reason-Objekt als ID speichern kannst, ergänze hier
             ];
         }
 
         return $this->json($result);
     }
+
     #[Route('/api/game/{gameId}/event/{eventId}', name: 'api_game_event_update', methods: ['PUT', 'PATCH'])]
     public function updateEvent(
         int $gameId,
@@ -162,7 +162,7 @@ class GameEventPublicController extends AbstractController
             $event->setRelatedPlayer(null);
         }
         if (isset($data['minute'])) {
-            $event->setTimestamp((new \DateTime())->setTime(0, 0)->modify('+' . ((int) $data['minute']) . ' minutes'));
+            $event->setTimestamp((new DateTime())->setTime(0, 0)->modify('+' . ((int) $data['minute']) . ' minutes'));
         }
         if (isset($data['description'])) {
             $event->setDescription($data['description']);
@@ -172,6 +172,7 @@ class GameEventPublicController extends AbstractController
             $event->setDescription($reasonEntity ? $reasonEntity->getName() : $data['reason']);
         }
         $em->flush();
+
         return $this->json(['success' => true]);
     }
 
@@ -189,6 +190,7 @@ class GameEventPublicController extends AbstractController
         }
         $em->remove($event);
         $em->flush();
+
         return $this->json(['success' => true]);
     }
 }
