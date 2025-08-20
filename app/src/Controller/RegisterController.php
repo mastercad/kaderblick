@@ -24,13 +24,7 @@ class RegisterController extends AbstractController
     ) {
     }
 
-    #[Route('/register', name: 'register', methods: ['GET'])]
-    public function registerFormular(Request $request): Response
-    {
-        return $this->render('auth/register.html.twig');
-    }
-
-    #[Route('/register', name: 'api_register', methods: ['POST'])]
+    #[Route('/register', name: 'register', methods: ['POST'])]
     public function register(
         Request $request,
         UserPasswordHasherInterface $passwordHasher,
