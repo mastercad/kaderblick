@@ -1,0 +1,69 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Spieldetails{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <a href="{{ path('games_index') }}" class="btn btn-link mb-3"><i class="fas fa-arrow-left me-1"></i> Zurück zur Übersicht</a>
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="card-title mb-3">
+                <strong>{{ game.homeTeam.name }}</strong> vs <strong>{{ game.awayTeam.name }}</strong>
+            </h2>
+            <div class="mb-2">
+                <span class="me-3">
+                    <i class="fas fa-calendar-alt"></i>
+                    {{ calendarEvent.startDate|date('d.m.Y H:i') }}
+                    {% if calendarEvent.endDate %} - {{ calendarEvent.endDate|date('H:i') }}{% endif %}
+                </span>
+                {% if game.location %}
+                    <span class="me-3"><i class="fas fa-map-marker-alt"></i> {{ game.location.name }}</span>
+                {% endif %}
+            </div>
+            <div class="mb-2">
+                {% if game.homeScore is not null and game.awayScore is not null %}
+                    <span class="badge bg-primary fs-5">{{ game.homeScore }} : {{ game.awayScore }}</span>
+                {% else %}
+                    <span class="badge bg-secondary">Noch kein Ergebnis</span>
+                {% endif %}
+            </div>
+            {% set now = "now"|date('U') %}
+            {% if calendarEvent.startDate and calendarEvent.endDate and now >= calendarEvent.startDate|date('U') and now <= calendarEvent.endDate|date('U') %}
+                <div class="mt-3">
+                    <a href="/game/{{ calendarEvent.game.id }}/events" class="btn btn-success" target="_blank">
+                        <i class="fas fa-futbol me-1"></i>Spielereignis erfassen
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Spielereignisse</h5>
+        </div>
+        <div class="card-body">
+            {% if gameEvents|length > 0 %}
+                <ul class="list-group list-group-flush">
+                    {% for event in gameEvents %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <span class="badge bg-light text-dark me-2">{{ event.timestamp|date('H:i') }}</span>
+                                <strong>{{ event.gameEventType.name }}</strong>
+                                {% if event.player %} - {{ event.player.fullName }}{% endif %}
+                                {% if event.description %}<span class="text-muted ms-2">{{ event.description }}</span>{% endif %}
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="text-muted">Keine Ereignisse für dieses Spiel.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+{% endblock %}

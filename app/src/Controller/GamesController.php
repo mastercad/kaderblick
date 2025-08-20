@@ -3,50 +3,66 @@
 namespace App\Controller;
 
 use App\Entity\Game;
+use App\Repository\GameRepository;
+use DateTimeImmutable;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route(path: '/api/games', name: 'api_games_')]
-class GamesController extends ApiController
+#[Route('/games', name: 'games_')]
+class GamesController extends AbstractController
 {
-    protected string $entityName = 'Game';
-    protected string $entityNamePlural = 'Games';
-    protected string $entityClass = Game::class;
-    protected array $relations = [
-        'homeTeam' => [
-            'entityName' => 'Team',
-            'fieldName' => 'homeTeam',
-            'methodName' => 'homeTeam',
-            'type' => 2
-        ],
-        'awayTeam' => [
-            'entityName' => 'Team',
-            'fieldName' => 'awayTeam',
-            'methodName' => 'awayTeam',
-            'type' => 2
-        ],
-        'location' => [
-            'entityName' => 'Location',
-            'type' => 2,
-        ],
-        'gameType' => [
-            'entityName' => 'GameType',
-            'type' => 2
-        ],
-        'gameEvents' => [
-            'entityName' => 'GameEvent',
-            'type' => 4,
-            'label_fields' => ['gameEventType.name']
-        ],
-        'substitutions' => [
-            'entityName' => 'Substitution',
-            'type' => 4
-        ],
-        'calendarEvents' => [
-            'entityName' => 'CalendarEvent',
-            'type' => 1,
-        ]
-    ];
-    protected array $relationEntries = [];
-    protected string $urlPart = 'games';
-    protected bool $createAndEditAllowed = false;
+    #[Route(path: '/', name: 'index', methods: ['GET'])]
+    public function index(GameRepository $gameRepository): Response
+    {
+        $games = $gameRepository->createQueryBuilder('g')
+            ->leftJoin('g.calendarEvent', 'ce')
+            ->leftJoin('ce.calendarEventType', 'cet')
+            ->addSelect('ce', 'cet')
+            ->where('cet.name = :spiel')
+            ->setParameter('spiel', 'Spiel')
+            ->orderBy('ce.startDate', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        $now = new DateTimeImmutable();
+        $running = [];
+        $upcoming = [];
+        $finished = [];
+
+        foreach ($games as $game) {
+            $ce = $game->getCalendarEvent();
+            if (!$ce) {
+                continue;
+            }
+            $start = $ce->getStartDate();
+            $end = $ce->getEndDate();
+            if ($start && $end && $now >= $start && $now <= $end) {
+                $running[] = $game;
+            } elseif ($start && $now < $start) {
+                $upcoming[] = $game;
+            } else {
+                $finished[] = $game;
+            }
+        }
+
+        return $this->render('games/index.html.twig', [
+            'running_games' => $running,
+            'upcoming_games' => $upcoming,
+            'finished_games' => $finished,
+        ]);
+    }
+
+    #[Route(path: '/{id}', name: 'show', requirements: ['id' => '\\d+'], methods: ['GET'])]
+    public function show(Game $game): Response
+    {
+        $calendarEvent = $game->getCalendarEvent();
+        $gameEvents = $game->getGameEvents();
+
+        return $this->render('games/show.html.twig', [
+            'game' => $game,
+            'calendarEvent' => $calendarEvent,
+            'gameEvents' => $gameEvents,
+        ]);
+    }
 }

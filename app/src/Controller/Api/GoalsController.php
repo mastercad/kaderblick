@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller;
+namespace App\Controller\Api;
 
 use App\Entity\Goal;
 use Symfony\Component\Routing\Annotation\Route;

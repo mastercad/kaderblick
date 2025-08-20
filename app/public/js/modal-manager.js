@@ -1,8 +1,7 @@
 /**
  * Modal Management System
- * Professional solution for handling modals outside the main container
+ * Solution for handling modals outside the main container
  * 
- * @author Senior Frontend Developer
  * @version 1.0.0
  */
 
