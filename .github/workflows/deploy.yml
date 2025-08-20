@@ -124,7 +124,8 @@ jobs:
             ###### ENDE WORKAROUND FÜR FIXTURES ######
 
             sed -i 's/^APP_ENV=dev$/APP_ENV=prod/' app/.env
-
+            docker compose -p staging exec -T api env APP_ENV=dev composer install 
+            
             echo "Starte migrations"
             docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
 
