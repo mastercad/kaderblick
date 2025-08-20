@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller;
+namespace App\Controller\Api;
 
 use App\Entity\GameEventType;
 use Symfony\Component\Routing\Annotation\Route;
