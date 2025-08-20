@@ -1,94 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333333;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background-color: #1a4789;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        .content {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 5px;
-        }
-        .feature-box {
-            background-color: #f5f5f5;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
-        }
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #1a4789;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .footer {
-            text-align: center;
-            padding: 20px;
-            font-size: 12px;
-            color: #666666;
-        }
-    </style>
+    <title>Willkommen bei Kaderblick!</title>
+    <link rel="stylesheet" href="/css/email.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Willkommen bei Kaderblick!</h1>
+    <div class="email-container">
+        <div class="email-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border-radius: 8px 8px 0 0; padding: 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 0.5px;">Willkommen bei Kaderblick!</h1>
         </div>
-        <div class="content">
-            <p>Hallo {{ name }},</p>
-            
-            <p>herzlich willkommen bei Kaderblick! Wir freuen uns sehr, dich als neues Mitglied begrüßen zu dürfen.</p>
-            
-            <div class="feature-box">
-                <h3>🎯 Deine nächsten Schritte:</h3>
-                <ul>
-                    <li>Vervollständige dein Profil</li>
-                    <li>Entdecke unsere Teams</li>
-                    <li>Schau dir den Trainingsplan an</li>
+        <div class="email-content" style="background: #fff; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(16,185,129,0.08);">
+            <h2 style="color: #10b981; font-size: 20px; margin-bottom: 8px;">Hallo und herzlich willkommen!</h2>
+            <p style="color: #475569;">Wir freuen uns, dass du Teil der Kaderblick-Community bist.</p>
+            <div style="background: #f1f5f9; padding: 15px; margin: 10px 0; border-radius: 6px;">
+                <strong style="color: #059669;">Deine Vorteile:</strong>
+                <ul style="color: #475569;">
+                    <li>Alle Termine und Spiele im Blick</li>
+                    <li>Digitale Kommunikation mit deinem Team</li>
+                    <li>Eigene Mediathek für Videos & Dateien</li>
                 </ul>
             </div>
-
-            <div class="text-center">
-                <a href="{{ path('app_dashboard_index') }}" class="button">Zum Dashboard</a>
+            <p style="color: #475569;">Starte jetzt und entdecke alle Funktionen!</p>
+            <div style="text-align:center; margin: 32px 0;">
+                <a href="https://kaderblick.de/login" class="email-button">Jetzt einloggen</a>
             </div>
-
-            <div class="feature-box">
-                <h3>📱 Bleib in Kontakt:</h3>
-                <ul>
-                    <li>Website: {{ website_url }}</li>
-                    <li>E-Mail: {{ contact_email }}</li>
-                    <li>Telefon: {{ phone_number }}</li>
-                </ul>
-            </div>
-
-            <p>Wir wünschen dir viel Spaß und Erfolg bei und mit uns!</p>
-            
-            <p>Sportliche Grüße<br>Dein Team von Kaderblick</p>
+            <p style="color: #059669; font-weight: 500;">Sportliche Grüße<br>Dein Kaderblick-Team</p>
         </div>
-        <div class="footer">
-            <p>Diese E-Mail wurde automatisch generiert. Bitte antworte nicht darauf.</p>
-            <p>&copy; {{ "now"|date("Y") }} Kaderblick. Alle Rechte vorbehalten.</p>
+        <div class="email-footer" style="text-align: center; padding: 20px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; margin-top: 20px;">
+            <p style="margin: 0 0 4px 0;">Diese E-Mail wurde automatisch generiert. Bitte antworte nicht darauf.</p>
+            <p style="margin: 0;">&copy; {{ "now"|date("Y") }} Kaderblick. Alle Rechte vorbehalten.</p>
         </div>
     </div>
 </body>

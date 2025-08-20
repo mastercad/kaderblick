@@ -36,19 +36,22 @@
 .email-button {
     display: inline-block;
     padding: 12px 24px;
-    background-color: #1a4789;
-    color: white;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff;
     text-decoration: none;
     border-radius: 6px;
     margin: 20px 0;
-    font-weight: 500;
-    transition: background-color 0.2s ease;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(16,185,129,0.10);
+    transition: background 0.2s;
 }
 
 .email-button:hover {
-    background-color: #144068;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
     text-decoration: none;
-    color: white;
+    color: #fff;
 }
 
 .email-footer {
