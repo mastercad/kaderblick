@@ -113,15 +113,84 @@ class GameEventPublicController extends AbstractController
             $result[] = [
                 'id' => $event->getId(),
                 'type' => $event->getGameEventType()?->getName(),
+                'typeId' => $event->getGameEventType()?->getId(),
                 'typeIcon' => $event->getGameEventType()?->getIcon(),
                 'typeColor' => $event->getGameEventType()?->getColor(),
                 'minute' => $event->getTimestamp()->format('i'),
                 'player' => $event->getPlayer()?->getFullName(),
+                'playerId' => $event->getPlayer()?->getId(),
                 'relatedPlayer' => $event->getRelatedPlayer()?->getFullName(),
+                'relatedPlayerId' => $event->getRelatedPlayer()?->getId(),
+                'teamId' => $event->getTeam()->getId(),
                 'description' => $event->getDescription(),
             ];
         }
 
         return $this->json($result);
+    }
+
+    #[Route('/api/game/{gameId}/event/{eventId}', name: 'api_game_event_update', methods: ['PUT', 'PATCH'])]
+    public function updateEvent(
+        int $gameId,
+        int $eventId,
+        Request $request,
+        EntityManagerInterface $em,
+        GameEventRepository $eventRepo,
+        PlayerRepository $playerRepo,
+        GameEventTypeRepository $eventTypeRepo,
+        SubstitutionReasonRepository $substitutionReasonRepo
+    ): JsonResponse {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $event = $eventRepo->find($eventId);
+        if (!$event || $event->getGame()->getId() !== $gameId) {
+            return $this->json(['error' => 'Event not found'], 404);
+        }
+        $data = json_decode($request->getContent(), true);
+        if (!$data) {
+            return $this->json(['error' => 'Invalid data'], 400);
+        }
+        if (isset($data['eventType'])) {
+            $eventType = $eventTypeRepo->find($data['eventType']);
+            $event->setGameEventType($eventType);
+        }
+        if (isset($data['player'])) {
+            $event->setPlayer($playerRepo->find($data['player']));
+        }
+        if (isset($data['relatedPlayer'])) {
+            $event->setRelatedPlayer($playerRepo->find($data['relatedPlayer']));
+        } elseif (array_key_exists('relatedPlayer', $data)) {
+            $event->setRelatedPlayer(null);
+        }
+        if (isset($data['minute'])) {
+            $event->setTimestamp((new DateTime())->setTime(0, 0)->modify('+' . ((int) $data['minute']) . ' minutes'));
+        }
+        if (isset($data['description'])) {
+            $event->setDescription($data['description']);
+        }
+        if (isset($data['reason'])) {
+            $reasonEntity = $substitutionReasonRepo->find($data['reason']);
+            $event->setDescription($reasonEntity ? $reasonEntity->getName() : $data['reason']);
+        }
+        $em->flush();
+
+        return $this->json(['success' => true]);
+    }
+
+    #[Route('/api/game/{gameId}/event/{eventId}', name: 'api_game_event_delete', methods: ['DELETE'])]
+    public function deleteEvent(
+        int $gameId,
+        int $eventId,
+        EntityManagerInterface $em,
+        GameEventRepository $eventRepo
+    ): JsonResponse {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $event = $eventRepo->find($eventId);
+        if (!$event || $event->getGame()->getId() !== $gameId) {
+            return $this->json(['error' => 'Event not found'], 404);
+        }
+        $em->remove($event);
+        $em->flush();
+
+        return $this->json(['success' => true]);
     }
 }

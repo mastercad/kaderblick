@@ -4,6 +4,7 @@
 <div class="container my-3">
   <h5>Neues Spielereignis erfassen</h5>
   <form id="gameEventForm" class="row g-2">
+    <input type="hidden" name="eventId" id="eventId">
     <div class="col-12">
       <select class="form-select" name="team" id="teamSelect" required>
         <option value="">Team wählen…</option>
@@ -47,14 +48,64 @@
       <input type="text" class="form-control" name="description" placeholder="Beschreibung (optional)">
     </div>
     <div class="col-12 d-grid">
-      <button class="btn btn-success" type="submit">Event speichern</button>
+      <button class="btn btn-success" id="submitBtn" type="submit">Event speichern</button>
+      <button class="btn btn-secondary mt-2" id="cancelEditBtn" type="button" style="display:none;">Bearbeiten abbrechen</button>
     </div>
   </form>
   <div id="eventList" class="mt-4">
+  {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPERADMIN') %}
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteConfirmModalLabel">Event löschen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Soll dieses Event wirklich gelöscht werden?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Löschen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
     <!-- Hier werden die bisherigen Events als Liste angezeigt -->
   </div>
+
+  {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPERADMIN') %}
+  <!-- Edit-Modal (Bootstrap) -->
+  <div class="modal fade" id="editEventModal" tabindex="-1" aria-labelledby="editEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editEventModalLabel">Event bearbeiten</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editEventForm">
+            <input type="hidden" name="eventId" id="editEventId">
+            <div class="mb-2">
+              <label class="form-label">Minute</label>
+              <input type="number" class="form-control" name="minute" id="editMinute" min="1" max="120" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Beschreibung</label>
+              <input type="text" class="form-control" name="description" id="editDescription">
+            </div>
+            <button type="submit" class="btn btn-primary">Speichern</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const form = document.getElementById('gameEventForm');
 const relatedField = document.getElementById('relatedPlayerField');
@@ -77,10 +128,11 @@ function updateRelatedField() {
 }
 eventTypeSelect.addEventListener('change', updateRelatedField);
 
-function loadPlayers(teamId) {
+function loadPlayers(teamId, cb) {
   if (!teamId) {
     playerSelect.innerHTML = '<option value="">Spieler wählen…</option>';
     relatedPlayerSelect.innerHTML = '<option value="">Zweiter Spieler (bei Wechsel)…</option>';
+    if (cb) cb();
     return;
   }
   axios.get(window.location.origin + '/api/team/' + teamId + '/players')
@@ -93,12 +145,16 @@ function loadPlayers(teamId) {
       });
       playerSelect.innerHTML = options;
       relatedPlayerSelect.innerHTML = relOptions;
+      if (cb) cb();
     });
 }
 
 teamSelect.addEventListener('change', function() {
   loadPlayers(this.value);
 });
+
+let editMode = false;
+let editingEventId = null;
 
 form.addEventListener('submit', function(e) {
   e.preventDefault();
@@ -110,32 +166,111 @@ form.addEventListener('submit', function(e) {
     formData.delete('reason');
   }
   const data = Object.fromEntries(formData);
-  axios.post(window.location.origin + '/api/game/{{ game.id }}/event', data)
-    .then(() => {
-      form.reset();
-      updateRelatedField();
-      loadEvents();
-    });
+  if (editMode && editingEventId) {
+    axios.patch(window.location.origin + '/api/game/{{ game.id }}/event/' + editingEventId, data)
+      .then(() => {
+        resetForm();
+        loadEvents();
+      });
+  } else {
+    axios.post(window.location.origin + '/api/game/{{ game.id }}/event', data)
+      .then(() => {
+        form.reset();
+        updateRelatedField();
+        loadEvents();
+      });
+  }
 });
+
+document.getElementById('cancelEditBtn').addEventListener('click', function() {
+  resetForm();
+});
+
+function resetForm() {
+  editMode = false;
+  editingEventId = null;
+  form.reset();
+  updateRelatedField();
+  document.getElementById('eventId').value = '';
+  document.getElementById('submitBtn').textContent = 'Event speichern';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+}
 const reasonField = document.getElementById('reasonField');
 const reasonInput = document.getElementById('reasonInput');
 
 function loadEvents() {
   axios.get(window.location.origin + '/api/game/{{ game.id }}/events')
     .then(res => {
-      eventList.innerHTML = res.data.map(ev => `
-        <div class="card mb-2" style="border-left: 5px solid ${ev.typeColor}">
-          <div class="card-body py-2 px-3 d-flex align-items-center">
-            <span class="me-2"><i class="${ev.typeIcon}"></i></span>
-            <span class="fw-bold">${ev.type}</span>
-            <span class="mx-2">${ev.minute}'.'</span>
-            <span>${ev.player}${ev.relatedPlayer ? ' ↔ ' + ev.relatedPlayer : ''}</span>
-            <span class="ms-auto text-muted small">${ev.description || ''}</span>
+      eventList.innerHTML = res.data.map(ev => {
+        let adminBtns = '';
+        {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPERADMIN') %}
+        adminBtns = `
+          <button class="btn btn-sm btn-outline-primary me-1" onclick='editEvent(${JSON.stringify(ev)})'>Bearbeiten</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="showDeleteModal(${ev.id})">Löschen</button>
+        `;
+        {% endif %}
+        return `
+          <div class="card mb-2" style="border-left: 5px solid ${ev.typeColor}">
+            <div class="card-body py-2 px-3 d-flex align-items-center">
+              <span class="me-2"><i class="${ev.typeIcon}"></i></span>
+              <span class="fw-bold">${ev.type}</span>
+              <span class="mx-2">${ev.minute}'.'</span>
+              <span>${ev.player}${ev.relatedPlayer ? ' ↔ ' + ev.relatedPlayer : ''}</span>
+              <span class="ms-auto text-muted small">${ev.description || ''}</span>
+              ${adminBtns}
+            </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     });
 }
+
+{% if is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPERADMIN') %}
+// Editieren
+window.editEvent = function(ev) {
+  editMode = true;
+  editingEventId = ev.id;
+  document.getElementById('eventId').value = ev.id;
+  document.querySelector('input[name="minute"]').value = ev.minute;
+  document.querySelector('input[name="description"]').value = ev.description || '';
+  document.getElementById('submitBtn').textContent = 'Event aktualisieren';
+  document.getElementById('cancelEditBtn').style.display = '';
+  // Team setzen und Spieler nachladen
+  if (ev.teamId) {
+    teamSelect.value = ev.teamId;
+    loadPlayers(ev.teamId, function() {
+      if (ev.playerId) playerSelect.value = ev.playerId;
+      if (ev.relatedPlayerId) relatedPlayerSelect.value = ev.relatedPlayerId;
+    });
+  }
+  // Event-Typ setzen
+  if (ev.typeId) {
+    eventTypeSelect.value = ev.typeId;
+    updateRelatedField();
+  }
+  // Reason (falls vorhanden)
+  if (ev.reasonId && reasonInput) {
+    reasonInput.value = ev.reasonId;
+  }
+}
+
+// Löschen mit Modal
+let deleteEventId = null;
+window.showDeleteModal = function(id) {
+  deleteEventId = id;
+  var modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+  modal.show();
+}
+document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+  if (deleteEventId) {
+    axios.delete(window.location.origin + '/api/game/{{ game.id }}/event/' + deleteEventId)
+      .then(() => {
+        loadEvents();
+        bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
+      });
+  }
+});
+{% endif %}
 
 // Initial: Spieler für erstes Team laden, falls vorausgewählt
 if (teamSelect.value) {
