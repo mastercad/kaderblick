@@ -1,0 +1,66 @@
+<div class="modal fade" id="locationEditModal" tabindex="-1" aria-labelledby="locationEditModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="locationEditForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="locationEditModalLabel">Spielstätte bearbeiten</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id" value="{{ location.id }}">
+          <div class="mb-3">
+            <label for="locationName" class="form-label">Name*</label>
+            <input type="text" class="form-control" id="locationName" name="name" value="{{ location.name }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="locationAddress" class="form-label">Adresse</label>
+            <input type="text" class="form-control" id="locationAddress" name="address" value="{{ location.address }}">
+          </div>
+          <div class="mb-3">
+            <label for="locationCity" class="form-label">Stadt</label>
+            <input type="text" class="form-control" id="locationCity" name="city" value="{{ location.city }}">
+          </div>
+          <div class="mb-3">
+            <label for="locationCapacity" class="form-label">Kapazität</label>
+            <input type="number" class="form-control" id="locationCapacity" name="capacity" value="{{ location.capacity }}">
+          </div>
+          <div class="mb-3">
+            <label for="locationSurfaceType" class="form-label">Belag</label>
+            <select class="form-select" id="locationSurfaceType" name="surfaceType">
+              <option value="">- bitte wählen -</option>
+              {% for surfaceType in surfaceTypes %}
+                <option value="{{ surfaceType.id }}" {% if location.surfaceType and location.surfaceType.id == surfaceType.id %}selected{% endif %}>{{ surfaceType.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3 d-flex align-items-center">
+            <label class="form-label me-3 mb-0" for="locationHasFloodlight">Flutlicht</label>
+            <input class="form-check-input ms-2" type="checkbox" id="locationHasFloodlight" name="hasFloodlight" value="1" {% if location.hasFloodlight %}checked{% endif %}>
+          </div>
+          <div class="mb-3">
+            <label for="locationFacilities" class="form-label">Ausstattung</label>
+            <input type="text" class="form-control" id="locationFacilities" name="facilities" value="{{ location.facilities }}" placeholder="z.B. Umkleiden, Duschen, Vereinsheim">
+          </div>
+          <div class="mb-3 row">
+            <div class="col">
+              <label for="locationLatitude" class="form-label">Latitude</label>
+              <input type="text" class="form-control" id="locationLatitude" name="latitude" value="{{ location.latitude }}">
+            </div>
+            <div class="col">
+              <label for="locationLongitude" class="form-label">Longitude</label>
+              <input type="text" class="form-control" id="locationLongitude" name="longitude" value="{{ location.longitude }}">
+            </div>
+          </div>
+          <button type="button" class="btn btn-outline-secondary w-100 mb-2" id="fetchCoordinatesBtn">
+            <i class="fas fa-map-marker-alt me-2"></i>Koordinaten von OpenStreetMap holen
+          </button>
+          <div id="osmResultsContainer" class="d-none mt-2"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+          <button type="submit" class="btn btn-primary">Speichern</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -425,8 +425,6 @@
                     const iconHtml = `<span class="event-status-icon" style="position: absolute; top: 0px; right: 0px;" title="Keine Antwort"><i class="fas fa-question-circle text-secondary"></i></span>`;
                 }
 
-//                const titleEl = info.el.querySelector('.fc-event-title') || info.el;
-//                titleEl.insertAdjacentHTML('afterbegin', iconHtml + ' ');
                 const titleEl = info.el.querySelector('.fc-daygrid-event-harness') || info.el;
                 titleEl.insertAdjacentHTML("beforeend", iconHtml);
                 
