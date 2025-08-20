@@ -415,9 +415,9 @@
                 const status = info.event.extendedProps.participation_status;
                 let iconHtml = '';
                 
-                if (status.icon) {
+                if (status && status.icon) {
                     iconHtml = `<span class="event-status-icon" style="position: absolute; top: 0px; right: 0px;" title="${status.name}"><i class="fa fa-${status.icon}"></i></span>`;
-                } else if (status.code) {
+                } else if (status && status.code) {
                     iconHtml = `<span class="event-status-dot" title="${status.name}" style="background:${status.color||'#888'}; position: absolute; top: 0px; right: 0px;"></span>`;
                 }
                 
