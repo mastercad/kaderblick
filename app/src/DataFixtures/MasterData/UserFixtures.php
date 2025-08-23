@@ -20,7 +20,7 @@ class UserFixtures extends Fixture implements FixtureGroupInterface
         $user->setEmail('andreas.kempe@byte-artist.de')
             ->setFirstName('Andreas')
             ->setLastName('Kempe')
-            ->setRoles(['ROLE_SUPER_ADMIN'])
+            ->setRoles(['ROLE_SUPERADMIN'])
             ->setPassword('$2y$13$dp0os8m.w398LvveRtUKwO0sQkKMXfKDyclEK1X0ZpVkXFqwQtmkG')
             ->setIsVerified(true)
             ->setIsEnabled(true);

@@ -1,3 +1,7 @@
+# fussball.de Test-Controller
+fussballde_test:
+    path: /fussballde/test
+    controller: App\Controller\FussballDeTestController::test
 controllers:
     resource:
         path: ../src/Controller/

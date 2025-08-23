@@ -163,7 +163,7 @@
                     }
                 });
             }
-            
+
             // Initiale Spieler laden, falls vorhanden
             {% if formation.formationData.players is defined %}
                 players = {{ formation.formationData.players|json_encode|raw }};
@@ -248,20 +248,22 @@
                 if (existingPlayer) {
                     return;
                 }
-                
+
+                // Freie Position suchen wie bei generischen Spielern
+                const position = findFreePosition();
                 const player = {
                     id: Date.now(),
                     number: shirtNumber || nextPlayerNumber++,
                     displayNumber: shirtNumber || `G${nextPlayerNumber - 1}`,
-                    x: 50,
-                    y: 50,
+                    x: position.x,
+                    y: position.y,
                     name: playerName,
                     playerId: playerId,
                     isRealPlayer: !!playerId
                 };
                 players.push(player);
                 renderPlayers();
-                
+
                 // Button als ausgewählt markieren
                 const button = document.querySelector(`[data-player-id="${playerId}"] button`);
                 if (button) {

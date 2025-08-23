@@ -2,14 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Entity\User;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 class NewsEndToEndTest extends ApiWebTestCase
 {
     public function testAdminCanCreatePlatformNews(): void
     {
         $client = static::createClient();
+        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user16@example.com');
 
         $crawler = $client->request('GET', '/news/create');
@@ -34,6 +35,7 @@ class NewsEndToEndTest extends ApiWebTestCase
     public function testAdminCanCreateClubNews(): void
     {
         $client = static::createClient();
+        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user16@example.com');
 
         $crawler = $client->request('GET', '/news/create');
@@ -57,6 +59,7 @@ class NewsEndToEndTest extends ApiWebTestCase
     public function testAdminCanCreateTeamNews(): void
     {
         $client = static::createClient();
+        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user16@example.com');
 
         $crawler = $client->request('GET', '/news/create');
@@ -80,16 +83,19 @@ class NewsEndToEndTest extends ApiWebTestCase
     public function testNonAdminCannotCreateNews(): void
     {
         $client = static::createClient();
+        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user6@example.com');
 
+        $this->expectException(AccessDeniedException::class);
+
         $client->request('GET', '/news/create');
-        $this->assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
     }
 
     public function testUserSeesOnlyRelevantNews(): void
     {
         // Admin legt eine Team-News für Team 1 an
         $client = static::createClient();
+        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user16@example.com');
 
         $crawler = $client->request('GET', '/news/create');
@@ -156,19 +162,14 @@ class NewsEndToEndTest extends ApiWebTestCase
         $this->assertStringContainsString('Nur für Team 1', $content);
     }
 
-    public function testUserWithRelationCanCreateNews(): void
+    public function testUserWithoutRelationsCannotCreateNews(): void
     {
-        // User 16 ist Admin, darf News anlegen
         $client = static::createClient();
-        $this->authenticateUser($client, 'user16@example.com');
 
-        $crawler = $client->request('GET', '/news/create');
-        $this->assertResponseStatusCodeSame(Response::HTTP_OK);
-
-        // User 6 ist normaler User, darf KEINE News anlegen
         $this->authenticateUser($client, 'user6@example.com');
 
         $client->request('GET', '/news/create');
+
         $this->assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
     }
 }

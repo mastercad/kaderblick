@@ -55,7 +55,7 @@ class UserFixtures extends Fixture implements DependentFixtureInterface, Fixture
                 'maxId' => 20,
             ],
             [
-                'name' => 'ROLE_SUPER_ADMIN',
+                'name' => 'ROLE_SUPERADMIN',
                 'minId' => 21,
                 'maxId' => 25,
             ]

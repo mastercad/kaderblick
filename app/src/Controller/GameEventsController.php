@@ -8,7 +8,10 @@ use App\Repository\GameEventRepository;
 use App\Repository\GameEventTypeRepository;
 use App\Repository\PlayerRepository;
 use App\Repository\SubstitutionReasonRepository;
+use App\Service\FussballDeCrawlerService;
+use App\Service\GameDetailsSyncService;
 use DateTime;
+use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,7 +19,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-class GameEventPublicController extends AbstractController
+class GameEventsController extends AbstractController
 {
     #[Route('/game/{id}/events', name: 'game_event_public', methods: ['GET'])]
     public function form(
@@ -77,10 +80,11 @@ class GameEventPublicController extends AbstractController
         $team = null;
         if ($player) {
             $assignments = $player->getPlayerTeamAssignments();
+            $currentDate = new DateTime();
             foreach ($assignments as $pta) {
                 $ptaTeam = $pta->getTeam();
                 $ptaEnd = $pta->getEndDate();
-                $isActive = (null === $ptaEnd) || ($ptaEnd >= new DateTime());
+                $isActive = (null === $ptaEnd) || ($ptaEnd >= $currentDate);
                 if ($isActive && ($ptaTeam === $game->getHomeTeam() || $ptaTeam === $game->getAwayTeam())) {
                     $team = $ptaTeam;
                     break;
@@ -88,9 +92,9 @@ class GameEventPublicController extends AbstractController
             }
         }
         $event->setTeam($team);
-        $event->setTimestamp(
-            (new DateTime())->setTime(0, 0)->modify('+' . ((int) ($data['minute'] ?? 1)) . ' minutes')
-        );
+        /** @var DateTime $startDate */
+        $startDate = $event->getGame()->getCalendarEvent()->getStartDate();
+        $event->setTimestamp($startDate->modify('+' . ((int) ($data['minute'] ?? 1)) . ' minutes'));
 
         if ($isSubstitution && !empty($data['reason'])) {
             $reasonEntity = $substitutionReasonRepo->find($data['reason']);
@@ -116,7 +120,7 @@ class GameEventPublicController extends AbstractController
                 'typeId' => $event->getGameEventType()?->getId(),
                 'typeIcon' => $event->getGameEventType()?->getIcon(),
                 'typeColor' => $event->getGameEventType()?->getColor(),
-                'minute' => $event->getTimestamp()->format('i'),
+                'minute' => $this->calculateDateDiffInMinutes($event->getGame()->getCalendarEvent()->getStartDate(), $event->getTimestamp()),
                 'player' => $event->getPlayer()?->getFullName(),
                 'playerId' => $event->getPlayer()?->getId(),
                 'relatedPlayer' => $event->getRelatedPlayer()?->getFullName(),
@@ -162,7 +166,9 @@ class GameEventPublicController extends AbstractController
             $event->setRelatedPlayer(null);
         }
         if (isset($data['minute'])) {
-            $event->setTimestamp((new DateTime())->setTime(0, 0)->modify('+' . ((int) $data['minute']) . ' minutes'));
+            /** @var DateTime $startDate */
+            $startDate = $event->getGame()->getCalendarEvent()->getStartDate();
+            $event->setTimestamp($startDate->modify('+' . ((int) ($data['minute'] ?? 1)) . ' minutes'));
         }
         if (isset($data['description'])) {
             $event->setDescription($data['description']);
@@ -190,6 +196,33 @@ class GameEventPublicController extends AbstractController
         }
         $em->remove($event);
         $em->flush();
+
+        return $this->json(['success' => true]);
+    }
+
+    private function calculateDateDiffInMinutes(DateTimeInterface $dateStart, DateTimeInterface $dateCurrent): int
+    {
+        $diff = $dateCurrent->diff($dateStart);
+
+        return ($diff->days * 24 * 60) + ($diff->h * 60) + $diff->i;
+    }
+
+    #[Route('/api/game/{id}/sync-fussballde', name: 'api_game_event_sync_fussballde', methods: ['POST'])]
+    public function syncFussballDe(
+        Game $game,
+        FussballDeCrawlerService $crawlerService,
+        GameDetailsSyncService $syncService
+    ): JsonResponse {
+        $this->denyAccessUnlessGranted('ROLE_SUPERADMIN');
+        $url = $game->getFussballDeUrl();
+        if (!$url) {
+            return $this->json(['error' => 'Keine fussball.de-URL für dieses Spiel hinterlegt.'], 400);
+        }
+        $details = $crawlerService->parseGameDetailsHtmlFromUrl($url);
+        if (empty($details)) {
+            return $this->json(['error' => 'Konnte Spieldetails nicht abrufen.'], 400);
+        }
+        $syncService->syncGameDetails($details);
 
         return $this->json(['success' => true]);
     }

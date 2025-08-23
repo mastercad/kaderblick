@@ -17,6 +17,16 @@ use Symfony\Component\Security\Core\User\UserInterface;
  */
 class GameEventRepository extends ServiceEntityRepository implements OptimizedRepositoryInterface
 {
+    /**
+     * Legt ein GameEvent aus Crawler-Daten an oder aktualisiert es (Platzhalter-Implementierung).
+     *
+     * @param array<string, mixed> $data
+     */
+    public function updateOrCreateFromCrawler(array $data): void
+    {
+        // TODO: Implementiere die eigentliche Logik zum Anlegen/Aktualisieren eines GameEvent
+    }
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, GameEvent::class);

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Formation;
+use App\Entity\Team;
 use App\Entity\User;
 use App\Form\FormationType;
 use App\Service\CoachTeamPlayerService;
@@ -79,7 +80,7 @@ class FormationController extends AbstractController
 
         return $this->render('formation/edit.html.twig', [
             'formation' => $formation,
-            'availablePlayers' => $availablePlayers,
+            'availablePlayers' => $availablePlayers
         ]);
     }
 

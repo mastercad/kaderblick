@@ -114,11 +114,43 @@ class Game
     )]
     private ?CalendarEvent $calendarEvent;
 
+    #[Groups(['game:read', 'game:write'])]
+    #[ORM\Column(type: 'string', nullable: true, unique: true, name: 'fussball_de_id')]
+    private ?string $fussballDeId = null;
+
+    #[Groups(['game:read', 'game:write'])]
+    #[ORM\Column(type: 'string', length: 255, nullable: true, name: 'fussball_de_url')]
+    private ?string $fussballDeUrl = null;
+
     public function __construct()
     {
         $this->goals = new ArrayCollection();
         $this->gameEvents = new ArrayCollection();
         $this->substitutions = new ArrayCollection();
+    }
+
+    public function getFussballDeId(): ?string
+    {
+        return $this->fussballDeId;
+    }
+
+    public function setFussballDeId(?string $fussballDeId): self
+    {
+        $this->fussballDeId = $fussballDeId;
+
+        return $this;
+    }
+
+    public function getFussballDeUrl(): ?string
+    {
+        return $this->fussballDeUrl;
+    }
+
+    public function setFussballDeUrl(?string $fussballDeUrl): self
+    {
+        $this->fussballDeUrl = $fussballDeUrl;
+
+        return $this;
     }
 
     public function getId(): int
