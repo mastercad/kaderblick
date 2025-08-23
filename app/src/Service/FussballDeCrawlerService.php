@@ -218,7 +218,12 @@ class FussballDeCrawlerService
         $website = '';
         $crawler->filter('.club-profile .factfile-data .row')->each(
             function (Crawler $row) use (
-                &$gruendung, &$farben, &$adresse, &$ansprechpartner, &$website) {
+                &$gruendung,
+                &$farben,
+                &$adresse,
+                &$ansprechpartner,
+                &$website
+            ) {
                 $labelLeft = $row->filter('.column-left .label')->count() ? trim($row->filter('.column-left .label')->text('')) : '';
                 $valueLeft = $row->filter('.column-left .value')->count() ? trim($row->filter('.column-left .value')->text('')) : '';
                 $labelRight = $row->filter('.column-right .label')->count() ? trim($row->filter('.column-right .label')->text('')) : '';
