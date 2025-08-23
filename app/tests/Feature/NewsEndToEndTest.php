@@ -10,6 +10,7 @@ class NewsEndToEndTest extends ApiWebTestCase
     public function testAdminCanCreatePlatformNews(): void
     {
         $client = static::createClient();
+        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user16@example.com');
 
         $crawler = $client->request('GET', '/news/create');
@@ -34,6 +35,7 @@ class NewsEndToEndTest extends ApiWebTestCase
     public function testAdminCanCreateClubNews(): void
     {
         $client = static::createClient();
+        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user16@example.com');
 
         $crawler = $client->request('GET', '/news/create');
@@ -57,6 +59,7 @@ class NewsEndToEndTest extends ApiWebTestCase
     public function testAdminCanCreateTeamNews(): void
     {
         $client = static::createClient();
+        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user16@example.com');
 
         $crawler = $client->request('GET', '/news/create');
@@ -80,6 +83,7 @@ class NewsEndToEndTest extends ApiWebTestCase
     public function testNonAdminCannotCreateNews(): void
     {
         $client = static::createClient();
+        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user6@example.com');
 
         $client->request('GET', '/news/create');
@@ -90,6 +94,7 @@ class NewsEndToEndTest extends ApiWebTestCase
     {
         // Admin legt eine Team-News für Team 1 an
         $client = static::createClient();
+        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user16@example.com');
 
         $crawler = $client->request('GET', '/news/create');
@@ -160,6 +165,7 @@ class NewsEndToEndTest extends ApiWebTestCase
     {
         // User 16 ist Admin, darf News anlegen
         $client = static::createClient();
+        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user16@example.com');
 
         $crawler = $client->request('GET', '/news/create');

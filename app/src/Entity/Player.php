@@ -149,6 +149,11 @@ class Player
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Assert\Email(message: 'Die E-Mail-Adresse {{ value }} ist nicht gültig.')]
     private ?string $email = null;
+    #[ORM\Column(type: 'string', nullable: true, unique: true, name: 'fussball_de_id')]
+    private ?string $fussballDeId = null;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true, name: 'fussball_de_url')]
+    private ?string $fussballDeUrl = null;
 
     public function __construct()
     {
@@ -488,6 +493,30 @@ class Player
     public function setEmail(?string $email): self
     {
         $this->email = $email;
+
+        return $this;
+    }
+
+    public function getFussballDeId(): ?string
+    {
+        return $this->fussballDeId;
+    }
+
+    public function setFussballDeId(?string $fussballDeId): self
+    {
+        $this->fussballDeId = $fussballDeId;
+
+        return $this;
+    }
+
+    public function getFussballDeUrl(): ?string
+    {
+        return $this->fussballDeUrl;
+    }
+
+    public function setFussballDeUrl(?string $fussballDeUrl): self
+    {
+        $this->fussballDeUrl = $fussballDeUrl;
 
         return $this;
     }

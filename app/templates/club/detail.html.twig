@@ -1,0 +1,13 @@
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Verein Details{% endblock %}
+
+{% block body %}
+    {% include 'club/_detail_content.html.twig' %}
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="/js/club-admin.js"></script>
+{% endblock %}

@@ -53,28 +53,6 @@ function openEditModal(locationId) {
     });
 }
 
-// Bindet Events im Modal (Formular, OSM-Button)
-function bindEditModalEvents() {
-  const form = document.getElementById('locationEditForm');
-  form.addEventListener('submit', function(e) {
-    e.preventDefault();
-    const id = form.querySelector('input[name="id"]').value;
-    const data = new FormData(form);
-    axios.post(`/locations/update/${id}`, data)
-      .then(() => {
-        if (typeof loadList === 'function') {
-          loadList();
-        }
-        if (window.ModalManager) {
-          window.ModalManager.hideModal('locationEditModal');
-        }
-      });
-  });
-
-  document.getElementById('fetchCoordinatesBtn').addEventListener('click', function() {
-    fetchCoordinatesFromOSM();
-  });
-}
 
 // Holt Koordinaten von OSM/Nominatim
 function fetchCoordinatesFromOSM() {
@@ -107,6 +85,29 @@ function fetchCoordinatesFromOSM() {
         container.classList.remove('d-none');
       }
     });
+}
+
+// Bindet Events im Modal (Formular, OSM-Button)
+function bindEditModalEvents() {
+  const form = document.getElementById('locationEditForm');
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = form.querySelector('input[name="id"]').value;
+    const data = new FormData(form);
+    axios.post(`/locations/update/${id}`, data)
+      .then(() => {
+        if (typeof loadList === 'function') {
+          loadList();
+        }
+        if (window.ModalManager) {
+          window.ModalManager.hideModal('locationEditModal');
+        }
+      });
+  });
+
+  document.getElementById('fetchCoordinatesBtn').addEventListener('click', function() {
+    fetchCoordinatesFromOSM();
+  });
 }
 
 // Löschen-Button

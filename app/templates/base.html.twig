@@ -75,6 +75,23 @@
 <!-- Professional Modal Container - AUSSERHALB des Hauptcontainers -->
 <div id="modalContainer" class="modal-container-root"></div>
 
+<!-- Global Modal für fussball.de-Datenübernahme (wird von überall korrekt angezeigt) -->
+<div class="modal fade" id="fussballDeResultModal" tabindex="-1" aria-labelledby="fussballDeResultModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="fussballDeResultModalLabel">fussball.de-Daten</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
+      </div>
+      <div class="modal-body" id="fussballDeResultModalBody">
+        <!-- Inhalt wird per JS gesetzt -->
+      </div>
+      <div class="modal-footer" id="fussballDeResultModalFooter">
+        <!-- Footer wird per JS gesetzt -->
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- JavaScript Libraries -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -748,9 +765,42 @@ function initializeModalFunctionality() {
     }
   });
 
-  // Register service worker if supported
-  if ('serviceWorker' in navigator) {
-    registerServiceWorker();
+  // Register service worker if supported and on HTTPS/localhost
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    (async function registerServiceWorkerSafe() {
+      try {
+        const registration = await navigator.serviceWorker.register('/js/service-worker.js');
+        // Warten, bis der Service Worker wirklich aktiv ist!
+        await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
+        if (!subscription) {
+          // Hole VAPID-Key vom Server
+          const response = await fetch('{{ path("app_push_key") }}');
+          const data = await response.json();
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: data.key
+          });
+        }
+        // Sende Subscription an den Server
+        await fetch('{{ path("app_push_subscribe") }}', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(subscription)
+        }).then((response) => {
+          if (response.status >= 400 && response.status < 600) {
+            throw new Error("Bad response from server - " + response.status + " : " + response.statusText);
+          }
+          return response.json();
+        }).then((responseData) => {
+          console.log("Success subscribing to push notifications", responseData);
+        });
+      } catch (error) {
+        console.error('Service Worker registration or push subscription failed:', error);
+      }
+    })();
+  } else {
+    console.warn('Service Worker wird nur über HTTPS oder localhost registriert.');
   }
 }
 

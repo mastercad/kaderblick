@@ -6,7 +6,7 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>News</h1>
-        {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN') %}
+        {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPERADMIN') %}
             <a href="{{ path('app_news_create') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-2"></i>Neue Nachricht erstellen
             </a>
@@ -17,7 +17,7 @@
         <div class="text-center py-5">
             <i class="bi bi-newspaper text-muted icon-placeholder"></i>
             <p class="text-muted mt-3">Keine News verfügbar.</p>
-            {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPER_ADMIN') %}
+            {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPERADMIN') %}
                 <a href="{{ path('app_news_create') }}" class="btn btn-outline-primary">
                     <i class="bi bi-plus-circle me-2"></i>Erste Nachricht erstellen
                 </a>

@@ -50,7 +50,11 @@
     <div class="col-12 d-grid">
       <button class="btn btn-success" id="submitBtn" type="submit">Event speichern</button>
       <button class="btn btn-secondary mt-2" id="cancelEditBtn" type="button" style="display:none;">Bearbeiten abbrechen</button>
+      {% if is_granted('ROLE_SUPERADMIN') %}
+        <button class="btn btn-warning mt-2" id="syncGameEventsBtn" type="button">Events automatisch abgleichen (fussball.de)</button>
+      {% endif %}
     </div>
+  
   </form>
   <div id="eventList" class="mt-4">
   {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_SUPERADMIN') %}
@@ -114,6 +118,27 @@ const eventList = document.getElementById('eventList');
 const teamSelect = document.getElementById('teamSelect');
 const playerSelect = document.getElementById('playerSelect');
 const relatedPlayerSelect = document.getElementById('relatedPlayerSelect');
+
+// Sync-Button Event Listener
+{% if is_granted('ROLE_SUPERADMIN') %}
+document.getElementById('syncGameEventsBtn').addEventListener('click', function() {
+  this.disabled = true;
+  this.textContent = 'Abgleich läuft...';
+  axios.post(window.location.origin + '/api/game/{{ game.id }}/sync-fussballde')
+    .then(() => {
+      loadEvents();
+      this.textContent = 'Events automatisch abgleichen (fussball.de)';
+      this.disabled = false;
+    })
+    .catch(() => {
+      this.textContent = 'Fehler beim Abgleich!';
+      setTimeout(() => {
+        this.textContent = 'Events automatisch abgleichen (fussball.de)';
+        this.disabled = false;
+      }, 3000);
+    });
+});
+{% endif %}
 
 function updateRelatedField() {
     const selected = eventTypeSelect.options[eventTypeSelect.selectedIndex];
@@ -214,7 +239,7 @@ function loadEvents() {
             <div class="card-body py-2 px-3 d-flex align-items-center">
               <span class="me-2"><i class="${ev.typeIcon}"></i></span>
               <span class="fw-bold">${ev.type}</span>
-              <span class="mx-2">${ev.minute}'.'</span>
+              <span class="mx-2">${ev.minute}’</span>
               <span>${ev.player}${ev.relatedPlayer ? ' ↔ ' + ev.relatedPlayer : ''}</span>
               <span class="ms-auto text-muted small">${ev.description || ''}</span>
               ${adminBtns}

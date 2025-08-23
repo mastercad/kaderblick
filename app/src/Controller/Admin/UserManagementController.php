@@ -48,7 +48,7 @@ class UserManagementController extends AbstractController
         $availableRoles = [
             'ROLE_USER' => 'Benutzer',
             'ROLE_ADMIN' => 'Administrator',
-            'ROLE_SUPER_ADMIN' => 'Super Administrator'
+            'ROLE_SUPERADMIN' => 'Super Administrator'
         ];
 
         return $this->render('admin/users/roles.html.twig', [

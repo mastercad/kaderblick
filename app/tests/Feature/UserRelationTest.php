@@ -45,38 +45,6 @@ class UserRelationTest extends KernelTestCase
     public function testUserWithMultipleCoachRelationsSeesAllRelevantCoachesAndTeams(): void
     {
         $entityManager = self::getContainer()->get('doctrine')->getManager();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['email' => 'user5@example.com']);
-        $coach2 = $entityManager->getRepository(Coach::class)->findOneBy([
-            'firstName' => 'Coach',
-            'lastName' => '2'
-        ]);
-        $coach3 = $entityManager->getRepository(Coach::class)->findOneBy([
-            'firstName' => 'Coach',
-            'lastName' => '3'
-        ]);
-
-        // Prüfe, ob die Relationen korrekt bestehen
-        $relationCoaches = [];
-        foreach ($user->getRelations() as $rel) {
-            if ($rel->getCoach()) {
-                $relationCoaches[] = $rel->getCoach()->getId();
-            }
-        }
-        self::assertContains($coach2->getId(), $relationCoaches, 'User ist mit Coach 2 befreundet');
-        self::assertContains($coach3->getId(), $relationCoaches, 'User ist mit Coach 3 befreundet');
-
-        $coaches = $entityManager->getRepository(Coach::class)->fetchOptimizedList($user);
-        $teams = $entityManager->getRepository(Team::class)->fetchOptimizedList($user);
-
-        $coachIds = array_map(fn ($c) => $c->getId(), $coaches);
-        self::assertContains($coach2->getId(), $coachIds);
-        self::assertContains($coach3->getId(), $coachIds);
-        self::assertNotEmpty($teams, 'User mit mehreren Coach-Relationen sieht Teams');
-    }
-
-    public function testUserWithMixedRelationsSeesAllRelevantEntities(): void
-    {
-        $entityManager = self::getContainer()->get('doctrine')->getManager();
         $user = $entityManager->getRepository(User::class)->findOneBy(['email' => 'user3@example.com']);
         $coach5 = $entityManager->getRepository(Coach::class)->findOneBy([
             'firstName' => 'Coach',

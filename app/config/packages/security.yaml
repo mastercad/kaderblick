@@ -51,7 +51,7 @@ security:
         ROLE_USER:        [ROLE_GUEST]
         ROLE_CLUB:        [ROLE_USER]
         ROLE_ADMIN:       [ROLE_USER]
-        ROLE_SUPER_ADMIN: [ROLE_ADMIN]
+        ROLE_SUPERADMIN: [ROLE_ADMIN]
 
     access_control:
         - { path: ^/admin,        roles: ROLE_ADMIN }

@@ -206,7 +206,9 @@ class CalendarController extends AbstractController
      *     locationId?: string,
      *     homeTeamId?: string,
      *     awayTeamId?: string,
-     *     gameTypeId?: string
+     *     gameTypeId?: string,
+     *     fussballDeUrl?: string,
+     *     fussballDeId?: string
      * } $data
      *
      * @return ConstraintViolationList<int, mixed>
@@ -257,6 +259,14 @@ class CalendarController extends AbstractController
         if (isset($data['gameTypeId']) && $data['gameTypeId']) {
             $gameType = $this->entityManager->getReference(GameType::class, (int) $data['gameTypeId']);
             $calendarEvent->getGame()?->setGameType($gameType);
+        }
+
+        if ($data['fussballDeUrl']) {
+            $calendarEvent->getGame()?->setFussballDeUrl($data['fussballDeUrl']);
+        }
+
+        if ($data['fussballDeId']) {
+            $calendarEvent->getGame()?->setFussballDeId($data['fussballDeId']);
         }
 
         if ($data['locationId']) {

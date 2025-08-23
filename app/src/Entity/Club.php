@@ -33,13 +33,24 @@ class Club
     private ?string $shortName = null;
 
     #[ORM\Column(length: 10, nullable: true)]
+    #[Groups(['club:read'])]
     private ?string $abbreviation = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['club:read'])]
     private ?string $stadiumName = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['club:read'])]
     private ?string $logoUrl = null;
+
+    #[ORM\Column(type: 'string', nullable: true, unique: true, name: 'fussball_de_id')]
+    #[Groups(['club:read'])]
+    private ?string $fussballDeId = null;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true, name: 'fussball_de_url')]
+    #[Groups(['club:read'])]
+    private ?string $fussballDeUrl = null;
 
     #[ORM\ManyToOne(targetEntity: Location::class)]
     #[ORM\JoinColumn(
@@ -64,6 +75,7 @@ class Club
     private ?string $phone = null;
 
     #[ORM\Column(type: 'boolean')]
+    #[Groups(['club:read'])]
     private bool $active = true;
 
     /** @var Collection<int, PlayerClubAssignment> */
@@ -81,11 +93,59 @@ class Club
     #[Groups(['club:read'])]
     private Collection $teams;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['club:read'])]
+    private ?string $clubColors = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['club:read'])]
+    private ?string $contactPerson = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    #[Groups(['club:read'])]
+    private ?int $foundingYear = null;
+
     public function __construct()
     {
         $this->playerClubAssignments = new ArrayCollection();
         $this->coachClubAssignments = new ArrayCollection();
         $this->teams = new ArrayCollection();
+    }
+
+    public function getClubColors(): ?string
+    {
+        return $this->clubColors;
+    }
+
+    public function setClubColors(?string $clubColors): self
+    {
+        $this->clubColors = $clubColors;
+
+        return $this;
+    }
+
+    public function getContactPerson(): ?string
+    {
+        return $this->contactPerson;
+    }
+
+    public function setContactPerson(?string $contactPerson): self
+    {
+        $this->contactPerson = $contactPerson;
+
+        return $this;
+    }
+
+    public function getFoundingYear(): ?int
+    {
+        return $this->foundingYear;
+    }
+
+    public function setFoundingYear(?int $foundingYear): self
+    {
+        $this->foundingYear = $foundingYear;
+
+        return $this;
     }
 
     public function getId(): ?int
@@ -298,6 +358,30 @@ class Club
         if ($this->teams->removeElement($team)) {
             $team->removeClub($this);
         }
+
+        return $this;
+    }
+
+    public function getFussballDeUrl(): ?string
+    {
+        return $this->fussballDeUrl;
+    }
+
+    public function setFussballDeUrl(?string $url): self
+    {
+        $this->fussballDeUrl = $url;
+
+        return $this;
+    }
+
+    public function getFussballDeId(): ?string
+    {
+        return $this->fussballDeId;
+    }
+
+    public function setFussballDeId(?string $id): self
+    {
+        $this->fussballDeId = $id;
 
         return $this;
     }

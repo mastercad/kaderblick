@@ -76,7 +76,7 @@ class NewsController extends AbstractController
         assert($user instanceof User);
         if (
             !in_array('ROLE_ADMIN', $user->getRoles(), true)
-            && !in_array('ROLE_SUPER_ADMIN', $user->getRoles(), true)
+            && !in_array('ROLE_SUPERADMIN', $user->getRoles(), true)
         ) {
             throw $this->createAccessDeniedException();
         }
@@ -122,7 +122,7 @@ class NewsController extends AbstractController
         $teams = [];
 
         // Für Admins: alle Clubs und Teams
-        if (in_array('ROLE_ADMIN', $user->getRoles(), true) || in_array('ROLE_SUPER_ADMIN', $user->getRoles(), true)) {
+        if (in_array('ROLE_ADMIN', $user->getRoles(), true) || in_array('ROLE_SUPERADMIN', $user->getRoles(), true)) {
             $allClubs = $this->em->getRepository(\App\Entity\Club::class)->findAll();
             foreach ($allClubs as $club) {
                 $clubs[$club->getId()] = $club;
