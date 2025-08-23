@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\News;
 use App\Entity\User;
 use App\Repository\NewsRepositoryInterface;
 use DateTimeImmutable;
@@ -20,7 +21,7 @@ class NewsController extends AbstractController
     public function __construct(EntityManagerInterface $em)
     {
         $this->em = $em;
-        $repository = $em->getRepository(\App\Entity\News::class);
+        $repository = $em->getRepository(News::class);
         assert($repository instanceof NewsRepositoryInterface);
         $this->newsRepository = $repository;
     }
@@ -74,12 +75,6 @@ class NewsController extends AbstractController
     {
         $user = $this->getUser();
         assert($user instanceof User);
-        if (
-            !in_array('ROLE_ADMIN', $user->getRoles(), true)
-            && !in_array('ROLE_SUPERADMIN', $user->getRoles(), true)
-        ) {
-            throw $this->createAccessDeniedException();
-        }
 
         $visibilityOptions = [
             'Platform' => 'platform',
@@ -101,7 +96,7 @@ class NewsController extends AbstractController
                 $teamId = $request->request->get('team_id');
                 $team = $this->em->getRepository(\App\Entity\Team::class)->find($teamId);
             }
-            $news = new \App\Entity\News();
+            $news = new News();
             $news->setTitle($title)
                 ->setContent($content)
                 ->setVisibility($visibility)
@@ -155,6 +150,15 @@ class NewsController extends AbstractController
                     }
                 }
             }
+        }
+
+        if (
+            !in_array('ROLE_ADMIN', $user->getRoles(), true)
+            && !in_array('ROLE_SUPERADMIN', $user->getRoles(), true)
+            && 0 === count($clubs)
+            && 0 === count($teams)
+        ) {
+            throw $this->createAccessDeniedException();
         }
 
         return $this->render('news/create.html.twig', [
