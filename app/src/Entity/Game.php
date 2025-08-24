@@ -122,11 +122,18 @@ class Game
     #[ORM\Column(type: 'string', length: 255, nullable: true, name: 'fussball_de_url')]
     private ?string $fussballDeUrl = null;
 
+    /**
+     * @var Collection<int, Video>
+     */
+    #[ORM\OneToMany(targetEntity: Video::class, mappedBy: 'game', orphanRemoval: true)]
+    private Collection $videos;
+
     public function __construct()
     {
         $this->goals = new ArrayCollection();
         $this->gameEvents = new ArrayCollection();
         $this->substitutions = new ArrayCollection();
+        $this->videos = new ArrayCollection();
     }
 
     public function getFussballDeId(): ?string
@@ -342,5 +349,35 @@ class Game
     public function __toString()
     {
         return $this->getHomeTeam()?->getName() . ' : ' . $this->getAwayTeam()?->getName();
+    }
+
+    /**
+     * @return Collection<int, Video>
+     */
+    public function getVideos(): Collection
+    {
+        return $this->videos;
+    }
+
+    public function addVideo(Video $video): static
+    {
+        if (!$this->videos->contains($video)) {
+            $this->videos->add($video);
+            $video->setGame($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVideo(Video $video): static
+    {
+        if ($this->videos->removeElement($video)) {
+            // set the owning side to null (unless already changed)
+            if ($video->getGame() === $this) {
+                $video->setGame(null);
+            }
+        }
+
+        return $this;
     }
 }

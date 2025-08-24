@@ -41,7 +41,7 @@ class ReportDefinition
     private DateTimeImmutable $updatedAt;
 
     /** @var Collection<int, DashboardWidget> */
-    #[ORM\OneToMany(mappedBy: 'report', targetEntity: DashboardWidget::class, fetch: 'EXTRA_LAZY')]
+    #[ORM\OneToMany(mappedBy: 'reportDefinition', targetEntity: DashboardWidget::class, fetch: 'EXTRA_LAZY')]
     private Collection $widgets;
 
     public function __construct()

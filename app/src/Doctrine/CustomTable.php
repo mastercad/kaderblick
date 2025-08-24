@@ -36,7 +36,7 @@ class CustomTable extends BaseTable
     ) {
         if (null === $name) {
             $refTable = is_string($foreignTable) ? $foreignTable : $foreignTable->getName();
-            $name = sprintf('fk_%s_%s', strtolower($this->getName()), strtolower($refTable));
+            $name = sprintf('fk_%s_%s_%s', strtolower($this->getName()), strtolower($refTable), implode('_', $localColumns));
         }
 
         return parent::addForeignKeyConstraint($foreignTable, $localColumns, $foreignColumns, $options, $name);
