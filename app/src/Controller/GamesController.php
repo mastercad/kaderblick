@@ -102,10 +102,10 @@ class GamesController extends AbstractController
                 foreach ($currentVideos as $startTime => $video) {
                     if (
                         $startTime <= ($eventSeconds + $video->getGameStart())
-                        && (int)($startTime + $video->getLength()) >= (int)($eventSeconds + $video->getGameStart())
+                        && (int) ($startTime + $video->getLength()) >= (int) ($eventSeconds + $video->getGameStart())
                     ) {
                         $seconds = $eventSeconds - $elapsedTime + (int) $video->getGameStart() + $this->youtubeLinkStartOffset;
-                        $youtubeLinks[(int)$event->getId()][(int)$cameraId][] = $video->getUrl() .
+                        $youtubeLinks[(int) $event->getId()][(int) $cameraId][] = $video->getUrl() .
                             '&t=' . $seconds . 's';
                     }
                     $elapsedTime += $video->getLength();
@@ -126,7 +126,7 @@ class GamesController extends AbstractController
         $cameras = [];
 
         foreach ($videosEntries as $videoEntry) {
-            $cameras[(int)$videoEntry->getCamera()->getId()][(int)$videoEntry->getSort()] = $videoEntry;
+            $cameras[(int) $videoEntry->getCamera()->getId()][(int) $videoEntry->getSort()] = $videoEntry;
         }
 
         /* TODO potenziell performancelastig, aber aktuell nicht so tragisch */

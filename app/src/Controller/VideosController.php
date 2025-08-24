@@ -64,7 +64,6 @@ class VideosController extends AbstractController
         CameraRepository $cameraRepository,
         EntityManagerInterface $em
     ): JsonResponse {
-
         /** @var ?Game $game */
         $game = $gameRepository->find($gameId);
         if (null === $game) {
