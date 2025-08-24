@@ -4,12 +4,13 @@ namespace App\Controller;
 
 use App\Entity\Game;
 use App\Entity\GameEvent;
+use App\Entity\GameEventType;
 use App\Entity\Video;
 use App\Repository\CameraRepository;
 use App\Repository\GameRepository;
 use App\Repository\VideoTypeRepository;
 use DateTimeImmutable;
-use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -18,6 +19,10 @@ use Symfony\Component\Routing\Annotation\Route;
 class GamesController extends AbstractController
 {
     private int $youtubeLinkStartOffset = -60;
+
+    public function __construct(private EntityManagerInterface $entityManager)
+    {
+    }
 
     #[Route(path: '/', name: 'index', methods: ['GET'])]
     public function index(GameRepository $gameRepository): Response
@@ -64,13 +69,20 @@ class GamesController extends AbstractController
     public function show(Game $game, VideoTypeRepository $videoTypeRepository, CameraRepository $cameraRepository): Response
     {
         $calendarEvent = $game->getCalendarEvent();
-        $gameEvents = $game->getGameEvents();
-        $cameras = [];
 
+        $gameEvents = [];
+        foreach ($game->getGameEvents() as $gameEvent) {
+            $gameEvents[$gameEvent->getTimestamp()->getTimestamp()] = $gameEvent;
+        }
+        ksort($gameEvents);
+
+        $cameras = [];
         foreach ($cameraRepository->findAll() as $camera) {
             $cameras[$camera->getId()] = $camera;
         }
         ksort($cameras);
+
+        $scores = $this->collectScores($gameEvents, $game);
 
         return $this->render('games/show.html.twig', [
             'game' => $game,
@@ -78,16 +90,44 @@ class GamesController extends AbstractController
             'gameEvents' => $gameEvents,
             'videoTypes' => $videoTypeRepository->findAll(),
             'videos' => $this->prepareYoutubeLinks($game, $gameEvents),
-            'cameras' => $cameras
+            'cameras' => $cameras,
+            'homeScore' => $scores['home'],
+            'awayScore' => $scores['away']
         ]);
     }
 
     /**
-     * @param Collection<int, GameEvent> $gameEvents
+     * @param array<int, GameEvent> $gameEvents
+     */
+    private function collectScores(array $gameEvents, Game $game): array
+    {
+        $gameEventGoal = $this->entityManager->getRepository(GameEventType::class)->findOneBy(['code' => 'goal']);
+
+        $homeScore = 0;
+        $awayScore = 0;
+
+        foreach ($gameEvents as $gameEvent) {
+            if ($gameEvent->getGameEventType() === $gameEventGoal) {
+                if ($gameEvent->getTeam() === $game->getHomeTeam()) {
+                    $homeScore++;
+                } elseif ($gameEvent->getTeam() === $game->getAwayTeam()) {
+                    $awayScore++;
+                }
+            }
+        }
+
+        return [
+            'home' => $homeScore,
+            'away' => $awayScore
+        ];
+    }
+
+    /**
+     * @param array<int, GameEvent> $gameEvents
      *
      * @return array<int, array<int, list<string>>> $youtubeLinks
      */
-    private function prepareYoutubeLinks(Game $game, Collection $gameEvents): array
+    private function prepareYoutubeLinks(Game $game, array $gameEvents): array
     {
         $youtubeLinks = [];
         $videos = $this->orderVideos($game);

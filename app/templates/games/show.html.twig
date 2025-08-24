@@ -21,8 +21,8 @@
                 {% endif %}
             </div>
             <div class="mb-2">
-                {% if game.homeScore is not null and game.awayScore is not null %}
-                    <span class="badge bg-primary fs-5">{{ game.homeScore }} : {{ game.awayScore }}</span>
+                {% if homeScore is not null and awayScore is not null %}
+                    <span class="badge bg-primary fs-5">{{ homeScore }} : {{ awayScore }}</span>
                 {% else %}
                     <span class="badge bg-secondary">Noch kein Ergebnis</span>
                 {% endif %}
