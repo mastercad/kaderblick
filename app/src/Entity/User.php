@@ -100,11 +100,53 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: PushSubscription::class, orphanRemoval: true)]
     private Collection $pushSubscriptions;
 
+    /**
+     * @var Collection<int, Video>
+     */
+    #[ORM\OneToMany(targetEntity: Video::class, mappedBy: 'createdFrom')]
+    private Collection $videosCreatedFrom;
+
+    /**
+     * @var Collection<int, Video>
+     */
+    #[ORM\OneToMany(targetEntity: Video::class, mappedBy: 'updatedFrom')]
+    private Collection $videosUpdatedFrom;
+
+    /**
+     * @var Collection<int, VideoType>
+     */
+    #[ORM\OneToMany(targetEntity: VideoType::class, mappedBy: 'createdFrom')]
+    private Collection $videoTypesCreatedFrom;
+
+    /**
+     * @var Collection<int, VideoType>
+     */
+    #[ORM\OneToMany(targetEntity: VideoType::class, mappedBy: 'updatedFrom')]
+    private Collection $videoTypesUpdatedFrom;
+
+    /**
+     * @var Collection<int, Camera>
+     */
+    #[ORM\OneToMany(targetEntity: Camera::class, mappedBy: 'created_from')]
+    private Collection $camerasCreated;
+
+    /**
+     * @var Collection<int, Camera>
+     */
+    #[ORM\OneToMany(targetEntity: Camera::class, mappedBy: 'updated_from')]
+    private Collection $camerasUpdated;
+
     public function __construct()
     {
         $this->widgets = new ArrayCollection();
         $this->relations = new ArrayCollection();
         $this->pushSubscriptions = new ArrayCollection();
+        $this->videosCreatedFrom = new ArrayCollection();
+        $this->videosUpdatedFrom = new ArrayCollection();
+        $this->videoTypesCreatedFrom = new ArrayCollection();
+        $this->videoTypesUpdatedFrom = new ArrayCollection();
+        $this->camerasCreated = new ArrayCollection();
+        $this->camerasUpdated = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -436,6 +478,109 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /**
+     * @return Collection<int, Video>
+     */
+    public function getCreatedVideos(): Collection
+    {
+        return $this->videosCreatedFrom;
+    }
+
+    public function addVideo(Video $video): static
+    {
+        if (!$this->videosCreatedFrom->contains($video)) {
+            $this->videosCreatedFrom->add($video);
+            $video->setCreatedFrom($this);
+            $this->videosUpdatedFrom->add($video);
+            $video->setUpdatedFrom($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVideo(Video $video): static
+    {
+        if ($this->videosCreatedFrom->removeElement($video)) {
+            // set the owning side to null (unless already changed)
+            if ($video->getCreatedFrom() === $this) {
+                $video->setCreatedFrom(null);
+            }
+            if ($video->getUpdatedFrom() === $this) {
+                $video->setUpdatedFrom(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Video>
+     */
+    public function getUpdatedideos(): Collection
+    {
+        return $this->videosUpdatedFrom;
+    }
+
+    /**
+     * @return Collection<int, VideoType>
+     */
+    public function getVideoTypesCreatedFrom(): Collection
+    {
+        return $this->videoTypesCreatedFrom;
+    }
+
+    public function addVideoTypeCreatedFrom(VideoType $videoType): static
+    {
+        if (!$this->videoTypesCreatedFrom->contains($videoType)) {
+            $this->videoTypesCreatedFrom->add($videoType);
+            $videoType->setCreatedFrom($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVideoTypeCreatedFrom(VideoType $videoType): static
+    {
+        if ($this->videoTypesCreatedFrom->removeElement($videoType)) {
+            // set the owning side to null (unless already changed)
+            if ($videoType->getCreatedFrom() === $this) {
+                $videoType->setCreatedFrom(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, VideoType>
+     */
+    public function getVideoTypesUpdatedFrom(): Collection
+    {
+        return $this->videoTypesUpdatedFrom;
+    }
+
+    public function addVideoTypeUpdatedFrom(VideoType $videoType): static
+    {
+        if (!$this->videoTypesUpdatedFrom->contains($videoType)) {
+            $this->videoTypesUpdatedFrom->add($videoType);
+            $videoType->setUpdatedFrom($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVideoTypeUpdatedFrom(VideoType $videoType): static
+    {
+        if ($this->videoTypesUpdatedFrom->removeElement($videoType)) {
+            // set the owning side to null (unless already changed)
+            if ($videoType->getUpdatedFrom() === $this) {
+                $videoType->setUpdatedFrom(null);
+            }
+        }
+
+        return $this;
+    }
+
     public function eraseCredentials(): void
     {
     }
@@ -443,5 +588,65 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __toString(): string
     {
         return $this->getFullName();
+    }
+
+    /**
+     * @return Collection<int, Camera>
+     */
+    public function getCamerasCreated(): Collection
+    {
+        return $this->camerasCreated;
+    }
+
+    public function addCamerasCreated(Camera $camerasCreated): static
+    {
+        if (!$this->camerasCreated->contains($camerasCreated)) {
+            $this->camerasCreated->add($camerasCreated);
+            $camerasCreated->setCreatedFrom($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCamerasCreated(Camera $camerasCreated): static
+    {
+        if ($this->camerasCreated->removeElement($camerasCreated)) {
+            // set the owning side to null (unless already changed)
+            if ($camerasCreated->getCreatedFrom() === $this) {
+                $camerasCreated->setCreatedFrom(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Camera>
+     */
+    public function getCamerasUpdated(): Collection
+    {
+        return $this->camerasUpdated;
+    }
+
+    public function addCamerasUpdated(Camera $camerasUpdated): static
+    {
+        if (!$this->camerasUpdated->contains($camerasUpdated)) {
+            $this->camerasUpdated->add($camerasUpdated);
+            $camerasUpdated->setUpdatedFrom($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCamerasUpdated(Camera $camerasUpdated): static
+    {
+        if ($this->camerasUpdated->removeElement($camerasUpdated)) {
+            // set the owning side to null (unless already changed)
+            if ($camerasUpdated->getUpdatedFrom() === $this) {
+                $camerasUpdated->setUpdatedFrom(null);
+            }
+        }
+
+        return $this;
     }
 }

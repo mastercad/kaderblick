@@ -14,7 +14,7 @@ class DashboardWidget
     /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: ReportDefinition::class)]
+    #[ORM\ManyToOne(inversedBy: 'widgets', targetEntity: ReportDefinition::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?ReportDefinition $reportDefinition = null;
 
