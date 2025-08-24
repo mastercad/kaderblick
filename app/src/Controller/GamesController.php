@@ -98,6 +98,8 @@ class GamesController extends AbstractController
 
     /**
      * @param array<int, GameEvent> $gameEvents
+     *
+     * @return array<string, int>
      */
     private function collectScores(array $gameEvents, Game $game): array
     {
@@ -109,9 +111,9 @@ class GamesController extends AbstractController
         foreach ($gameEvents as $gameEvent) {
             if ($gameEvent->getGameEventType() === $gameEventGoal) {
                 if ($gameEvent->getTeam() === $game->getHomeTeam()) {
-                    $homeScore++;
+                    ++$homeScore;
                 } elseif ($gameEvent->getTeam() === $game->getAwayTeam()) {
-                    $awayScore++;
+                    ++$awayScore;
                 }
             }
         }
