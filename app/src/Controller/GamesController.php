@@ -57,7 +57,7 @@ class GamesController extends AbstractController
                 $gameEvents = [];
 
                 foreach ($game->getGameEvents() as $gameEvent) {
-                    $gameEvents[$gameEvent->getTimestamp()->getTimestamp()] = $gameEvent;
+                    $gameEvents[] = $gameEvent;
                 }
                 $scores = $this->collectScores($gameEvents, $game);
 
@@ -83,7 +83,7 @@ class GamesController extends AbstractController
 
         $gameEvents = [];
         foreach ($game->getGameEvents() as $gameEvent) {
-            $gameEvents[$gameEvent->getTimestamp()->getTimestamp()] = $gameEvent;
+            $gameEvents[] = $gameEvent;
         }
         ksort($gameEvents);
 
