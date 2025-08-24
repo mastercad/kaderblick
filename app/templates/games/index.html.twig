@@ -47,16 +47,16 @@
     {% if finished_games is not empty %}
         <h3 class="mt-4 mb-2">Absolvierte Spiele</h3>
         <div class="list-group mb-4">
-            {% for game in finished_games %}
-                <a href="{{ path('games_show', {id: game.id}) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            {% for gameDetails in finished_games %}
+                <a href="{{ path('games_show', {id: gameDetails.game.id}) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                     <span>
-                        <strong>{{ game.homeTeam.name }}</strong> vs <strong>{{ game.awayTeam.name }}</strong>
-                        {% if game.homeScore is not null and game.awayScore is not null %}
-                            <span class="badge bg-secondary ms-2">{{ game.homeScore }} : {{ game.awayScore }}</span>
+                        <strong>{{ gameDetails.game.homeTeam.name }}</strong> vs <strong>{{ gameDetails.game.awayTeam.name }}</strong>
+                        {% if gameDetails.homeScore is not null and gameDetails.awayScore is not null %}
+                            <span class="badge bg-secondary ms-2">{{ gameDetails.homeScore }} : {{ gameDetails.awayScore }}</span>
                         {% endif %}
                     </span>
                     <span class="text-muted small">
-                        {{ game.calendarEvent.startDate|date('d.m.Y H:i') }}
+                        {{ gameDetails.game.calendarEvent.startDate|date('d.m.Y H:i') }}
                     </span>
                 </a>
             {% endfor %}

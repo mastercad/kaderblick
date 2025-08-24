@@ -17,12 +17,20 @@
                     {% if calendarEvent.endDate %} - {{ calendarEvent.endDate|date('H:i') }}{% endif %}
                 </span>
                 {% if game.location %}
-                    <span class="me-3"><i class="fas fa-map-marker-alt"></i> {{ game.location.name }}</span>
+                    <span class="me-3"><i class="fas fa-map-marker-alt"></i>
+                        {% if game.location.latitude and game.location.longitude %}
+                        <a href="https://google.com/maps/search/?api=1&query={{ game.location.latitude }},{{ game.location.longitude }}" target="_blank">
+                            {{ game.location.name }}
+                        </a>
+                        {% else %}
+                            {{ game.location.name }}
+                        {% endif %}
+                    </span>
                 {% endif %}
             </div>
             <div class="mb-2">
-                {% if game.homeScore is not null and game.awayScore is not null %}
-                    <span class="badge bg-primary fs-5">{{ game.homeScore }} : {{ game.awayScore }}</span>
+                {% if homeScore is not null and awayScore is not null %}
+                    <span class="badge bg-primary fs-5">{{ homeScore }} : {{ awayScore }}</span>
                 {% else %}
                     <span class="badge bg-secondary">Noch kein Ergebnis</span>
                 {% endif %}
