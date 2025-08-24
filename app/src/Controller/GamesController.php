@@ -54,7 +54,18 @@ class GamesController extends AbstractController
             } elseif ($start && $now < $start) {
                 $upcoming[] = $game;
             } else {
-                $finished[] = $game;
+                $gameEvents = [];
+
+                foreach ($game->getGameEvents() as $gameEvent) {
+                    $gameEvents[$gameEvent->getTimestamp()->getTimestamp()] = $gameEvent;
+                }
+                $scores = $this->collectScores($gameEvents, $game);
+
+                $finished[] =  [
+                    'game' => $game,
+                    'homeScore' => $scores['home'],
+                    'awayScore' => $scores['away']
+                ];
             }
         }
 
