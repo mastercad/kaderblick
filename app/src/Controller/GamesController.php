@@ -61,7 +61,7 @@ class GamesController extends AbstractController
                 }
                 $scores = $this->collectScores($gameEvents, $game);
 
-                $finished[] =  [
+                $finished[] = [
                     'game' => $game,
                     'homeScore' => $scores['home'],
                     'awayScore' => $scores['away']
