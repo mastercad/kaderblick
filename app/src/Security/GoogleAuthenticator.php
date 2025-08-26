@@ -48,11 +48,12 @@ class GoogleAuthenticator extends AbstractAuthenticator
                     if ($user) {
                         $user->setGoogleId($googleId);
                     } else {
+                        $nameParts = $this->splitNameToFirstAndLast($name);
                         $user = new User();
                         $user->setEmail($email);
                         $user->setGoogleId($googleId);
-                        $user->setFirstName($name);
-                        $user->setLastName('');
+                        $user->setFirstName($nameParts['first']);
+                        $user->setLastName($nameParts['last']);
                         $user->setPassword('!');
                         $user->setRoles(['ROLE_USER']);
                         $user->setIsVerified(true);
@@ -75,5 +76,22 @@ class GoogleAuthenticator extends AbstractAuthenticator
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?RedirectResponse
     {
         return new RedirectResponse('/login?error=google');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function splitNameToFirstAndLast(string $name): array
+    {
+        $parts = preg_split('/\s+/', trim($name));
+        if (!$parts || count($parts) === 0) {
+            return ['first' => '', 'last' => ''];
+        }
+        $last = array_pop($parts);
+        $first = implode(' ', $parts);
+        return [
+            'first' => $first,
+            'last' => $last
+        ];
     }
 }
