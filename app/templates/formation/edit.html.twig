@@ -34,7 +34,7 @@
                         Team auswählen
                     </div>
                     <div class="card-body">
-                        <select class="form-select" id="teamSelector">
+                        <select class="selectpicker" data-style="form-select" id="teamSelector">
                             <option value="">Bitte Team auswählen...</option>
                             {% for team in availablePlayers.teams %}
                                 <option value="{{ team.id }}">{{ team.name }}</option>

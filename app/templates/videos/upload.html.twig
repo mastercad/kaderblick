@@ -41,7 +41,7 @@
                         <div class="mb-3">
                             <label for="notifyEmails" class="form-label">Benachrichtigungs-Emails</label>
                             <div class="mb-2">
-                                <select multiple class="form-select system-emails-textarea" id="systemEmails">
+                                <select multiple class="selectpicker system-emails-textarea" data-style="form-select" id="systemEmails">
                                     <option disabled>Verfügbare E-Mail Adressen:</option>
                                     {% for email in systemEmails %}
                                         <option value="{{ email }}">{{ email }}</option>

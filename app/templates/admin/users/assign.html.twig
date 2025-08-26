@@ -17,10 +17,10 @@
                     </button>
                 </div>
                 <div class="card-body">
-                    <div id="playerAssignments" data-prototype='
+                    <div id="playerAssignments" data-prototype=''>
                         <div class="row mb-3 assignment-row">
                             <div class="col-md-3">
-                                <select name="player_assignments[__name__][id]" class="form-select" required>
+                                <select name="player_assignments[__name__][id]" class="select2 form-select" required>
                                     <option value="">Spieler auswählen</option>
                                     {% for player in players %}
                                         <option value="{{ player.id }}">{{ player.fullName }}</option>
@@ -28,7 +28,7 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <select name="player_assignments[__name__][type]" class="form-select" required>
+                                <select name="player_assignments[__name__][type]" class="select2 form-select" required>
                                     <option value="">Beziehung wählen</option>
                                     {% for type in relationTypes.player %}
                                         <option value="{{ type.id }}">{{ type.name }}</option>
@@ -36,7 +36,7 @@
                                 </select>
                             </div>
                             <div class="col-md-5">
-                                <select name="player_assignments[__name__][permissions][]" class="form-select" multiple>
+                                <select name="player_assignments[__name__][permissions][]" class="select2 form-select" multiple>
                                     {% for permission in permissions %}
                                         <option value="{{ permission.identifier }}" title="{{ permission.description }}">
                                             {{ permission.name }}
@@ -50,12 +50,11 @@
                                 </button>
                             </div>
                         </div>
-                    '>
                         {% if currentAssignments.players is defined %}
                             {% for assignment in currentAssignments.players %}
                                 <div class="row mb-3 assignment-row">
                                     <div class="col-md-3">
-                                        <select name="player_assignments[{{ loop.index0 }}][id]" class="form-select" required>
+                                        <select name="player_assignments[{{ loop.index0 }}][id]" class="select2 form-select" required>
                                             <option value="">Spieler auswählen</option>
                                             {% for player in players %}
                                                 <option value="{{ player.id }}" {{ player.id == assignment.entity.id ? 'selected' : '' }}>
@@ -65,7 +64,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3">
-                                        <select name="player_assignments[{{ loop.index0 }}][type]" class="form-select" required>
+                                        <select name="player_assignments[{{ loop.index0 }}][type]" class="select2 form-select" required>
                                             <option value="">Beziehung wählen</option>
                                             {% for type in relationTypes.player %}
                                                 <option value="{{ type.id }}" {{ type.id == assignment.relationType.id ? 'selected' : '' }}>
@@ -75,7 +74,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-5">
-                                        <select name="player_assignments[{{ loop.index0 }}][permissions][]" class="form-select" multiple>
+                                        <select name="player_assignments[{{ loop.index0 }}][permissions][]" class="select2 form-select" multiple="multiple">
                                             {% for permission in permissions %}
                                                 <option value="{{ permission.identifier }}" 
                                                         {{ permission.identifier in assignment.permissions ? 'selected' : '' }}
@@ -109,7 +108,7 @@
                     <div id="coachAssignments" data-prototype='
                         <div class="row mb-3 assignment-row">
                             <div class="col-md-3">
-                                <select name="coach_assignments[__name__][id]" class="form-select" required>
+                                <select name="coach_assignments[__name__][id]" class="select2 form-select" required>
                                     <option value="">Trainer auswählen</option>
                                     {% for coach in coaches %}
                                         <option value="{{ coach.id }}">{{ coach.fullName }}</option>
@@ -117,7 +116,7 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <select name="coach_assignments[__name__][type]" class="form-select" required>
+                                <select name="coach_assignments[__name__][type]" class="select2 form-select" required>
                                     <option value="">Beziehung wählen</option>
                                     {% for type in relationTypes.coach %}
                                         <option value="{{ type.id }}" data-category="coach">
@@ -127,7 +126,7 @@
                                 </select>
                             </div>
                             <div class="col-md-5">
-                                <select name="coach_assignments[__name__][permissions][]" class="form-select" multiple>
+                                <select name="coach_assignments[__name__][permissions][]" class="select2 form-select" multiple>
                                     {% for permission in permissions %}
                                         <option value="{{ permission.identifier }}" title="{{ permission.description }}">
                                             {{ permission.name }}
@@ -146,7 +145,7 @@
                             {% for assignment in currentAssignments.coaches %}
                                 <div class="row mb-3 assignment-row">
                                     <div class="col-md-3">
-                                        <select name="coach_assignments[{{ loop.index0 }}][id]" class="form-select" required>
+                                        <select name="coach_assignments[{{ loop.index0 }}][id]" class="select2 form-select" required>
                                             <option value="">Trainer auswählen</option>
                                             {% for coach in coaches %}
                                                 <option value="{{ coach.id }}" {{ coach.id == assignment.entity.id ? 'selected' : '' }}>
@@ -156,7 +155,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3">
-                                        <select name="coach_assignments[{{ loop.index0 }}][type]" class="form-select" required>
+                                        <select name="coach_assignments[{{ loop.index0 }}][type]" class="select2 form-select" required>
                                             <option value="">Beziehung wählen</option>
                                             {% for type in relationTypes.coach %}
                                                 <option value="{{ type.id }}" {{ type.id == assignment.relationType.id ? 'selected' : '' }}>
@@ -166,7 +165,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-5">
-                                        <select name="coach_assignments[{{ loop.index0 }}][permissions][]" class="form-select" multiple>
+                                        <select name="coach_assignments[{{ loop.index0 }}][permissions][]" class="select2 form-select" multiple>
                                             {% for permission in permissions %}
                                                 <option value="{{ permission.identifier }}" 
                                                         {{ permission.identifier in assignment.permissions ? 'selected' : '' }}
@@ -201,6 +200,7 @@
 {% endblock %}
 
 {% block javascripts %}
+{{ parent() }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     function initAssignments(containerId, addButtonId) {
@@ -212,14 +212,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const prototype = container.getAttribute('data-prototype');
             const newRow = prototype.replace(/__name__/g, counter);
             container.insertAdjacentHTML('beforeend', newRow);
-            
-            // Bootstrap Select für neue Multiple Selects initialisieren
-            const newSelects = container.querySelectorAll(`select[multiple]:not(.selectpicker)`);
-            newSelects.forEach(select => {
-                $(select).selectpicker({
-                    selectedTextFormat: 'count > 2'
-                });
-            });
             
             counter++;
         });
@@ -292,6 +284,19 @@ document.addEventListener('DOMContentLoaded', function() {
             form.prepend(alertDiv);
         }
     });
+});
+
+// Select2 Initialization
+$(function() {
+  $('.select2').select2({
+    theme: 'bootstrap-5',
+    width: '100%',
+    dropdownAutoWidth: true,
+    placeholder: function(){
+      return $(this).find('option:first').text();
+    },
+//    allowClear: true
+  });
 });
 </script>
 {% endblock %}

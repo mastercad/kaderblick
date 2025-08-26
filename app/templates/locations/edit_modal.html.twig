@@ -26,7 +26,7 @@
           </div>
           <div class="mb-3">
             <label for="locationSurfaceType" class="form-label">Belag</label>
-            <select class="form-select" id="locationSurfaceType" name="surfaceType">
+            <select class="selectpicker" data-style="form-select" id="locationSurfaceType" name="surfaceType">
               <option value="">- bitte wählen -</option>
               {% for surfaceType in surfaceTypes %}
                 <option value="{{ surfaceType.id }}" {% if location.surfaceType and location.surfaceType.id == surfaceType.id %}selected{% endif %}>{{ surfaceType.name }}</option>

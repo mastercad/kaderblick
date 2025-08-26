@@ -1,0 +1,12 @@
+{# templates/includes/_footer.html.twig #}
+<footer class="footer mt-auto py-3 bg-light border-top w-100" style="position:relative; bottom:0;">
+  <div class="container text-center small">
+  <span class="text-muted">&copy; {{ "now"|date("Y") }} Kaderblick – privat für Sportteams</span>
+  &middot;
+  <a href="{{ path('privacy') }}">Datenschutz</a>
+  &middot;
+  <a href="{{ path('imprint') }}">Impressum</a>
+  &middot;
+  <a href="#" onclick="if(window.ModalManager){window.ModalManager.showModal('contact_modal');} return false;">Kontakt</a>
+  </div>
+</footer>
