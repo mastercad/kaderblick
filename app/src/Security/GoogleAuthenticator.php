@@ -84,11 +84,12 @@ class GoogleAuthenticator extends AbstractAuthenticator
     public function splitNameToFirstAndLast(string $name): array
     {
         $parts = preg_split('/\s+/', trim($name));
-        if (!$parts || count($parts) === 0) {
+        if (!$parts) {
             return ['first' => '', 'last' => ''];
         }
         $last = array_pop($parts);
         $first = implode(' ', $parts);
+
         return [
             'first' => $first,
             'last' => $last
