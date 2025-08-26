@@ -187,9 +187,9 @@ const modalTemplates = {
           </div>
           <div class="modal-body">
             <div class="mb-3 text-center">
-              <a href="/connect/google" class="btn btn-outline-danger w-100 mb-2" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <button id="googleLoginBtn" type="button" class="btn btn-outline-danger w-100 mb-2" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
                 <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo" style="width: 20px; height: 20px;"> Mit Google anmelden
-              </a>
+              </button>
               <div class="text-muted small mb-2">oder klassisch mit E-Mail</div>
             </div>
             <div class="tab-content">
@@ -517,6 +517,30 @@ function initializeModalFunctionality() {
       } else {
         showGlobalAlert('Registrierung erfolgreich! Bitte E-Mail bestätigen.', 'success');
       }
+    });
+  }
+
+  // Google Login per Popup und AJAX
+  const btn = document.getElementById('googleLoginBtn');
+  if (btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const width = 500, height = 600;
+      const left = (screen.width/2)-(width/2);
+      const top = (screen.height/2)-(height/2);
+      const popup = window.open('/connect/google', 'GoogleLogin', `width=${width},height=${height},top=${top},left=${left}`);
+      if (!popup) return;
+      const pollTimer = setInterval(function() {
+        if (popup.closed) {
+          clearInterval(pollTimer);
+          fetch('{{ path('api_about_me') }}', { credentials: 'include' })
+            .then(r => r.ok ? r.json() : Promise.reject())
+            .then(() => window.location.reload())
+            .catch(() => {
+              if (window.ModalManager) window.ModalManager.showModal('auth_modal');
+            });
+        }
+      }, 500);
     });
   }
 

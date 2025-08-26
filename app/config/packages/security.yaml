@@ -39,7 +39,7 @@ security:
             security: false
 
         main:
-            stateless: false
+            stateless: true
             provider: app_user_provider
             jwt: ~
             custom_authenticators:
