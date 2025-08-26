@@ -6,7 +6,7 @@
   <form id="gameEventForm" class="row g-2">
     <input type="hidden" name="eventId" id="eventId">
     <div class="col-12">
-      <select class="form-select" name="team" id="teamSelect" required>
+    <select class="selectpicker" data-style="form-select" name="team" id="teamSelect" required>
         <option value="">Team wählen…</option>
         {% for team in teams %}
           <option value="{{ team.id }}">{{ team.name }}</option>
@@ -14,7 +14,7 @@
       </select>
     </div>
     <div class="col-12">
-      <select class="form-select" name="eventType" required>
+    <select class="selectpicker" data-style="form-select" name="eventType" required>
         <option value="">Event-Typ wählen…</option>
         {% for type in eventTypes %}
           <option value="{{ type.id }}" data-icon="{{ type.icon }}" data-color="{{ type.color }}">{{ type.name }}</option>
@@ -22,19 +22,19 @@
       </select>
     </div>
     <div class="col-12">
-      <select class="form-select" name="player" id="playerSelect" required>
+    <select class="selectpicker" data-style="form-select" name="player" id="playerSelect" required>
         <option value="">Spieler wählen…</option>
         {# Spieler werden per JS nachgeladen #}
       </select>
     </div>
     <div class="col-12" id="relatedPlayerField" style="display:none;">
-      <select class="form-select" name="relatedPlayer" id="relatedPlayerSelect">
+    <select class="selectpicker" data-style="form-select" name="relatedPlayer" id="relatedPlayerSelect">
         <option value="">Zweiter Spieler (bei Wechsel)…</option>
         {# Spieler werden per JS nachgeladen #}
       </select>
     </div>
     <div class="col-12" id="reasonField" style="display:none;">
-      <select class="form-select" name="reason" id="reasonInput">
+    <select class="selectpicker" data-style="form-select" name="reason" id="reasonInput">
         <option value="">Grund für Wechsel wählen…</option>
         {% for reason in substitutionReasons %}
           <option value="{{ reason.id }}">{{ reason.name }}{% if reason.description %} – {{ reason.description }}{% endif %}</option>

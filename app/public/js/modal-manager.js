@@ -153,8 +153,20 @@ class ModalManager {
     handleModalShow(modalId) {
         const modal = this.registeredModals.get(modalId);
         if (modal && modal.element) {
-            // Add body class for preventing scroll
             document.body.classList.add('modal-open');
+            if (window.jQuery && window.jQuery.fn.selectpicker && modal && modal.element) {
+                // Nur Selects im aktuellen Modal ansprechen!
+                const selects = modal.element.querySelectorAll('.selectpicker');
+                selects.forEach(sel => {
+                    const $sel = window.jQuery(sel);
+                    // Nur initialisieren, wenn noch nicht aktiv
+                    if (!$sel.parent().hasClass('bootstrap-select')) {
+                        $sel.selectpicker();
+                    } else {
+                        $sel.selectpicker('refresh');
+                    }
+                });
+            }
         }
     }
 
@@ -265,10 +277,20 @@ let globalModalManager = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     globalModalManager = new ModalManager();
-    
     // Make it globally accessible (both conventions)
     window.ModalManager = globalModalManager;
     window.modalManager = globalModalManager;
+    // Initialisiere alle Selectpicker mit container: body
+    if (window.jQuery && window.jQuery.fn.selectpicker) {
+        window.jQuery('.selectpicker').each(function() {
+            const $sel = window.jQuery(this);
+            if (!$sel.parent().hasClass('bootstrap-select')) {
+                $sel.selectpicker();
+            } else {
+                $sel.selectpicker('refresh');
+            }
+        });
+    }
 });
 
 // Export for module usage

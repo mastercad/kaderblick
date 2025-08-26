@@ -3,12 +3,443 @@
    ========================================================================== */
 
 @import url('./variables.css');
-@import url('./base.css');
 @import url('./components.css');
 @import url('./utilities.css');
 @import url('./sports-fields.css');
 @import url('./formation-modern.css');
 @import url('./calendar-modern.css');
+
+/* ==========================================================================
+   Base Layout & Typography System
+   ========================================================================== */
+
+/* Base Reset & Setup */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  line-height: var(--line-height-normal);
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  color: var(--text-primary);
+  background: var(--body-bg);
+  background-attachment: fixed;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  transition: background var(--transition-base), color var(--transition-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+}
+
+/* ==========================================================================
+   Typography Scale
+   ========================================================================== */
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 var(--space-4) 0;
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--text-primary);
+}
+
+h1 { font-size: var(--font-size-4xl); }
+h2 { font-size: var(--font-size-3xl); }
+h3 { font-size: var(--font-size-2xl); }
+h4 { font-size: var(--font-size-xl); }
+h5 { font-size: var(--font-size-lg); }
+h6 { font-size: var(--font-size-base); }
+
+/* Paragraph */
+p {
+  margin: 0 0 var(--space-4) 0;
+  color: var(--text-secondary);
+}
+
+/* Small text */
+small {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* Links */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+/* Lists */
+ul, ol {
+  margin: 0 0 var(--space-4) 0;
+  padding-left: var(--space-6);
+}
+
+li {
+  margin-bottom: var(--space-1);
+}
+
+/* Code */
+code {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  background: var(--surface-muted);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+
+pre {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  background: var(--surface-muted);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-4) 0;
+}
+
+/* ==========================================================================
+   Layout Containers
+   ========================================================================== */
+
+/* Main container */
+.main-container {
+  background: var(--container-bg);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-xl);
+  margin: var(--space-8);
+  padding: var(--space-8);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
+  transition: all var(--transition-base);
+}
+
+/* Section containers */
+.section {
+  padding: var(--section-padding);
+  margin-bottom: var(--space-8);
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+/* Grid layouts */
+.grid {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* Flex layouts */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-center {
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  justify-content: space-between;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+/* Spacing utilities */
+.gap-2 { gap: var(--space-2); }
+.gap-4 { gap: var(--space-4); }
+.gap-6 { gap: var(--space-6); }
+.gap-8 { gap: var(--space-8); }
+
+/* Margin utilities */
+.m-0 { margin: 0; }
+.m-4 { margin: var(--space-4); }
+.mt-4 { margin-top: var(--space-4); }
+.mb-4 { margin-bottom: var(--space-4); }
+.ml-4 { margin-left: var(--space-4); }
+.mr-4 { margin-right: var(--space-4); }
+
+/* Padding utilities */
+.p-0 { padding: 0; }
+.p-4 { padding: var(--space-4); }
+.pt-4 { padding-top: var(--space-4); }
+.pb-4 { padding-bottom: var(--space-4); }
+.pl-4 { padding-left: var(--space-4); }
+.pr-4 { padding-right: var(--space-4); }
+
+/* ==========================================================================
+   Visibility & Display
+   ========================================================================== */
+
+.hidden { display: none !important; }
+.visible { display: block !important; }
+.invisible { visibility: hidden; }
+
+/* Text alignment */
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+/* Text colors */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-danger { color: var(--color-danger); }
+
+/* ==========================================================================
+   Scrollbar Styling
+   ========================================================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-muted);
+  border-radius: var(--radius-md);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gradient-primary);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gradient-success);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) var(--surface-muted);
+}
+
+/* ==========================================================================
+   Focus Management
+   ========================================================================== */
+
+/* Focus visible for better accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Remove default focus for non-keyboard navigation */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ==========================================================================
+   Animations & Transitions
+   ========================================================================== */
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-4));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-8));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-var(--space-8));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn var(--duration-base) ease-out;
+}
+
+.slide-in-up {
+  animation: slideInUp var(--duration-base) ease-out;
+}
+
+.slide-in-left {
+  animation: slideInLeft var(--duration-base) ease-out;
+}
+
+.scale-in {
+  animation: scaleIn var(--duration-base) ease-out;
+}
+
+/* Transition utilities */
+.transition-all {
+  transition: all var(--transition-base);
+}
+
+.transition-colors {
+  transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.transition-transform {
+  transition: transform var(--transition-fast);
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .main-container {
+    margin: var(--space-4);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+  }
+  
+  .section {
+    padding: var(--space-4);
+  }
+  
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Typography scaling for mobile */
+  h1 { font-size: var(--font-size-3xl); }
+  h2 { font-size: var(--font-size-2xl); }
+  h3 { font-size: var(--font-size-xl); }
+  
+  /* Disable animations on mobile for better performance */
+  .fade-in,
+  .slide-in-up,
+  .slide-in-left,
+  .scale-in {
+    animation: none;
+  }
+  
+  /* Reduce motion for mobile */
+  * {
+    transition-duration: var(--duration-fast) !important;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .main-container {
+    margin: var(--space-6);
+    padding: var(--space-6);
+  }
+  
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Large screen adjustments */
+@media (min-width: 1200px) {
+  .main-container {
+    max-width: var(--container-max-width);
+    margin: var(--space-8) auto;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-lg: none;
+    --shadow-xl: none;
+    --shadow-2xl: none;
+  }
+  
+  * {
+    border-width: 2px !important;
+  }
+}
 
 /* Only application-specific overrides */
 .navbar-custom { background: var(--navbar-bg) !important; }
@@ -18,41 +449,25 @@
 .main-container { background: var(--container-bg); backdrop-filter: blur(20px); }
 .position-dynamic { left: var(--x-pos, 0%); top: var(--y-pos, 0%); position: absolute; }
 
-/* --- fussball.de Lookup: Visuelles Feedback für neue Werte --- */
-.fussballde-updated {
-   border: 2px solid var(--color-warning, #f59e0b) !important;
-   background: linear-gradient(90deg, #fffbe6 0%, #fff7d1 100%);
-   position: relative;
+/* Active state for navigation links and dropdown items */
+.nav-link.active,
+.nav-link-kaderblick.active,
+.dropdown-item.active {
+  background: var(--color-primary, #16a34a) !important;
+  color: var(--text-inverse, #fff) !important;
+  border-radius: var(--radius-md, 0.375rem);
+  box-shadow: 0 2px 8px 0 rgba(22,163,74,0.08);
 }
-.fussballde-badge {
-   display: inline-block;
-   background: var(--color-warning, #f59e0b);
-   color: #fff;
-   font-size: 0.75em;
-   font-weight: 600;
-   border-radius: 0.5em;
-   padding: 0.1em 0.6em;
-   margin-left: 0.5em;
-   vertical-align: middle;
-   box-shadow: 0 1px 2px rgba(0,0,0,0.07);
+
+/* Optional: slightly bolder for active nav-link */
+.nav-link.active,
+.nav-link-kaderblick.active {
+  font-weight: 600;
 }
-.fussballde-revert-btn {
-   margin-left: 0.5em;
-   font-size: 0.85em;
-   padding: 0.1em 0.7em;
-   border-radius: 0.4em;
-   background: var(--color-secondary, #6b7280);
-   color: #fff;
-   border: none;
-   cursor: pointer;
-   transition: background 0.15s;
-}
-.fussballde-revert-btn:hover {
-   background: var(--color-warning, #f59e0b);
-   color: #fff;
-}
-.fussballde-reset-all {
-   float: right;
-   margin-top: -2.2em;
-   margin-bottom: 1em;
+
+/* Optional: active state for dark navbar */
+.navbar-dark .nav-link.active,
+.navbar-dark .nav-link-kaderblick.active {
+  background: rgba(255,255,255,0.18) !important;
+  color: #fff !important;
 }

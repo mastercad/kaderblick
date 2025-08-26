@@ -139,7 +139,7 @@
                             <input type="text" class="form-control" id="video_name" name="name" required>
                         </div>
                         <div class="col-12">
-                            <select class="form-select" name="videoType" id="video_type" required>
+                            <select class="selectpicker" data-style="form-select" name="videoType" id="video_type" required>
                                 <option value="">Video-Typ wählen…</option>
                                 {% for type in videoTypes %}
                                 <option value="{{ type.id }}" data-name="{{ type.name }}" data-sort="{{ type.sort }}">{{ type.name }}</option>
@@ -147,7 +147,7 @@
                             </select>
                         </div>
                         <div class="col-12">
-                            <select class="form-select" name="camera" id="video_camera" required>
+                            <select class="selectpicker" data-style="form-select" name="camera" id="video_camera" required>
                                 <option value="">Kamera wählen…</option>
                                 {% for camera in cameras %}
                                 <option value="{{ camera.id }}" data-name="{{ camera.name }}">{{ camera.name }}</option>

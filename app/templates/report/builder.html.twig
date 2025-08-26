@@ -53,7 +53,7 @@
                     </div>
                     <div class="col-md-4">
                         <label for="diagramType" class="form-label">Diagrammtyp</label>
-                        <select class="form-select" id="diagramType" name="config[diagramType]">
+                        <select class="selectpicker" data-style="form-select" id="diagramType" name="config[diagramType]">
                             <option value="bar" {{ (report.config.diagramType|default('bar')) == 'bar' ? 'selected' : '' }}>Balken</option>
                             <option value="line" {{ (report.config.diagramType|default('bar')) == 'line' ? 'selected' : '' }}>Linie</option>
                             <option value="pie" {{ (report.config.diagramType|default('bar')) == 'pie' ? 'selected' : '' }}>Kreis</option>
