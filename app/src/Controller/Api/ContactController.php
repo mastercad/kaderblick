@@ -39,8 +39,8 @@ class ContactController extends AbstractController
         try {
             $mail = (new Email())
                 ->from($dto->email)
-                ->to($this->getParameter('app.contact_email') ?? 'kontakt@dein-sportteam-tool.de')
-                ->subject('Kontaktformular: ' . $dto->name)
+                ->to($this->getParameter('app.contact_email') ?? 'andreas.kempe@byte-artist.de')
+                ->subject('Kaderblick Kontaktformular: ' . $dto->name)
                 ->text("Name: {$dto->name}\nE-Mail: {$dto->email}\n\nNachricht:\n{$dto->message}");
 
             $mailer->send($mail);

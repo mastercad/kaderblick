@@ -51,9 +51,10 @@ security:
     role_hierarchy:
         ROLE_GUEST:       []
         ROLE_USER:        [ROLE_GUEST]
+        ROLE_SUPPORTER:   [ROLE_USER]
         ROLE_CLUB:        [ROLE_USER]
         ROLE_ADMIN:       [ROLE_USER]
-        ROLE_SUPERADMIN: [ROLE_ADMIN]
+        ROLE_SUPERADMIN:  [ROLE_ADMIN]
 
     access_control:
     - { path: ^/connect/google, roles: PUBLIC_ACCESS }

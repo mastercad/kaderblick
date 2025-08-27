@@ -12,14 +12,16 @@ use Symfony\Component\Security\Core\User\UserInterface;
  */
 final class GameEventVoter extends Voter
 {
+    public const CREATE = 'POST_CREATE';
     public const EDIT = 'POST_EDIT';
     public const VIEW = 'POST_VIEW';
+    public const DELETE = 'POST_DELETE';
 
     protected function supports(string $attribute, mixed $subject): bool
     {
         // replace with your own logic
         // https://symfony.com/doc/current/security/voters.html
-        return in_array($attribute, [self::EDIT, self::VIEW])
+        return in_array($attribute, [self::CREATE, self::EDIT, self::VIEW, self::DELETE])
             && $subject instanceof GameEvent;
     }
 

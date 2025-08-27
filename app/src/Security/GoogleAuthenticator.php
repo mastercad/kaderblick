@@ -8,10 +8,13 @@ use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Http\Authenticator\AbstractAuthenticator;
@@ -22,27 +25,16 @@ use Twig\Environment;
 
 class GoogleAuthenticator extends AbstractAuthenticator
 {
-    private ClientRegistry $clientRegistry;
-    private EntityManagerInterface $em;
-    private JWTTokenManagerInterface $jwtManager;
-    private RefreshTokenService $refreshTokenService;
-    private int $jwtTtl;
-    private Environment $twig;
-
     public function __construct(
-        ClientRegistry $clientRegistry,
-        EntityManagerInterface $em,
-        JWTTokenManagerInterface $jwtManager,
-        RefreshTokenService $refreshTokenService,
-        Environment $twig,
-        int $jwtTtl = 3600
+        private ClientRegistry $clientRegistry,
+        private EntityManagerInterface $em,
+        private JWTTokenManagerInterface $jwtManager,
+        private RefreshTokenService $refreshTokenService,
+        private Environment $twig,
+        private MailerInterface $mailer,
+        private ParameterBagInterface $params,
+        private int $jwtTtl = 3600
     ) {
-        $this->clientRegistry = $clientRegistry;
-        $this->em = $em;
-        $this->jwtManager = $jwtManager;
-        $this->refreshTokenService = $refreshTokenService;
-        $this->jwtTtl = $jwtTtl;
-        $this->twig = $twig;
     }
 
     public function supports(Request $request): ?bool
@@ -58,9 +50,11 @@ class GoogleAuthenticator extends AbstractAuthenticator
         $googleUserData = $googleUser->toArray();
         $googleId = $googleUser->getId();
         $email = $googleUserData['email'];
+        $mailer = $this->mailer;
+        $params = $this->params;
 
         return new SelfValidatingPassport(
-            new UserBadge($googleId, function () use ($googleId, $email, $googleUserData) {
+            new UserBadge($googleId, function () use ($googleId, $email, $googleUserData, $mailer, $params) {
                 $user = $this->em->getRepository(User::class)->findOneBy(['googleId' => $googleId]);
                 if (!$user) {
                     $user = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
@@ -77,8 +71,23 @@ class GoogleAuthenticator extends AbstractAuthenticator
                         $user->setIsVerified(true);
                         $user->setIsEnabled(true);
                     }
+
                     $this->em->persist($user);
                     $this->em->flush();
+
+                    $email = (new TemplatedEmail())
+                        ->from('no-reply@byte-artist.de')
+                        ->to($user->getEmail())
+                        ->subject('Willkommen auf der Plattform')
+                        ->htmlTemplate('emails/welcome.html.twig')
+                        ->context([
+                            'name' => $user->getEmail(),
+                            'website_url' => $params->get('app.website_url'),
+                            'contact_email' => $params->get('app.contact_email'),
+                            'phone_number' => $params->get('app.phone_number')
+                        ]);
+
+                    $mailer->send($email);
                 }
 
                 return $user;

@@ -27,22 +27,37 @@ class GamesController extends AbstractController
     #[Route(path: '/', name: 'index', methods: ['GET'])]
     public function index(GameRepository $gameRepository): Response
     {
-        $games = $gameRepository->createQueryBuilder('g')
+        $now = new DateTimeImmutable();
+
+        $upcomingGames = $gameRepository->createQueryBuilder('g')
             ->leftJoin('g.calendarEvent', 'ce')
             ->leftJoin('ce.calendarEventType', 'cet')
             ->addSelect('ce', 'cet')
             ->where('cet.name = :spiel')
+            ->andWhere('ce.startDate > :now')
+            ->andWhere('ce.endDate > :now OR ce.endDate IS NULL')
             ->setParameter('spiel', 'Spiel')
+            ->setParameter('now', $now)
+            ->orderBy('ce.startDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $otherGames = $gameRepository->createQueryBuilder('g')
+            ->leftJoin('g.calendarEvent', 'ce')
+            ->leftJoin('ce.calendarEventType', 'cet')
+            ->addSelect('ce', 'cet')
+            ->where('cet.name = :spiel')
+            ->andWhere('ce.startDate <= :now')
+            ->setParameter('spiel', 'Spiel')
+            ->setParameter('now', $now)
             ->orderBy('ce.startDate', 'DESC')
             ->getQuery()
             ->getResult();
 
-        $now = new DateTimeImmutable();
         $running = [];
-        $upcoming = [];
         $finished = [];
 
-        foreach ($games as $game) {
+        foreach ($otherGames as $game) {
             $ce = $game->getCalendarEvent();
             if (!$ce) {
                 continue;
@@ -51,8 +66,6 @@ class GamesController extends AbstractController
             $end = $ce->getEndDate();
             if ($start && $end && $now >= $start && $now <= $end) {
                 $running[] = $game;
-            } elseif ($start && $now < $start) {
-                $upcoming[] = $game;
             } else {
                 $gameEvents = [];
 
@@ -71,7 +84,7 @@ class GamesController extends AbstractController
 
         return $this->render('games/index.html.twig', [
             'running_games' => $running,
-            'upcoming_games' => $upcoming,
+            'upcoming_games' => $upcomingGames,
             'finished_games' => $finished,
         ]);
     }
