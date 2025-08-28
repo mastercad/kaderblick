@@ -232,6 +232,38 @@ const modalTemplates = {
       </div>
     </div>
   `,
+  contact_modal: `
+    <div class="modal fade" id="contact_modal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="contactModalLabel">Kontakt</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+          </div>
+          <div class="modal-body">
+            <form id="contactForm">
+              <div class="mb-3">
+                <label for="contactName" class="form-label">Name</label>
+                <input type="text" class="form-control" id="contactName" required>
+              </div>
+              <div class="mb-3">
+                <label for="contactEmail" class="form-label">E-Mail</label>
+                <input type="email" class="form-control" id="contactEmail" required>
+              </div>
+              <div class="mb-3">
+                <label for="contactMessage" class="form-label">Nachricht</label>
+                <textarea class="form-control" id="contactMessage" rows="4" required></textarea>
+              </div>
+            </form>
+            <div id="contactFormAlert" class="alert d-none mt-2"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+            <button type="button" class="btn btn-primary" id="submitContact">Absenden</button>
+          </div>
+        </div>
+      </div>
+    </div>`,
   
   {% if ( is_granted('ROLE_USER') ) %}
   profile_modal: `
@@ -345,7 +377,6 @@ const modalTemplates = {
       </div>
     </div>
   `,
-
   feedback_modal: `
     <div class="modal fade" id="feedback_modal" tabindex="-1">
       <div class="modal-dialog">
@@ -386,38 +417,6 @@ const modalTemplates = {
       </div>
     </div>
   `,
-  contact_modal: `
-    <div class="modal fade" id="contact_modal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="contactModalLabel">Kontakt</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
-          </div>
-          <div class="modal-body">
-            <form id="contactForm">
-              <div class="mb-3">
-                <label for="contactName" class="form-label">Name</label>
-                <input type="text" class="form-control" id="contactName" required>
-              </div>
-              <div class="mb-3">
-                <label for="contactEmail" class="form-label">E-Mail</label>
-                <input type="email" class="form-control" id="contactEmail" required>
-              </div>
-              <div class="mb-3">
-                <label for="contactMessage" class="form-label">Nachricht</label>
-                <textarea class="form-control" id="contactMessage" rows="4" required></textarea>
-              </div>
-            </form>
-            <div id="contactFormAlert" class="alert d-none mt-2"></div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
-            <button type="button" class="btn btn-primary" id="submitContact">Absenden</button>
-          </div>
-        </div>
-      </div>
-    </div>`
   {% endif %}
 };
 
