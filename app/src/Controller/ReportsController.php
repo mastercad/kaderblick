@@ -26,12 +26,20 @@ class ReportsController extends AbstractController
         $report = new ReportDefinition();
         $report->setName($data['name'] ?? '');
         $report->setDescription($data['description'] ?? null);
+        $rawFilters = $data['config']['filters'] ?? [];
+
+        $filters = [];
+        foreach ($rawFilters as $k => $v) {
+            if (null !== $v && '' !== $v) {
+                $filters[$k] = $v;
+            }
+        }
         $config = [
             'diagramType' => $data['config']['diagramType'] ?? 'bar',
             'xField' => $data['config']['xField'] ?? 'player',
             'yField' => $data['config']['yField'] ?? 'goals',
             'groupBy' => $data['config']['groupBy'] ?? [],
-            'filters' => $data['config']['filters'] ?? [],
+            'filters' => $filters,
         ];
         if (!isset($fieldAliases[$config['xField']])) {
             $config['xField'] = array_key_first($fieldAliases);
@@ -94,7 +102,10 @@ class ReportsController extends AbstractController
                 'diagramType' => $data['config']['diagramType'] ?? 'bar',
                 'xField' => $data['config']['xField'] ?? 'player',
                 'yField' => $data['config']['yField'] ?? 'goals',
+                'filters' => $data['config']['filters'] ?? [],
+                'groupBy' => $data['config']['groupBy'] ?? [],
             ];
+
             // Nur erlaubte Aliase speichern
             if (!isset($fieldAliases[$config['xField']])) {
                 $config['xField'] = array_key_first($fieldAliases);
@@ -117,10 +128,36 @@ class ReportsController extends AbstractController
             return $this->redirectToRoute('app_report_list');
         }
 
+        // Teams, Spieler, Ereignistypen für Filter
+        $teamRepo = $em->getRepository(\App\Entity\Team::class);
+        $playerRepo = $em->getRepository(\App\Entity\Player::class);
+        $eventTypeRepo = $em->getRepository(\App\Entity\GameEventType::class);
+        $gameEventRepo = $em->getRepository(\App\Entity\GameEvent::class);
+        $teams = $teamRepo->findAll();
+        $players = $playerRepo->findAll();
+        $eventTypes = $eventTypeRepo->findAll();
+        $dateRows = $gameEventRepo->createQueryBuilder('e')
+            ->select('e.timestamp')
+            ->orderBy('e.timestamp', 'ASC')
+            ->getQuery()->getArrayResult();
+        $availableDates = array_unique(array_map(
+            fn ($row) => $row['timestamp']->format('Y-m-d'),
+            $dateRows
+        ));
+        $availableDates = array_values($availableDates); // reindizieren
+        $minDate = $availableDates[0] ?? null;
+        $maxDate = $availableDates[count($availableDates) - 1] ?? null;
+
         return $this->render('report/builder.html.twig', [
             'report' => $report,
             'form_action' => $isEdit ? $this->generateUrl('app_report_builder', ['id' => $id]) : $this->generateUrl('app_report_builder'),
             'fieldAliases' => $fieldAliases,
+            'teams' => $teams,
+            'players' => $players,
+            'eventTypes' => $eventTypes,
+            'minDate' => $minDate,
+            'maxDate' => $maxDate,
+            'availableDates' => $availableDates,
         ]);
     }
 

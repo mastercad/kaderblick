@@ -56,16 +56,25 @@ class ReportController extends AbstractController
             return $this->json(['error' => 'No report definition'], 400);
         }
         $config = $report->getConfig();
+        $rawFilters = $config['filters'] ?? [];
+
+        $filters = [];
+        foreach ($rawFilters as $k => $v) {
+            if (null !== $v && '' !== $v) {
+                $filters[$k] = $v;
+            }
+        }
+        $config['filters'] = $filters;
+
         $reportData = $reportDataService->generateReportData($config);
 
         return $this->json([
+            'config' => $config,
             'labels' => $reportData['labels'],
             'datasets' => $reportData['datasets'],
             'diagramType' => $config['diagramType'] ?? 'bar'
         ]);
     }
-
-    // Feldwert-Logik ist jetzt im ReportDataService zentralisiert
 
     #[Route('/definitions', name: 'api_report_definitions', methods: ['GET'])]
     public function list(EntityManagerInterface $em): JsonResponse

@@ -1,4 +1,3 @@
-{# templates/dashboard.html.twig #}
 {% extends 'base.html.twig' %}
 
 {% block title %}Dashboard{% endblock %}
@@ -40,7 +39,7 @@
     <div id="widgetContainer">
         <div class="row widget-grid" id="widgetGrid">
             {% for widget in widgets %}
-                <div class="col-md-{{ widget.width }} mb-4 widget-item" data-widget-id="{{ widget.id }}">
+                <div class="col-md-{{ widget.width }} mb-4 widget-item" data-widget-id="{{ widget.id }}" data-widget-position="{{ widget.position }}">
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">{{ widget.type | replace({'_': ' '}) | title }}</h5>
@@ -144,7 +143,6 @@
             document.addEventListener('pointerup', handleWidgetInteraction);
         });
 
-
         async function handleDelete(button) {
             if (!confirm('Widget wirklich entfernen?')) return;
             
@@ -167,6 +165,7 @@
         function handleSettings(button) {
             const widget = button.closest('.widget-item');
             const widgetId = widget.dataset.widgetId;
+            const widgetPosition = widget.dataset.widgetPosition;
             const width = parseInt(widget.className.match(/col-md-(\d+)/)[1]);
             
             const modal = `
@@ -180,7 +179,7 @@
                             <div class="modal-body">
                                 <div class="mb-3">
                                     <label class="form-label">Breite</label>
-                                    <select class="selectpicker" data-style="form-select widget-width">
+                                    <select class="selectpicker form-select widget-width">
                                         <option value="3" ${width === 3 ? 'selected' : ''}>Schmal (25%)</option>
                                         <option value="4" ${width === 4 ? 'selected' : ''}>Normal (33%)</option>
                                         <option value="6" ${width === 6 ? 'selected' : ''}>Breit (50%)</option>
@@ -200,12 +199,18 @@
             document.body.insertAdjacentHTML('beforeend', modal);
             const modalElement = document.getElementById(`widgetSettings${widgetId}`);
             const bsModal = new bootstrap.Modal(modalElement);
+
+            console.log(widgetId);
+            console.log(modalElement);
             
             modalElement.querySelector('.save-settings').addEventListener('click', async function() {
+                console.log(modalElement);
+                console.log(modalElement.querySelector('.widget-width'));
                 const newWidth = modalElement.querySelector('.widget-width').value;
                 widget.className = widget.className.replace(/col-md-\d+/, `col-md-${newWidth}`);
                 
-                await loadWidgetContent(widget); // Widget nach Breitenänderung neu laden
+                await loadWidgetContent(widget);
+                await saveWidgetSettings(widgetId, { id: widgetId, width: newWidth, position: widgetPosition });
                 await updateWidgetPositions();
                 bsModal.hide();
                 modalElement.remove();

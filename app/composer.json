@@ -51,7 +51,8 @@
         "symfony/http-client": "^7.3",
         "symfony/dom-crawler": "^7.3",
         "knpuniversity/oauth2-client-bundle": "^2.18",
-        "league/oauth2-google": "^4.0"
+        "league/oauth2-google": "^4.0",
+        "beberlei/doctrineextensions": "^1.5"
     },
     "autoload": {
         "psr-4": {

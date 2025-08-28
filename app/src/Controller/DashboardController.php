@@ -72,7 +72,7 @@ class DashboardController extends AbstractController
     }
 
     #[IsGranted('IS_AUTHENTICATED')]
-    #[Route('widget', name: 'widget_update', methods: ['POST'])]
+    #[Route('/app/dashboard/widgets/update', name: 'widgets_update', methods: ['PUT'])]
     public function updateWidgets(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -91,6 +91,28 @@ class DashboardController extends AbstractController
                 if (isset($widgetData['config'])) {
                     $widget->setConfig($widgetData['config']);
                 }
+            }
+        }
+
+        $em->flush();
+
+        return $this->json(['status' => 'success']);
+    }
+
+    #[IsGranted('IS_AUTHENTICATED')]
+    #[Route('/app/dashboard/widget/update', name: 'widget_update', methods: ['PUT'])]
+    public function updateWidget(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        $widget = $em->getRepository(DashboardWidget::class)->find($data['id']);
+
+        if ($widget && $widget->getUser() === $this->getUser()) {
+            $widget->setPosition($data['position']);
+            $widget->setWidth($data['width']);
+            $widget->setEnabled($data['enabled'] ?? true);
+            if (isset($data['config'])) {
+                $widget->setConfig($data['config']);
             }
         }
 
@@ -172,6 +194,34 @@ class DashboardController extends AbstractController
         }
 
         $em->remove($widget);
+        $em->flush();
+
+        return $this->json(['status' => 'success']);
+    }
+
+    #[Route('/app/dashboard/widgets/positions', name: 'widget_position', methods: ['PUT'])]
+    #[IsGranted('IS_AUTHENTICATED')]
+    public function updateWidgetPosition(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        foreach ($data['positions'] as $positionData) {
+            $widgetId = $positionData['id'] ?? null;
+            $newPosition = $positionData['position'] ?? null;
+
+            if (null === $widgetId || null === $newPosition) {
+                return $this->json(['error' => 'Invalid data'], 400);
+            }
+
+            /** @var ?DashboardWidget $widget */
+            $widget = $em->getRepository(DashboardWidget::class)->find($widgetId);
+            if (null === $widget) {
+                return $this->json(['error' => 'Widget not found'], 404);
+            }
+
+            $widget->setPosition($newPosition);
+            $em->persist($widget);
+        }
         $em->flush();
 
         return $this->json(['status' => 'success']);

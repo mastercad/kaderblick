@@ -338,10 +338,19 @@ function updateWidgetPositions() {
         });
     });
 
-    fetch('{{ path("app_dashboard_widget_update") }}', {
-        method: 'POST',
+    fetch('/app/dashboard/widgets/update', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ widgets: widgets })
+    }).catch(error => console.error('Error:', error));
+}
+
+function saveWidgetSettings(data) {
+
+    fetch('/app/dashboard/widget/update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
     }).catch(error => console.error('Error:', error));
 }
   
@@ -352,30 +361,9 @@ function createWidgetFromHtml(htmlString, widgetId) {
     return container.firstElementChild;
 }
 
-/**
- * Update widget positions
- */
-function updateWidgetPositions() {
-  const widgets = document.querySelectorAll('.widget-item');
-  const positions = Array.from(widgets).map((widget, index) => ({
-    id: widget.dataset.widgetId,
-    position: index
-  }));
-  
-  // Send to backend
-  fetch('/api/dashboard/widgets/positions', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ positions })
-  }).catch(error => {
-    console.error('Update positions error:', error);
-  });
-}
-
 // Make functions globally available
 window.addWidget = addWidget;
 window.removeWidget = removeWidget;
 window.loadWidgetContent = loadWidgetContent;
 window.updateWidgetPositions = updateWidgetPositions;
+window.saveWidgetSettings = saveWidgetSettings;
