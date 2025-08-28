@@ -5,7 +5,7 @@
 
 {% block body %}
 <div class="container-fluid">
-    {% if ( is_granted('ROLE_USER') ) %}
+    {% if ( is_granted('IS_AUTHENTICATED_FULLY') ) %}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Dashboard</h1>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addWidgetModal">
@@ -13,30 +13,29 @@
         </button>
     </div>
 
-
-        {# Report Auswahl Modal #}
-        <div class="modal fade" id="selectReportModal" tabindex="-1" aria-labelledby="selectReportModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="selectReportModalLabel">Report auswählen</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    {# Report Auswahl Modal #}
+    <div class="modal fade" id="selectReportModal" tabindex="-1" aria-labelledby="selectReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="selectReportModalLabel">Report auswählen</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="reportListLoading" class="text-center my-3" style="display:none;">
+                        <div class="spinner-border" role="status"><span class="visually-hidden">Laden...</span></div>
                     </div>
-                    <div class="modal-body">
-                        <div id="reportListLoading" class="text-center my-3" style="display:none;">
-                            <div class="spinner-border" role="status"><span class="visually-hidden">Laden...</span></div>
-                        </div>
-                        <div id="reportListContainer">
-                            <!-- Dynamisch per JS geladen -->
-                        </div>
+                    <div id="reportListContainer">
+                        <!-- Dynamisch per JS geladen -->
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
-                        <button type="button" class="btn btn-primary" id="addReportWidgetsBtn">Hinzufügen</button>
-                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="button" class="btn btn-primary" id="addReportWidgetsBtn">Hinzufügen</button>
                 </div>
             </div>
         </div>
+    </div>
 
     <div id="widgetContainer">
         <div class="row widget-grid" id="widgetGrid">
@@ -70,6 +69,28 @@
             {% endfor %}
         </div>
     </div>
+{% else %}
+    <section class="welcome">
+        <h1>Willkommen zur Spiel- & Teamverwaltung</h1>
+        <p>
+            Diese Plattform unterstützt Jugendmannschaften bei der Organisation von Spielen, der Verwaltung von Spielern und Trainern sowie der Analyse von Ergebnissen.
+        </p>
+    </section>
+    <section class="features">
+        <h2>Was bietet die Anwendung?</h2>
+        <ul>
+            <li>Spiele und Termine planen</li>
+            <li>Spieler- und Trainerprofile verwalten</li>
+            <li>Ergebnisse und Statistiken auswerten</li>
+            <li>Berichte und Analysen für die Trainingsarbeit</li>
+        </ul>
+    </section>
+    <section class="cta">
+        <button class="btn text-start justify-content-start" onclick="const modalManager = (window.modalManager || window.ModalManager); modalManager.showModal('auth_modal')">
+            <i class="fas fa-sign-in-alt me-1"></i>
+            Jetzt einloggen
+        </button>
+    </section>
 {% endif %}
 </div>
 
