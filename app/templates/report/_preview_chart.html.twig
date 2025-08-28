@@ -44,7 +44,19 @@
                 },
                 options: {
                     responsive: true,
-                    plugins: { legend: { display: true } }
+                    plugins: { 
+                        legend: {
+                            display: true,
+                            labels: {
+                                boxWidth: 5,
+                                boxHeight: 5,
+                                padding: 10,
+                                font: {
+                                    size: 8
+                                }
+                            }
+                        }
+                    }
                 }
             });
         }
