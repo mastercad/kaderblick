@@ -136,12 +136,14 @@
                 {% if is_granted('ROLE_USER') %}
                     {# Nachrichten für eingeloggte User #}
                     <li class="nav-item me-2 mt-2">
-                        <button class="btn btn-outline-light btn-sm circle position-relative" onclick="window.location.href='{{ path('messages_index') }}'" title="Nachrichten">
-                            <i class="fas fa-envelope"></i>
+                        <div class="position-relative d-inline-block">
+                            <button class="btn btn-outline-light btn-sm circle" onclick="window.location.href='{{ path('messages_index') }}'" title="Nachrichten">
+                                <i class="fas fa-envelope"></i>
+                            </button>
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="unread_messages_count">
                                 <span class="visually-hidden">ungelesene Nachrichten</span>
                             </span>
-                        </button>
+                        </div>
                     </li>
                     
                     {# User Dropdown #}
