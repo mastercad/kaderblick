@@ -31,7 +31,7 @@ class TeamsController extends ApiController
 
     protected string $urlPart = 'teams';
 
-    #[Route('/api/team/{id}/players', name: 'api_team_players', methods: ['GET'])]
+    #[Route('/{id}/players', name: 'api_team_players', methods: ['GET'])]
     public function players(Team $team): JsonResponse
     {
         $players = $team->getCurrentPlayers();
