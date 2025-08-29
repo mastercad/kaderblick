@@ -48,7 +48,7 @@ class ReportController extends AbstractController
     public function getData(int $widgetId, EntityManagerInterface $em, Request $request, ReportDataService $reportDataService): JsonResponse
     {
         $widget = $em->getRepository(DashboardWidget::class)->find($widgetId);
-        if (!$widget || $widget->getUser() !== $this->getUser() || 'report' !== $widget->getType()) {
+        if (!$widget || ($widget->getUser() !== $this->getUser() && true !== $widget->isDefault()) || 'report' !== $widget->getType()) {
             return $this->json(['error' => 'Not found or access denied'], 404);
         }
         $report = $widget->getReportDefinition();

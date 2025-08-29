@@ -2,24 +2,23 @@
 
 namespace App\Security\Voter;
 
-use App\Entity\Location;
+use App\Entity\CalendarEvent;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /**
- * @template-extends Voter<string, Location>
+ * @template-extends Voter<string, CalendarEvent>
  */
-final class LocationVoter extends Voter
+final class CalendarVoter extends Voter
 {
-    public const CREATE = 'LOCATION_CREATE';
-    public const EDIT = 'LOCATION_EDIT';
-    public const VIEW = 'LOCATION_VIEW';
-    public const DELETE = 'LOCATION_DELETE';
+    public const CREATE = 'CALENDAR_CREATE';
+    public const EDIT = 'CALENDAR_EDIT';
+    public const VIEW = 'CALENDAR_VIEW';
+    public const DELETE = 'CALENDAR_DELETE';
 
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return in_array($attribute, [self::CREATE, self::EDIT, self::VIEW, self::DELETE])
-            && $subject instanceof Location;
+        return in_array($attribute, [self::CREATE, self::EDIT, self::VIEW, self::DELETE]);
     }
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
@@ -31,7 +30,8 @@ final class LocationVoter extends Voter
             case self::EDIT:
             case self::DELETE:
                 if (
-                    in_array('ROLE_ADMIN', $user->getRoles())
+                    in_array('ROLE_SUPPORTER', $user->getRoles())
+                    || in_array('ROLE_ADMIN', $user->getRoles())
                     || in_array('ROLE_SUPERADMIN', $user->getRoles())
                 ) {
                     return true;

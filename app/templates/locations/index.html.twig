@@ -16,6 +16,7 @@
             </tr>
         </thead>
         <tbody>
+        {{ locations|length }}
             {% for location in locations %}
                 <tr data-id="{{ location.id }}">
                     <td>{{ location.name }}</td>
@@ -24,8 +25,18 @@
                     <td>{{ location.latitude }}</td>
                     <td>{{ location.longitude }}</td>
                     <td>
-                        <button class="btn btn-sm btn-primary edit-location-btn" data-id="{{ location.id }}"><i class="fas fa-edit"></i> Bearbeiten</button>
-                        <button class="btn btn-sm btn-danger delete-location-btn" data-id="{{ location.id }}"><i class="fas fa-trash"></i> Löschen</button>
+                        {% if is_granted(permissions.EDIT, location) %}
+                        <button class="btn btn-sm btn-primary edit-location-btn" data-id="{{ location.id }}">
+                            <i class="fas fa-edit"></i> 
+                            Bearbeiten
+                        </button>
+                        {% endif %}
+                        {% if is_granted(permissions.DELETE, location) %}
+                        <button class="btn btn-sm btn-danger delete-location-btn" data-id="{{ location.id }}">
+                            <i class="fas fa-trash"></i> 
+                            Löschen
+                        </button>
+                        {% endif %}
                     </td>
                 </tr>
             {% endfor %}

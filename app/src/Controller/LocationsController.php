@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Location;
 use App\Repository\LocationRepository;
+use App\Repository\SurfaceTypeRepository;
+use App\Security\Voter\LocationVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,11 +21,17 @@ class LocationsController extends AbstractController
 
         return $this->render('locations/index.html.twig', [
             'locations' => $locations,
+            'permissions' => [
+                'CREATE' => LocationVoter::CREATE,
+                'EDIT' => LocationVoter::EDIT,
+                'VIEW' => LocationVoter::VIEW,
+                'DELETE' => LocationVoter::DELETE
+            ]
         ]);
     }
 
     #[Route('/locations/edit/{id}', name: 'locations_edit', methods: ['GET'])]
-    public function edit(Location $location, \App\Repository\SurfaceTypeRepository $surfaceTypeRepository): Response
+    public function edit(Location $location, SurfaceTypeRepository $surfaceTypeRepository): Response
     {
         $surfaceTypes = $surfaceTypeRepository->findAll();
 

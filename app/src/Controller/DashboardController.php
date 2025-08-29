@@ -75,10 +75,6 @@ class DashboardController extends AbstractController
     #[Route('/widget/{id}/content', name: 'widget_content')]
     public function widgetContent(DashboardWidget $widget): Response
     {
-        if ($widget->getUser() !== $this->getUser()) {
-            throw $this->createAccessDeniedException();
-        }
-
         return new Response($this->retrieveWidgetContent($widget));
     }
 
@@ -212,8 +208,8 @@ class DashboardController extends AbstractController
         return $this->json(['status' => 'success']);
     }
 
-    #[Route('/app/dashboard/widgets/positions', name: 'widget_position', methods: ['PUT'])]
     #[IsGranted('IS_AUTHENTICATED')]
+    #[Route('/app/dashboard/widgets/positions', name: 'widget_position', methods: ['PUT'])]
     public function updateWidgetPosition(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
