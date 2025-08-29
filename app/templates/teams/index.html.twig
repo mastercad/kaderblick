@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+{% block title %}Teams verwalten{% endblock %}
+
+{% block body %}
+<div class="container my-4">
+    <h1 class="mb-4">Teams verwalten</h1>
+    <table class="table table-striped align-middle" id="locations-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Altersgruppe</th>
+                <th>Trainer</th>
+                <th>Verein(e)</th>
+                <th>Liga</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for key, teamData in teams %}
+                <tr data-id="{{ teamData.id }}">
+                    <td>{{ teamData.name }}</td>
+                    <td>{{ teamData.age_group_name }}</td>
+                    <td>{{ teamData.coach_names|join(', ') }}</td>
+                    <td>{{ teamData.club_names|join(', ') }}</td>
+                    <td>{{ teamData.league_name }}</td>
+                    <td>
+                        {% if is_granted(permissions.EDIT, teamData.0) %}
+                        <button class="btn btn-sm btn-primary edit-team-btn" data-id="{{ teamData.id }}">
+                            <i class="fas fa-edit"></i> 
+                            Bearbeiten
+                        </button>
+                        {% endif %}
+                        {% if is_granted(permissions.DELETE, teamData.0) %}
+                        <button class="btn btn-sm btn-danger delete-team-btn" data-id="{{ teamData.id }}">
+                            <i class="fas fa-trash"></i> 
+                            Löschen
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="teamEditModalContainer"></div>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="/js/location-admin.js"></script>
+{% endblock %}

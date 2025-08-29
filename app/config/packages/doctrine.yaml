@@ -19,7 +19,9 @@ doctrine:
                 alias: App
         dql:
             datetime_functions:
-                date: DoctrineExtensions\Query\Mysql\Date
+                DATE: DoctrineExtensions\Query\Mysql\Date
+            string_functions:
+                GROUP_CONCAT: DoctrineExtensions\Query\Mysql\GroupConcat
 
 when@test:
     doctrine:

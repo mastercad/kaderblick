@@ -65,19 +65,23 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
         $qb = $this->createQueryBuilder('t')
-            ->select('t.id, t.name')
+            ->select('t.id, t.name, t')
             ->addSelect('ag.id as age_group_id, ag.name as age_group_name')
             ->addSelect('l.id as league_id, l.name as league_name')
             ->addSelect('COUNT(DISTINCT pta.id) as player_count')
             ->addSelect('COUNT(DISTINCT cta.id) as coach_count')
+            ->addSelect("GROUP_CONCAT(DISTINCT CONCAT(c.firstName, ' ', c.lastName) SEPARATOR ', ') AS coach_names")
+            ->addSelect("GROUP_CONCAT(DISTINCT cl.name SEPARATOR ', ') AS club_names")
             ->leftJoin('t.ageGroup', 'ag')
             ->leftJoin('t.league', 'l')
             ->leftJoin('t.playerTeamAssignments', 'pta')
             ->leftJoin('t.coachTeamAssignments', 'cta')
+            ->leftJoin('cta.coach', 'c')
+            ->leftJoin('t.clubs', 'cl')
             ->groupBy('t.id, ag.id, l.id')
             ->orderBy('t.name', 'ASC');
 
-        if ($user && !in_array('ROLE_ADMIN', $user->getRoles(), true)) {
+        if ($user && !in_array('ROLE_ADMIN', $user->getRoles(), true) && !in_array('ROLE_SUPERADMIN', $user->getRoles(), true)) {
             $playerIds = [];
             $coachIds = [];
             if ($user instanceof User) {

@@ -28,8 +28,12 @@ final class GameEventVoter extends Voter
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
     {
-        /** @var User $user */
+        /** @var ?User $user */
         $user = $token->getUser();
+
+        if (!$user instanceof User) {
+            return false;
+        }
 
         switch ($attribute) {
             case self::CREATE:

@@ -66,9 +66,8 @@ security:
     - { path: ^/api/messages, roles: ROLE_USER }
     - { path: ^/api/message-groups, roles: ROLE_USER }
     - { path: ^/api/profile,  roles: ROLE_USER }
-    - { path: ^/api/teams,    roles: ROLE_USER }
     - { path: ^/api/players,  roles: ROLE_USER }
     - { path: ^/api/register, roles: PUBLIC_ACCESS }
     - { path: ^/api/login,    roles: PUBLIC_ACCESS }
     - { path: ^/api/verify,   roles: PUBLIC_ACCESS }
-    - { path: ^/api,          roles: ROLE_GUEST }
+    - { path: ^/api,          roles: PUBLIC_ACCESS }
