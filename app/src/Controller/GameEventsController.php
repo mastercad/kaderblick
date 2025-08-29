@@ -11,6 +11,7 @@ use App\Repository\SubstitutionReasonRepository;
 use App\Service\FussballDeCrawlerService;
 use App\Service\GameDetailsSyncService;
 use DateTime;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -37,6 +38,7 @@ class GameEventsController extends AbstractController
 
         return $this->render('game_event/public_form.html.twig', [
             'game' => $game,
+            'gameStartDate' => $game->getCalendarEvent()->getStartDate(),
             'eventTypes' => $eventTypes,
             'players' => $players,
             'events' => $events,
@@ -92,9 +94,11 @@ class GameEventsController extends AbstractController
             }
         }
         $event->setTeam($team);
+
         /** @var DateTime $startDate */
         $startDate = $event->getGame()->getCalendarEvent()->getStartDate();
-        $event->setTimestamp($startDate->modify('+' . ((int) ($data['minute'] ?? 1)) . ' minutes'));
+        $seconds = $this->convertUserInputToSeconds($data['minute'] ?? 1, $startDate);
+        $event->setTimestamp($startDate->modify('+' . $seconds . ' seconds'));
 
         if ($isSubstitution && !empty($data['reason'])) {
             $reasonEntity = $substitutionReasonRepo->find($data['reason']);
@@ -120,7 +124,7 @@ class GameEventsController extends AbstractController
                 'typeId' => $event->getGameEventType()?->getId(),
                 'typeIcon' => $event->getGameEventType()?->getIcon(),
                 'typeColor' => $event->getGameEventType()?->getColor(),
-                'minute' => $this->calculateDateDiffInMinutes($event->getGame()->getCalendarEvent()->getStartDate(), $event->getTimestamp()),
+                'minute' => $this->calculateDateDiffInSeconds($event->getGame()->getCalendarEvent()->getStartDate(), $event->getTimestamp()),
                 'player' => $event->getPlayer()?->getFullName(),
                 'playerId' => $event->getPlayer()?->getId(),
                 'relatedPlayer' => $event->getRelatedPlayer()?->getFullName(),
@@ -168,7 +172,8 @@ class GameEventsController extends AbstractController
         if (isset($data['minute'])) {
             /** @var DateTime $startDate */
             $startDate = $event->getGame()->getCalendarEvent()->getStartDate();
-            $event->setTimestamp($startDate->modify('+' . ((int) ($data['minute'] ?? 1)) . ' minutes'));
+            $seconds = $this->convertUserInputToSeconds($data['minute'] ?? '00:00:01', $startDate);
+            $event->setTimestamp($startDate->modify('+' . $seconds . ' seconds'));
         }
         if (isset($data['description'])) {
             $event->setDescription($data['description']);
@@ -200,11 +205,11 @@ class GameEventsController extends AbstractController
         return $this->json(['success' => true]);
     }
 
-    private function calculateDateDiffInMinutes(DateTimeInterface $dateStart, DateTimeInterface $dateCurrent): int
+    private function calculateDateDiffInSeconds(DateTimeInterface $dateStart, DateTimeInterface $dateCurrent): int
     {
         $diff = $dateCurrent->diff($dateStart);
 
-        return ($diff->days * 24 * 60) + ($diff->h * 60) + $diff->i;
+        return ($diff->days * 24 * 60 * 60) + ($diff->h * 60 * 60) + ($diff->i * 60) + $diff->s;
     }
 
     #[Route('/api/game/{id}/sync-fussballde', name: 'api_game_event_sync_fussballde', methods: ['POST'])]
@@ -225,5 +230,34 @@ class GameEventsController extends AbstractController
         $syncService->syncGameDetails($details);
 
         return $this->json(['success' => true]);
+    }
+
+    private function convertUserInputToSeconds(string $time, DateTime $gameStartDate): int
+    {
+        $timeParts = explode(':', $time);
+
+        if (3 === count($timeParts)) {
+            $hours = (int) $timeParts[0];
+
+            if ($hours >= 2) {
+                $diff = $gameStartDate->diff(new DateTimeImmutable($time));
+
+                return ($diff->h * 3600) + ($diff->i * 60) + $diff->s;
+            }
+
+            $minutes = (int) $timeParts[1];
+            $seconds = (int) $timeParts[2];
+
+            return ($hours * 3600) + ($minutes * 60) + $seconds;
+        }
+
+        if (2 === count($timeParts)) {
+            $minutes = (int) $timeParts[0];
+            $seconds = (int) $timeParts[1];
+
+            return ($minutes * 60) + $seconds;
+        }
+
+        return (int) $timeParts[0];
     }
 }
