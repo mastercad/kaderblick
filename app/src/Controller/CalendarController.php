@@ -20,12 +20,10 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-#[IsGranted('IS_AUTHENTICATED')]
 #[Route('/calendar', name: 'api_calendar_')]
 class CalendarController extends AbstractController
 {
@@ -40,8 +38,6 @@ class CalendarController extends AbstractController
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(CalendarEventRepository $calendarEventRepository): Response
     {
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED');
-
         $calendarGameEventTypeSpiel = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Spiel']);
 
         return $this->render('calendar/index.html.twig', [
@@ -67,7 +63,7 @@ class CalendarController extends AbstractController
         $end = new DateTime($request->query->get('end'));
 
         $calendarEvents = $calendarEventRepository->findBetweenDates($start, $end);
-        /** @var User $user */
+        /** @var ?User $user */
         $user = $this->getUser();
 
         $formattedEvents = array_map(function ($calendarEvent) use ($user) {
@@ -80,7 +76,7 @@ class CalendarController extends AbstractController
 
             // Participation-Status für eingeloggten User holen
             $participationStatus = null;
-            $participation = $this->participationRepository->findByUserAndEvent($user, $calendarEvent);
+            $participation = $user instanceof User ? $this->participationRepository->findByUserAndEvent($user, $calendarEvent) : [];
             if ($participation && $participation->getStatus()) {
                 $participationStatus = [
                     'id' => $participation->getStatus()->getId(),

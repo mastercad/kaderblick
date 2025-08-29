@@ -46,9 +46,6 @@ services:
         tags:
             - { name: 'monolog.logger', channel: 'security' }
 
-    lexik_jwt_authentication.security.user_checker:
-        alias: App\Security\JWTUserChecker
-
     Symfony\Component\Serializer\Normalizer\ObjectNormalizer:
         arguments:
             $classMetadataFactory: '@serializer.mapping.class_metadata_factory'

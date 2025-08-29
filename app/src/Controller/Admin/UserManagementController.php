@@ -47,6 +47,7 @@ class UserManagementController extends AbstractController
         // Verfügbare Rollen definieren
         $availableRoles = [
             'ROLE_USER' => 'Benutzer',
+            'ROLE_SUPPORTER' => 'Supporter',
             'ROLE_ADMIN' => 'Administrator',
             'ROLE_SUPERADMIN' => 'Super Administrator'
         ];
