@@ -80,6 +80,7 @@
                     </div>
                 </div>
                     <div class="row align-items-end g-2 mt-3 mb-2">
+                        <div class="col-md-2"></div>
                         <div class="col-md-6">
                             <label class="form-label">Zeitraum</label>
                             <div id="date-range-slider"></div>
@@ -88,6 +89,7 @@
                             <div class="form-text">Wähle einen Zeitraum zwischen {{ minDate|date('d.m.Y') }} und {{ maxDate|date('d.m.Y') }}.</div>
                             <div class="small mt-1"><span id="date-range-label"></span></div>
                         </div>
+                        <div class="col-md-2"></div>
                     </div>
                     <div class="row g-2">
                         <div class="col-md-3">
@@ -149,7 +151,7 @@
             if (endIdx === -1) endIdx = availableDates.length-1;
 
             noUiSlider.create(slider, {
-                start: [startDate, endDate], // HIER die Strings, nicht die Indizes!
+                start: [startDate, endDate],
                 connect: true,
                 range: {
                     min: 0,

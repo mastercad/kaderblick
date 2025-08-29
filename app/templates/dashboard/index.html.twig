@@ -7,6 +7,12 @@
     {% if ( is_granted('IS_AUTHENTICATED_FULLY') ) %}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Dashboard</h1>
+        {% if ( is_granted('ROLE_SUPERADMIN') ) %}
+        <div class="form-group md-4">
+            <input type="checkbox" class="form-check-input" id="defaultWidgetCheckbox">
+            <label class="form-check-label" for="defaultWidgetCheckbox">Standard-Dashboard</label>
+        </div>
+        {% endif %}
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addWidgetModal">
             <i class="fas fa-plus"></i> Widget hinzufügen
         </button>
@@ -141,6 +147,15 @@
 
             // Für beide Event-Typen registrieren
             document.addEventListener('pointerup', handleWidgetInteraction);
+
+            const defaultWidgetCheckbox = document.getElementById('defaultWidgetCheckbox');
+
+            if (defaultWidgetCheckbox) {
+                defaultWidgetCheckbox.checked = {{ isDefault ? 'true' : 'false' }};
+                defaultWidgetCheckbox.addEventListener('change', function() {
+                    updateWidgetPositions();
+                });
+            }
         });
 
         async function handleDelete(button) {
@@ -200,17 +215,12 @@
             const modalElement = document.getElementById(`widgetSettings${widgetId}`);
             const bsModal = new bootstrap.Modal(modalElement);
 
-            console.log(widgetId);
-            console.log(modalElement);
-            
             modalElement.querySelector('.save-settings').addEventListener('click', async function() {
-                console.log(modalElement);
-                console.log(modalElement.querySelector('.widget-width'));
                 const newWidth = modalElement.querySelector('.widget-width').value;
                 widget.className = widget.className.replace(/col-md-\d+/, `col-md-${newWidth}`);
                 
                 await loadWidgetContent(widget);
-                await saveWidgetSettings(widgetId, { id: widgetId, width: newWidth, position: widgetPosition });
+//                await saveWidgetSettings(widgetId, { id: widgetId, width: newWidth, position: widgetPosition });
                 await updateWidgetPositions();
                 bsModal.hide();
                 modalElement.remove();

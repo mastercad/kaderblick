@@ -121,9 +121,10 @@ class ReportDataService
         }
         $xLabels = array_keys($counts);
         sort($xLabels);
+        // TODO das erscheint mir hier wenig sinnvoll. die Daten passen mit und ohne [$x] im frontend
         $data = [];
         foreach ($xLabels as $x) {
-            $data[] = $counts[$x];
+            $data[$x] = $counts[$x];
         }
 
         return [

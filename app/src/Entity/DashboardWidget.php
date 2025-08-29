@@ -36,7 +36,10 @@ class DashboardWidget
     private int $width = 6; // Bootstrap columns (1-12)
 
     #[ORM\Column]
-    private bool $enabled = true;
+    private bool $isEnabled = true;
+
+    #[ORM\Column]
+    private bool $isDefault = false;
 
     public function getId(): ?int
     {
@@ -111,12 +114,24 @@ class DashboardWidget
 
     public function isEnabled(): bool
     {
-        return $this->enabled;
+        return $this->isEnabled;
     }
 
-    public function setEnabled(bool $enabled): self
+    public function setEnabled(bool $isEnabled): self
     {
-        $this->enabled = $enabled;
+        $this->isEnabled = $isEnabled;
+
+        return $this;
+    }
+
+    public function isDefault(): bool
+    {
+        return $this->isDefault;
+    }
+
+    public function setDefault(bool $isDefault): self
+    {
+        $this->isDefault = $isDefault;
 
         return $this;
     }
