@@ -7,6 +7,7 @@ use App\Entity\GameEvent;
 use App\Entity\GameEventType;
 use App\Entity\Video;
 use App\Repository\CameraRepository;
+use App\Repository\GameEventRepository;
 use App\Repository\GameRepository;
 use App\Repository\VideoTypeRepository;
 use App\Security\Voter\VideoVoter;
@@ -91,15 +92,10 @@ class GamesController extends AbstractController
     }
 
     #[Route(path: '/{id}', name: 'show', requirements: ['id' => '\\d+'], methods: ['GET'])]
-    public function show(Game $game, VideoTypeRepository $videoTypeRepository, CameraRepository $cameraRepository): Response
+    public function show(Game $game, GameEventRepository $gameEventRepository, VideoTypeRepository $videoTypeRepository, CameraRepository $cameraRepository): Response
     {
         $calendarEvent = $game->getCalendarEvent();
-
-        $gameEvents = [];
-        foreach ($game->getGameEvents() as $gameEvent) {
-            $gameEvents[] = $gameEvent;
-        }
-        ksort($gameEvents);
+        $gameEvents = $gameEventRepository->findAllGameEvents($game);
 
         $cameras = [];
         foreach ($cameraRepository->findAll() as $camera) {

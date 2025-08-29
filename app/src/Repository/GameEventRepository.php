@@ -35,6 +35,19 @@ class GameEventRepository extends ServiceEntityRepository implements OptimizedRe
     /**
      * @return GameEvent[]
      */
+    public function findAllGameEvents(Game $game): array
+    {
+        return $this->createQueryBuilder('e')
+            ->where('e.game = :game')
+            ->setParameter('game', $game)
+            ->orderBy('e.timestamp', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return GameEvent[]
+     */
     public function findPlayerEvents(Player $player, string $eventTypeCode): array
     {
         return $this->createQueryBuilder('e')
