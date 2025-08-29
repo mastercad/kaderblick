@@ -47,18 +47,28 @@ class ReportFieldAliasService
                 'type' => 'relation',
                 'subfield' => 'name', // GameEventType entity
             ],
+            'surfaceType' => [
+                'label' => 'Platztyp',
+                'value' => static function ($event) {
+                    if (method_exists($event, 'getGame') && $event->getGame() && method_exists($event->getGame(), 'getLocation')) {
+                        $location = $event->getGame()->getLocation();
+                        if ($location && method_exists($location, 'getSurfaceType')) {
+                            return $location->getSurfaceType();
+                        }
+                    }
+
+                    return null;
+                },
+                'entity' => 'Location',
+                'field' => 'surfaceType',
+                'type' => 'string'
+            ],
             'minute' => [
                 'label' => 'Minute',
                 'entity' => 'GameEvent',
                 'field' => 'timestamp',
                 'type' => 'datetime',
                 'format' => 'i', // Minute aus Zeitstempel
-            ],
-            'description' => [
-                'label' => 'Beschreibung',
-                'entity' => 'GameEvent',
-                'field' => 'description',
-                'type' => 'string',
             ],
             'gameDate' => [
                 'label' => 'Spieldatum',

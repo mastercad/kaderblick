@@ -35,21 +35,32 @@ class DashboardController extends AbstractController
         }
 
         $widgets = $widgetRepo->findBy(
-            ['user' => $user, 'enabled' => true],
+            ['user' => $user, 'isEnabled' => true],
             ['position' => 'ASC']
         );
 
+        if (empty($widgets) && $user instanceof User) {
+            $widgets = $widgetRepo->findBy(
+                [
+                    'isEnabled' => true,
+                    'isDefault' => true
+                ],
+                [
+                    'position' => 'ASC'
+                ]
+            );
+        }
+
         return $this->render('dashboard/index.html.twig', [
-            'widgets' => $widgets
+            'widgets' => $widgets,
+            'isDefault' => $this->checkDashboardIsDefault($widgets)
         ]);
     }
 
     #[IsGranted('IS_AUTHENTICATED')]
     #[Route('/widget/{id}', name: 'widget', methods: ['GET'])]
-    public function widget(
-        DashboardWidget $widget,
-        CalendarEventRepository $calendarRepo
-    ): Response {
+    public function widget(DashboardWidget $widget): Response
+    {
         if ($widget->getUser() !== $this->getUser()) {
             throw $this->createAccessDeniedException();
         }
@@ -88,6 +99,8 @@ class DashboardController extends AbstractController
                 $widget->setPosition($widgetData['position']);
                 $widget->setWidth($widgetData['width']);
                 $widget->setEnabled($widgetData['enabled'] ?? true);
+                $widget->setDefault($widgetData['default'] ?? false);
+
                 if (isset($widgetData['config'])) {
                     $widget->setConfig($widgetData['config']);
                 }
@@ -254,5 +267,19 @@ class DashboardController extends AbstractController
             ]),
             default => 'Widget type not implemented yet'
         };
+    }
+
+    /**
+     * @param DashboardWidget[] $widgets
+     */
+    private function checkDashboardIsDefault(array $widgets): bool
+    {
+        foreach ($widgets as $widget) {
+            if ($widget->isDefault()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

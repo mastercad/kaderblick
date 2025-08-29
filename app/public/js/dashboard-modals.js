@@ -331,10 +331,14 @@ function updateWidgetPositions() {
     const widgets = [];
     document.querySelectorAll('.widget-item').forEach((widget, index) => {
         const width = parseInt(widget.className.match(/col-md-(\d+)/)[1]);
+        const defaultWidgetCheckbox = document.getElementById('defaultWidgetCheckbox');
+        const isDefault = defaultWidgetCheckbox && defaultWidgetCheckbox.checked ? 1 : 0;
+
         widgets.push({
             id: widget.dataset.widgetId,
             position: index,
-            width: width
+            width: width,
+            default: isDefault
         });
     });
 
