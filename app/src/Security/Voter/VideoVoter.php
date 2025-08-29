@@ -2,27 +2,28 @@
 
 namespace App\Security\Voter;
 
-use App\Entity\Game;
-use App\Entity\GameEvent;
+use App\Entity\Team;
 use App\Entity\User;
+use App\Entity\Video;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /**
- * @template-extends Voter<string, GameEvent>
+ * @template-extends Voter<string, Video>
  */
-final class GameEventVoter extends Voter
+final class VideoVoter extends Voter
 {
-    public const CREATE = 'GAME_EVENT_CREATE';
-    public const EDIT = 'GAME_EVENT_EDIT';
-    public const VIEW = 'GAME_EVENT_VIEW';
-    public const DELETE = 'GAME_EVENT_DELETE';
+    public const CREATE = 'VIDEO_CREATE';
+    public const EDIT = 'VIDEO_EDIT';
+    public const VIEW = 'VIDEO_VIEW';
+    public const DELETE = 'VIDEO_DELETE';
 
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return (in_array($attribute, [self::EDIT, self::VIEW, self::DELETE])
-            && $subject instanceof GameEvent)
-            || (self::CREATE === $attribute && $subject instanceof Game)
+        return (
+            in_array($attribute, [self::CREATE, self::EDIT, self::VIEW, self::DELETE])
+                && $subject instanceof Video)
+            || (self::CREATE === $attribute && $subject instanceof Team)
         ;
     }
 
@@ -47,7 +48,8 @@ final class GameEventVoter extends Voter
                 foreach ($user->getRelations() as $userRelation) {
                     if ($userRelation->getPlayer()) {
                         foreach ($userRelation->getPlayer()->getPlayerTeamAssignments() as $assignment) {
-                            if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
+                            /** @var Team $subject */
+                            if ($assignment->getTeam() === $subject) {
                                 return true;
                             }
                         }
@@ -55,13 +57,15 @@ final class GameEventVoter extends Voter
 
                     if ($userRelation->getCoach()) {
                         foreach ($userRelation->getCoach()->getCoachTeamAssignments() as $assignment) {
-                            if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
+                            /** @var Team $subject */
+                            if ($assignment->getTeam() === $subject) {
                                 return true;
                             }
                         }
                     }
                 }
 
+                // hier ist subject team, nicht video!
                 break;
             case self::DELETE:
             case self::EDIT:
@@ -69,16 +73,14 @@ final class GameEventVoter extends Voter
                     return true;
                 }
 
-                if (
-                    !in_array('ROLE_ADMIN', $user->getRoles())
-                    && !in_array('ROLE_SUPPORTER', $user->getRoles())
-                ) {
+                if (!in_array('ROLE_ADMIN', $user->getRoles())) {
                     return false;
                 }
 
                 foreach ($user->getRelations() as $userRelation) {
                     if ($userRelation->getPlayer()) {
                         foreach ($userRelation->getPlayer()->getPlayerTeamAssignments() as $assignment) {
+                            /** @var Video $subject */
                             if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
                                 return true;
                             }
@@ -87,6 +89,7 @@ final class GameEventVoter extends Voter
 
                     if ($userRelation->getCoach()) {
                         foreach ($userRelation->getCoach()->getCoachTeamAssignments() as $assignment) {
+                            /** @var Video $subject */
                             if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
                                 return true;
                             }
@@ -95,7 +98,30 @@ final class GameEventVoter extends Voter
                 }
                 break;
             case self::VIEW:
-                return true;
+                if (in_array('ROLE_SUPERADMIN', $user->getRoles())) {
+                    return true;
+                }
+
+                foreach ($user->getRelations() as $userRelation) {
+                    if ($userRelation->getPlayer()) {
+                        foreach ($userRelation->getPlayer()->getPlayerTeamAssignments() as $assignment) {
+                            /** @var Video $subject */
+                            if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
+                                return true;
+                            }
+                        }
+                    }
+
+                    if ($userRelation->getCoach()) {
+                        foreach ($userRelation->getCoach()->getCoachTeamAssignments() as $assignment) {
+                            /** @var Video $subject */
+                            if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                break;
         }
 
         return false;

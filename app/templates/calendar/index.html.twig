@@ -4,31 +4,9 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css' rel='stylesheet' />
     <link href='/css/calendar.css' rel='stylesheet' />
 {% endblock %}
 
-{#
-{% block stylesheets %}
-    {{ parent() }}
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.css' rel='stylesheet' />
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href='/css/calendar.css' rel='stylesheet' />
-    <style>
-        .fc-event {
-            opacity: 0.85;
-            transition: opacity 0.2s;
-        }
-        .fc-event:hover {
-            opacity: 1;
-        }
-        .fc-timeGridDay-view .fc-event {
-            border-radius: 3px;
-            margin: 1px 0;
-        }
-    </style>
-{% endblock %}
-#}
 {% block body %}
 <div class="container-fluid py-4">
     <div class="row">
@@ -68,7 +46,7 @@
                     <div class="row align-items-center">
                         <div class="col-xl-6 col-lg-7 col-md-12 mb-3 mb-xl-0">
                             <div class="d-flex gap-2 flex-wrap">
-                                {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_TRAINER') %}
+                                {% if is_granted(permissions.CREATE) %}
                                     <button type="button" class="btn btn-calendar" data-action="add-event">
                                         <i class="fas fa-plus me-2"></i><span class="d-none d-sm-inline">Event hinzufügen</span><span class="d-sm-none">Event</span>
                                     </button>
@@ -132,8 +110,10 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
+                {% if is_granted(permissions.CREATE) %}
                 <h5 class="modal-title" id="eventModalLabel">Event erstellen/bearbeiten</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                {% endif %}
             </div>
             <div class="modal-body">
                 <form id="eventForm">
@@ -308,10 +288,8 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
-                {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_TRAINER') or is_granted('ROLE_SUPERADMIN') %}
-                    <button type="button" class="btn btn-danger" id="deleteEventFromDetailsBtn" style="display: none;">Löschen</button>
-                    <button type="button" class="btn btn-primary" id="editEventBtn">Bearbeiten</button>
-                {% endif %}
+                <button type="button" class="btn btn-danger" id="deleteEventFromDetailsBtn" style="display: none;">Löschen</button>
+                <button type="button" class="btn btn-primary" id="editEventBtn">Bearbeiten</button>
             </div>
         </div>
     </div>
@@ -444,7 +422,6 @@
 
             eventMouseEnter: function(info) {
                 // Enhanced tooltip could be added here
-                console.log('Mouse enter event:', info.event.title);
             },
             height: 'auto',
             aspectRatio: 1.35,
@@ -470,7 +447,6 @@
             select: function(info) {
                 // Handle date range selection
                 {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_TRAINER') %}
-                    console.log('Date range selected:', info.start, 'to', info.end);
                     window.handleDateClick({
                         dateStr: info.start.toISOString().split('T')[0],
                         endDateStr: info.end.toISOString().split('T')[0]
@@ -479,14 +455,12 @@
             },
             // Responsive design
             windowResize: function(view) {
-                console.log('Calendar resized to:', view.type);
             }
         });
 
         // Render calendar
         try {
             window.calendar.render();
-            console.log('Calendar rendered successfully');
         } catch (error) {
             console.error('Error rendering calendar:', error);
             hideLoading();
@@ -558,12 +532,10 @@
             if (window.calendar) {
                 const events = window.calendar.getEvents();
                 events.forEach(event => {
-                    const eventTypeId = event.extendedProps.eventTypeId;
+                    const eventTypeId = event.extendedProps.type.id;
                     const shouldShow = activeFilters.includes(String(eventTypeId));
                     event.setProp('display', shouldShow ? 'auto' : 'none');
                 });
-                
-                console.log('Filtered events. Active filters:', activeFilters);
             }
         }
 
@@ -583,7 +555,6 @@
                 newUrl.searchParams.set('date', date);
                 
                 window.history.replaceState({}, '', newUrl);
-                console.log('URL updated:', newUrl.toString());
             });
         }
 
@@ -617,34 +588,36 @@
         const locationDropdown = document.getElementById('locationDropdown');
         const locationLoading = document.getElementById('locationLoading');
 
-        locationInput.addEventListener('input', function() {
-            const term = this.value.trim();
-            
-            // Clear previous timeout
-            if (locationTimeout) {
-                clearTimeout(locationTimeout);
-            }
-            
-            // Hide loading and dropdown
-            locationLoading.style.display = 'none';
-            locationDropdown.style.display = 'none';
-            
-            // Reset location ID if input changed
-            locationIdInput.value = '';
-            
-            // Hide dropdown if input is empty
-            if (term.length < 2) {
-                return;
-            }
-            
-            // Show loading indicator
-            locationLoading.style.display = 'block';
-            
-            // Debounce search
-            locationTimeout = setTimeout(() => {
-                searchLocations(term);
-            }, 300);
-        });
+        if (location) {
+            locationInput.addEventListener('input', function() {
+                const term = this.value.trim();
+                
+                // Clear previous timeout
+                if (locationTimeout) {
+                    clearTimeout(locationTimeout);
+                }
+                
+                // Hide loading and dropdown
+                locationLoading.style.display = 'none';
+                locationDropdown.style.display = 'none';
+                
+                // Reset location ID if input changed
+                locationIdInput.value = '';
+                
+                // Hide dropdown if input is empty
+                if (term.length < 2) {
+                    return;
+                }
+                
+                // Show loading indicator
+                locationLoading.style.display = 'block';
+                
+                // Debounce search
+                locationTimeout = setTimeout(() => {
+                    searchLocations(term);
+                }, 300);
+            });
+        }
 
         // Hide dropdown when clicking outside
         document.addEventListener('click', function(e) {
@@ -846,32 +819,34 @@
                 html += `<p><strong>Ort:</strong> ${event.extendedProps.location.name}</p>`;
             }
 
-            // Button für Spielereignis erfassen
-            if (event.extendedProps.type && event.extendedProps.type.id == calendarGameEventTypeId) {
+            if (event.extendedProps.createPermissions && event.extendedProps.type && event.extendedProps.type.id == calendarGameEventTypeId) {
                 html += `<div class=\"mt-3\">
                     <a href=\"/game/${event.extendedProps.game.id}/events\" class=\"btn btn-success\" target=\"_blank\">
                         <i class=\"fas fa-futbol me-1\"></i>Spielereignis erfassen
                     </a>
                 </div>`;
             }
+
             content.innerHTML = html;
-            
             // Teilnahme-Sektion anzeigen
             document.getElementById('participationSection').style.display = 'block';
             loadParticipationData(event.id);
             
             // Edit/Delete-Buttons für berechtigte User
-            const canEdit = {{ (is_granted('ROLE_ADMIN') or is_granted('ROLE_TRAINER') or is_granted('ROLE_SUPERADMIN')) ? 'true' : 'false' }};
             const editEventBtn = document.getElementById('editEventBtn');
             const deleteEventBtn = document.getElementById('deleteEventFromDetailsBtn');
-            if (canEdit && editEventBtn) {
+            if (event.extendedProps.permissions.canEdit && editEventBtn) {
                 editEventBtn.style.display = 'inline-block';
                 editEventBtn.onclick = function() {
                     const detailsModal = bootstrap.Modal.getInstance(document.getElementById('eventDetailsModal'));
                     detailsModal.hide();
                     openEditModal(event);
-                };
-                
+                }
+            } else {
+                if (editEventBtn) editEventBtn.style.display = 'none';
+            }
+
+            if (event.extendedProps.permissions.canDelete && deleteEventBtn) {
                 deleteEventBtn.style.display = 'inline-block';
                 deleteEventBtn.onclick = function() {
                     if (confirm('Sind Sie sicher, dass Sie dieses Event löschen möchten?')) {
@@ -881,7 +856,6 @@
                     }
                 };
             } else {
-                if (editEventBtn) editEventBtn.style.display = 'none';
                 if (deleteEventBtn) deleteEventBtn.style.display = 'none';
             }
             

@@ -11,6 +11,7 @@ use App\Entity\Team;
 use App\Entity\User;
 use App\Repository\CalendarEventRepository;
 use App\Repository\ParticipationRepository;
+use App\Security\Voter\CalendarEventVoter;
 use App\Service\EmailNotificationService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
@@ -50,6 +51,12 @@ class CalendarController extends AbstractController
             'locations' => $this->entityManager->getRepository(Location::class)->findAll(),
             'teams' => $this->entityManager->getRepository(Team::class)->findAll(),
             'gameTypes' => $this->entityManager->getRepository(GameType::class)->findAll(),
+            'permissions' => [
+                'CREATE' => CalendarEventVoter::CREATE,
+                'EDIT' => CalendarEventVoter::EDIT,
+                'VIEW' => CalendarEventVoter::VIEW,
+                'DELETE' => CalendarEventVoter::DELETE,
+            ]
         ]);
     }
 
@@ -116,6 +123,11 @@ class CalendarController extends AbstractController
                     'id' => $calendarEvent->getLocation()->getId(),
                     'name' => $calendarEvent->getLocation()->getName()
                 ] : null,
+                'permissions' => [
+                    'canCreate' => $this->isGranted(CalendarEventVoter::CREATE, $calendarEvent->getGame() ?? null),
+                    'canEdit' => $this->isGranted(CalendarEventVoter::EDIT, $calendarEvent),
+                    'canDelete' => $this->isGranted(CalendarEventVoter::DELETE, $calendarEvent),
+                ],
                 'participation_status' => $participationStatus,
             ];
         }, $calendarEvents);

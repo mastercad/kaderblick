@@ -9,6 +9,7 @@ use App\Entity\Video;
 use App\Repository\CameraRepository;
 use App\Repository\GameRepository;
 use App\Repository\VideoTypeRepository;
+use App\Security\Voter\VideoVoter;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -116,7 +117,13 @@ class GamesController extends AbstractController
             'videos' => $this->prepareYoutubeLinks($game, $gameEvents),
             'cameras' => $cameras,
             'homeScore' => $scores['home'],
-            'awayScore' => $scores['away']
+            'awayScore' => $scores['away'],
+            'permissions' => [
+                'VIEW' => VideoVoter::VIEW,
+                'EDIT' => VideoVoter::EDIT,
+                'DELETE' => VideoVoter::DELETE,
+                'CREATE' => VideoVoter::CREATE
+            ],
         ]);
     }
 
@@ -166,6 +173,9 @@ class GamesController extends AbstractController
             foreach ($videos as $cameraId => $currentVideos) {
                 $elapsedTime = 0;
                 foreach ($currentVideos as $startTime => $video) {
+                    if (!$this->isGranted(VideoVoter::VIEW, $video)) {
+                        continue;
+                    }
                     if (
                         $startTime <= ($eventSeconds + $video->getGameStart())
                         && (int) ($startTime + $video->getLength()) >= (int) ($eventSeconds + $video->getGameStart())
