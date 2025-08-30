@@ -209,7 +209,7 @@
                 document.body.style.userSelect = '';
                 document.body.style.touchAction = '';
             });
-        }
+        });
 
         document.querySelectorAll('.widget-item').forEach(async widget => {
             await loadWidgetContent(widget);
@@ -247,7 +247,6 @@
                 updateWidgetPositions();
             });
         }
-    });
 
         async function handleDelete(button) {
             if (!confirm('Widget wirklich entfernen?')) return;
