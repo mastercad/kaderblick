@@ -171,7 +171,7 @@
             }
         }
 
-        function enableDrag() {
+        function enableDrag(dragElement, originalTouchEvent) {
             if (!sortableInstance) {
                 sortableInstance = new Sortable(grid, {
                     animation: 150,
@@ -179,10 +179,37 @@
                     draggable: '.widget-item',
                     onEnd: function(evt) {
                         updateWidgetPositions();
-                        // Nach Drag wieder entfernen
-                        disableDrag();
+                        // Nach Drag nur auf Touch wieder entfernen
+                        if (isRealTouchDevice()) {
+                            disableDrag();
+                        }
                     },
                 });
+            }
+            // Workaround: Drag sofort starten
+            if (dragElement && originalTouchEvent) {
+                // Timeout, damit Sortable initialisiert ist
+                setTimeout(() => {
+                    // Künstliches touchstart-Event auf das Element feuern
+                    const touch = originalTouchEvent.touches[0];
+                    const simulatedEvent = new TouchEvent('touchstart', {
+                        touches: [new Touch({
+                            identifier: Date.now(),
+                            target: dragElement,
+                            clientX: touch.clientX,
+                            clientY: touch.clientY,
+                            screenX: touch.screenX,
+                            screenY: touch.screenY,
+                            pageX: touch.pageX,
+                            pageY: touch.pageY
+                        })],
+                        targetTouches: [],
+                        changedTouches: [],
+                        bubbles: true,
+                        cancelable: true
+                    });
+                    dragElement.dispatchEvent(simulatedEvent);
+                }, 0);
             }
         }
         function disableDrag() {
@@ -211,9 +238,10 @@
                         if (!dragTarget) return;
                         svgCircle.fg.setAttribute('stroke-dashoffset', 0);
                         setTimeout(() => {
-                            enableDrag();
                             if (window.navigator.vibrate) window.navigator.vibrate(30);
                             removeProgressCircle();
+                            // Drag sofort starten
+                            enableDrag(cardHeader, e);
                         }, LONG_PRESS_MS);
                     }, 10);
                 }, 10);
