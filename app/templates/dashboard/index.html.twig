@@ -123,191 +123,70 @@
     <!-- Dashboard Modal System -->
     <script src="/js/dashboard-modals.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-        const grid = document.getElementById('widgetGrid');
-        let sortableInstance = null;
-        let longPressTimer = null;
-        let svgCircle = null;
-        let dragTarget = null;
-        const LONG_PRESS_MS = 600;
-
-        function isRealTouchDevice() {
-            return (
-                ('ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)
-                && window.matchMedia('(pointer: coarse)').matches
-            );
-        }
-
-        function createProgressCircle(x, y) {
-            const size = 56;
-            const stroke = 5;
-            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.setAttribute('width', size);
-            svg.setAttribute('height', size);
-            svg.style.position = 'fixed';
-            svg.style.left = (x - size/2) + 'px';
-            svg.style.top = (y - size/2) + 'px';
-            svg.style.zIndex = 9999;
-            svg.style.pointerEvents = 'none';
-            svg.style.transition = 'opacity 0.2s';
-            svg.style.opacity = '1';
-            svg.classList.add('widget-longpress-circle');
-            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            bg.setAttribute('cx', size/2);
-            bg.setAttribute('cy', size/2);
-            bg.setAttribute('r', (size-stroke)/2);
-            bg.setAttribute('stroke', '#eee');
-            bg.setAttribute('stroke-width', stroke);
-            bg.setAttribute('fill', 'none');
-            svg.appendChild(bg);
-            const fg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            fg.setAttribute('cx', size/2);
-            fg.setAttribute('cy', size/2);
-            fg.setAttribute('r', (size-stroke)/2);
-            fg.setAttribute('stroke', '#007bff');
-            fg.setAttribute('stroke-width', stroke);
-            fg.setAttribute('fill', 'none');
-            fg.setAttribute('stroke-dasharray', Math.PI*(size-stroke));
-            fg.setAttribute('stroke-dashoffset', Math.PI*(size-stroke));
-            fg.style.transition = 'stroke-dashoffset 0.6s linear';
-            svg.appendChild(fg);
-            document.body.appendChild(svg);
-            return {svg, fg};
-        }
-
-        function removeProgressCircle() {
-            if (svgCircle && svgCircle.svg) {
-                svgCircle.svg.style.opacity = '0';
-                setTimeout(() => {
-                    if (svgCircle && svgCircle.svg && svgCircle.svg.parentNode) svgCircle.svg.parentNode.removeChild(svgCircle.svg);
-                    svgCircle = null;
-                }, 200);
+            const grid = document.getElementById('widgetGrid');
+            function isRealTouchDevice() {
+                return (
+                    ('ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)
+                    && window.matchMedia('(pointer: coarse)').matches
+                );
             }
-        }
-
-        function enableDrag(dragElement, originalTouchEvent) {
-            if (!sortableInstance) {
-                sortableInstance = new Sortable(grid, {
+            // Desktop: SortableJS wie gehabt
+            if (!isRealTouchDevice()) {
+                new Sortable(grid, {
                     animation: 150,
                     handle: '.card-header',
                     draggable: '.widget-item',
-                    onStart: function(evt) {
-                        // Optisches Feedback für aktives Widget
-                        evt.item.classList.add('drag-active');
-                    },
-                    onEnd: function(evt) {
-                        updateWidgetPositions();
-                        // Optisches Feedback zurücksetzen
-                        evt.item.classList.remove('drag-active');
-                        // Nach Drag nur auf Touch wieder entfernen
-                        if (isRealTouchDevice()) {
-                            disableDrag();
+                    onEnd: updateWidgetPositions
+                });
+            } else {
+                // Touch: Interact.js für Drag-and-Drop
+                interact('.widget-item').draggable({
+                    allowFrom: '.card-header',
+                    listeners: {
+                        start (event) {
+                            event.target.classList.add('drag-active');
+                            event.target.style.zIndex = 1000;
+                        },
+                        move (event) {
+                            if (!event.target.hasAttribute('data-x')) {
+                                event.target.setAttribute('data-x', 0);
+                                event.target.setAttribute('data-y', 0);
+                            }
+                            let x = (parseFloat(event.target.getAttribute('data-x')) || 0) + event.dx;
+                            let y = (parseFloat(event.target.getAttribute('data-y')) || 0) + event.dy;
+                            event.target.style.transform = `translate(${x}px, ${y}px)`;
+                            event.target.setAttribute('data-x', x);
+                            event.target.setAttribute('data-y', y);
+                        },
+                        end (event) {
+                            event.target.classList.remove('drag-active');
+                            event.target.style.transform = '';
+                            event.target.style.zIndex = '';
+                            event.target.removeAttribute('data-x');
+                            event.target.removeAttribute('data-y');
+                            // Nach Drag: Widget-Positionen neu berechnen
+                            // Finde neue Reihenfolge anhand der Position im Grid
+                            const items = Array.from(grid.querySelectorAll('.widget-item'));
+                            items.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top || a.getBoundingClientRect().left - b.getBoundingClientRect().left);
+                            items.forEach((item, idx) => {
+                                item.dataset.widgetPosition = idx + 1;
+                            });
+                            updateWidgetPositions();
                         }
-                        // Nach Drag: Textauswahl und Scrollen wieder erlauben
-                        document.body.style.userSelect = '';
-                        document.body.style.touchAction = '';
                     },
+                    inertia: true,
+                    modifiers: [
+                        interact.modifiers.restrictRect({
+                            restriction: grid,
+                            endOnly: true
+                        })
+                    ]
                 });
             }
-            // Workaround: Drag sofort starten
-            if (dragElement && originalTouchEvent) {
-                // Timeout, damit Sortable initialisiert ist
-                setTimeout(() => {
-                    // Künstliches touchstart-Event auf das Element feuern
-                    const touch = originalTouchEvent.touches[0];
-                    const simulatedEvent = new TouchEvent('touchstart', {
-                        touches: [new Touch({
-                            identifier: Date.now(),
-                            target: dragElement,
-                            clientX: touch.clientX,
-                            clientY: touch.clientY,
-                            screenX: touch.screenX,
-                            screenY: touch.screenY,
-                            pageX: touch.pageX,
-                            pageY: touch.pageY
-                        })],
-                        targetTouches: [],
-                        changedTouches: [],
-                        bubbles: true,
-                        cancelable: true
-                    });
-                    dragElement.dispatchEvent(simulatedEvent);
-                }, 0);
-            }
-        }
-        function disableDrag() {
-            if (sortableInstance) {
-                sortableInstance.destroy();
-                sortableInstance = null;
-            }
-        }
-
-        // Desktop: Drag sofort, Touch: erst nach Long-Press
-        if (!isRealTouchDevice()) {
-            enableDrag();
-        } else {
-            disableDrag();
-            let touchMove = false;
-            grid.addEventListener('touchstart', function(e) {
-                const cardHeader = e.target.closest('.card-header');
-                if (!cardHeader) return;
-                // Nur auf dem Header das Kontextmenü verhindern
-                if (e.target === cardHeader) e.preventDefault();
-                dragTarget = cardHeader;
-                let startX = e.touches[0].clientX;
-                let startY = e.touches[0].clientY;
-                document.body.style.userSelect = 'none';
-                document.body.style.touchAction = 'none';
-                let feedbackGiven = false;
-                let moved = false;
-                svgCircle = null;
-                longPressTimer = setTimeout(() => {
-                    if (!dragTarget) return;
-                    svgCircle = createProgressCircle(startX, startY);
-                    setTimeout(() => {
-                        if (!dragTarget) return;
-                        svgCircle.fg.setAttribute('stroke-dashoffset', 0);
-                        setTimeout(() => {
-                            if (!dragTarget) return;
-                            if (!feedbackGiven) {
-                                if (window.navigator.vibrate) window.navigator.vibrate(30);
-                                feedbackGiven = true;
-                            }
-                            removeProgressCircle();
-                            enableDrag(cardHeader, e);
-                        }, LONG_PRESS_MS);
-                    }, 10);
-                }, 10);
-                function moveHandler(ev) {
-                    if (!dragTarget) return;
-                    const dx = Math.abs(ev.touches[0].clientX - startX);
-                    const dy = Math.abs(ev.touches[0].clientY - startY);
-                    if (dx > 10 || dy > 10) {
-                        moved = true;
-                        clearTimeout(longPressTimer);
-                        removeProgressCircle();
-                        dragTarget = null;
-                        document.body.style.userSelect = '';
-                        document.body.style.touchAction = '';
-                        grid.removeEventListener('touchmove', moveHandler);
-                        grid.removeEventListener('touchend', endHandler);
-                    }
-                }
-                function endHandler() {
-                    clearTimeout(longPressTimer);
-                    if (!moved) removeProgressCircle();
-                    dragTarget = null;
-                    document.body.style.userSelect = '';
-                    document.body.style.touchAction = '';
-                    grid.removeEventListener('touchmove', moveHandler);
-                    grid.removeEventListener('touchend', endHandler);
-                }
-                grid.addEventListener('touchmove', moveHandler, {passive: true});
-                grid.addEventListener('touchend', endHandler);
-            }, {passive: false});
-
             grid.addEventListener('touchmove', function(e) {
                 if (!dragTarget) return;
                 touchMove = true;
