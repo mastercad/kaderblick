@@ -107,56 +107,173 @@
     <!-- Dashboard Modal System -->
     <script src="/js/dashboard-modals.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const grid = document.getElementById('widgetGrid');
-            
-            new Sortable(grid, {
-                animation: 150,
-                handle: '.card-header',
-                draggable: '.widget-item',
-                onEnd: updateWidgetPositions
-            });
+    document.addEventListener('DOMContentLoaded', function() {
+        const grid = document.getElementById('widgetGrid');
+        let sortableInstance = null;
+        let longPressTimer = null;
+        let svgCircle = null;
+        let dragTarget = null;
+        const LONG_PRESS_MS = 600;
 
-            document.querySelectorAll('.widget-item').forEach(async widget => {
-                await loadWidgetContent(widget);
-            });
+        function isRealTouchDevice() {
+            return (
+                ('ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)
+                && window.matchMedia('(pointer: coarse)').matches
+            );
+        }
 
-            function handleWidgetInteraction(e) {
-                const deleteBtn = e.target.closest('.widget-delete');
-                if (deleteBtn) {
-                    handleDelete(deleteBtn);
-                    e.preventDefault();
-                    return;
-                }
+        function createProgressCircle(x, y) {
+            const size = 56;
+            const stroke = 5;
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', size);
+            svg.setAttribute('height', size);
+            svg.style.position = 'fixed';
+            svg.style.left = (x - size/2) + 'px';
+            svg.style.top = (y - size/2) + 'px';
+            svg.style.zIndex = 9999;
+            svg.style.pointerEvents = 'none';
+            svg.style.transition = 'opacity 0.2s';
+            svg.style.opacity = '1';
+            svg.classList.add('widget-longpress-circle');
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            bg.setAttribute('cx', size/2);
+            bg.setAttribute('cy', size/2);
+            bg.setAttribute('r', (size-stroke)/2);
+            bg.setAttribute('stroke', '#eee');
+            bg.setAttribute('stroke-width', stroke);
+            bg.setAttribute('fill', 'none');
+            svg.appendChild(bg);
+            const fg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            fg.setAttribute('cx', size/2);
+            fg.setAttribute('cy', size/2);
+            fg.setAttribute('r', (size-stroke)/2);
+            fg.setAttribute('stroke', '#007bff');
+            fg.setAttribute('stroke-width', stroke);
+            fg.setAttribute('fill', 'none');
+            fg.setAttribute('stroke-dasharray', Math.PI*(size-stroke));
+            fg.setAttribute('stroke-dashoffset', Math.PI*(size-stroke));
+            fg.style.transition = 'stroke-dashoffset 0.6s linear';
+            svg.appendChild(fg);
+            document.body.appendChild(svg);
+            return {svg, fg};
+        }
 
-                const settingsBtn = e.target.closest('.widget-settings');
-                if (settingsBtn) {
-                    handleSettings(settingsBtn);
-                    e.preventDefault();
-                    return;
-                }
-
-                const refreshButton = e.target.closest('.widget-refresh');
-                if (refreshButton) {
-                    handleRefresh(refreshButton);
-                    e.preventDefault();
-                    return;
-                }
+        function removeProgressCircle() {
+            if (svgCircle && svgCircle.svg) {
+                svgCircle.svg.style.opacity = '0';
+                setTimeout(() => {
+                    if (svgCircle && svgCircle.svg && svgCircle.svg.parentNode) svgCircle.svg.parentNode.removeChild(svgCircle.svg);
+                    svgCircle = null;
+                }, 200);
             }
+        }
 
-            // Für beide Event-Typen registrieren
-            document.addEventListener('pointerup', handleWidgetInteraction);
-
-            const defaultWidgetCheckbox = document.getElementById('defaultWidgetCheckbox');
-
-            if (defaultWidgetCheckbox) {
-                defaultWidgetCheckbox.checked = {{ isDefault ? 'true' : 'false' }};
-                defaultWidgetCheckbox.addEventListener('change', function() {
-                    updateWidgetPositions();
+        function enableDrag() {
+            if (!sortableInstance) {
+                sortableInstance = new Sortable(grid, {
+                    animation: 150,
+                    handle: '.card-header',
+                    draggable: '.widget-item',
+                    onEnd: function(evt) {
+                        updateWidgetPositions();
+                        // Nach Drag wieder entfernen
+                        disableDrag();
+                    },
                 });
             }
+        }
+        function disableDrag() {
+            if (sortableInstance) {
+                sortableInstance.destroy();
+                sortableInstance = null;
+            }
+        }
+
+        // Desktop: Drag sofort, Touch: erst nach Long-Press
+        if (!isRealTouchDevice()) {
+            enableDrag();
+        } else {
+            disableDrag();
+            let touchMove = false;
+            grid.addEventListener('touchstart', function(e) {
+                const cardHeader = e.target.closest('.card-header');
+                if (!cardHeader) return;
+                dragTarget = cardHeader;
+                touchMove = false;
+                const touch = e.touches[0];
+                longPressTimer = setTimeout(() => {
+                    if (svgCircle && svgCircle.svg) removeProgressCircle();
+                    svgCircle = createProgressCircle(touch.clientX, touch.clientY);
+                    setTimeout(() => {
+                        if (!dragTarget) return;
+                        svgCircle.fg.setAttribute('stroke-dashoffset', 0);
+                        setTimeout(() => {
+                            enableDrag();
+                            if (window.navigator.vibrate) window.navigator.vibrate(30);
+                            removeProgressCircle();
+                        }, LONG_PRESS_MS);
+                    }, 10);
+                }, 10);
+            }, {passive: true});
+
+            grid.addEventListener('touchmove', function(e) {
+                if (!dragTarget) return;
+                touchMove = true;
+                clearTimeout(longPressTimer);
+                removeProgressCircle();
+                dragTarget = null;
+            }, {passive: true});
+
+            grid.addEventListener('touchend', function(e) {
+                clearTimeout(longPressTimer);
+                setTimeout(() => {
+                    disableDrag();
+                }, 300);
+                removeProgressCircle();
+                dragTarget = null;
+            });
+        }
+
+        document.querySelectorAll('.widget-item').forEach(async widget => {
+            await loadWidgetContent(widget);
         });
+
+        function handleWidgetInteraction(e) {
+            const deleteBtn = e.target.closest('.widget-delete');
+            if (deleteBtn) {
+                handleDelete(deleteBtn);
+                e.preventDefault();
+                return;
+            }
+
+            const settingsBtn = e.target.closest('.widget-settings');
+            if (settingsBtn) {
+                handleSettings(settingsBtn);
+                e.preventDefault();
+                return;
+            }
+
+            const refreshButton = e.target.closest('.widget-refresh');
+            if (refreshButton) {
+                handleRefresh(refreshButton);
+                e.preventDefault();
+                return;
+            }
+        }
+
+        document.addEventListener('pointerup', handleWidgetInteraction);
+
+        const defaultWidgetCheckbox = document.getElementById('defaultWidgetCheckbox');
+        if (defaultWidgetCheckbox) {
+            defaultWidgetCheckbox.checked = {{ isDefault ? 'true' : 'false' }};
+            defaultWidgetCheckbox.addEventListener('change', function() {
+                updateWidgetPositions();
+            });
+        }
+    });
 
         async function handleDelete(button) {
             if (!confirm('Widget wirklich entfernen?')) return;
