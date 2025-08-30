@@ -269,17 +269,12 @@ class CalendarController extends AbstractController
             $calendarEvent->getGame()?->setGameType($gameType);
         }
 
-        if ($data['fussballDeUrl']) {
+        if (isset($data['fussballDeUrl']) && $data['fussballDeUrl']) {
             $calendarEvent->getGame()?->setFussballDeUrl($data['fussballDeUrl']);
         }
 
-        if ($data['fussballDeId']) {
+        if (isset($data['fussballDeId']) && $data['fussballDeId']) {
             $calendarEvent->getGame()?->setFussballDeId($data['fussballDeId']);
-        }
-
-        if ($data['locationId']) {
-            $location = $this->entityManager->getReference(Location::class, (int) $data['locationId']);
-            $calendarEvent->getGame()?->setLocation($location);
         }
 
         $this->entityManager->persist($calendarEvent);

@@ -444,15 +444,6 @@
             nowIndicator: true,
             selectable: true,
             selectMirror: true,
-            select: function(info) {
-                // Handle date range selection
-                {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_TRAINER') %}
-                    window.handleDateClick({
-                        dateStr: info.start.toISOString().split('T')[0],
-                        endDateStr: info.end.toISOString().split('T')[0]
-                    });
-                {% endif %}
-            },
             // Responsive design
             windowResize: function(view) {
             }
