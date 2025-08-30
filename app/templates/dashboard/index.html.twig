@@ -187,28 +187,7 @@
                     ]
                 });
             }
-            grid.addEventListener('touchmove', function(e) {
-                if (!dragTarget) return;
-                touchMove = true;
-                clearTimeout(longPressTimer);
-                removeProgressCircle();
-                dragTarget = null;
-                // Textauswahl und Scrollen wieder erlauben
-                document.body.style.userSelect = '';
-                document.body.style.touchAction = '';
-            }, {passive: true});
 
-            grid.addEventListener('touchend', function(e) {
-                clearTimeout(longPressTimer);
-                setTimeout(() => {
-                    // disableDrag(); // handled in onEnd
-                }, 300);
-                removeProgressCircle();
-                dragTarget = null;
-                // Textauswahl und Scrollen wieder erlauben
-                document.body.style.userSelect = '';
-                document.body.style.touchAction = '';
-            });
         });
 
         document.querySelectorAll('.widget-item').forEach(async widget => {
