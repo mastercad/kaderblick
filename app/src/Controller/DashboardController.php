@@ -83,6 +83,8 @@ class DashboardController extends AbstractController
     public function updateWidgets(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
+        /** @var ?User $user */
+        $user = $this->getUser();
 
         if (!isset($data['widgets']) || !is_array($data['widgets'])) {
             return $this->json(['error' => 'Invalid data format'], 400);
@@ -91,7 +93,7 @@ class DashboardController extends AbstractController
         foreach ($data['widgets'] as $widgetData) {
             $widget = $em->getRepository(DashboardWidget::class)->find($widgetData['id']);
 
-            if ($widget && $widget->getUser() === $this->getUser()) {
+            if ($widget && $widget->getUser() === $user) {
                 $widget->setPosition($widgetData['position']);
                 $widget->setWidth($widgetData['width']);
                 $widget->setEnabled($widgetData['enabled'] ?? true);
@@ -100,6 +102,32 @@ class DashboardController extends AbstractController
                 if (isset($widgetData['config'])) {
                     $widget->setConfig($widgetData['config']);
                 }
+            } elseif ($widget && $widget->getUser() !== $user && $widget->isDefault()) {
+                $newWidget = new DashboardWidget();
+                $newWidget->setUser($user);
+                $newWidget->setType($widget->getType());
+                $newWidget->setPosition($widgetData['position']);
+                $newWidget->setWidth($widgetData['width']);
+                $newWidget->setEnabled(true);
+                $newWidget->setDefault(false);
+
+                if (isset($widgetData['config'])) {
+                    $newWidget->setConfig($widgetData['config']);
+                }
+
+                // ReportDefinition mitkopieren, falls vorhanden
+                if ($widget->getReportDefinition()) {
+                    $origReport = $widget->getReportDefinition();
+                    $reportCopy = new ReportDefinition();
+                    $reportCopy->setName($origReport->getName());
+                    $reportCopy->setDescription($origReport->getDescription());
+                    $reportCopy->setConfig($origReport->getConfig());
+                    $reportCopy->setIsTemplate($origReport->isTemplate());
+                    $em->persist($reportCopy);
+                    $newWidget->setReportDefinition($reportCopy);
+                }
+
+                $em->persist($newWidget);
             }
         }
 
@@ -113,16 +141,44 @@ class DashboardController extends AbstractController
     public function updateWidget(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
+        /** @var ?User $user */
+        $user = $this->getUser();
 
         $widget = $em->getRepository(DashboardWidget::class)->find($data['id']);
 
-        if ($widget && $widget->getUser() === $this->getUser()) {
+        if ($widget && $widget->getUser() === $user) {
             $widget->setPosition($data['position']);
             $widget->setWidth($data['width']);
             $widget->setEnabled($data['enabled'] ?? true);
             if (isset($data['config'])) {
                 $widget->setConfig($data['config']);
             }
+        } elseif ($widget && $widget->getUser() !== $user && $widget->isDefault()) {
+            $newWidget = new DashboardWidget();
+            $newWidget->setUser($user);
+            $newWidget->setType($widget->getType());
+            $newWidget->setPosition($data['position']);
+            $newWidget->setWidth($data['width']);
+            $newWidget->setEnabled(true);
+            $newWidget->setDefault(false);
+
+            if (isset($data['config'])) {
+                $newWidget->setConfig($data['config']);
+            }
+
+            // ReportDefinition mitkopieren, falls vorhanden
+            if ($widget->getReportDefinition()) {
+                $origReport = $widget->getReportDefinition();
+                $reportCopy = new ReportDefinition();
+                $reportCopy->setName($origReport->getName());
+                $reportCopy->setDescription($origReport->getDescription());
+                $reportCopy->setConfig($origReport->getConfig());
+                $reportCopy->setIsTemplate($origReport->isTemplate());
+                $em->persist($reportCopy);
+                $newWidget->setReportDefinition($reportCopy);
+            }
+
+            $em->persist($newWidget);
         }
 
         $em->flush();
@@ -226,6 +282,10 @@ class DashboardController extends AbstractController
             $widget = $em->getRepository(DashboardWidget::class)->find($widgetId);
             if (null === $widget) {
                 return $this->json(['error' => 'Widget not found'], 404);
+            }
+
+            if ($widget->isDefault()) {
+                continue;
             }
 
             $widget->setPosition($newPosition);

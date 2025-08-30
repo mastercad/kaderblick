@@ -24,9 +24,9 @@ class DashboardWidgetRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('w')
             ->andWhere('w.user = :user')
-            ->andWhere('w.enabled = :enabled')
+            ->andWhere('w.isEnabled = :isEnabled')
             ->setParameter('user', $user)
-            ->setParameter('enabled', true)
+            ->setParameter('isEnabled', true)
             ->orderBy('w.position', 'ASC')
             ->getQuery()
             ->getResult();
