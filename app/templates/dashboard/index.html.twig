@@ -5,7 +5,7 @@
 {% block body %}    
 <style>
     /* Verhindert Textauswahl und Scrollen während Drag auf Touch */
-    .card-header, .widget-item {
+    .card-header, .widget-item, .card-header *, .widget-item * {
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
@@ -255,29 +255,61 @@
                 if (!cardHeader) return;
                 dragTarget = cardHeader;
                 touchMove = false;
+                let startX = e.touches[0].clientX;
+                let startY = e.touches[0].clientY;
                 // Während Long-Press: Textauswahl und Scrollen verhindern
                 document.body.style.userSelect = 'none';
                 document.body.style.touchAction = 'none';
+                // Kontextmenü verhindern
+                e.preventDefault();
                 const touch = e.touches[0];
                 let feedbackGiven = false;
                 longPressTimer = setTimeout(() => {
+                    if (!dragTarget) return;
                     if (svgCircle && svgCircle.svg) removeProgressCircle();
                     svgCircle = createProgressCircle(touch.clientX, touch.clientY);
                     setTimeout(() => {
                         if (!dragTarget) return;
                         svgCircle.fg.setAttribute('stroke-dashoffset', 0);
                         setTimeout(() => {
+                            if (!dragTarget) return;
                             if (!feedbackGiven) {
                                 if (window.navigator.vibrate) window.navigator.vibrate(30);
                                 feedbackGiven = true;
                             }
                             removeProgressCircle();
-                            // Drag sofort starten
+                            // Drag nur starten, wenn Finger noch auf gleichem Widget ist
                             enableDrag(cardHeader, e);
                         }, LONG_PRESS_MS);
                     }, 10);
                 }, 10);
-            }, {passive: true});
+                // Drag abbrechen, wenn Finger zu weit bewegt wird
+                function moveHandler(ev) {
+                    if (!dragTarget) return;
+                    const dx = Math.abs(ev.touches[0].clientX - startX);
+                    const dy = Math.abs(ev.touches[0].clientY - startY);
+                    if (dx > 10 || dy > 10) {
+                        clearTimeout(longPressTimer);
+                        removeProgressCircle();
+                        dragTarget = null;
+                        document.body.style.userSelect = '';
+                        document.body.style.touchAction = '';
+                        grid.removeEventListener('touchmove', moveHandler);
+                    }
+                }
+                grid.addEventListener('touchmove', moveHandler, {passive: true});
+                // Nach touchend cleanup
+                function endHandler() {
+                    clearTimeout(longPressTimer);
+                    removeProgressCircle();
+                    dragTarget = null;
+                    document.body.style.userSelect = '';
+                    document.body.style.touchAction = '';
+                    grid.removeEventListener('touchmove', moveHandler);
+                    grid.removeEventListener('touchend', endHandler);
+                }
+                grid.addEventListener('touchend', endHandler);
+            }, {passive: false});
 
             grid.addEventListener('touchmove', function(e) {
                 if (!dragTarget) return;
