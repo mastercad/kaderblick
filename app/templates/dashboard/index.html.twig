@@ -2,7 +2,23 @@
 
 {% block title %}Dashboard{% endblock %}
 
-{% block body %}
+{% block body %}    
+<style>
+    /* Verhindert Textauswahl und Scrollen während Drag auf Touch */
+    .card-header, .widget-item {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        touch-action: manipulation;
+    }
+    .drag-active {
+        background: rgba(0,123,255,0.08);
+        transition: background 0.2s;
+    }
+</style>
+
 <div class="container-fluid">
     {% if ( is_granted('IS_AUTHENTICATED_FULLY') ) %}
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -109,7 +125,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
         const grid = document.getElementById('widgetGrid');
         let sortableInstance = null;
         let longPressTimer = null;
@@ -177,12 +193,21 @@
                     animation: 150,
                     handle: '.card-header',
                     draggable: '.widget-item',
+                    onStart: function(evt) {
+                        // Optisches Feedback für aktives Widget
+                        evt.item.classList.add('drag-active');
+                    },
                     onEnd: function(evt) {
                         updateWidgetPositions();
+                        // Optisches Feedback zurücksetzen
+                        evt.item.classList.remove('drag-active');
                         // Nach Drag nur auf Touch wieder entfernen
                         if (isRealTouchDevice()) {
                             disableDrag();
                         }
+                        // Nach Drag: Textauswahl und Scrollen wieder erlauben
+                        document.body.style.userSelect = '';
+                        document.body.style.touchAction = '';
                     },
                 });
             }
@@ -230,7 +255,11 @@
                 if (!cardHeader) return;
                 dragTarget = cardHeader;
                 touchMove = false;
+                // Während Long-Press: Textauswahl und Scrollen verhindern
+                document.body.style.userSelect = 'none';
+                document.body.style.touchAction = 'none';
                 const touch = e.touches[0];
+                let feedbackGiven = false;
                 longPressTimer = setTimeout(() => {
                     if (svgCircle && svgCircle.svg) removeProgressCircle();
                     svgCircle = createProgressCircle(touch.clientX, touch.clientY);
@@ -238,7 +267,10 @@
                         if (!dragTarget) return;
                         svgCircle.fg.setAttribute('stroke-dashoffset', 0);
                         setTimeout(() => {
-                            if (window.navigator.vibrate) window.navigator.vibrate(30);
+                            if (!feedbackGiven) {
+                                if (window.navigator.vibrate) window.navigator.vibrate(30);
+                                feedbackGiven = true;
+                            }
                             removeProgressCircle();
                             // Drag sofort starten
                             enableDrag(cardHeader, e);
@@ -253,15 +285,21 @@
                 clearTimeout(longPressTimer);
                 removeProgressCircle();
                 dragTarget = null;
+                // Textauswahl und Scrollen wieder erlauben
+                document.body.style.userSelect = '';
+                document.body.style.touchAction = '';
             }, {passive: true});
 
             grid.addEventListener('touchend', function(e) {
                 clearTimeout(longPressTimer);
                 setTimeout(() => {
-                    disableDrag();
+                    // disableDrag(); // handled in onEnd
                 }, 300);
                 removeProgressCircle();
                 dragTarget = null;
+                // Textauswahl und Scrollen wieder erlauben
+                document.body.style.userSelect = '';
+                document.body.style.touchAction = '';
             });
         }
 
