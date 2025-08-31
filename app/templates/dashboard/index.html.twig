@@ -143,38 +143,62 @@
                     onEnd: updateWidgetPositions
                 });
             } else {
-                // Touch: Interact.js für Drag-and-Drop
+                // Touch: Interact.js für echtes Sortieren
+                let placeholder = null;
+                let dragIndex = null;
+                let dragEl = null;
+
                 interact('.widget-item').draggable({
                     allowFrom: '.card-header',
                     listeners: {
                         start (event) {
-                            event.target.classList.add('drag-active');
-                            event.target.style.zIndex = 1000;
+                            dragEl = event.target;
+                            dragIndex = Array.from(grid.children).indexOf(dragEl);
+                            placeholder = document.createElement('div');
+                            placeholder.className = dragEl.className + ' widget-placeholder';
+                            placeholder.style.height = dragEl.offsetHeight + 'px';
+                            placeholder.style.background = 'rgba(0,0,0,0.07)';
+                            dragEl.parentNode.insertBefore(placeholder, dragEl.nextSibling);
+                            dragEl.classList.add('drag-active');
+                            dragEl.style.zIndex = 1000;
                         },
                         move (event) {
-                            if (!event.target.hasAttribute('data-x')) {
-                                event.target.setAttribute('data-x', 0);
-                                event.target.setAttribute('data-y', 0);
+                            let x = (parseFloat(dragEl.getAttribute('data-x')) || 0) + event.dx;
+                            let y = (parseFloat(dragEl.getAttribute('data-y')) || 0) + event.dy;
+                            dragEl.style.transform = `translate(${x}px, ${y}px)`;
+                            dragEl.setAttribute('data-x', x);
+                            dragEl.setAttribute('data-y', y);
+
+                            // Platzhalter verschieben
+                            let widgets = Array.from(grid.querySelectorAll('.widget-item:not(.drag-active)'));
+                            let dragRect = dragEl.getBoundingClientRect();
+                            let found = false;
+                            for (let widget of widgets) {
+                                let rect = widget.getBoundingClientRect();
+                                if (y + dragEl.offsetHeight/2 < rect.top + rect.height/2) {
+                                    if (widget !== placeholder.nextSibling) {
+                                        grid.insertBefore(placeholder, widget);
+                                    }
+                                    found = true;
+                                    break;
+                                }
                             }
-                            let x = (parseFloat(event.target.getAttribute('data-x')) || 0) + event.dx;
-                            let y = (parseFloat(event.target.getAttribute('data-y')) || 0) + event.dy;
-                            event.target.style.transform = `translate(${x}px, ${y}px)`;
-                            event.target.setAttribute('data-x', x);
-                            event.target.setAttribute('data-y', y);
+                            if (!found && widgets.length > 0) {
+                                grid.appendChild(placeholder);
+                            }
                         },
                         end (event) {
-                            event.target.classList.remove('drag-active');
-                            event.target.style.transform = '';
-                            event.target.style.zIndex = '';
-                            event.target.removeAttribute('data-x');
-                            event.target.removeAttribute('data-y');
-                            // Nach Drag: Widget-Positionen neu berechnen
-                            // Finde neue Reihenfolge anhand der Position im Grid
-                            const items = Array.from(grid.querySelectorAll('.widget-item'));
-                            items.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top || a.getBoundingClientRect().left - b.getBoundingClientRect().left);
-                            items.forEach((item, idx) => {
-                                item.dataset.widgetPosition = idx + 1;
-                            });
+                            dragEl.classList.remove('drag-active');
+                            dragEl.style.transform = '';
+                            dragEl.style.zIndex = '';
+                            dragEl.removeAttribute('data-x');
+                            dragEl.removeAttribute('data-y');
+                            if (placeholder && placeholder.parentNode) {
+                                grid.insertBefore(dragEl, placeholder);
+                                placeholder.remove();
+                            }
+                            dragEl = null;
+                            placeholder = null;
                             updateWidgetPositions();
                         }
                     },
