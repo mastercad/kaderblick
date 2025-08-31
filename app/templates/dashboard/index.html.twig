@@ -123,94 +123,43 @@
     <!-- Dashboard Modal System -->
     <script src="/js/dashboard-modals.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const grid = document.getElementById('widgetGrid');
-            function isRealTouchDevice() {
+            // SortableJS für alle Geräte (Desktop & Mobile), forceFallback nur auf Touch
+            function isTouchDevice() {
                 return (
                     ('ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)
                     && window.matchMedia('(pointer: coarse)').matches
                 );
             }
-            // Desktop: SortableJS wie gehabt
-            if (!isRealTouchDevice()) {
-                new Sortable(grid, {
-                    animation: 150,
-                    handle: '.card-header',
-                    draggable: '.widget-item',
-                    onEnd: updateWidgetPositions
-                });
-            } else {
-                // Touch: Interact.js für echtes Sortieren
-                let placeholder = null;
-                let dragIndex = null;
-                let dragEl = null;
+            new Sortable(grid, {
+                animation: 150,
+                handle: '.card-header',
+                draggable: '.widget-item',
+                onStart: function (evt) {
+                    evt.item.classList.add('drag-active');
+                    document.body.classList.add('no-scroll');
+                },
+                onEnd: function (evt) {
+                    evt.item.classList.remove('drag-active');
+                    document.body.classList.remove('no-scroll');
+                    updateWidgetPositions();
+                },
+                delay: 180,
+                delayOnTouchOnly: true,
+                touchStartThreshold: 4,
+                filter: '.widget-refresh, .widget-settings, .widget-delete',
+                preventOnFilter: false,
+                scroll: true,
+                forceFallback: isTouchDevice()
+            });
 
-                interact('.widget-item').draggable({
-                    allowFrom: '.card-header',
-                    listeners: {
-                        start (event) {
-                            dragEl = event.target;
-                            dragIndex = Array.from(grid.children).indexOf(dragEl);
-                            placeholder = document.createElement('div');
-                            placeholder.className = dragEl.className + ' widget-placeholder';
-                            placeholder.style.height = dragEl.offsetHeight + 'px';
-                            placeholder.style.background = 'rgba(0,0,0,0.07)';
-                            dragEl.parentNode.insertBefore(placeholder, dragEl.nextSibling);
-                            dragEl.classList.add('drag-active');
-                            dragEl.style.zIndex = 1000;
-                        },
-                        move (event) {
-                            let x = (parseFloat(dragEl.getAttribute('data-x')) || 0) + event.dx;
-                            let y = (parseFloat(dragEl.getAttribute('data-y')) || 0) + event.dy;
-                            dragEl.style.transform = `translate(${x}px, ${y}px)`;
-                            dragEl.setAttribute('data-x', x);
-                            dragEl.setAttribute('data-y', y);
-
-                            // Platzhalter verschieben
-                            let widgets = Array.from(grid.querySelectorAll('.widget-item:not(.drag-active)'));
-                            let dragRect = dragEl.getBoundingClientRect();
-                            let found = false;
-                            for (let widget of widgets) {
-                                let rect = widget.getBoundingClientRect();
-                                if (y + dragEl.offsetHeight/2 < rect.top + rect.height/2) {
-                                    if (widget !== placeholder.nextSibling) {
-                                        grid.insertBefore(placeholder, widget);
-                                    }
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (!found && widgets.length > 0) {
-                                grid.appendChild(placeholder);
-                            }
-                        },
-                        end (event) {
-                            dragEl.classList.remove('drag-active');
-                            dragEl.style.transform = '';
-                            dragEl.style.zIndex = '';
-                            dragEl.removeAttribute('data-x');
-                            dragEl.removeAttribute('data-y');
-                            if (placeholder && placeholder.parentNode) {
-                                grid.insertBefore(dragEl, placeholder);
-                                placeholder.remove();
-                            }
-                            dragEl = null;
-                            placeholder = null;
-                            updateWidgetPositions();
-                        }
-                    },
-                    inertia: true,
-                    modifiers: [
-                        interact.modifiers.restrictRect({
-                            restriction: grid,
-                            endOnly: true
-                        })
-                    ]
-                });
-            }
+            // Textauswahl und Scrollen während Drag verhindern
+            const style = document.createElement('style');
+            style.innerHTML = '.no-scroll { overflow: hidden !important; touch-action: none !important; }';
+            document.head.appendChild(style);
 
         });
 
