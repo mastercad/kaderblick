@@ -156,11 +156,13 @@
                 forceFallback: isTouchDevice()
             });
 
-            // Textauswahl und Scrollen während Drag verhindern
-            const style = document.createElement('style');
-            style.innerHTML = '.no-scroll { overflow: hidden !important; touch-action: none !important; }';
-            document.head.appendChild(style);
-
+            // Textauswahl und Scrollen während Drag nur temporär verhindern
+            if (!document.getElementById('no-scroll-style')) {
+                const style = document.createElement('style');
+                style.id = 'no-scroll-style';
+                style.innerHTML = '.no-scroll { overflow: hidden !important; touch-action: none !important; }';
+                document.head.appendChild(style);
+            }
         });
 
         document.querySelectorAll('.widget-item').forEach(async widget => {
