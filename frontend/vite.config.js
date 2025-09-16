@@ -1,20 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-// Plugin, um 'uploads' aus dem Build zu ignorieren
-function excludeUploads() {
-  return {
-    name: 'exclude-uploads',
-    enforce: 'post',
-    generateBundle(_, bundle) {
-      Object.keys(bundle).forEach((file) => {
-        if (file.startsWith('uploads/') || file.startsWith('public/uploads/')) {
-          delete bundle[file];
-        }
-      });
-    }
-  };
-}
 
 export default defineConfig({
   plugins: [
@@ -49,7 +35,6 @@ export default defineConfig({
         ]
       }
     }),
-//    excludeUploads(),
   ],
   build: {
     sourcemap: true
