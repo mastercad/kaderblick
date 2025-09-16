@@ -31,7 +31,7 @@ jobs:
       - name: Prepare files
         run: |
           mkdir -p build
-          cp -r docker-compose.yml docker-compose.db.yml .docker app build/
+          cp -r docker-compose.yml docker-compose.db.yml .docker api build/
           
       - name: Deploy and switch
         uses: appleboy/ssh-action@master
@@ -45,12 +45,12 @@ jobs:
             CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
             
             # Nur prod secrets und jwt kopieren
-            mkdir -p "$RELEASE_DIR/app/config/secrets/prod"
-            mkdir -p "$RELEASE_DIR/app/config/jwt"
+            mkdir -p "$RELEASE_DIR/api/config/secrets/prod"
+            mkdir -p "$RELEASE_DIR/api/config/jwt"
             
             if [ -d "$CURRENT_DIR" ]; then
-              [ -d "$CURRENT_DIR/app/config/jwt" ] && \
-                cp -r "$CURRENT_DIR/app/config/jwt/"* "$RELEASE_DIR/app/config/jwt/"
+              [ -d "$CURRENT_DIR/api/config/jwt" ] && \
+                cp -r "$CURRENT_DIR/api/config/jwt/"* "$RELEASE_DIR/api/config/jwt/"
             fi
             
             chmod -R 755 "$RELEASE_DIR"
@@ -93,44 +93,44 @@ jobs:
             
             # Alte Staging-Container stoppen und entfernen
             docker compose -p staging down --remove-orphans api react-frontend
-            
-            cp app/.env.dist app/.env
-            echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> app/.env
+
+            cp api/.env.dist api/.env
+            echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> api/.env
 
             # ich bin mir ehrlich gesagt gerade gar nicht mehr sicher, ob das hier noch so sinn macht, die kommen ja immer mit dem branch aktuell rein
             if [ -d "$CURRENT_DIR" ]; then
-              if [ -d "$CURRENT_DIR/app/config/jwt" ]; then
-                mkdir -p "$RELEASE_DIR/app/config/jwt"
-                cp -r "$CURRENT_DIR/app/config/jwt/"* "$RELEASE_DIR/app/config/jwt/" 2>/dev/null || true
+              if [ -d "$CURRENT_DIR/api/config/jwt" ]; then
+                mkdir -p "$RELEASE_DIR/api/config/jwt"
+                cp -r "$CURRENT_DIR/api/config/jwt/"* "$RELEASE_DIR/api/config/jwt/" 2>/dev/null || true
               fi
             fi
             
             chmod -R 755 "$RELEASE_DIR"
 
-            mkdir -p app/config/secrets/prod
-            # echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > app/config/secrets/prod/prod.decrypt.private.php
-            echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > app/config/secrets/prod/prod.decrypt.private.php
-            chmod 655 app/config/secrets/prod/prod.decrypt.private.php
+            mkdir -p api/config/secrets/prod
+            # echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > api/config/secrets/prod/prod.decrypt.private.php
+            echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > api/config/secrets/prod/prod.decrypt.private.php
+            chmod 655 api/config/secrets/prod/prod.decrypt.private.php
 
             PMA_PORT=18081 API_PORT=18000 REACT_PORT=18080 docker compose -p staging up -d --build --force-recreate api react-frontend
 
             ###### WORKAROUND FÜR FIXTURES ######
-            #            sed -i 's/^APP_ENV=prod$/APP_ENV=dev/' app/.env
+            #            sed -i 's/^APP_ENV=prod$/APP_ENV=dev/' api/.env
             #            docker compose -p staging exec -T api env APP_ENV=dev composer install --dev
             #            echo "Spiele Fixtures für stammdaten ein"
             #            docker compose -p staging exec -T api bin/console doctrine:fixtures:load -n --group=master
             ###### ENDE WORKAROUND FÜR FIXTURES ######
 
-            sed -i 's/^APP_ENV=dev$/APP_ENV=prod/' app/.env
-            docker compose -p staging exec -T api env APP_ENV=dev composer install 
-            
+            sed -i 's/^APP_ENV=dev$/APP_ENV=prod/' api/.env
+            docker compose -p staging exec -T api env APP_ENV=dev composer install
+
             docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
 
             docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
 
             docker compose -p staging exec -T api bin/console secrets:decrypt-to-local --force --env=prod
 
-            if [ ! -f app/config/jwt/private.pem ] || [ ! -f app/config/jwt/public.pem ]; then
+            if [ ! -f api/config/jwt/private.pem ] || [ ! -f api/config/jwt/public.pem ]; then
               docker compose -p staging exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
             fi
 
@@ -139,14 +139,14 @@ jobs:
 
             # Aktivierung
             ln -sfn "$RELEASE_DIR" "$CURRENT_DIR"
-            
-            chmod -R 777 $CURRENT_DIR/app/var
+
+            chmod -R 777 $CURRENT_DIR/api/var
 
             mkdir -p "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads"
 
-            ln -sfn "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads" "$RELEASE_DIR/app/public/uploads"
+            ln -sfn "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads" "$RELEASE_DIR/api/public/uploads"
 
-            chmod -R 777 "$RELEASE_DIR/app/public/uploads"
+            chmod -R 777 "$RELEASE_DIR/api/public/uploads"
 
             # Neue Production starten
             cd $CURRENT_DIR
