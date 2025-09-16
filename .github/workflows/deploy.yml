@@ -31,7 +31,7 @@ jobs:
       - name: Prepare files
         run: |
           mkdir -p build
-          cp -r docker-compose.yml docker-compose.db.yml .docker api build/
+          cp -r docker-compose.yml docker-compose.db.yml .docker api frontend build/
           
       - name: Deploy and switch
         uses: appleboy/ssh-action@master
