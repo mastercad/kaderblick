@@ -4,8 +4,8 @@ services:
   api:
     build: ./.docker/api
     restart: unless-stopped
-    ports:
-      - "${API_PORT:-8081}:80"
+#    ports:
+#      - "${API_PORT:-8081}:80"
     volumes:
       - ./api:/var/www/symfony
     environment:
