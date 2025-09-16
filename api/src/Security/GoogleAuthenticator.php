@@ -127,6 +127,7 @@ class GoogleAuthenticator extends AbstractAuthenticator
                 'authData' => json_encode($authData)
             ])
         );
+
         $response->headers->setCookie(
             new Cookie(
                 'jwt_token',
@@ -140,6 +141,7 @@ class GoogleAuthenticator extends AbstractAuthenticator
                 'strict'
             ),
         );
+
         $response->headers->setCookie(
             new Cookie(
                 'jwt_refresh_token',
