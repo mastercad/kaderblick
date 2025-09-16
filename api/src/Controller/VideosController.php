@@ -28,8 +28,13 @@ class VideosController extends AbstractController
     private int $youtubeLinkStartOffset = -60;
 
     #[Route('/videos/{gameId}', name: 'videos_list', methods: ['GET'])]
-    public function details(int $gameId, GameEventRepository $gameEventRepository, GameRepository $gameRepository, VideoTypeRepository $videoTypeRepository, CameraRepository $cameraRepository): JsonResponse
-    {
+    public function details(
+        int $gameId,
+        GameEventRepository $gameEventRepository,
+        GameRepository $gameRepository,
+        VideoTypeRepository $videoTypeRepository,
+        CameraRepository $cameraRepository
+    ): JsonResponse {
         $game = $gameRepository->find($gameId);
         $gameEvents = $gameEventRepository->findAllGameEvents($game);
         if (!$game) {

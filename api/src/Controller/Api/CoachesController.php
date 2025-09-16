@@ -192,7 +192,8 @@ class CoachesController extends AbstractController
             $coachClubAssignment = new CoachClubAssignment();
             $coachClubAssignment->setCoach($coach);
             $coachClubAssignment->setStartDate(isset($clubAssignment['startDate']) ? new DateTime($clubAssignment['startDate']) : null);
-            $coachClubAssignment->setEndDate((isset($clubAssignment['endDate']) && !empty($clubAssignment['endDate'])) ? new DateTime($clubAssignment['endDate']) : null);
+            $coachClubAssignment->setEndDate((isset($clubAssignment['endDate'])
+                && !empty($clubAssignment['endDate'])) ? new DateTime($clubAssignment['endDate']) : null);
             $coachClubAssignment->setClub($club);
 
             $this->entityManager->persist($coachClubAssignment);
@@ -203,7 +204,8 @@ class CoachesController extends AbstractController
             $coachLicenseAssignment = new CoachLicenseAssignment();
             $coachLicenseAssignment->setCoach($coach);
             $coachLicenseAssignment->setStartDate(isset($licenseAssignment['startDate']) ? new DateTime($licenseAssignment['startDate']) : null);
-            $coachLicenseAssignment->setEndDate((isset($licenseAssignment['endDate']) && !empty($licenseAssignment['endDate'])) ? new DateTime($licenseAssignment['endDate']) : null);
+            $coachLicenseAssignment->setEndDate((isset($licenseAssignment['endDate'])
+                && !empty($licenseAssignment['endDate'])) ? new DateTime($licenseAssignment['endDate']) : null);
             $coachLicenseAssignment->setLicense($license);
 
             $this->entityManager->persist($coachLicenseAssignment);
@@ -214,7 +216,8 @@ class CoachesController extends AbstractController
             $coachNationalityAssignment = new CoachNationalityAssignment();
             $coachNationalityAssignment->setCoach($coach);
             $coachNationalityAssignment->setStartDate(isset($nationalityAssignment['startDate']) ? new DateTime($nationalityAssignment['startDate']) : null);
-            $coachNationalityAssignment->setEndDate((isset($nationalityAssignment['endDate']) && !empty($nationalityAssignment['endDate'])) ? new DateTime($nationalityAssignment['endDate']) : null);
+            $coachNationalityAssignment->setEndDate((isset($nationalityAssignment['endDate'])
+                && !empty($nationalityAssignment['endDate'])) ? new DateTime($nationalityAssignment['endDate']) : null);
             $coachNationalityAssignment->setNationality($nationality);
 
             $this->entityManager->persist($coachNationalityAssignment);
@@ -225,7 +228,8 @@ class CoachesController extends AbstractController
             $coachTeamAssignment = new CoachTeamAssignment();
             $coachTeamAssignment->setCoach($coach);
             $coachTeamAssignment->setStartDate(isset($teamAssignment['startDate']) ? new DateTime($teamAssignment['startDate']) : null);
-            $coachTeamAssignment->setEndDate((isset($teamAssignment['endDate']) && !empty($teamAssignment['endDate'])) ? new DateTime($teamAssignment['endDate']) : null);
+            $coachTeamAssignment->setEndDate((isset($teamAssignment['endDate'])
+                && !empty($teamAssignment['endDate'])) ? new DateTime($teamAssignment['endDate']) : null);
             $coachTeamAssignment->setTeam($team);
 
             $type = $this->entityManager->getRepository(CoachTeamAssignmentType::class)->find($teamAssignment['type'] ?? null);
@@ -254,10 +258,22 @@ class CoachesController extends AbstractController
         $coach->setEmail($data['email'] ?? '');
         $coach->setBirthdate(isset($data['birthdate']) ? new DateTime($data['birthdate']) : null);
 
-        $existingCoachLicenseAssignments = array_map(fn ($assignment) => $assignment->getId(), $this->entityManager->getRepository(CoachLicenseAssignment::class)->findBy(['coach' => $coach]));
-        $existingCoachNationalities = array_map(fn ($assignment) => $assignment->getId(), $this->entityManager->getRepository(CoachNationalityAssignment::class)->findBy(['coach' => $coach]));
-        $existingCoachTeams = array_map(fn ($assignment) => $assignment->getId(), $this->entityManager->getRepository(CoachTeamAssignment::class)->findBy(['coach' => $coach]));
-        $existingCoachClubAssignments = array_map(fn ($assignment) => $assignment->getId(), $this->entityManager->getRepository(CoachClubAssignment::class)->findBy(['coach' => $coach]));
+        $existingCoachLicenseAssignments = array_map(
+            fn ($assignment) => $assignment->getId(),
+            $this->entityManager->getRepository(CoachLicenseAssignment::class)->findBy(['coach' => $coach])
+        );
+        $existingCoachNationalities = array_map(
+            fn ($assignment) => $assignment->getId(),
+            $this->entityManager->getRepository(CoachNationalityAssignment::class)->findBy(['coach' => $coach])
+        );
+        $existingCoachTeams = array_map(
+            fn ($assignment) => $assignment->getId(),
+            $this->entityManager->getRepository(CoachTeamAssignment::class)->findBy(['coach' => $coach])
+        );
+        $existingCoachClubAssignments = array_map(
+            fn ($assignment) => $assignment->getId(),
+            $this->entityManager->getRepository(CoachClubAssignment::class)->findBy(['coach' => $coach])
+        );
 
         foreach (($data['clubAssignments'] ?? []) as $clubAssignment) {
             if (isset($clubAssignment['id']) && isset($clubAssignment['club']) && in_array($clubAssignment['id'], $existingCoachClubAssignments)) {
@@ -272,7 +288,8 @@ class CoachesController extends AbstractController
             $club = $this->entityManager->getRepository(Club::class)->find($clubAssignment['club']['id']);
             $coachClubAssignment->setCoach($coach);
             $coachClubAssignment->setStartDate(isset($clubAssignment['startDate']) ? new DateTime($clubAssignment['startDate']) : null);
-            $coachClubAssignment->setEndDate((isset($clubAssignment['endDate']) && !empty($clubAssignment['endDate'])) ? new DateTime($clubAssignment['endDate']) : null);
+            $coachClubAssignment->setEndDate((isset($clubAssignment['endDate'])
+                && !empty($clubAssignment['endDate'])) ? new DateTime($clubAssignment['endDate']) : null);
             $coachClubAssignment->setClub($club);
 
             $this->entityManager->persist($coachClubAssignment);
@@ -299,7 +316,8 @@ class CoachesController extends AbstractController
             $license = $this->entityManager->getRepository(CoachLicense::class)->find($licenseAssignment['license']['id']);
             $coachLicenseAssignment->setCoach($coach);
             $coachLicenseAssignment->setStartDate(isset($licenseAssignment['startDate']) ? new DateTime($licenseAssignment['startDate']) : null);
-            $coachLicenseAssignment->setEndDate((isset($licenseAssignment['endDate']) && !empty($licenseAssignment['endDate'])) ? new DateTime($licenseAssignment['endDate']) : null);
+            $coachLicenseAssignment->setEndDate((isset($licenseAssignment['endDate'])
+                && !empty($licenseAssignment['endDate'])) ? new DateTime($licenseAssignment['endDate']) : null);
             $coachLicenseAssignment->setLicense($license);
 
             $this->entityManager->persist($coachLicenseAssignment);
@@ -326,7 +344,8 @@ class CoachesController extends AbstractController
             $nationality = $this->entityManager->getRepository(Nationality::class)->find($nationalityAssignment['nationality']['id']);
             $coachNationalityAssignment->setCoach($coach);
             $coachNationalityAssignment->setStartDate(isset($nationalityAssignment['startDate']) ? new DateTime($nationalityAssignment['startDate']) : null);
-            $coachNationalityAssignment->setEndDate((isset($nationalityAssignment['endDate']) && !empty($nationalityAssignment['endDate'])) ? new DateTime($nationalityAssignment['endDate']) : null);
+            $coachNationalityAssignment->setEndDate((isset($nationalityAssignment['endDate'])
+                && !empty($nationalityAssignment['endDate'])) ? new DateTime($nationalityAssignment['endDate']) : null);
             $coachNationalityAssignment->setNationality($nationality);
 
             $this->entityManager->persist($coachNationalityAssignment);
@@ -353,7 +372,8 @@ class CoachesController extends AbstractController
             }
             $coachTeamAssignment->setCoach($coach);
             $coachTeamAssignment->setStartDate(isset($teamAssignment['startDate']) ? new DateTime($teamAssignment['startDate']) : null);
-            $coachTeamAssignment->setEndDate((isset($teamAssignment['endDate']) && !empty($teamAssignment['endDate'])) ? new DateTime($teamAssignment['endDate']) : null);
+            $coachTeamAssignment->setEndDate((isset($teamAssignment['endDate'])
+                && !empty($teamAssignment['endDate'])) ? new DateTime($teamAssignment['endDate']) : null);
             $coachTeamAssignment->setTeam($team);
 
             $type = $this->entityManager->getRepository(CoachTeamAssignmentType::class)->find($teamAssignment['type'] ?? null);

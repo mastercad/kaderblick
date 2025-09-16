@@ -243,7 +243,8 @@ class PlayersController extends AbstractController
             $playerNationalityAssignment = new PlayerNationalityAssignment();
             $playerNationalityAssignment->setPlayer($player);
             $playerNationalityAssignment->setStartDate(isset($nationalityAssignment['startDate']) ? new DateTime($nationalityAssignment['startDate']) : null);
-            $playerNationalityAssignment->setEndDate((isset($nationalityAssignment['endDate']) && !empty($nationalityAssignment['endDate'])) ? new DateTime($nationalityAssignment['endDate']) : null);
+            $playerNationalityAssignment->setEndDate((isset($nationalityAssignment['endDate'])
+                && !empty($nationalityAssignment['endDate'])) ? new DateTime($nationalityAssignment['endDate']) : null);
             $playerNationalityAssignment->setNationality($nationality);
 
             $this->entityManager->persist($playerNationalityAssignment);
@@ -255,7 +256,8 @@ class PlayersController extends AbstractController
             $playerTeamAssignment->setPlayer($player);
             $playerTeamAssignment->setShirtNumber($teamAssignment['shirtNumber'] ?? null);
             $playerTeamAssignment->setStartDate(isset($teamAssignment['startDate']) ? new DateTime($teamAssignment['startDate']) : null);
-            $playerTeamAssignment->setEndDate((isset($teamAssignment['endDate']) && !empty($teamAssignment['endDate'])) ? new DateTime($teamAssignment['endDate']) : null);
+            $playerTeamAssignment->setEndDate((isset($teamAssignment['endDate'])
+                && !empty($teamAssignment['endDate'])) ? new DateTime($teamAssignment['endDate']) : null);
             $playerTeamAssignment->setTeam($team);
 
             $type = $this->entityManager->getRepository(PlayerTeamAssignmentType::class)->find($teamAssignment['type'] ?? null);
@@ -305,11 +307,21 @@ class PlayersController extends AbstractController
             }
         }
 
-        /*        $existingPlayerLicenseAssignments = array_map(fn($assignment) => $assignment->getId(), $this->entityManager->getRepository(PlayerLicenseAssignment::class)->findBy(['player' => $player])); */
+        /*  $existingPlayerLicenseAssignments = array_map(fn($assignment) =>
+            $assignment->getId(), $this->entityManager->getRepository(PlayerLicenseAssignment::class)->findBy(['player' => $player])); */
         $existingPlayerAlternativePositions = array_map(fn ($assignment) => $assignment->getId(), $player->getAlternativePositions()->toArray());
-        $existingPlayerNationalities = array_map(fn ($assignment) => $assignment->getId(), $this->entityManager->getRepository(PlayerNationalityAssignment::class)->findBy(['player' => $player]));
-        $existingPlayerTeams = array_map(fn ($assignment) => $assignment->getId(), $this->entityManager->getRepository(PlayerTeamAssignment::class)->findBy(['player' => $player]));
-        $existingPlayerClubAssignments = array_map(fn ($assignment) => $assignment->getId(), $this->entityManager->getRepository(PlayerClubAssignment::class)->findBy(['player' => $player]));
+        $existingPlayerNationalities = array_map(
+            fn ($assignment) => $assignment->getId(),
+            $this->entityManager->getRepository(PlayerNationalityAssignment::class)->findBy(['player' => $player])
+        );
+        $existingPlayerTeams = array_map(
+            fn ($assignment) => $assignment->getId(),
+            $this->entityManager->getRepository(PlayerTeamAssignment::class)->findBy(['player' => $player])
+        );
+        $existingPlayerClubAssignments = array_map(
+            fn ($assignment) => $assignment->getId(),
+            $this->entityManager->getRepository(PlayerClubAssignment::class)->findBy(['player' => $player])
+        );
 
         foreach (($data['clubAssignments'] ?? []) as $clubAssignment) {
             if (isset($clubAssignment['id']) && isset($clubAssignment['club']) && in_array($clubAssignment['id'], $existingPlayerClubAssignments)) {
@@ -324,7 +336,8 @@ class PlayersController extends AbstractController
             $club = $this->entityManager->getRepository(Club::class)->find($clubAssignment['club']['id']);
             $playerClubAssignment->setPlayer($player);
             $playerClubAssignment->setStartDate(isset($clubAssignment['startDate']) ? new DateTime($clubAssignment['startDate']) : null);
-            $playerClubAssignment->setEndDate((isset($clubAssignment['endDate']) && !empty($clubAssignment['endDate'])) ? new DateTime($clubAssignment['endDate']) : null);
+            $playerClubAssignment->setEndDate((isset($clubAssignment['endDate'])
+                && !empty($clubAssignment['endDate'])) ? new DateTime($clubAssignment['endDate']) : null);
             $playerClubAssignment->setClub($club);
 
             $this->entityManager->persist($playerClubAssignment);
@@ -375,7 +388,8 @@ class PlayersController extends AbstractController
             $nationality = $this->entityManager->getRepository(Nationality::class)->find($nationalityAssignment['nationality']['id']);
             $playerNationalityAssignment->setPlayer($player);
             $playerNationalityAssignment->setStartDate(isset($nationalityAssignment['startDate']) ? new DateTime($nationalityAssignment['startDate']) : null);
-            $playerNationalityAssignment->setEndDate((isset($nationalityAssignment['endDate']) && !empty($nationalityAssignment['endDate'])) ? new DateTime($nationalityAssignment['endDate']) : null);
+            $playerNationalityAssignment->setEndDate((isset($nationalityAssignment['endDate'])
+                && !empty($nationalityAssignment['endDate'])) ? new DateTime($nationalityAssignment['endDate']) : null);
             $playerNationalityAssignment->setNationality($nationality);
 
             $this->entityManager->persist($playerNationalityAssignment);
@@ -403,7 +417,8 @@ class PlayersController extends AbstractController
             $playerTeamAssignment->setPlayer($player);
             $playerTeamAssignment->setShirtNumber($teamAssignment['shirtNumber'] ?? null);
             $playerTeamAssignment->setStartDate(isset($teamAssignment['startDate']) ? new DateTime($teamAssignment['startDate']) : null);
-            $playerTeamAssignment->setEndDate((isset($teamAssignment['endDate']) && !empty($teamAssignment['endDate'])) ? new DateTime($teamAssignment['endDate']) : null);
+            $playerTeamAssignment->setEndDate((isset($teamAssignment['endDate'])
+                && !empty($teamAssignment['endDate'])) ? new DateTime($teamAssignment['endDate']) : null);
             $playerTeamAssignment->setTeam($team);
 
             $type = $this->entityManager->getRepository(PlayerTeamAssignmentType::class)->find($teamAssignment['type'] ?? null);

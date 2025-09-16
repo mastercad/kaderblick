@@ -49,7 +49,8 @@ class UserController extends AbstractController
         return $this->json(
             array_map(fn (UserRelation $userRelation) => [
                 'id' => $userRelation->getId(),
-                'fullName' => $userRelation->getPlayer() ? $userRelation->getPlayer()->getFullname() : ($userRelation->getCoach() ? $userRelation->getCoach()->getFullname() : 'N/A'),
+                'fullName' => $userRelation->getPlayer() ? $userRelation->getPlayer()->getFullname() :
+                    ($userRelation->getCoach() ? $userRelation->getCoach()->getFullname() : 'N/A'),
                 'identifier' => $userRelation->getRelationType()->getIdentifier(),
                 'category' => $userRelation->getRelationType()->getCategory()
             ], $user->getUserRelations()->toArray())

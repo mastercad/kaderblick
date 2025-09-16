@@ -148,8 +148,13 @@ class TaskController extends AbstractController
     }
 
     #[Route('/assignments/{assignmentId}', name: 'assignment_update', methods: ['PUT', 'PATCH'])]
-    public function updateAssignment(int $assignmentId, Request $request, TaskAssignmentRepository $assignmentRepo, EntityManagerInterface $em, SerializerInterface $serializer): JsonResponse
-    {
+    public function updateAssignment(
+        int $assignmentId,
+        Request $request,
+        TaskAssignmentRepository $assignmentRepo,
+        EntityManagerInterface $em,
+        SerializerInterface $serializer
+    ): JsonResponse {
         $assignment = $assignmentRepo->find($assignmentId);
         if (!$assignment) {
             return new JsonResponse(['error' => 'Assignment not found'], Response::HTTP_NOT_FOUND);
