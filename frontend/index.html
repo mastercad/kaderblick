@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#1976d2" />
+  <link rel="apple-touch-icon" href="/images/icon-192.png" />
+  <title>Kaderblick - Fußballverein Management</title>
+  </head>
+  <body>
+    <div id="preload-fallback" style="position:fixed;inset:0;z-index:9999;display:flex;justify-content:center;align-items:center;background:linear-gradient(135deg,#43a047 0%,#a5d6a7 100%);">
+      <div>
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="glowGreen" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+              <stop offset="0%" stop-color="#b9f6ca" stop-opacity="0.8" />
+              <stop offset="100%" stop-color="#43a047" stop-opacity="0" />
+            </radialGradient>
+            <linearGradient id="ballGradientGreen" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#a5d6a7" />
+              <stop offset="1" stop-color="#43a047" />
+            </linearGradient>
+          </defs>
+          <circle cx="60" cy="60" r="48" fill="url(#ballGradientGreen)" stroke="#fff" stroke-width="4" />
+          <circle cx="60" cy="60" r="54" fill="url(#glowGreen)">
+            <animate attributeName="r" values="54;60;54" dur="1.2s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.7;1;0.7" dur="1.2s" repeatCount="indefinite" />
+          </circle>
+          <g>
+            <polygon points="60,40 70,60 60,80 50,60" fill="#fff" stroke="#388e3c" stroke-width="2">
+              <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.8s" repeatCount="indefinite" />
+            </polygon>
+            <circle cx="60" cy="60" r="10" fill="#b9f6ca" stroke="#388e3c" stroke-width="2">
+              <animateTransform attributeName="transform" type="scale" from="1" to="1.2" begin="0s" dur="0.8s" repeatCount="indefinite" />
+            </circle>
+          </g>
+        </svg>
+        <div style="margin-top:24px;color:#fff;font-weight:700;font-size:22px;letter-spacing:2px;text-shadow:0 2px 8px #388e3c;text-align:center;">Kaderblick wird geladen...</div>
+      </div>
+    </div>
+    <div id="root"></div>
+    <script type="module">
+      // Entferne das Fallback sobald React die App rendert
+      const removePreload = () => {
+        const el = document.getElementById('preload-fallback');
+        if (el) el.remove();
+      };
+      window.addEventListener('DOMContentLoaded', () => {
+        const root = document.getElementById('root');
+        if (root) {
+          const observer = new MutationObserver(() => {
+            // Sobald React etwas in #root rendert, entferne das Fallback
+            if (root.childNodes.length > 0) {
+              removePreload();
+              observer.disconnect();
+            }
+          });
+          observer.observe(root, { childList: true });
+        }
+      });
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

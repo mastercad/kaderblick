@@ -1,0 +1,4 @@
+.env
+public/uploads
+api/var/cache/
+api/var/logs/

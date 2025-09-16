@@ -1,0 +1,35 @@
+import React from 'react';
+import { Container } from '@mui/material';
+
+const Imprint: React.FC = () => (
+  <Container maxWidth="md" sx={{ py: 4 }}>
+    <div className="container py-4">
+      <h1>Impressum</h1>
+      <p>Angaben gemäß § 5 TMG</p>
+      <p>
+        Andreas Kempe<br />
+        Glück-Auf-Straße 11c<br />
+        01705 Freital<br />
+        Deutschland
+      </p>
+      <p>
+        <strong>Kontakt:</strong><br />
+        E-Mail: <a href="mailto:andreas.kempe@byte-artist.de">andreas.kempe@byte-artist.de</a>
+      </p>
+      <h2>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h2>
+      <p>
+        Andreas Kempe<br />
+        Glück-Auf-Straße 11c<br />
+        01705 Freital
+      </p>
+      <h2>Haftungsausschluss</h2>
+      <p>Die Inhalte dieser Webseite wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte kann jedoch keine Gewähr übernommen werden.</p>
+      <h2>Haftung für Links</h2>
+      <p>Unsere Webseite enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich.</p>
+      <h2>Urheberrecht</h2>
+      <p>Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Beiträge Dritter sind als solche gekennzeichnet.</p>
+    </div>
+  </Container>
+);
+
+export default Imprint;

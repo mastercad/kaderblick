@@ -1,0 +1,202 @@
+
+@media (max-width: 768px) {
+  .rbc-calendar {
+    font-size: 12px !important;
+  }
+  
+  .rbc-toolbar {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  .rbc-toolbar .rbc-btn-group {
+    display: none !important;
+  }
+  
+  .rbc-header {
+    padding: 4px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+  }
+  
+  .rbc-date-cell {
+    padding: 2px !important;
+    font-size: 10px !important;
+  }
+  
+  .rbc-event {
+    font-size: 9px !important;
+    padding: 1px 2px !important;
+    border-radius: 2px !important;
+    line-height: 1.1 !important;
+  }
+  
+  .rbc-month-row {
+    min-height: 50px !important;
+  }
+  
+  .rbc-agenda-view table {
+    font-size: 12px !important;
+  }
+  
+  .rbc-agenda-time-cell {
+    width: 70px !important;
+    font-size: 10px !important;
+  }
+  
+  .rbc-agenda-event-cell {
+    padding: 4px !important;
+  }
+  
+  /* Day and Week view optimizations */
+  .rbc-time-view {
+    font-size: 11px !important;
+  }
+  
+  .rbc-time-slot {
+    min-height: 20px !important;
+  }
+  
+  .rbc-timeslot-group {
+    min-height: 40px !important;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (max-width: 768px) {
+  /* Increase touch targets for calendar navigation */
+  .rbc-btn-group button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    font-size: 12px !important;
+  }
+  
+  /* Make events more touchable */
+  .rbc-event {
+    min-height: 18px !important;
+    cursor: pointer !important;
+  }
+  
+  /* Better spacing for mobile */
+  .rbc-day-bg + .rbc-day-bg {
+    border-left: 1px solid rgba(0,0,0,0.1) !important;
+  }
+}
+
+/* Landscape phone optimization */
+@media (max-width: 896px) and (orientation: landscape) {
+  .rbc-calendar {
+    font-size: 10px !important;
+  }
+  
+  .rbc-month-row {
+    min-height: 40px !important;
+  }
+  
+  .rbc-header {
+    padding: 2px !important;
+    font-size: 10px !important;
+  }
+}
+
+/* Very small screens (older phones) */
+@media (max-width: 480px) {
+  .rbc-calendar {
+    font-size: 10px !important;
+  }
+  
+  .rbc-event {
+    font-size: 8px !important;
+    padding: 1px !important;
+    min-height: 14px !important;
+  }
+  
+  .rbc-month-row {
+    min-height: 45px !important;
+  }
+  
+  .rbc-header {
+    font-size: 9px !important;
+    padding: 2px 1px !important;
+  }
+  
+  .rbc-date-cell {
+    font-size: 9px !important;
+    padding: 1px !important;
+  }
+}
+
+/* Material-UI responsive improvements */
+@media (max-width: 768px) {
+  /* Better card spacing on mobile */
+  .MuiCard-root {
+    margin-bottom: 8px !important;
+  }
+  
+  /* Compact button groups */
+  .MuiButtonGroup-root {
+    flex-wrap: wrap !important;
+  }
+  
+  .MuiButtonGroup-root .MuiButton-root {
+    font-size: 0.75rem !important;
+    padding: 4px 8px !important;
+  }
+  
+  /* Drawer improvements */
+  .MuiDrawer-paper {
+    width: 85vw !important;
+    max-width: 320px !important;
+  }
+  
+  /* Better modal spacing */
+  .MuiDialog-paper {
+    margin: 16px !important;
+    width: calc(100% - 32px) !important;
+    max-height: calc(100% - 64px) !important;
+  }
+}
+
+/* Prevent zoom on input focus (iOS Safari) */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="number"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="time"],
+  textarea,
+  select {
+    font-size: 16px !important;
+    transform: scale(1) !important;
+  }
+  
+  .MuiInputBase-input {
+    font-size: 16px !important;
+  }
+}
+
+/* Fix viewport issues on iOS */
+@supports (-webkit-touch-callout: none) {
+  .ios-viewport-fix {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+}
+
+/* Better scroll behavior on mobile */
+@media (max-width: 768px) {
+  .scroll-container {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Smooth scrolling for calendar */
+  .rbc-calendar {
+    scroll-behavior: smooth;
+  }
+}
