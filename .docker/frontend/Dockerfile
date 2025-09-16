@@ -13,7 +13,7 @@ RUN npm install
 # Quellcode kopieren
 COPY ./frontend .
 
-RUN ls -lisa ./public && rm -rf ./public/uploads && mkdir -p ./public/uploads
+RUN rm -rf ./public/uploads && mkdir -p ./public/uploads
 
 # Build erstellen (für Produktion)
 RUN npm run build

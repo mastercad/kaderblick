@@ -5,7 +5,7 @@ services:
     build: ./.docker/api
     restart: unless-stopped
     ports:
-      - "${API_PORT:-8081}:80"
+      - "${API_PORT:-8881}:80"
     volumes:
       - ./api:/var/www/symfony
     environment:
@@ -24,7 +24,7 @@ services:
       dockerfile: .docker/frontend/Dockerfile
     restart: unless-stopped
     ports:
-      - "${REACT_PORT:-8080}:80"
+      - "${REACT_PORT:-8880}:80"
     volumes:
       - ./frontend:/app
       - ./public/uploads:/usr/share/nginx/html/uploads
