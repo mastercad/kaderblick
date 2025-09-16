@@ -1,5 +1,3 @@
-# ./app/Dockerfile
-
 FROM php:8.3-apache
 
 ENV TZ=Europe/Berlin

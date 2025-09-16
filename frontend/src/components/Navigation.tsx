@@ -1,0 +1,451 @@
+import { useNavigate, useLocation } from 'react-router-dom';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Avatar from '@mui/material/Avatar';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import Divider from '@mui/material/Divider';
+import Collapse from '@mui/material/Collapse';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import MenuIcon from '@mui/icons-material/Menu';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+// Admin-Dropdown Icons
+import GroupsIcon from '@mui/icons-material/Groups';
+import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
+import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
+import LayersIcon from '@mui/icons-material/Layers';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import ShieldIcon from '@mui/icons-material/Shield';
+import PersonBadgeIcon from '@mui/icons-material/Badge';
+import PersonIcon from '@mui/icons-material/Person';
+import RoomIcon from '@mui/icons-material/Room';
+import FeedbackIcon from '@mui/icons-material/Feedback';
+import NewspaperIcon from '@mui/icons-material/Newspaper';
+import SearchIcon from '@mui/icons-material/Search';
+import GroupWorkIcon from '@mui/icons-material/GroupWork';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import HandshakeIcon from '@mui/icons-material/Handshake';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import BusinessIcon from '@mui/icons-material/Business';
+import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import PublicIcon from '@mui/icons-material/Public';
+import SchoolIcon from '@mui/icons-material/School';
+import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { NotificationCenter } from './NotificationCenter';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme as useMuiTheme } from '@mui/material/styles';
+import NavigationMessagesButton from './NavigationMessagesButton';
+import React from 'react';
+
+interface NavigationProps {
+  onOpenAuth: () => void;
+  onOpenProfile: () => void;
+}
+
+export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProps) {
+  const { user, isAuthenticated, logout } = useAuth();
+  const { mode, toggleTheme } = useTheme();
+  const muiTheme = useMuiTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [trainerDrawerOpen, setTrainerDrawerOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Navigation items configuration
+  const navigationItems = [
+    { key: 'home', label: 'Home', disabled: false },
+    { key: 'dashboard', label: 'Dashboard', disabled: false },
+    { key: 'surveys', label: 'Umfragen', disabled: false },
+    { key: 'teams', label: 'Teams', disabled: true },
+    { key: 'games', label: 'Spiele', disabled: false },
+    { key: 'reports', label: 'Reports', disabled: false },
+    { key: 'calendar', label: 'Kalender', disabled: false },
+//    { key: 'test', label: 'Test', disabled: false },
+  ];
+
+  const trainerMenuItems = [
+    { key: 'trainer-outfits', label: 'Kleidergrößen' },
+  ];
+
+  const adminMenuSections = [
+    {
+      section: 'Stammdaten',
+      items: [
+        { label: 'Altersgruppen', page: 'ageGroups', icon: <GroupsIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Positionen', page: 'positions', icon: <CenterFocusStrongIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Füße', page: 'strongFeets', icon: <DirectionsRunIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Beläge', page: 'surfaceTypes', icon: <LayersIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Ereignistypen', page: 'gameEventTypes', icon: <LocalOfferIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Nationalitäten', page: 'nationalities', icon: <PublicIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Trainer-Lizensen', page: 'coachLicenses', icon: <SchoolIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+      ],
+    },
+    {
+      section: 'Verwaltung',
+      items: [
+        { label: 'Vereine', page: 'clubs', icon: <ShieldIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Trainer', page: 'coaches', icon: <PersonBadgeIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Spieler', page: 'players', icon: <PersonIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Spielstätten', page: 'locations', icon: <RoomIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Teams', href: 'teams', icon: <GroupsIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Feedback', page: 'admin/feedback', icon: <FeedbackIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Neuigkeiten Management', page: 'news', icon: <NewspaperIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Datenkonsistenz', href: 'admin/consistency', icon: <SearchIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Aufstellungen', page: 'formations', icon: <GroupWorkIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Aufgaben', page: 'tasks', icon: <ManageAccountsIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+      ],
+    },
+    {
+      section: 'Zuweisungen',
+      items: [
+        { label: 'Benutzer', page: 'admin/user-relations', icon: <ManageAccountsIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+{/*        { label: 'Spieler zu Team', href: '/api/player_team_assignments', icon: <PersonAddIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Spieler zu Verein', href: '/api/player_club_assignments', icon: <HandshakeIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Coach zu Team', href: '/api/coach_team_assignments', icon: <SwapHorizIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Coach zu Verein', href: '/api/coach_club_assignments', icon: <BusinessIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> }*/},
+        { label: 'Videos', href: '/videos/upload', icon: <VideoLibraryIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+      ],
+    },
+  ];
+
+  const [adminMenuAnchor, setAdminMenuAnchor] = useState<null | HTMLElement>(null);
+  const handleAdminMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAdminMenuAnchor(event.currentTarget);
+  };
+  const handleAdminMenuClose = () => {
+    setAdminMenuAnchor(null);
+  };
+
+  const [trainerMenuAnchor, setTrainerMenuAnchor] = useState<null | HTMLElement>(null);
+  const handleTrainerMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setTrainerMenuAnchor(event.currentTarget);
+  };
+  const handleTrainerMenuClose = () => {
+    setTrainerMenuAnchor(null);
+  };
+  const handleTrainerMenuClick = (key: string) => {
+    navigate(`/${key}`);
+    handleTrainerMenuClose();
+    handleMobileMenuClose();
+  };
+
+  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    handleClose();
+  };
+
+  const handleMobileMenuToggle = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const handleMobileMenuClose = () => {
+    setMobileMenuOpen(false);
+  };
+
+  const handlePageChangeAndClose = (page: string) => {
+    navigate(`/${page}`);
+    handleMobileMenuClose();
+  };
+
+  const rolesArray = Object.values(user?.roles || {});
+  const isAdmin = rolesArray.includes('ROLE_ADMIN') || rolesArray.includes('ROLE_SUPERADMIN');
+
+  return (
+    <>
+      <AppBar position="static">
+        <Toolbar>
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ flexGrow: 1, cursor: 'pointer', userSelect: 'none' }}
+            onClick={() => navigate('/')}
+            title="Zur Startseite"
+          >
+            Kaderblick
+          </Typography>
+
+          {isAuthenticated ? (
+            <>
+              {/* Desktop Navigation */}
+              {!isMobile && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  {navigationItems.map((item) => (
+                    item.key === 'trainer' ? null : (
+                      <Button
+                        key={item.key}
+                        color="inherit"
+                        disabled={item.disabled}
+                        onClick={() => !item.disabled && navigate(`/${item.key}`)}
+                        sx={{
+                          backgroundColor: location.pathname === `/${item.key}` ? 'rgba(255,255,255,0.1)' : 'transparent',
+                          minWidth: 'auto',
+                          px: 2
+                        }}
+                      >
+                        {item.label}
+                      </Button>
+                    )
+                  ))}
+                  {/* Trainer Dropdown */}
+                  {user?.isCoach && (
+                    <>
+                      <Button
+                        color="inherit"
+                        onClick={handleTrainerMenuOpen}
+                        sx={{
+                          backgroundColor: location.pathname?.startsWith('/trainer-') ? 'rgba(255,255,255,0.1)' : 'transparent',
+                        minWidth: 'auto',
+                        px: 2
+                      }}
+                      endIcon={<ArrowDropDownIcon />}
+                      >
+                        Trainer
+                      </Button>
+                      <Menu
+                        anchorEl={trainerMenuAnchor}
+                        open={Boolean(trainerMenuAnchor)}
+                        onClose={handleTrainerMenuClose}
+                      >
+                        {trainerMenuItems.map((item) => (
+                          <MenuItem
+                            key={item.key}
+                            selected={location.pathname === `/${item.key}`}
+                            onClick={() => handleTrainerMenuClick(item.key)}
+                          >
+                            {item.label}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>
+                  )}
+                  {/* Admin Dropdown */}
+                  {isAdmin && (
+                    <>
+                      <Button
+                        color="inherit"
+                        onClick={handleAdminMenuOpen}
+                        sx={{
+                          backgroundColor: Boolean(adminMenuAnchor) ? 'rgba(255,255,255,0.1)' : 'transparent',
+                          minWidth: 'auto',
+                          px: 2
+                        }}
+                        endIcon={<ArrowDropDownIcon />}
+                      >
+                        Administration
+                      </Button>
+                      <Menu
+                        anchorEl={adminMenuAnchor}
+                        open={Boolean(adminMenuAnchor)}
+                        onClose={handleAdminMenuClose}
+                        MenuListProps={{ sx: { minWidth: 250 } }}
+                      >
+                        {adminMenuSections.map((section) => (
+                          <Box key={section.section}>
+                            <MenuItem disabled>
+                              <Typography variant="subtitle2" color="primary">
+                                {section.section}
+                              </Typography>
+                            </MenuItem>
+                            {section.items.map((item) => (
+                              <MenuItem
+                                key={item.label}
+                                sx={{ pl: 3, display: 'flex', alignItems: 'center' }}
+                                onClick={() => {
+                                  handleAdminMenuClose();
+                                  if (item.page) {
+                                    navigate(`/${item.page}`);
+                                  }
+                                }}
+                              >
+                                {item.icon}
+                                {item.label}
+                              </MenuItem>
+                            ))}
+                            <Divider />
+                          </Box>
+                        ))}
+                      </Menu>
+                    </>
+                  )}
+                </Box>
+              )}
+
+              {/* Mobile Navigation Button */}
+              {isMobile && (
+                <IconButton
+                  color="inherit"
+                  onClick={handleMobileMenuToggle}
+                  sx={{ mr: 1 }}
+                >
+                  <MenuIcon />
+                </IconButton>
+              )}
+
+              {/* Common Controls */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {/* Theme Toggle Button */}
+                <IconButton 
+                  onClick={toggleTheme} 
+                  color="inherit"
+                  title={mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                >
+                  {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+                </IconButton>
+                
+                {/* Notification Center */}
+                <NotificationCenter />
+                
+                <IconButton
+                  size="large"
+                  aria-label="account of current user"
+                  aria-controls="menu-appbar"
+                  aria-haspopup="true"
+                  onClick={handleMenu}
+                  color="inherit"
+                >
+                  <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
+                    {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  </Avatar>
+                </IconButton>
+              </Box>
+            </>
+          ) : (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {/* Theme Toggle Button für nicht eingeloggte Benutzer */}
+              <IconButton 
+                onClick={toggleTheme} 
+                color="inherit"
+                title={mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              >
+                {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+              </IconButton>
+              
+              <Button color="inherit" onClick={onOpenAuth}>
+                Login / Register
+              </Button>
+            </Box>
+          )}
+        </Toolbar>
+      </AppBar>
+
+      {/* Mobile Navigation Drawer */}
+      <Drawer
+        anchor="left"
+        open={mobileMenuOpen}
+        onClose={handleMobileMenuClose}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: 280,
+            boxSizing: 'border-box',
+          },
+        }}
+      >
+        <Box sx={{ pt: 2, pb: 1 }}>
+          <Typography variant="h6" sx={{ px: 2, mb: 1 }}>
+            Navigation
+          </Typography>
+          <Divider />
+          <List>
+            {navigationItems.map((item) => (
+              item.key === 'trainer' ? null : (
+                <ListItem key={item.key} disablePadding>
+                  <ListItemButton
+                    selected={location.pathname === `/${item.key}`}
+                    disabled={item.disabled}
+                    onClick={() => !item.disabled && handlePageChangeAndClose(item.key as any)}
+                  >
+                    <ListItemText primary={item.label} />
+                  </ListItemButton>
+                </ListItem>
+              )
+            ))}
+            {/* Trainer Untermenü im Drawer (Accordion) */}
+            {user?.isCoach && (
+              <>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    selected={location.pathname?.startsWith('/trainer-')}
+                    onClick={() => setTrainerDrawerOpen((prev: boolean) => !prev)}
+                  >
+                    <ListItemText primary="Trainer" />
+                    {trainerDrawerOpen ? <ExpandLess /> : <ExpandMore />}
+                  </ListItemButton>
+                </ListItem>
+                <Collapse in={trainerDrawerOpen} timeout="auto" unmountOnExit>
+                  {trainerMenuItems.map((item) => (
+                    <ListItem key={item.key} disablePadding sx={{ pl: 3 }}>
+                      <ListItemButton
+                        selected={location.pathname === `/${item.key}`}
+                        onClick={() => handleTrainerMenuClick(item.key)}
+                      >
+                        <ListItemText primary={item.label} />
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
+                </Collapse>
+              </>
+            )}
+            {/* Admin Untermenü (Accordion) entfernt, da Admin-Dropdown jetzt über adminMenuSections läuft */}
+          </List>
+        </Box>
+      </Drawer>
+
+      {/* User Menu */}
+      <Menu
+        id="menu-appbar"
+        anchorEl={anchorEl}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        keepMounted
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        open={Boolean(anchorEl)}
+        onClose={handleClose}
+      >
+        <MenuItem disabled>
+          <Box>
+            <Typography variant="subtitle2">{user?.name}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {user?.email}
+            </Typography>
+          </Box>
+        </MenuItem>
+        <MenuItem onClick={() => { handleClose(); onOpenProfile(); }}>Profil</MenuItem>
+        <NavigationMessagesButton 
+          variant="icon-with-text" 
+          text="Nachrichten" 
+        />
+        <MenuItem onClick={handleLogout}>Logout</MenuItem>
+      </Menu>
+    </>
+  );
+}

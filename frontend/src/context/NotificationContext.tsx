@@ -1,0 +1,229 @@
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { AppNotification, NotificationContextType } from '../types/notifications';
+import { notificationService } from '../services/notificationService';
+import { ToastContainer } from '../components/ToastContainer';
+import { apiJson } from '../utils/api';
+
+const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+
+export const useNotifications = () => {
+  const context = useContext(NotificationContext);
+  if (!context) {
+    throw new Error('useNotifications must be used within NotificationProvider');
+  }
+  return context;
+};
+
+interface NotificationProviderProps {
+  children: React.ReactNode;
+}
+
+export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [toasts, setToasts] = useState<AppNotification[]>([]);
+
+  // Lade gespeicherte Notifications beim Start
+  useEffect(() => {
+    // Lade aktuelle Notifications vom Server statt localStorage
+    apiJson('/api/notifications')
+    .then(data => {
+      const serverNotifications = data.notifications.map((n: any) => ({
+        ...n,
+        timestamp: new Date(n.createdAt),
+        read: n.isRead
+      }));
+      setNotifications(serverNotifications);
+    })
+    .catch(error => {
+      console.error('Failed to load notifications:', error);
+      // Fallback zu localStorage
+      const saved = localStorage.getItem('notifications');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved).map((n: any) => ({
+            ...n,
+            timestamp: new Date(n.timestamp)
+          }));
+          setNotifications(parsed);
+        } catch (e) {
+          console.error('Failed to parse saved notifications', e);
+        }
+      }
+    });
+
+    // Starte Notification Service (ersetzt SSE)
+    notificationService.startListening();
+    
+    // Füge Listener für eingehende Notifications hinzu
+    const removeListener = notificationService.addListener((notificationData) => {
+//      console.log('Push notification received:', notificationData);
+      
+      const newNotification: AppNotification = {
+        ...notificationData,
+        read: false,
+        showToast: notificationData.showToast !== false, // Standard: true
+        showPush: notificationData.showPush !== false,   // Standard: true
+      };
+
+//      console.log('Adding notification to state:', newNotification);
+      setNotifications(prev => {
+        // Prüfen ob Notification bereits existiert (keine Duplikate)
+        const exists = prev.find(n => n.id === newNotification.id);
+        if (exists) {
+//          console.log('Notification already exists, skipping:', newNotification.id);
+          return prev;
+        }
+        
+        // Toast anzeigen falls gewünscht und noch nicht in Toast-Liste
+        if (newNotification.showToast) {
+          setToasts(prevToasts => {
+            const toastExists = prevToasts.find(t => t.id === newNotification.id);
+            if (!toastExists) {
+//              console.log('Adding toast notification');
+              return [...prevToasts, newNotification];
+            }
+            return prevToasts;
+          });
+        }
+        
+        // Push-Notification anzeigen falls erlaubt und gewünscht
+        if (newNotification.showPush && 'Notification' in window && (window as any).Notification.permission === 'granted') {
+//          console.log('Showing desktop notification');
+          new (window as any).Notification(newNotification.title, {
+            body: newNotification.message,
+            icon: '/favicon.ico',
+            tag: newNotification.id,
+          });
+        }
+        
+        return [newNotification, ...prev];
+      });
+    });
+
+    return () => {
+      notificationService.stopListening();
+      removeListener();
+    };
+  }, []);
+
+  // Speichere Notifications bei Änderungen
+  useEffect(() => {
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
+  const addNotification = useCallback((notification: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => {
+    const newNotification: AppNotification = {
+      ...notification,
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date(),
+      read: false,
+      showToast: notification.showToast !== false,
+      showPush: notification.showPush !== false,
+    };
+
+    setNotifications(prev => {
+      const exists = prev.find(n => n.id === newNotification.id);
+      if (exists) return prev;
+      return [newNotification, ...prev];
+    });
+
+    if (newNotification.showToast) {
+      setToasts(prev => [...prev, newNotification]);
+    }
+
+    if (newNotification.showPush && 'Notification' in window && (window as any).Notification.permission === 'granted') {
+      new (window as any).Notification(notification.title, {
+        body: notification.message || '',
+        icon: '/favicon.ico',
+        tag: newNotification.id.toString(),
+      });
+    }
+
+    // Auto-entfernen nach 10 Sekunden für System-Notifications
+    if (notification.type === 'system') {
+      setTimeout(() => {
+        removeNotification(newNotification.id);
+      }, 10000);
+    }
+
+    return newNotification.id;
+  }, []);
+
+  const requestPermission = useCallback(async (): Promise<boolean> => {
+    if (!('Notification' in window)) {
+      console.warn('Browser unterstützt keine Notifications');
+      return false;
+    }
+
+    if ((window as any).Notification.permission === 'granted') {
+      return true;
+    }
+
+    if ((window as any).Notification.permission === 'denied') {
+      return false;
+    }
+
+    const permission = await (window as any).Notification.requestPermission();
+    return permission === 'granted';
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const markAsRead = useCallback((id: string) => {
+    setNotifications(prev => 
+      prev.map(n => n.id === id ? { ...n, read: true } : n)
+    );
+    
+    // Backend API call
+    apiJson(`/api/notifications/${id}/read`, { method: 'POST' }).catch(error => {
+      console.error('Failed to mark notification as read:', error);
+      // Revert on error
+      setNotifications(prev => 
+        prev.map(n => n.id === id ? { ...n, read: false } : n)
+      );
+    });
+  }, []);
+
+  const markAllAsRead = useCallback(() => {
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+    
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    
+    // Backend API call
+    apiJson('/api/notifications/read-all', { method: 'POST' }).catch(error => {
+      console.error('Failed to mark all notifications as read:', error);
+      // Revert on error
+      setNotifications(prev => 
+        prev.map(n => unreadIds.includes(n.id) ? { ...n, read: false } : n)
+      );
+    });
+  }, [notifications]);
+
+  const removeNotification = useCallback((id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
+
+  const clearAll = useCallback(() => {
+    setNotifications([]);
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  return (
+    <NotificationContext.Provider value={{
+      notifications,
+      addNotification,
+      markAsRead,
+      markAllAsRead,
+      removeNotification,
+      clearAll,
+      unreadCount,
+      requestPermission,
+    }}>
+      {children}
+      <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
+    </NotificationContext.Provider>
+  );
+};

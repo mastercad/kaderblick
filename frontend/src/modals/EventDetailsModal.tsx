@@ -1,0 +1,331 @@
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Chip from '@mui/material/Chip';
+import Stack from '@mui/material/Stack';
+import Divider from '@mui/material/Divider';
+import React, { useState, useEffect } from 'react';
+import CircularProgress from '@mui/material/CircularProgress';
+import { apiJson } from '../utils/api';
+
+export interface EventDetailsModalProps {
+  open: boolean;
+  onClose: () => void;
+  event: {
+    id: number;
+    title: string;
+    start: Date | string;
+    end: Date | string;
+    description?: string;
+    type?: { name?: string; color?: string };
+    location?: { name?: string };
+    game?: {
+      homeTeam?: { name: string };
+      awayTeam?: { name: string };
+      gameType?: { name: string };
+    };
+    permissions?: {
+      canEdit?: boolean;
+      canDelete?: boolean;
+    };
+  } | null;
+
+  onEdit?: () => void;
+  showEdit?: boolean;
+  onDelete?: () => void;
+
+  // Teilnahme-API Props
+  participationStatuses?: Array<{
+    id: number;
+    name: string;
+    color?: string;
+    icon?: string;
+  }>;
+
+  currentParticipation?: {
+    statusId: number;
+    statusName: string;
+    color?: string;
+    icon?: string;
+    note?: string;
+  };
+
+  participations?: Array<{
+    available_statuses : Array<{
+      id: number;
+      name: string;
+      color?: string;
+      icon?: string;
+      code: string,
+      sort_order: number
+    }>,
+    event: {
+      id: number;
+      is_game: boolean;
+      title: string;
+      type: string;
+    },
+    participations: Array<{
+      user_id: number;
+      user_name: string;
+      is_team_player: boolean;
+      note?: string;
+      status: {
+        id: number;
+        name: string;
+        color?: string;
+        icon?: string;
+        code: string;
+      };
+    }>
+  }>;
+  onParticipationChange?: (statusId: number, note: string) => void;
+  loadingParticipation?: boolean;
+}
+
+export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
+  open,
+  onClose,
+  event,
+  onEdit,
+  showEdit = false,
+  onDelete,
+}) => {
+  const [participationStatuses, setParticipationStatuses] = useState<Array<any>>([]);
+  const [currentParticipation, setCurrentParticipation] = useState<any>(null);
+  const [participations, setParticipations] = useState<Array<any>>([]);
+  const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!event || !open) return;
+    setLoading(true);
+    Promise.all([
+      apiJson(`/api/participation/statuses/`),
+//      apiJson(`/api/participation/current/${event.id}`).catch(() => null),
+      apiJson(`/api/participation/event/${event.id}`).catch(() => []),
+    ])
+//      .then(([statusesResponse, current, list]) => {
+      .then(([statusesResponse, list]) => {
+        console.log('API participation/statuses response:', statusesResponse);
+        if (!Array.isArray(statusesResponse.statuses)) {
+          console.error('FEHLER: participation/statuses liefert kein Array!', statusesResponse);
+        }
+        setParticipationStatuses(Array.isArray(statusesResponse.statuses) ? statusesResponse.statuses : []);
+//        setCurrentParticipation(current);
+        setParticipations(list.participations);
+//        setNote(current?.note || '');
+      })
+      .catch(() => {
+        setParticipationStatuses([]);
+        setCurrentParticipation(null);
+        setParticipations([]);
+        setNote('');
+      })
+      .finally(() => setLoading(false));
+  }, [event, open]);
+
+  const handleParticipationChange = (statusId: number) => {
+    if (!event) return;
+    setSaving(true);
+    apiJson(`/api/participation/event/${event.id}/respond`, {
+      method: 'POST',
+      body: { status_id: statusId, note },
+    })
+      .then(() => {
+        return Promise.all([
+//          apiJson(`/api/participation/current/${event.id}`),
+          apiJson(`/api/participation/event/${event.id}`),
+        ]);
+      })
+//      .then(([current, list]) => {
+      .then(([list]) => {
+//        setCurrentParticipation(current);
+        setParticipations(list.participations);
+      })
+      .finally(() => setSaving(false));
+  };
+
+  // Teilnehmer gruppieren
+  const groupedParticipations: Record<string, { statusName: string; color?: string; icon?: string; participants: typeof participations }> = {};
+  participations.forEach(p => {
+    if (!groupedParticipations[p.status.name]) {
+      groupedParticipations[p.status.name] = {
+        statusName: p.status.name,
+        color: p.status.color,
+        icon: p.status.icon,
+        participants: [],
+      };
+    }
+    groupedParticipations[p.status.name].participants.push(p);
+  });
+
+  if (!event) return null;
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle>{event.title}</DialogTitle>
+      <DialogContent dividers>
+        <Box mb={2}>
+          <Typography variant="subtitle2" color="text.secondary">
+            {event.type?.name && (
+              <span style={{ color: event.type.color || undefined, fontWeight: 600 }}>{event.type.name}</span>
+            )}
+            {event.location?.name && (
+              <>
+                {' '}| <span>{event.location.name}</span>
+              </>
+            )}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mt={1}>
+            {(() => {
+              const startDate = new Date(event.start);
+              const endDate = new Date(event.end);
+              const isSameDay = startDate.toDateString() === endDate.toDateString();
+              const startFormatted = startDate.toLocaleString('de-DE', {
+                weekday: 'short',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+              if (isSameDay) {
+                const endTimeFormatted = endDate.toLocaleString('de-DE', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                });
+                return `${startFormatted} – ${endTimeFormatted}`;
+              } else {
+                const endFormatted = endDate.toLocaleString('de-DE', {
+                  weekday: 'short',
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                });
+                return `${startFormatted} – ${endFormatted}`;
+              }
+            })()}
+          </Typography>
+        </Box>
+        {event.game && (
+          <Box mb={2}>
+            <Typography variant="subtitle2">Spiel:</Typography>
+            <Typography variant="body2">
+              {event.game.homeTeam?.name} vs. {event.game.awayTeam?.name} ({event.game.gameType?.name})
+            </Typography>
+          </Box>
+        )}
+        {event.description && (
+          <Box mb={2}>
+            <Typography variant="subtitle2">Beschreibung:</Typography>
+            <Typography variant="body2">{event.description}</Typography>
+          </Box>
+        )}
+
+        {/* Teilnahme-Sektion */}
+        <Divider sx={{ my: 2 }} />
+        <Box id="participationSection">
+          <Typography variant="h6" gutterBottom>Teilnahme</Typography>
+          {loading ? (
+            <Box display="flex" alignItems="center" justifyContent="center" my={2}><CircularProgress /></Box>
+          ) : (
+            <>
+              {/* Aktueller Status */}
+              {currentParticipation && (
+                <Box id="currentParticipationStatus" mb={2}>
+                  <Chip
+                    label={
+                      <span>
+                        {currentParticipation.icon && <i className={currentParticipation.icon} style={{ marginRight: 6 }} />}
+                        Ihre aktuelle Teilnahme: <strong style={{ color: currentParticipation.color || '#0dcaf0' }}>{currentParticipation.statusName}</strong>
+                      </span>
+                    }
+                    style={{ background: currentParticipation.color || '#e3f2fd', color: '#222', fontWeight: 500 }}
+                  />
+                </Box>
+              )}
+              {/* Teilnahme-Buttons */}
+              <Stack direction="row" spacing={2} id="participationButtons" mb={2}>
+                {Array.isArray(participationStatuses) && participationStatuses.length > 0 ? (
+                  participationStatuses.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(status => (
+                    <Button
+                      key={status.id}
+                      variant={currentParticipation?.statusId === status.id ? 'contained' : 'outlined'}
+                      color="primary"
+                      startIcon={status.icon ? <i className={`fa fa-${status.icon} fa-fw`} /> : undefined}
+                      style={{ background: status.color || undefined, color: status.color ? '#fff' : undefined }}
+                      disabled={saving}
+                      onClick={() => handleParticipationChange(status.id)}
+                    >
+                      {status.name}
+                    </Button>
+                  ))
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Keine Teilnahme-Statusdaten verfügbar.
+                    {process.env.NODE_ENV === 'development' && (
+                      <pre style={{ fontSize: 10, color: '#c00' }}>{JSON.stringify(participationStatuses, null, 2)}</pre>
+                    )}
+                  </Typography>
+                )}
+              </Stack>
+              {/* Notizfeld */}
+              <Box mb={2}>
+                <TextField
+                  id="participationNote"
+                  label="Notiz (optional)"
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                  fullWidth
+                  multiline
+                  minRows={1}
+                  maxRows={3}
+                  disabled={saving}
+                />
+              </Box>
+              {/* Teilnehmerliste */}
+              <Box id="participationsList" mb={2}>
+                <Typography variant="subtitle2" gutterBottom>Teilnehmer</Typography>
+                {participations.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">Noch keine Rückmeldungen.</Typography>
+                ) : (
+                  Object.values(groupedParticipations).map(group => (
+                    <Box key={group.statusName} mb={1}>
+                      <Typography variant="body2" style={{ fontWeight: 600, color: group.color || undefined }}>
+                        {group.icon && <i className={group.icon} style={{ marginRight: 4 }} />}
+                        {group.statusName} ({group.participants.length})
+                      </Typography>
+                      <Stack direction="row" spacing={1} flexWrap="wrap">
+                        {group.participants.map(p => (
+                          <Chip key={p.user_id} label={p.user_name} size="small" style={{ marginBottom: 2 }} />
+                        ))}
+                      </Stack>
+                    </Box>
+                  ))
+                )}
+              </Box>
+            </>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} color="primary" variant="contained">Schließen</Button>
+        {event.permissions?.canDelete && onDelete && (
+          <Button onClick={onDelete} color="error" variant="outlined">Löschen</Button>
+        )}
+        {((showEdit && onEdit) || event.permissions?.canEdit) && (
+          <Button onClick={onEdit} color="secondary" variant="outlined">Bearbeiten</Button>
+        )}
+      </DialogActions>
+    </Dialog>
+  );
+};
