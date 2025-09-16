@@ -96,6 +96,8 @@ jobs:
 
             cp api/.env.dist api/.env
             echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> api/.env
+            echo "CORS_ALLOW_ORIGIN=http://frontend:8080" >> api/.env
+            echo "VITE_BACKEND_URL=http://api:8081" > frontend/.env
 
             # ich bin mir ehrlich gesagt gerade gar nicht mehr sicher, ob das hier noch so sinn macht, die kommen ja immer mit dem branch aktuell rein
             if [ -d "$CURRENT_DIR" ]; then
