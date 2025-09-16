@@ -141,7 +141,7 @@ class GoogleAuthenticator extends AbstractAuthenticator
                 'strict'
             ),
         );
-        
+
         $response->headers->setCookie(
             new Cookie(
                 'jwt_refresh_token',
