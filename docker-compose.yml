@@ -18,7 +18,7 @@ services:
     networks:
       - kaderblick-net
 
-  react-frontend:
+  frontend:
     build:
       context: ./
       dockerfile: .docker/frontend/Dockerfile

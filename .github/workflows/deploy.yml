@@ -92,7 +92,7 @@ jobs:
             fi
             
             # Alte Staging-Container stoppen und entfernen
-            docker compose -p staging down --remove-orphans api react-frontend
+            docker compose -p staging down --remove-orphans api frontend
 
             cp api/.env.dist api/.env
             echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> api/.env
@@ -112,7 +112,7 @@ jobs:
             echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > api/config/secrets/prod/prod.decrypt.private.php
             chmod 655 api/config/secrets/prod/prod.decrypt.private.php
 
-            PMA_PORT=18081 API_PORT=18000 REACT_PORT=18080 docker compose -p staging up -d --build --force-recreate api react-frontend
+            PMA_PORT=18081 API_PORT=18000 REACT_PORT=18080 docker compose -p staging up -d --build --force-recreate api frontend
 
             ###### WORKAROUND FÜR FIXTURES ######
             #            sed -i 's/^APP_ENV=prod$/APP_ENV=dev/' api/.env
@@ -135,7 +135,7 @@ jobs:
             fi
 
             # Vor Aktivierung alte Production-Container stoppen
-            docker compose -p production down --remove-orphans api react-frontend
+            docker compose -p production down --remove-orphans api frontend
 
             # Aktivierung
             ln -sfn "$RELEASE_DIR" "$CURRENT_DIR"
@@ -152,10 +152,10 @@ jobs:
             cd $CURRENT_DIR
 
             echo "starte production"
-            docker compose -p production up -d --force-recreate api react-frontend
+            docker compose -p production up -d --force-recreate api frontend
 
-            docker compose -p staging down api react-frontend
-            docker compose -p staging rm api react-frontend
+            docker compose -p staging down api frontend
+            docker compose -p staging rm api frontend
 
             # Cleanup
             cd ../releases && ls -t | tail -n +4 | xargs rm -rf

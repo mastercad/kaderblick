@@ -90,7 +90,7 @@ jobs:
             FLUSH PRIVILEGES;
           "
           
-          docker compose up -d --build --force-recreate api vue-frontend
+          docker compose up -d --build --force-recreate api frontend
 
           docker compose exec -T api composer install
 
