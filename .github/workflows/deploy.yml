@@ -96,8 +96,8 @@ jobs:
 
             cp api/.env.dist api/.env
             echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> api/.env
-            echo "CORS_ALLOW_ORIGIN=http://frontend" >> api/.env
-            echo "VITE_BACKEND_URL=http://api" > frontend/.env
+            #            echo "CORS_ALLOW_ORIGIN=http://frontend" >> api/.env
+            echo "VITE_BACKEND_URL=https://api.kaderblick.byte-artist.de" > frontend/.env
 
             # ich bin mir ehrlich gesagt gerade gar nicht mehr sicher, ob das hier noch so sinn macht, die kommen ja immer mit dem branch aktuell rein
             if [ -d "$CURRENT_DIR" ]; then
@@ -147,8 +147,10 @@ jobs:
             mkdir -p "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads"
 
             ln -sfn "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads" "$RELEASE_DIR/api/public/uploads"
+            ln -sfn "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads" "$RELEASE_DIR/frontend/public/uploads"
 
             chmod -R 777 "$RELEASE_DIR/api/public/uploads"
+            chmod -R 777 "$RELEASE_DIR/frontend/public/uploads"
 
             # Neue Production starten
             cd $CURRENT_DIR
