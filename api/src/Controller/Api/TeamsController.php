@@ -30,8 +30,8 @@ class TeamsController extends AbstractController
 
         return $this->json([
             'teams' => array_map(fn ($team) => [
-                'id' => $team->getId(),
-                'name' => $team->getName(),
+                'id' => $team['id'],
+                'name' => $team['name'],
                 'permissions' => [
                     'canView' => $this->isGranted(TeamVoter::VIEW, $team),
                     'canEdit' => $this->isGranted(TeamVoter::EDIT, $team),
@@ -54,8 +54,8 @@ class TeamsController extends AbstractController
 
         return $this->json([
             'teams' => array_map(fn ($team) => [
-                'id' => $team->getId(),
-                'name' => $team->getName(),
+                'id' => $team['id'],
+                'name' => $team['name'],
                 'permissions' => [
                     'canView' => $this->isGranted(TeamVoter::VIEW, $team),
                     'canEdit' => $this->isGranted(TeamVoter::EDIT, $team),
