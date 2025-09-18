@@ -71,7 +71,7 @@ class AgeGroupsController extends AbstractController
         ]);
     }
 
-    #[Route('/', methods: ['POST'])]
+    #[Route('', name: 'create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -91,7 +91,7 @@ class AgeGroupsController extends AbstractController
         return $this->json(['message' => 'Age group created successfully'], 201);
     }
 
-    #[Route('/{id}', methods: ['PUT'])]
+    #[Route('/{id}', name: 'update', methods: ['PUT'])]
     public function update(Request $request, int $id): JsonResponse
     {
         $ageGroup = $this->entityManager->getRepository(AgeGroup::class)->find($id);

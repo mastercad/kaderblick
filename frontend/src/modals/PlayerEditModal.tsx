@@ -306,6 +306,7 @@ const PlayerEditModal: React.FC<PlayerEditModalProps> = ({ openPlayerEditModal, 
                                                     strongFeet: id ? allStrongFeets.find(f => f.id === id) || { id } : { id: '' }
                                                 }));
                                             }}
+                                            required
                                             fullWidth
                                             margin="normal"
                                             SelectProps={{ native: true }}
@@ -330,6 +331,7 @@ const PlayerEditModal: React.FC<PlayerEditModalProps> = ({ openPlayerEditModal, 
                                                 }));
                                             }}
                                             fullWidth
+                                            required
                                             margin="normal"
                                             SelectProps={{ native: true }}
                                             InputLabelProps={{ shrink: true }}
