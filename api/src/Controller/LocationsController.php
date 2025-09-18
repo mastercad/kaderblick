@@ -61,8 +61,8 @@ class LocationsController extends AbstractController
                 'facilities' => $location->getFacilities(),
                 'city' => $location->getCity(),
                 'surfaceType' => [
-                    'id' => $location->getSurfaceType()->getId(),
-                    'name' => $location->getSurfaceType()->getName()
+                    'id' => $location->getSurfaceType()?->getId(),
+                    'name' => $location->getSurfaceType()?->getName()
                 ]
             ]
         ]);
@@ -107,8 +107,8 @@ class LocationsController extends AbstractController
                 'facilities' => $location->getFacilities(),
                 'city' => $location->getCity(),
                 'surfaceType' => [
-                    'id' => $location->getSurfaceType()->getId(),
-                    'name' => $location->getSurfaceType()->getName()
+                    'id' => $location->getSurfaceType()?->getId(),
+                    'name' => $location->getSurfaceType()?->getName()
                 ]
             ]
         ]);
