@@ -114,8 +114,8 @@ jobs:
             echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > api/config/secrets/prod/prod.decrypt.private.php
             chmod 655 api/config/secrets/prod/prod.decrypt.private.php
 
-            PMA_PORT=8082 API_PORT=8082 REACT_PORT=8080 docker compose -p production up -d --build --force-recreate --no-cache api frontend
-            PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 docker compose -p staging up -d --build --force-recreate --no-cache api frontend
+            PMA_PORT=8082 API_PORT=8082 REACT_PORT=8080 docker compose -p production build --no-cache api frontend
+            PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 docker compose -p staging up -d --build --force-recreate api frontend
 
             ###### WORKAROUND FÜR FIXTURES ######
             #            sed -i 's/^APP_ENV=prod$/APP_ENV=dev/' api/.env
