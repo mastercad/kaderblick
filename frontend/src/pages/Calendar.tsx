@@ -245,12 +245,12 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   useEffect(() => {    
     Promise.all([
       apiJson<{ createAndEditAllowed: boolean; entries: CalendarEventType[] }>('/api/calendar-event-types').catch(() => ({ createAndEditAllowed: false, entries: [] })),
-      apiJson<{ createAndEditAllowed: boolean; entries: Team[] }>('/api/teams/list').catch(() => ({ createAndEditAllowed: false, entries: [] })),
+      apiJson<{ createAndEditAllowed: boolean; teams: Team[] }>('/api/teams/list').catch(() => ({ createAndEditAllowed: false, teams: [] })),
       apiJson<{ createAndEditAllowed: boolean; entries: GameType[] }>('/api/game-types').catch(() => ({ createAndEditAllowed: false, entries: [] })),
       apiJson<LocationsApiResponse>('/api/locations').catch(() => ({ locations: [], permissions: { canCreate: false, canEdit: false, canView: false, canDelete: false } }))
     ]).then(([eventTypesData, teamsData, gameTypesData, locationsData]) => {
       setEventTypes(eventTypesData);
-      setTeams({ createAndEditAllowed: teamsData.createAndEditAllowed, entries: teamsData.entries || [] });
+      setTeams({ createAndEditAllowed: teamsData.createAndEditAllowed, entries: teamsData.teams || [] });
       setGameTypes(gameTypesData);
       setLocations(locationsData.locations || []);
     }).catch(console.error);
