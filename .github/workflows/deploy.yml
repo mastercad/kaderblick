@@ -114,8 +114,13 @@ jobs:
             echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > api/config/secrets/prod/prod.decrypt.private.php
             chmod 655 api/config/secrets/prod/prod.decrypt.private.php
 
-            PMA_PORT=8082 API_PORT=8082 REACT_PORT=8080 docker compose -p production build --no-cache api frontend
+
+            # Staging-Container bauen und starten
             PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 docker compose -p staging up -d --build --force-recreate api frontend
+
+            # Nach erfolgreichem Staging: Images für Production taggen
+            docker images | grep kaderblick_frontend && docker tag staging-frontend production-frontend || true
+            docker images | grep kaderblick_api && docker tag staging-api production-api || true
 
             ###### WORKAROUND FÜR FIXTURES ######
             #            sed -i 's/^APP_ENV=prod$/APP_ENV=dev/' api/.env
@@ -153,12 +158,13 @@ jobs:
             chmod -R 777 "$RELEASE_DIR/api/public/uploads"
             chmod -R 777 "$RELEASE_DIR/frontend/public/uploads"
 
-            # Neue Production starten
+            # Production-Container aus getaggten Images starten
             cd $CURRENT_DIR
 
-            echo "starte production"
+            echo "starte production aus staging Images"
             docker compose -p production up -d --force-recreate api frontend
 
+            # Staging-Container stoppen und entfernen
             docker compose -p staging down api frontend
             docker compose -p staging rm api frontend
 
