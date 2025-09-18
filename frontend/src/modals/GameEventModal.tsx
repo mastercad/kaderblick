@@ -290,8 +290,7 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
                   label="Spieler"
                 >
                   <MenuItem value="">Spieler wählen…</MenuItem>
-                  {filteredPlayers.map((player) => {
-                    // Support both API shapes: reports.Player (shirtNumber, fullName)
+                  {Object.values(filteredPlayers).map((player) => {
                     const shirtNumber = (player as any).shirtNumber;
                     const fullName = (player as any).fullName ?? `${(player as any).firstName ?? ''} ${(player as any).lastName ?? ''}`.trim();
                     return (
@@ -312,7 +311,7 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
                     label="Zweiter Spieler (bei Wechsel)"
                   >
                     <MenuItem value="">Zweiter Spieler wählen…</MenuItem>
-                    {filteredPlayers.map((player) => {
+                    {Object.values(filteredPlayers).map((player) => {
                       const shirtNumber = (player as any).shirtNumber;
                       const fullName = (player as any).fullName ?? `${(player as any).firstName ?? ''} ${(player as any).lastName ?? ''}`.trim();
                       return (
