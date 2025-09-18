@@ -118,9 +118,15 @@ jobs:
             # Staging-Container bauen und starten
             PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 docker compose -p staging up -d --build --force-recreate api frontend
 
-            # Nach erfolgreichem Staging: Images für Production taggen
-            docker images | grep kaderblick_frontend && docker tag staging-frontend production-frontend || true
-            docker images | grep kaderblick_api && docker tag staging-api production-api || true
+            # Nach erfolgreichem Staging: Images für Production taggen (immer aktuellste Image-ID verwenden)
+            FRONTEND_IMAGE_ID=$(docker images staging-frontend:latest --format "{{.ID}}" | head -n 1)
+            if [ -n "$FRONTEND_IMAGE_ID" ]; then
+              docker tag $FRONTEND_IMAGE_ID production-frontend:latest
+            fi
+            API_IMAGE_ID=$(docker images staging-api:latest --format "{{.ID}}" | head -n 1)
+            if [ -n "$API_IMAGE_ID" ]; then
+              docker tag $API_IMAGE_ID production-api:latest
+            fi
 
             ###### WORKAROUND FÜR FIXTURES ######
             #            sed -i 's/^APP_ENV=prod$/APP_ENV=dev/' api/.env
