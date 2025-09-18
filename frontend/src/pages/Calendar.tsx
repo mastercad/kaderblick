@@ -188,7 +188,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   
   // Zusätzliche Daten
   const [eventTypes, setEventTypes] = useState<{ createAndEditAllowed: boolean; entries: CalendarEventType[] }>({ createAndEditAllowed: false, entries: [] });
-  const [teams, setTeams] = useState<{ createAndEditAllowed: boolean; entries: Team[] }>({ createAndEditAllowed: false, entries: [] });
+  const [teams, setTeams] = useState<{ createAndEditAllowed: boolean; teams: Team[] }>({ createAndEditAllowed: false, teams: [] });
   const [gameTypes, setGameTypes] = useState<{ createAndEditAllowed: boolean; entries: GameType[] }>({ createAndEditAllowed: false, entries: [] });
   const [locations, setLocations] = useState<Location[]>([]);
 
