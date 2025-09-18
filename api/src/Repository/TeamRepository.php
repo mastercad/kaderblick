@@ -111,30 +111,6 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
         }
 
         return $qb->getQuery()->getResult();
-        /*
-        // Transformiere die Daten in ein benutzerfreundlicheres Format
-        $teams = [];
-        foreach ($result as $row) {
-            $teams[] = [
-                'id' => $row['id'],
-                'name' => $row['name'],
-                'ageGroup' => $row['age_group_id'] ? [
-                    'id' => $row['age_group_id'],
-                    'name' => $row['age_group_name']
-                ] : null,
-                'league' => $row['league_id'] ? [
-                    'id' => $row['league_id'],
-                    'name' => $row['league_name']
-                ] : null,
-                'playerCount' => (int) $row['player_count'],
-                'coachCount' => (int) $row['coach_count'],
-                'coachNames' => $row['coach_names'] ? explode(', ', $row['coach_names']) : [],
-                'clubNames' => $row['club_names'] ? explode(', ', $row['club_names']) : []
-            ];
-        }
-
-        return $teams;
-        */
     }
 
     /**

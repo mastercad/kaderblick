@@ -1,0 +1,354 @@
+import React, { useEffect, useState } from 'react';
+import {
+    Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, TextField, InputAdornment, Switch, FormControlLabel, CircularProgress, Alert, Divider, IconButton
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import Autocomplete from '@mui/material/Autocomplete';
+import AddIcon from '@mui/icons-material/Add';
+import AgeGroupEditModal from './AgeGroupEditModal';
+import LeagueEditModal from './LeagueEditModal';
+import { AgeGroup } from '../types/ageGroup';
+import { League } from '../types/league';
+import { Team } from '../types/team';
+import { apiJson } from '../utils/api';
+
+interface TeamEditModalProps {
+    openTeamEditModal: boolean;
+    teamId: number | null;
+    onTeamEditModalClose: () => void;
+    onTeamSaved?: (team: Team) => void;
+}
+
+const TeamEditModal: React.FC<TeamEditModalProps> = ({ openTeamEditModal, teamId, onTeamEditModalClose, onTeamSaved }) => {
+    const [team, setTeam] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [ageGroups, setAgeGroups] = useState<AgeGroup[]>([]);
+    const [leagues, setLeagues] = useState<League[]>([]);
+    const [ageGroupsLoading, setAgeGroupsLoading] = useState(false);
+    const [ageGroupEditModalOpen, setAgeGroupEditModalOpen] = useState(false);
+    const [leaguesLoading, setLeagueLoading] = useState(false);
+    const [leagueEditModalOpen, setLeagueEditModalOpen] = useState(false);
+
+    const [fieldErrors, setFieldErrors] = useState<{ name?: string; ageGroup?: string, league?: string }>({});
+
+    useEffect(() => {
+        setError(null);
+        if (openTeamEditModal) {
+            loadAgeGroups();
+            loadLeagues();
+        }
+    }, [openTeamEditModal]);
+
+    useEffect(() => {
+        if (openTeamEditModal && teamId) {
+            setLoading(true);
+            apiJson(`/api/teams/${teamId}/details`)
+                .then(data => {
+                    setTeam(data.team);
+                    setLoading(false);
+                })
+                .catch(() => {
+                    setError('Fehler beim Laden des Teams.');
+                    setLoading(false);
+                });
+        } else if (openTeamEditModal) {
+            setTeam(null);
+        }
+    }, [openTeamEditModal, teamId]);
+
+    const loadAgeGroups = () => {
+        setAgeGroupsLoading(true);
+        apiJson('/api/age-groups')
+        .then((res) => {
+            setAgeGroups(Array.isArray(res.ageGroups) ? res.ageGroups : []);
+        })
+        .catch(() => setAgeGroups([]))
+        .finally(() => setAgeGroupsLoading(false));
+    };
+
+    const loadLeagues = () => {
+        setLeagueLoading(true);
+        apiJson('/api/leagues')
+        .then((res) => {
+            setLeagues(Array.isArray(res.leagues) ? res.leagues : []);
+        })
+        .catch(() => setLeagues([]))
+        .finally(() => setLeagueLoading(false));
+    };
+
+    const handleTeamEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value, type, checked } = e.target;
+        setTeam((prev: any) => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    const handleTeamEditSubmit = async (e: React.FormEvent) => {
+            e.preventDefault();
+            let errors: { name?: string; ageGroup?: string; league?: string} = {};
+            if (!team?.name || team.name.trim() === '') {
+                    errors.name = 'Name ist erforderlich';
+            }
+            if (!team?.ageGroup || !team.ageGroup.id) {
+                    errors.ageGroup = 'Altersgruppe ist erforderlich';
+            }
+            if (!team?.league || !team.league.id) {
+                    errors.league = 'Liga ist erforderlich';
+            }
+            setFieldErrors(errors);
+            if (Object.keys(errors).length > 0) {
+                    return;
+            }
+            setLoading(true);
+            setError(null);
+            try {
+                const url = team.id ? `/api/teams/${team.id}` : '/api/teams';
+                const method = team.id ? 'PUT' : 'POST';
+                const res = await apiJson(url, {
+                    method,
+                    body: team,
+                    headers: { 'Content-Type': 'application/json' },
+                });
+
+                if (onTeamSaved) onTeamSaved(res.team || res.data || team);
+                onTeamEditModalClose();
+            } catch (err: any) {
+                setError(err?.message || 'Fehler beim Speichern');
+            } finally {
+                setLoading(false);
+            }
+    };
+
+    return (
+        <Dialog open={openTeamEditModal} onClose={onTeamEditModalClose} maxWidth="md" fullWidth>
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 2 }}>
+                Verein bearbeiten
+                <IconButton aria-label="close" onClick={onTeamEditModalClose} size="small" sx={{ ml: 2 }}>
+                    <CloseIcon />
+                </IconButton>
+            </DialogTitle>
+            <DialogContent>
+                {loading ? (
+                    <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
+                        <CircularProgress />
+                    </Box>
+                ) : (
+                <>
+                    {error && (
+                        <Alert severity="error" sx={{ mb: 2, fontWeight: 'bold', fontSize: '1.1em' }}>
+                            {error}
+                        </Alert>
+                    )}
+                    <form id="teamEditForm" autoComplete="off" onSubmit={handleTeamEditSubmit}>
+                        <input type="hidden" name="id" value={team?.id} />
+                        <Box className="modal-body" sx={{ bgcolor: 'background.default', p: 0 }}>
+                            <Box mb={4} pb={2} borderBottom={1} borderColor="divider">
+                                <Typography variant="h6" color="primary" mb={3} display="flex" alignItems="center">
+                                    Stammdaten
+                                </Typography>
+                                <Box display="flex" flexWrap="wrap" gap={2}>
+                                    <Box flex={1} minWidth={250}>
+                                        <TextField label="Name" name="name" value={team?.name || ''} onChange={handleTeamEditChange} required fullWidth margin="normal"
+                                            error={!!fieldErrors.name}
+                                            helperText={fieldErrors.name}
+                                        />
+                                    </Box>
+                                    <Box flex={1} minWidth={250}>
+                                        <Autocomplete
+                                            options={(() => {
+                                                const filtered = ageGroups;
+                                                return [
+                                                    ...filtered,
+                                                    { id: 'new', name: 'Neue Altersgruppe anlegen...' }
+                                                ];
+                                            })()}
+                                            loading={ageGroupsLoading}
+                                            getOptionLabel={(option) => option.name}
+                                            value={team?.ageGroup && ageGroups.length > 0 ? ageGroups.find(l => l.id === team.ageGroup.id) || null : null}
+                                            onChange={(_, newValue) => {
+                                                if (newValue && (newValue as any).id === 'new') {
+                                                    setAgeGroupEditModalOpen(true);
+                                                } else {
+                                                    setTeam((prev: any) => ({ ...prev, ageGroup: newValue }));
+                                                    setFieldErrors((prev) => ({ ...prev, ageGroup: undefined }));
+                                                }
+                                            }}
+                                            renderOption={(props, option) => {
+                                                if ((option as any).id === 'new') {
+                                                    return (
+                                                        <li {...props} style={{ display: 'flex', alignItems: 'center', color: '#1976d2', fontWeight: 500 }}>
+                                                            <AddIcon fontSize="small" style={{ marginRight: 8 }} /> Neue Sportstätte anlegen...
+                                                        </li>
+                                                    );
+                                                }
+                                                return (
+                                                    <li {...props}>{option.name}</li>
+                                                );
+                                            }}
+                                            renderInput={(params) => (
+                                                <TextField placeholder='Mindestens 2 Buchstaben für Suche eingeben...'
+                                                    {...params}
+                                                    label="Altersgruppe"
+                                                    fullWidth margin="normal"
+                                                    error={!!fieldErrors.ageGroup}
+                                                    helperText={fieldErrors.ageGroup}
+                                                />
+                                            )}
+                                            isOptionEqualToValue={(option, value) => option.id === value.id}
+                                            filterOptions={(options, { inputValue }) => {
+                                                if (inputValue.length < 2) return options.filter(o => (o as any).id === 'new');
+                                                const filtered = options.filter(option =>
+                                                    option.name.toLowerCase().includes(inputValue.toLowerCase())
+                                                );
+                                                return [
+                                                    ...filtered.filter(o => (o as any).id !== 'new'),
+                                                    ...options.filter(o => (o as any).id === 'new')
+                                                ];
+                                            }}
+                                            noOptionsText="Keine Altersgruppe gefunden (mind. 2 Zeichen)"
+                                        />
+                                    </Box>
+                                    <Box flex={1} minWidth={250}>
+                                        <Autocomplete
+                                            options={(() => {
+                                                const filtered = leagues;
+                                                return [
+                                                    ...filtered,
+                                                    { id: 'new', name: 'Neue Liga anlegen...' }
+                                                ];
+                                            })()}
+                                            loading={leaguesLoading}
+                                            getOptionLabel={(option) => option.name}
+                                            value={team?.league && leagues.length > 0 ? leagues.find(l => l.id === team.league.id) || null : null}
+                                            onChange={(_, newValue) => {
+                                                if (newValue && (newValue as any).id === 'new') {
+                                                    setLeagueEditModalOpen(true);
+                                                } else {
+                                                    setTeam((prev: any) => ({ ...prev, league: newValue }));
+                                                    setFieldErrors((prev) => ({ ...prev, league: undefined }));
+                                                }
+                                            }}
+                                            renderOption={(props, option) => {
+                                                if ((option as any).id === 'new') {
+                                                    return (
+                                                        <li {...props} style={{ display: 'flex', alignItems: 'center', color: '#1976d2', fontWeight: 500 }}>
+                                                            <AddIcon fontSize="small" style={{ marginRight: 8 }} />
+                                                            Neue Liga anlegen...
+                                                        </li>
+                                                    );
+                                                }
+                                                return (
+                                                    <li {...props}>{option.name}</li>
+                                                );
+                                            }}
+                                            renderInput={(params) => (
+                                                <TextField placeholder='Mindestens 2 Buchstaben für Suche eingeben...'
+                                                    {...params}
+                                                    label="Liga"
+                                                    fullWidth margin="normal"
+                                                    error={!!fieldErrors.league}
+                                                    helperText={fieldErrors.league}
+                                                />
+                                            )}
+                                            isOptionEqualToValue={(option, value) => option.id === value.id}
+                                            filterOptions={(options, { inputValue }) => {
+                                                if (inputValue.length < 2) return options.filter(o => (o as any).id === 'new');
+                                                const filtered = options.filter(option =>
+                                                    option.name.toLowerCase().includes(inputValue.toLowerCase())
+                                                );
+                                                return [
+                                                    ...filtered.filter(o => (o as any).id !== 'new'),
+                                                    ...options.filter(o => (o as any).id === 'new')
+                                                ];
+                                            }}
+                                            noOptionsText="Keine Liga gefunden (mind. 2 Zeichen)"
+                                        />
+                                    </Box>
+                                </Box>
+                            </Box>
+
+                            <Box mb={4} pb={2} borderBottom={1} borderColor="divider">
+                                <Typography variant="h6" color="primary" mb={3} display="flex" alignItems="center">
+                                    fussball.de Optionen
+                                </Typography>
+                                <Box display="flex" flexWrap="wrap" gap={2}>
+                                    <Box flex={1} minWidth={250}>
+                                        <TextField label="fussball.de ID" name="fussballDeId" value={team?.fussballDeId || ''} onChange={handleTeamEditChange} fullWidth margin="normal" />
+                                    </Box>
+                                    <Box flex={1} minWidth={250}>
+                                        <TextField label="fussball.de URL" name="fussballDeUrl" value={team?.fussballDeUrl || ''} onChange={handleTeamEditChange} fullWidth margin="normal" />
+                                    </Box>
+                                </Box>
+                                <Box mt={2} mb={1}>
+                                    <Button type="button" variant="outlined" color="info" startIcon={null}>
+                                        fussball.de-Daten laden
+                                    </Button>
+                                    {/* TODO: Loading spinner for fussball.de */}
+                                </Box>
+                            </Box>
+                        </Box>
+                        <Divider />
+                        <Box display="flex" justifyContent="flex-end" gap={2} mt={2} mb={1}>
+                            <Button onClick={onTeamEditModalClose} variant="outlined" color="secondary">
+                                Abbrechen
+                            </Button>
+                            <Button type="submit" variant="contained" color="primary" disabled={saving}>
+                                {saving ? <CircularProgress size={20} /> : 'Speichern'}
+                            </Button>
+                        </Box>
+                    </form>
+                </>
+                )}
+            </DialogContent>
+            <AgeGroupEditModal
+                openAgeGroupEditModal={ageGroupEditModalOpen}
+                onAgeGroupEditModalClose={() => setAgeGroupEditModalOpen(false)}
+                isEdit={false}
+                onLocationSaved={(newAgeGroup: Location) => {
+                    setAgeGroupEditModalOpen(false);
+                    if (newAgeGroup && newAgeGroup.id) {
+                        loadAgeGroups();
+
+                        setAgeGroups(prev => [...prev, newAgeGroup]);
+
+                        if (!team) {
+                            setTeam({ ageGroup: newAgeGroup })
+                            return;
+                        }
+                        setTeam((prev: Team) => {
+                            if (!prev) return prev;
+                            return { ...prev, ageGroup: newAgeGroup };
+                        });
+                    }
+                }}
+            />
+            <LeagueEditModal
+                openLeagueEditModal={leagueEditModalOpen}
+                onLeagueEditModalClose={() => setLeagueEditModalOpen(false)}
+                isEdit={false}
+                onLocationSaved={(newLeague: League) => {
+                    setLeagueEditModalOpen(false);
+                    if (newLeague && newLeague.id) {
+                        loadLeagues();
+
+                        setLeagues(prev => [...prev, newLeague]);
+
+                        if (!team) {
+                            setTeam({ league: newLeague })
+                            return;
+                        }
+                        setTeam((prev: Team) => {
+                            if (!prev) return prev;
+                            return { ...prev, league: newLeague };
+                        });
+                    }
+                }}
+            />
+</Dialog>
+    );
+};
+
+export default TeamEditModal;

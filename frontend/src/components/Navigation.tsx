@@ -35,6 +35,7 @@ import FeedbackIcon from '@mui/icons-material/Feedback';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
 import SearchIcon from '@mui/icons-material/Search';
 import GroupWorkIcon from '@mui/icons-material/GroupWork';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
@@ -73,7 +74,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
     { key: 'home', label: 'Home', disabled: false },
     { key: 'dashboard', label: 'Dashboard', disabled: false },
     { key: 'surveys', label: 'Umfragen', disabled: false },
-    { key: 'teams', label: 'Teams', disabled: true },
+    { key: 'teams', label: 'Teams', disabled: false },
     { key: 'games', label: 'Spiele', disabled: false },
     { key: 'reports', label: 'Reports', disabled: false },
     { key: 'calendar', label: 'Kalender', disabled: false },
@@ -89,6 +90,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
       section: 'Stammdaten',
       items: [
         { label: 'Altersgruppen', page: 'ageGroups', icon: <GroupsIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Ligen', page: 'leagues', icon: <EmojiEventsIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
         { label: 'Positionen', page: 'positions', icon: <CenterFocusStrongIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
         { label: 'Füße', page: 'strongFeets', icon: <DirectionsRunIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
         { label: 'Beläge', page: 'surfaceTypes', icon: <LayersIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
@@ -104,7 +106,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
         { label: 'Trainer', page: 'coaches', icon: <PersonBadgeIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
         { label: 'Spieler', page: 'players', icon: <PersonIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
         { label: 'Spielstätten', page: 'locations', icon: <RoomIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Teams', href: 'teams', icon: <GroupsIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Teams', page: 'teams', icon: <GroupsIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
         { label: 'Feedback', page: 'admin/feedback', icon: <FeedbackIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
         { label: 'Neuigkeiten Management', page: 'news', icon: <NewspaperIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
         { label: 'Datenkonsistenz', href: 'admin/consistency', icon: <SearchIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
