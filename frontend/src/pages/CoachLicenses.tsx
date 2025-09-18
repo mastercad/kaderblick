@@ -101,6 +101,9 @@ const CoachLicenses = () => {
                     {coachLicense.description || ''}
                   </TableCell>
                   <TableCell>
+                    {coachLicense.countryCode || ''}
+                  </TableCell>
+                  <TableCell>
                     { coachLicense.permissions?.canEdit && (
                       <IconButton color="primary"
                         size="small"
