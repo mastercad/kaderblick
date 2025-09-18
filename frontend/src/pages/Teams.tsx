@@ -148,20 +148,18 @@ const Teams = () => {
                       </IconButton>
                     )}
                   </TableCell>
-                  { team.permissions?.canDelete && (
-                  <TeamDeleteConfirmationModal
-                    open={deleteModalOpen}
-                    teamName={deleteTeam?.name}
-                    onClose={() => setDeleteModalOpen(false)}
-                    onConfirm={async () => handleDelete(deleteTeam.id) }
-                  />
-                  )}
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
       )}
+      <TeamDeleteConfirmationModal
+        open={deleteModalOpen}
+        teamName={deleteTeam?.name}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={async () => handleDelete(deleteTeam.id) }
+      />
       <TeamDetailsModal
         open={teamDetailsModalOpen}
         loadTeams={() => loadTeams()}
