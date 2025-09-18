@@ -42,7 +42,7 @@ const Teams = () => {
       const res = await apiJson<{ teams: TeamResponseProps[] }>('/api/teams/list');
       setTeams(res.teams);
     } catch (e) {
-      setError('Fehler beim Laden der Vereine.');
+      setError('Fehler beim Laden der Teams.');
     } finally {
       setLoading(false);
     }
@@ -65,10 +65,10 @@ const Teams = () => {
     <Box sx={{mx: 'auto', mt: 4, p: 3 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={4}>
         <Typography variant="h4">
-          Vereine
+          Teams
         </Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setTeamId(null); setTeamEditModalOpen(true) }}>
-          Neuen Verein erstellen
+          Neues Team erstellen
         </Button>
       </Stack>
       {loading ? (
@@ -128,7 +128,7 @@ const Teams = () => {
                           setTeamEditModalOpen(true);
                         }}
                         sx={{ ml: 1 }}
-                        aria-label="Formation löschen"
+                        aria-label="Team bearbeiten"
                       >
                         <EditIcon />
                       </IconButton>
@@ -142,7 +142,7 @@ const Teams = () => {
                           setDeleteModalOpen(true);
                         }}
                         sx={{ ml: 1 }}
-                        aria-label="Formation löschen"
+                        aria-label="Team löschen"
                       >
                         <DeleteIcon />
                       </IconButton>
