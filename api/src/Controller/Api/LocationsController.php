@@ -30,7 +30,7 @@ class LocationsController extends AbstractController
                 'city' => $location->getCity(),
                 'latitude' => $location->getLatitude(),
                 'longitude' => $location->getLongitude(),
-                'surfaceTypeId' => $location->getSurfaceType()->getId(),
+                'surfaceTypeId' => $location->getSurfaceType()?->getId(),
                 'hasFloodLight' => $location->getHasFloodlight() ? true : false,
                 'permissions' => [
                     'canCreate' => $this->isGranted(LocationVoter::CREATE, $location),
