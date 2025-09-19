@@ -11,24 +11,24 @@ import MenuItem from '@mui/material/MenuItem';
 
 export interface WidgetSettingsModalProps {
   open: boolean;
-  currentWidth: number;
+  currentWidth: number | string;
   onClose: () => void;
-  onSave: (width: number) => void;
+  onSave: (width: number | string) => void;
 }
 
-const WIDTH_OPTIONS = [
-  { value: 3, label: 'Schmal (25%)' },
-  { value: 4, label: 'Normal (33%)' },
-  { value: 6, label: 'Breit (50%)' },
-  { value: 12, label: 'Volle Breite (100%)' },
+const GRID_OPTIONS = [
+  { value: 3, label: 'Schmal (3/12, 25%)' },
+  { value: 4, label: 'Normal (4/12, 33%)' },
+  { value: 6, label: 'Halbe Breite (6/12, 50%)' },
+  { value: 8, label: 'Groß (8/12, 66%)' },
+  { value: 12, label: 'Volle Breite (12/12, 100%)' },
 ];
 
 export const WidgetSettingsModal: React.FC<WidgetSettingsModalProps> = ({ open, currentWidth, onClose, onSave }) => {
-  const [width, setWidth] = useState(currentWidth);
+  const [width, setWidth] = useState<number>(typeof currentWidth === 'number' ? currentWidth : 6);
 
-  // Reset width when modal opens with new value
   React.useEffect(() => {
-    setWidth(currentWidth);
+    setWidth(typeof currentWidth === 'number' ? currentWidth : 6);
   }, [currentWidth, open]);
 
   return (
@@ -43,7 +43,7 @@ export const WidgetSettingsModal: React.FC<WidgetSettingsModalProps> = ({ open, 
             label="Breite"
             onChange={e => setWidth(Number(e.target.value))}
           >
-            {WIDTH_OPTIONS.map(opt => (
+            {GRID_OPTIONS.map(opt => (
               <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
             ))}
           </Select>

@@ -54,7 +54,10 @@ function DashboardContent() {
   useEffect(() => {
     setLoading(true);
     fetchDashboardWidgets()
-      .then(setWidgets)
+      .then(widgets => {
+        console.log('Dashboard Widgets:', widgets);
+        setWidgets(widgets);
+      })
       .catch(() => setWidgets([]))
       .finally(() => setLoading(false));
   }, []);
@@ -102,11 +105,10 @@ function DashboardContent() {
     setSettingsWidgetId(null);
   };
 
-  const handleSettingsSave = async (newWidth: number) => {
+  const handleSettingsSave = async (newWidth: number | string) => {
     if (!settingsWidgetId) return;
     const widget = widgets.find(w => w.id === settingsWidgetId);
     if (!widget) return;
-    // Update API
     await updateWidgetWidth({
       id: widget.id,
       width: newWidth,
@@ -114,7 +116,6 @@ function DashboardContent() {
       config: widget.config,
       enabled: true
     });
-    // Nach erfolgreichem Update Widgets neu laden
     setLoading(true);
     fetchDashboardWidgets()
       .then(setWidgets)
@@ -273,7 +274,7 @@ function DashboardContent() {
         currentWidth={(() => {
           if (!settingsWidgetId) return 6;
           const w = widgets.find(w => w.id === settingsWidgetId);
-          return w?.width || 6;
+          return w?.width ?? 6;
         })()}
         onClose={handleSettingsClose}
         onSave={handleSettingsSave}

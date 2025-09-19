@@ -62,27 +62,59 @@ export const DashboardDndKitWrapper: React.FC<DashboardDndKitWrapperProps> = ({ 
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={widgets.map(w => w.id)} strategy={verticalListSortingStrategy}>
-        <Grid container spacing={{ xs: 1, sm: 2 }} wrap="wrap" sx={{ width: '100%' }}>
-          {widgets.map((widget, idx) => {
-            const isDraggingThis = activeId === widget.id;
-            const width = widget.width || 6;
-            if (isDraggingThis) {
-              // Zeige nur einen leeren Platzhalter für das gezogene Element
-              return (
-                <Grid item key={widget.id} xs={12} sm={width} md={width} lg={width} xl={width} style={{ opacity: 0.3, minHeight: 200 }}>
-                  <Box sx={{ border: '2px dashed #ccc', borderRadius: 1, height: '100%' }} />
-                </Grid>
-              );
-            }
-            return (
-              <Grid item key={widget.id} xs={12} sm={width} md={width} lg={width} xl={width}>
-                <SortableWidget id={widget.id}>
-                  {(dragProps, isDragging, dragHandle) => children(widget, idx, dragProps, isDragging, dragHandle)}
-                </SortableWidget>
-              </Grid>
-            );
-          })}
-        </Grid>
+        {(() => {
+          const gapPx = 16; // entspricht gap: 2 (theme.spacing(2) = 16px)
+          const rows: WidgetData[][] = [];
+          let i = 0;
+          while (i < widgets.length) {
+            // Ermittle die gewünschte Anzahl Widgets pro Zeile anhand der Breite des ersten Widgets
+            const width = typeof widgets[i].width === 'number' ? widgets[i].width : 6;
+            const percent = (width / 12) * 100;
+            const n = Math.floor(100 / percent);
+            rows.push(widgets.slice(i, i + n));
+            i += n;
+          }
+          return (
+            <>
+              {rows.map((row, rowIdx) => {
+                const n = row.length;
+                const totalGapPx = (n - 1) * gapPx;
+                const boxWidth = `calc((100% - ${totalGapPx}px) / ${n})`;
+                return (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: `${gapPx}px`, mb: `${gapPx}px`, width: '100%' }} key={rowIdx}>
+                    {row.map((widget, idx) => {
+                      const isDraggingThis = activeId === widget.id;
+                      const width = typeof widget.width === 'number' ? widget.width : 6;
+                      const percent = (width / 12) * 100;
+                      // Responsive: auf kleinen Bildschirmen immer 100% Breite
+                      const boxWidth = { xs: '100%', sm: `calc(${percent}% - ${(n > 1 ? ((n-1)*gapPx)/n : 0)}px)` };
+                      const sx: any = {
+                        width: boxWidth,
+                        minWidth: 120,
+                        opacity: isDraggingThis ? 0.3 : 1,
+                        boxSizing: 'border-box',
+                        transition: 'width 0.2s'
+                      };
+                      if (isDraggingThis) sx.minHeight = 200;
+                      if (isDraggingThis) {
+                        return (
+                          <Box key={widget.id} sx={{ border: '2px dashed #ccc', borderRadius: 1, height: '100%', ...sx }} />
+                        );
+                      }
+                      return (
+                        <Box key={widget.id} sx={sx}>
+                          <SortableWidget id={widget.id}>
+                            {(dragProps, isDragging, dragHandle) => children(widget, idx, dragProps, isDragging, dragHandle)}
+                          </SortableWidget>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                );
+              })}
+            </>
+          );
+        })()}
       </SortableContext>
       <DragOverlay>
         {activeId ? (() => {

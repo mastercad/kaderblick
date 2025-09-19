@@ -46,14 +46,15 @@ const DashboardWidgetInner = (
   return (
     <Card
       ref={ref}
-      style={style}
       sx={{ 
-        width: '100%',
-        minWidth: 320,
+        width: { xs: '100%', sm: '100%' },
+        minWidth: { xs: '100%', sm: 180 },
         maxWidth: '100%',
         height: '100%', 
         display: 'flex', 
         flexDirection: 'column', 
+        boxSizing: 'border-box',
+        p: { xs: 0.5, sm: 1 },
         '& .MuiCardHeader-action': {
           alignSelf: 'flex-start',
           marginTop: 0
