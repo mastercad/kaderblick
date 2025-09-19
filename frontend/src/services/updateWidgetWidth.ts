@@ -2,7 +2,7 @@ import { apiJson } from '../utils/api';
 
 export async function updateWidgetWidth({ id, width, position, config, enabled = true, isDefault = false }: {
   id: string;
-  width: number;
+  width: number | string;
   position: number;
   config?: any;
   enabled?: boolean;
