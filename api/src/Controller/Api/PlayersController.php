@@ -47,8 +47,8 @@ class PlayersController extends AbstractController
                 'height' => $player->getHeight(),
                 'weight' => $player->getWeight(),
                 'strongFeet' => [
-                    'id' => $player->getStrongFoot()->getId(),
-                    'name' => $player->getStrongFoot()->getName()
+                    'id' => $player->getStrongFoot()?->getId(),
+                    'name' => $player->getStrongFoot()?->getName()
                 ],
                 'mainPosition' => [
                     'id' => $player->getMainPosition()->getId(),
@@ -119,8 +119,8 @@ class PlayersController extends AbstractController
                 'height' => $player->getHeight(),
                 'weight' => $player->getWeight(),
                 'strongFeet' => [
-                    'id' => $player->getStrongFoot()->getId(),
-                    'name' => $player->getStrongFoot()->getName()
+                    'id' => $player->getStrongFoot()?->getId(),
+                    'name' => $player->getStrongFoot()?->getName()
                 ],
                 'mainPosition' => [
                     'id' => $player->getMainPosition()->getId(),

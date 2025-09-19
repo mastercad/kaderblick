@@ -137,7 +137,7 @@ class ClubController extends AbstractController
         $contactPerson = trim($clubData['contactPerson'] ?? $club->getContactPerson());
         $foundingYearRaw = $clubData['foundingYear'] ?? $club->getFoundingYear();
         $foundingYear = ('' !== $foundingYearRaw && is_numeric($foundingYearRaw)) ? (int) $foundingYearRaw : null;
-        $active = $clubData['active'] ? true : false;
+        $active = isset($clubData['active']) ? (bool) $clubData['active'] : false;
 
         // Setzen ins Entity
         $club->setLogoUrl('' !== $logoUrl ? $logoUrl : null);
@@ -232,7 +232,7 @@ class ClubController extends AbstractController
         $contactPerson = trim($clubData['contactPerson'] ?? $club->getContactPerson());
         $foundingYearRaw = $clubData['foundingYear'] ?? $club->getFoundingYear();
         $foundingYear = ('' !== $foundingYearRaw && is_numeric($foundingYearRaw)) ? (int) $foundingYearRaw : null;
-        $active = $clubData['active'] ? true : false;
+        $active = isset($clubData['active']) ? (bool) $clubData['active'] : false;
 
         // Setzen ins Entity
         $club->setLogoUrl('' !== $logoUrl ? $logoUrl : null);

@@ -31,7 +31,7 @@ jobs:
       - name: Prepare files
         run: |
           mkdir -p build
-          cp -r docker-compose.yml docker-compose.db.yml .docker api build/
+          cp -r docker-compose.yml docker-compose.db.yml .docker api frontend build/
           
       - name: Deploy and switch
         uses: appleboy/ssh-action@master
@@ -96,6 +96,8 @@ jobs:
 
             cp api/.env.dist api/.env
             echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> api/.env
+            #            echo "CORS_ALLOW_ORIGIN=http://frontend" >> api/.env
+            echo "VITE_BACKEND_URL=https://api.kaderblick.byte-artist.de" > frontend/.env
 
             # ich bin mir ehrlich gesagt gerade gar nicht mehr sicher, ob das hier noch so sinn macht, die kommen ja immer mit dem branch aktuell rein
             if [ -d "$CURRENT_DIR" ]; then
@@ -112,7 +114,19 @@ jobs:
             echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > api/config/secrets/prod/prod.decrypt.private.php
             chmod 655 api/config/secrets/prod/prod.decrypt.private.php
 
-            PMA_PORT=18081 API_PORT=18000 REACT_PORT=18080 docker compose -p staging up -d --build --force-recreate api frontend
+
+            # Staging-Container bauen und starten
+            PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 docker compose -p staging up -d --build --force-recreate api frontend
+
+            # Nach erfolgreichem Staging: Images für Production taggen (immer aktuellste Image-ID verwenden)
+            FRONTEND_IMAGE_ID=$(docker images staging-frontend:latest --format "{{.ID}}" | head -n 1)
+            if [ -n "$FRONTEND_IMAGE_ID" ]; then
+              docker tag $FRONTEND_IMAGE_ID production-frontend:latest
+            fi
+            API_IMAGE_ID=$(docker images staging-api:latest --format "{{.ID}}" | head -n 1)
+            if [ -n "$API_IMAGE_ID" ]; then
+              docker tag $API_IMAGE_ID production-api:latest
+            fi
 
             ###### WORKAROUND FÜR FIXTURES ######
             #            sed -i 's/^APP_ENV=prod$/APP_ENV=dev/' api/.env
@@ -145,15 +159,18 @@ jobs:
             mkdir -p "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads"
 
             ln -sfn "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads" "$RELEASE_DIR/api/public/uploads"
+            ln -sfn "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads" "$RELEASE_DIR/frontend/public/uploads"
 
             chmod -R 777 "$RELEASE_DIR/api/public/uploads"
+            chmod -R 777 "$RELEASE_DIR/frontend/public/uploads"
 
-            # Neue Production starten
+            # Production-Container aus getaggten Images starten
             cd $CURRENT_DIR
 
-            echo "starte production"
+            echo "starte production aus staging Images"
             docker compose -p production up -d --force-recreate api frontend
 
+            # Staging-Container stoppen und entfernen
             docker compose -p staging down api frontend
             docker compose -p staging rm api frontend
 

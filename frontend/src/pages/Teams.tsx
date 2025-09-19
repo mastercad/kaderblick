@@ -16,56 +16,48 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { apiJson } from '../utils/api';
-import ClubDetailsModal from '../modals/ClubDetailsModal';
-import ClubDeleteConfirmationModal from '../modals/ClubDeleteConfirmationModal';
-import ClubEditModal from '../modals/ClubEditModal';
-import { Club } from '../types/club';
+import TeamDetailsModal from '../modals/TeamDetailsModal';
+import TeamDeleteConfirmationModal from '../modals/TeamDeleteConfirmationModal';
+import TeamEditModal from '../modals/TeamEditModal';
+import { Team } from '../types/team';
 
-interface ClubResponseProps {
-  clubs: Club[]
+interface TeamResponseProps {
+  teams: Team[]
 }
 
-const Clubs = () => {
-  const [clubs, setClubs] = useState<Club[]>([]);
+const Teams = () => {
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [clubId, setClubId] = useState<number | null>(null);
-  const [clubDetailsModalOpen, setClubDetailsModalOpen] = useState(false);
-  const [clubEditModalOpen, setClubEditModalOpen] = useState(false);
+  const [teamId, setTeamId] = useState<number | null>(null);
+  const [teamDetailsModalOpen, setTeamDetailsModalOpen] = useState(false);
+  const [teamEditModalOpen, setTeamEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteClub, setDeleteClub] = useState<Club | null>(null);
+  const [deleteTeam, setDeleteTeam] = useState<Team | null>(null);
 
-  const loadClubs = async () => {
+  const loadTeams = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiJson<{ clubs: ClubResponseProps[] }>('/clubs');
-      if (res && typeof res === 'object') {
-        // Die eigentlichen Einträge stehen unter numerischen Keys
-        const clubList = Object.keys(res)
-          .filter(key => /^\d+$/.test(key))
-          .map(key => res[key].club);
-        setClubs(clubList);
-      } else {
-        setClubs([]);
-      }
+      const res = await apiJson<{ teams: TeamResponseProps[] }>('/api/teams/list');
+      setTeams(res.teams);
     } catch (e) {
-      setError('Fehler beim Laden der Vereine.');
+      setError('Fehler beim Laden der Teams.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadClubs();
+    loadTeams();
   }, []);
 
-  const handleDelete = async (clubId: number) => {
+  const handleDelete = async (teamId: number) => {
     try {
-      await apiJson(`/clubs/${clubId}/delete`, { method: 'DELETE' });
-      setClubs(clubs => clubs.filter(c => c.id !== clubId));
+      await apiJson(`/api/teams/${teamId}/delete`, { method: 'DELETE' });
+      setTeams(teams => teams.filter(c => c.id !== teamId));
     } catch (e) {
-      alert('Fehler beim Löschen des Vereins.');
+      alert('Fehler beim Löschen des Teams.');
     }
   };
 
@@ -73,10 +65,10 @@ const Clubs = () => {
     <Box sx={{mx: 'auto', mt: 4, p: 3 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={4}>
         <Typography variant="h4">
-          Vereine
+          Teams
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setClubId(null); setClubEditModalOpen(true) }}>
-          Neuen Verein erstellen
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setTeamId(null); setTeamEditModalOpen(true) }}>
+          Neues Team erstellen
         </Button>
       </Stack>
       {loading ? (
@@ -91,102 +83,100 @@ const Clubs = () => {
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
-                <TableCell>Stadion</TableCell>
-                <TableCell>Website</TableCell>
+                <TableCell>Altersgruppe</TableCell>
+                <TableCell>Liga</TableCell>
                 <TableCell>Aktionen</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {clubs.map((club, idx) => (
-                <TableRow key={club.id}
+              {teams.map((team, idx) => (
+                <TableRow key={team.id}
                   sx={{
                     backgroundColor: idx % 2 === 0 ? 'background.paper' : 'grey.100'
                   }}
                 >
                   <TableCell sx={{ cursor: 'pointer' }}
                     onClick={() => {
-                      setClubId(club.id);
-                      setClubDetailsModalOpen(true);
+                      setTeamId(team.id);
+                      setTeamDetailsModalOpen(true);
                     }}
                   >
-                    {club.name || ''}
+                    {team.name || ''}
                   </TableCell>
                   <TableCell sx={{ cursor: 'pointer' }}
                     onClick={() => {
-                      setClubId(club.id);
-                      setClubDetailsModalOpen(true);
+                      setTeamId(team.id);
+                      setTeamDetailsModalOpen(true);
                     }}
                   >
-                    {club.stadiumName || ''}
+                    {team.ageGroup.name || ''}
                   </TableCell>
                   <TableCell sx={{ cursor: 'pointer' }}
                     onClick={() => {
-                      setClubId(club.id);
-                      setClubDetailsModalOpen(true);
+                      setTeamId(team.id);
+                      setTeamDetailsModalOpen(true);
                     }}
                   >
-                    {club.website || ''}
+                    {team.league.name || ''}
                   </TableCell>
                   <TableCell>
-                    { club.permissions?.canEdit && (
+                    { team.permissions?.canEdit && (
                       <IconButton color="primary"
                         size="small"
                         onClick={() => {
-                          setClubId(club.id);
-                          setClubEditModalOpen(true);
+                          setTeamId(team.id);
+                          setTeamEditModalOpen(true);
                         }}
                         sx={{ ml: 1 }}
-                        aria-label="Formation löschen"
+                        aria-label="Team bearbeiten"
                       >
                         <EditIcon />
                       </IconButton>
                     )}
-                    { club.permissions?.canDelete && (
+                    { team.permissions?.canDelete && (
                       <IconButton
                         size="small"
                         color="error"
                         onClick={() => {
-                          setDeleteClub(club);
+                          setDeleteTeam(team);
                           setDeleteModalOpen(true);
                         }}
                         sx={{ ml: 1 }}
-                        aria-label="Formation löschen"
+                        aria-label="Team löschen"
                       >
                         <DeleteIcon />
                       </IconButton>
                     )}
                   </TableCell>
-                  { club.permissions?.canDelete && (
-                  <ClubDeleteConfirmationModal
-                    open={deleteModalOpen}
-                    clubName={deleteClub?.name}
-                    onClose={() => setDeleteModalOpen(false)}
-                    onConfirm={async () => handleDelete(deleteClub.id) }
-                  />
-                  )}
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
       )}
-      <ClubDetailsModal
-        open={clubDetailsModalOpen}
-        loadClubs={() => loadClubs()}
-        clubId={clubId}
-        onClose={() => setClubDetailsModalOpen(false)}
+      <TeamDeleteConfirmationModal
+        open={deleteModalOpen}
+        teamName={deleteTeam?.name}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={async () => handleDelete(deleteTeam.id) }
       />
-      <ClubEditModal
-        openClubEditModal={clubEditModalOpen}
-        clubId={clubId}
-        onClubEditModalClose={() => setClubEditModalOpen(false)}
-        onClubSaved={(savedClub) => {
-          setClubEditModalOpen(false);
-          loadClubs();
+      <TeamDetailsModal
+        open={teamDetailsModalOpen}
+        loadTeams={() => loadTeams()}
+        teamId={teamId}
+        onClose={() => setTeamDetailsModalOpen(false)}
+      />
+      <TeamEditModal
+        openTeamEditModal={teamEditModalOpen}
+        teamId={teamId}
+        onTeamEditModalClose={() => setTeamEditModalOpen(false)}
+        onTeamSaved={(savedTeam) => {
+          setTeamEditModalOpen(false);
+          loadTeams();
         }}
       />
     </Box>
   );
 };
 
-export default Clubs;
+export default Teams;

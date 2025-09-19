@@ -406,11 +406,10 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
                   playerDisplay = `${e.player.firstName ?? ''} ${e.player.lastName ?? ''}`.trim();
                 }
                 if (e.minute) {
-                  minute = e.minute;
+                  // minutes are the old name, for better video marker we get seconds
+                  minute = e.minute / 60;
                 } else if (e.timestamp) {
-                  minute = (game?.calendarEvent?.startDate && event.timestamp)
-                    ? parseInt(Math.floor((new Date(event.timestamp).getTime() - new Date(game.calendarEvent.startDate).getTime()) / (1000 * 60)).toString())
-                    : 0;
+                  minute = formatEventTime(e.timestamp, gameStartDate ?? '') as unknown as number;
                 }
                 if (e.code) {
                   code = e.code;

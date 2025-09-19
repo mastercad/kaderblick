@@ -16,47 +16,47 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { apiJson } from '../utils/api';
-import CoachLicenseDeleteConfirmationModal from '../modals/CoachLicenseDeleteConfirmationModal';
-import CoachLicenseEditModal from '../modals/CoachLicenseEditModal';
-import { CoachLicense } from '../types/coachLicense';
+import LeagueDeleteConfirmationModal from '../modals/LeagueDeleteConfirmationModal';
+import LeagueEditModal from '../modals/LeagueEditModal';
+import { League } from '../types/league';
 
-const CoachLicenses = () => {
-  const [coachLicenses, setCoachLicenses] = useState<CoachLicense[]>([]);
+const Leagues = () => {
+  const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [coachLicenseId, setCoachLicenseId] = useState<number | null>(null);
-  const [coachLicenseEditModalOpen, setCoachLicenseEditModalOpen] = useState(false);
+  const [leagueId, setLeagueId] = useState<number | null>(null);
+  const [leagueEditModalOpen, setLeagueEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteCoachLicense, setDeleteCoachLicense] = useState<CoachLicense | null>(null);
+  const [deleteLeague, setDeleteLeague] = useState<League | null>(null);
 
-  const loadCoachLicenses = async () => {
+  const loadLeagues = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiJson<{ coachLicenses: CoachLicense[] }>('/api/coach-licenses');
-      if (res && Array.isArray(res.coachLicenses)) {
-        setCoachLicenses(res.coachLicenses);
+      const res = await apiJson<{ leagues: League[] }>('/api/leagues');
+      if (res && Array.isArray(res.leagues)) {
+        setLeagues(res.leagues);
       } else {
-        setCoachLicenses([]);
+        setLeagues([]);
       }
     } catch (e) {
-      setError('Fehler beim Laden der Trainerlizenzen.');
+      setError('Fehler beim Laden der starken Füße.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadCoachLicenses();
+    loadLeagues();
   }, []);
 
-  const handleDelete = async (coachLicenseId: number) => {
+  const handleDelete = async (leagueId: number) => {
     try {
-      await apiJson(`/api/coach-licenses/${coachLicenseId}`, { method: 'DELETE' });
-      setCoachLicenses(coachLicenses => coachLicenses.filter(c => c.id !== coachLicenseId));
+      await apiJson(`/api/league/${leagueId}`, { method: 'DELETE' });
+      setLeagues(leagues => leagues.filter(c => c.id !== leagueId));
       setDeleteModalOpen(false);
     } catch (e) {
-      alert('Fehler beim Löschen der Trainerlizenzen.');
+      alert('Fehler beim Löschen der Liga.');
     }
   };
 
@@ -64,10 +64,10 @@ const CoachLicenses = () => {
     <Box sx={{mx: 'auto', mt: 4, p: 3 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={4}>
         <Typography variant="h4">
-          Trainerlizenzen
+          Ligen
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setCoachLicenseId(null); setCoachLicenseEditModalOpen(true) }}>
-          Neue Trainerlizenz erstellen
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setLeagueId(null); setLeagueEditModalOpen(true) }}>
+          Neue Liga erstellen
         </Button>
       </Stack>
       {loading ? (
@@ -82,51 +82,43 @@ const CoachLicenses = () => {
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
-                <TableCell>Beschreibung</TableCell>
-                <TableCell>Länder Code</TableCell>
                 <TableCell>Aktionen</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {coachLicenses.map((coachLicense, idx) => (
-                <TableRow key={coachLicense.id}
+              {leagues.map((league, idx) => (
+                <TableRow key={league.id}
                   sx={{
                     backgroundColor: idx % 2 === 0 ? 'background.paper' : 'grey.100'
                   }}
                 >
                   <TableCell>
-                    {coachLicense.name || ''}
+                    {league.name || ''}
                   </TableCell>
                   <TableCell>
-                    {coachLicense.description || ''}
-                  </TableCell>
-                  <TableCell>
-                    {coachLicense.countryCode || ''}
-                  </TableCell>
-                  <TableCell>
-                    { coachLicense.permissions?.canEdit && (
+                    { league.permissions?.canEdit && (
                       <IconButton color="primary"
                         size="small"
                         onClick={() => {
-                          setCoachLicenseId(coachLicense.id);
-                          setCoachLicenseEditModalOpen(true);
+                          setLeagueId(league.id);
+                          setLeagueEditModalOpen(true);
                         }}
                         sx={{ ml: 1 }}
-                        aria-label="Oberflächenart bearbeiten"
+                        aria-label="Starken Fuß bearbeiten"
                       >
                         <EditIcon />
                       </IconButton>
                     )}
-                    { coachLicense.permissions?.canDelete && (
+                    { league.permissions?.canDelete && (
                       <IconButton
                         size="small"
                         color="error"
                         onClick={() => {
-                          setDeleteCoachLicense(coachLicense);
+                          setDeleteLeague(league);
                           setDeleteModalOpen(true);
                         }}
                         sx={{ ml: 1 }}
-                        aria-label="Trainerlizenz löschen"
+                        aria-label="Starken Fuß löschen"
                       >
                         <DeleteIcon />
                       </IconButton>
@@ -138,23 +130,23 @@ const CoachLicenses = () => {
           </Table>
         </TableContainer>
         )}
-        <CoachLicenseEditModal
-            openCoachLicenseEditModal={coachLicenseEditModalOpen}
-            coachLicenseId={coachLicenseId}
-            onCoachLicenseEditModalClose={() => setCoachLicenseEditModalOpen(false)}
-            onCoachLicenseSaved={(savedCoachLicense) => {
-                setCoachLicenseEditModalOpen(false);
-                loadCoachLicenses();
+        <LeagueEditModal
+            openLeagueEditModal={leagueEditModalOpen}
+            leagueId={leagueId}
+            onLeagueEditModalClose={() => setLeagueEditModalOpen(false)}
+            onLeagueSaved={(savedLeague) => {
+                setLeagueEditModalOpen(false);
+                loadLeagues();
             }}
         />
-        <CoachLicenseDeleteConfirmationModal
+        <LeagueDeleteConfirmationModal
             open={deleteModalOpen}
-            coachLicenseName={deleteCoachLicense?.name}
+            leagueName={deleteLeague?.name}
             onClose={() => setDeleteModalOpen(false)}
-            onConfirm={async () => handleDelete(deleteCoachLicense.id) }
+            onConfirm={async () => handleDelete(deleteLeague.id) }
         />
     </Box>
   );
 };
 
-export default CoachLicenses;
+export default Leagues;

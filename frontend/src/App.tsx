@@ -39,8 +39,10 @@ import GameEventTypes from './pages/GameEventTypes';
 import Tasks from './pages/Tasks';
 import Nationalities from './pages/Nationalities';
 import CoachLicenses from './pages/CoachLicenses';
+import Leagues from './pages/Leagues';
 import Imprint from './pages/Imprint';
 import Privacy from './pages/Privacy';
+import Teams from './pages/Teams';
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -123,6 +125,8 @@ function App() {
                 <Route path="gameEventTypes" element={<ProtectedRoute><GameEventTypes /></ProtectedRoute>} />
                 <Route path="tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
                 <Route path="nationalities" element={<ProtectedRoute><Nationalities /></ProtectedRoute>} />
+                <Route path="leagues" element={<ProtectedRoute><Leagues /></ProtectedRoute>} />
+                <Route path="teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
                 <Route path="coachLicenses" element={<ProtectedRoute><CoachLicenses /></ProtectedRoute>} />
                 <Route path="/api/surveys/:surveyId" element={<ProtectedRoute><SurveyFill /></ProtectedRoute>} />
                 <Route path="/imprint" element={<ProtectedRoute><Imprint /></ProtectedRoute>} />

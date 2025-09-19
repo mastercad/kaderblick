@@ -188,7 +188,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   
   // Zusätzliche Daten
   const [eventTypes, setEventTypes] = useState<{ createAndEditAllowed: boolean; entries: CalendarEventType[] }>({ createAndEditAllowed: false, entries: [] });
-  const [teams, setTeams] = useState<{ createAndEditAllowed: boolean; entries: Team[] }>({ createAndEditAllowed: false, entries: [] });
+  const [teams, setTeams] = useState<{ createAndEditAllowed: boolean; teams: Team[] }>({ createAndEditAllowed: false, teams: [] });
   const [gameTypes, setGameTypes] = useState<{ createAndEditAllowed: boolean; entries: GameType[] }>({ createAndEditAllowed: false, entries: [] });
   const [locations, setLocations] = useState<Location[]>([]);
 
@@ -245,12 +245,12 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   useEffect(() => {    
     Promise.all([
       apiJson<{ createAndEditAllowed: boolean; entries: CalendarEventType[] }>('/api/calendar-event-types').catch(() => ({ createAndEditAllowed: false, entries: [] })),
-      apiJson<{ createAndEditAllowed: boolean; entries: Team[] }>('/api/teams/list').catch(() => ({ createAndEditAllowed: false, entries: [] })),
+      apiJson<{ createAndEditAllowed: boolean; teams: Team[] }>('/api/teams/list').catch(() => ({ createAndEditAllowed: false, teams: [] })),
       apiJson<{ createAndEditAllowed: boolean; entries: GameType[] }>('/api/game-types').catch(() => ({ createAndEditAllowed: false, entries: [] })),
       apiJson<LocationsApiResponse>('/api/locations').catch(() => ({ locations: [], permissions: { canCreate: false, canEdit: false, canView: false, canDelete: false } }))
     ]).then(([eventTypesData, teamsData, gameTypesData, locationsData]) => {
       setEventTypes(eventTypesData);
-      setTeams({ createAndEditAllowed: teamsData.createAndEditAllowed, entries: teamsData.entries || [] });
+      setTeams({ createAndEditAllowed: teamsData.createAndEditAllowed, entries: teamsData.teams || [] });
       setGameTypes(gameTypesData);
       setLocations(locationsData.locations || []);
     }).catch(console.error);
