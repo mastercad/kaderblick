@@ -2,11 +2,12 @@
 
 namespace App\Entity;
 
+use App\Repository\SurveyOptionTypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: SurveyOptionTypeRepository::class)]
 class SurveyOptionType
 {
     #[ORM\Id]

@@ -2,11 +2,12 @@
 
 namespace App\Entity;
 
+use App\Repository\SurveyQuestionRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: SurveyQuestionRepository::class)]
 class SurveyQuestion
 {
     #[ORM\Id]
@@ -29,7 +30,7 @@ class SurveyQuestion
     /**
      * @var Collection<int, SurveyOption>
      */
-    #[ORM\ManyToMany(targetEntity: SurveyOption::class, mappedBy: 'questions', cascade: ['persist', 'remove'])]
+    #[ORM\ManyToMany(targetEntity: SurveyOption::class, mappedBy: 'questions')]
     private Collection $options;
 
     public function __construct()

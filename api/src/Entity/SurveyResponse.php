@@ -2,11 +2,13 @@
 
 namespace App\Entity;
 
+use App\Repository\SurveyResponseRepository;
 use DateTime;
 use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+
+#[ORM\Entity(repositoryClass: SurveyResponseRepository::class)]
 class SurveyResponse
 {
     #[ORM\Id]

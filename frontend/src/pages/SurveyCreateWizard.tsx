@@ -126,7 +126,9 @@ import { apiJson } from '../utils/api';
       .then(data => setAvailableClubs(data.entries))
       .catch(e => setClubsLoadError('Fehler beim Laden der Vereine: ' + (e?.message || 'Unknown error')));
   }, []);
-    const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  // Zeigt Validierungsfehler erst nach Interaktion (Weiter-Klick) an
+  const [touched, setTouched] = useState<{ [step: number]: boolean }>({});
     const [editQuestionId, setEditQuestionId] = useState<string | null>(null);
     const [questionDraft, setQuestionDraft] = useState<{ questionText: string; type: QuestionType; options: number[] }>({ questionText: '', type: 'single_choice', options: [] });
   const [availableOptions, setAvailableOptions] = useState<SurveyOption[]>([]);
@@ -178,9 +180,11 @@ import { apiJson } from '../utils/api';
     };
 
     const stepValidation = [validateGeneralStep, validateQuestionsStep, validateSummaryStep];
-    const currentStepError = stepValidation[activeStep]();
+  const currentStepError = stepValidation[activeStep]();
 
     const handleNext = () => {
+      // Markiere aktuellen Schritt als "touched" beim ersten Weiter-Klick
+      if (!touched[activeStep]) setTouched(t => ({ ...t, [activeStep]: true }));
       if (!currentStepError) setActiveStep((prev) => prev + 1);
     };
     const handleBack = () => setActiveStep((prev) => prev - 1);
@@ -556,14 +560,14 @@ import { apiJson } from '../utils/api';
               ))}
             </Stepper>
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            {currentStepError && <Alert severity="error" sx={{ mb: 2 }}>{currentStepError}</Alert>}
+            {(touched[activeStep] && currentStepError) && <Alert severity="error" sx={{ mb: 2 }}>{currentStepError}</Alert>}
             {optionsLoadError && <Alert severity="error" sx={{ mb: 2 }}>{optionsLoadError}</Alert>}
             {typesLoadError && <Alert severity="error" sx={{ mb: 2 }}>{typesLoadError}</Alert>}
             {renderStepContent()}
             <Box mt={3} display="flex" justifyContent="space-between">
               <Button disabled={activeStep === 0} onClick={handleBack}>Zurück</Button>
         {activeStep < steps.length - 1 && (
-          <Button variant="contained" onClick={handleNext} disabled={!!currentStepError}>
+          <Button variant="contained" onClick={handleNext}>
             Weiter
           </Button>
         )}

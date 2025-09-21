@@ -11,6 +11,7 @@ use App\Entity\Team;
 use App\Entity\User;
 use App\Repository\SurveyOptionTypeRepository;
 use App\Repository\SurveyRepository;
+use App\Security\Voter\SurveyVoter;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,15 +25,6 @@ class SurveyController extends AbstractController
 {
     public function __construct(private EntityManagerInterface $em)
     {
-    }
-
-    #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
-    public function delete(Survey $survey): JsonResponse
-    {
-        $this->em->remove($survey);
-        $this->em->flush();
-
-        return $this->json(['success' => true]);
     }
 
     #[Route('', name: 'list', methods: ['GET'])]
@@ -264,6 +256,24 @@ class SurveyController extends AbstractController
             'title' => $survey->getTitle(),
             'results' => $results,
         ]);
+    }
+
+    #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
+    public function delete(Survey $survey): JsonResponse
+    {
+        if (! $this->isGranted(SurveyVoter::DELETE, $survey)) {
+            return $this->json(['error' => 'You do not have permission to delete this survey.'], 403);
+        }
+
+        $this->em->getRepository(SurveyResponse::class)->deleteBySurvey($survey);
+        foreach ($survey->getQuestions() as $question) {
+            $this->em->remove($question);
+        }
+
+        $this->em->remove($survey);
+        $this->em->flush();
+
+        return $this->json(['success' => true]);
     }
 
     /**

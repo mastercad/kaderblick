@@ -60,9 +60,11 @@ const News: React.FC = () => {
     <Box sx={{mx: 'auto', mt: 4, p: 3 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={4}>
         <Typography variant="h4">News</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
-          Neue Nachricht erstellen
-        </Button>
+        {news.length > 0 && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
+            Neue Nachricht erstellen
+          </Button>
+        )}
       </Stack>
       {loading ? (
         <Typography>Loading...</Typography>
