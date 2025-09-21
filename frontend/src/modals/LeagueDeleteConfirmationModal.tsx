@@ -5,21 +5,21 @@ interface LeagueDeleteConfirmationModalProps {
   open: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  positionName?: string;
+  leagueName?: string;
 }
 
 export const LeagueDeleteConfirmationModal: React.FC<LeagueDeleteConfirmationModalProps> = ({
   open,
   onClose,
   onConfirm,
-  positionName,
+  leagueName,
 }) => (
   <ConfirmationModal
     open={open}
     onClose={onClose}
     onConfirm={onConfirm}
     title="Liga löschen?"
-    message={`Soll die Liga${positionName ? ` "${positionName}"` : ''} wirklich entfernt werden?`}
+    message={`Soll die Liga${leagueName ? ` "${leagueName}"` : ''} wirklich entfernt werden?`}
     confirmText="Löschen"
     confirmColor="error"
   />
