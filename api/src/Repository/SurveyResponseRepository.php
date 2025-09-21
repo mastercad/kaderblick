@@ -17,9 +17,6 @@ class SurveyResponseRepository extends ServiceEntityRepository
         parent::__construct($registry, SurveyResponse::class);
     }
 
-    /**
-     * @param array<int> $surveyIds
-     */
     public function deleteBySurvey(Survey $survey): void
     {
         $this->createQueryBuilder('sr')

@@ -11,6 +11,7 @@ use App\Entity\Team;
 use App\Entity\User;
 use App\Repository\SurveyOptionTypeRepository;
 use App\Repository\SurveyRepository;
+use App\Repository\SurveyResponseRepository;
 use App\Security\Voter\SurveyVoter;
 use DateTime;
 use DateTimeImmutable;
@@ -261,11 +262,14 @@ class SurveyController extends AbstractController
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
     public function delete(Survey $survey): JsonResponse
     {
-        if (! $this->isGranted(SurveyVoter::DELETE, $survey)) {
+        if (!$this->isGranted(SurveyVoter::DELETE, $survey)) {
             return $this->json(['error' => 'You do not have permission to delete this survey.'], 403);
         }
 
-        $this->em->getRepository(SurveyResponse::class)->deleteBySurvey($survey);
+        /** @var SurveyResponseRepository $surveyResponseRepository */
+        $surveyResponseRepository = $this->em->getRepository(SurveyResponse::class);
+        $surveyResponseRepository->deleteBySurvey($survey);
+
         foreach ($survey->getQuestions() as $question) {
             $this->em->remove($question);
         }
