@@ -47,21 +47,31 @@ const SurveyList: React.FC = () => {
   if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
-    <>
-      <Box sx={{ mt: 4, p: 3 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
-        <Typography variant="h4" flex={1}>Umfragen</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setWizardOpen(true)}>
-          Neue Umfrage
-        </Button>
-      </Box>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-        {surveys.map((survey) => (
+    <Box sx={{mx: 'auto', mt: 4, p: 3 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={4}>
+        <Typography variant="h4">Umfragen</Typography>
+        {surveys.length > 0 && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setWizardOpen(true)}>
+            Neue Umfrage erstellen
+          </Button>
+        )}
+      </Stack>
+        {loading ? (
+          <Typography>Loading...</Typography>
+        ) : surveys.length === 0 ? (
+          <Box textAlign="center" py={5}>
+            <Typography color="text.secondary" variant="h6">Keine Umfragen verfügbar.</Typography>
+            <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setWizardOpen(true)} sx={{ mt: 2 }}>
+              Erste Umfrage erstellen
+            </Button>
+          </Box>
+        ) : (
+            surveys.map((survey) => (
           <Card
-            key={survey.id}
-            sx={{ width: '100%', minWidth: 0, maxWidth: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'stretch', position: 'relative' }}
-          >
-            <Tooltip
+              key={survey.id}
+              sx={{ width: '100%', minWidth: 0, maxWidth: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'stretch', position: 'relative' }}
+            >
+              <Tooltip
               title="Link kopiert!"
               open={tooltipOpenId === survey.id}
               disableFocusListener
@@ -142,7 +152,8 @@ const SurveyList: React.FC = () => {
               </Stack>
             </CardContent>
           </Card>
-        ))}
+        ))
+      )}
       <ConfirmationModal
         open={!!deleteSurveyId}
         onClose={() => setDeleteSurveyId(null)}
@@ -166,7 +177,6 @@ const SurveyList: React.FC = () => {
         confirmColor="error"
         cancelText="Abbrechen"
       />
-      </Box>
       <SurveyStatusDialog
         surveyId={selectedSurveyId}
         open={statusDialogOpen}
@@ -178,9 +188,7 @@ const SurveyList: React.FC = () => {
           editSurvey={editSurvey}
         />
       </Dialog>
-      </Box>
-  {/* Kein Snackbar mehr, stattdessen Tooltip am Icon */}
-    </>
+    </Box>
   );
 };
 
