@@ -241,7 +241,7 @@ class GamesController extends AbstractController
                 } elseif ($gameEvent->getTeam() === $game->getAwayTeam()) {
                     ++$awayScore;
                 }
-            } else if ($gameEvent->getGameEventType() === $gameEventOwnGoal) {
+            } elseif ($gameEvent->getGameEventType() === $gameEventOwnGoal) {
                 if ($gameEvent->getTeam() === $game->getHomeTeam()) {
                     ++$awayScore;
                 } elseif ($gameEvent->getTeam() === $game->getAwayTeam()) {
