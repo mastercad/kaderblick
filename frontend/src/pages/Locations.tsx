@@ -86,7 +86,7 @@ const Locations = () => {
                           latitude: location.latitude,
                           longitude: location.longitude,
                           capacity: location.capacity ?? '',
-                          surfaceType: location.surfaceType?.id ?? '',
+                          surfaceTypeId: location.surfaceTypeId ?? location.surfaceType?.id ?? 0,
                           hasFloodlight: location.hasFloodlight ?? false,
                           facilities: location.facilities ?? '',
                         });

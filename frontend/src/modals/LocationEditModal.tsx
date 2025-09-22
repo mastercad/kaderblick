@@ -9,7 +9,7 @@ export type LocationFormValues = {
   address: string;
   city: string;
   capacity: number | '';
-  surfaceType: number | '';
+  surfaceTypeId?: number;
   hasFloodlight: boolean;
   facilities: string;
   latitude: number | '';
@@ -22,6 +22,8 @@ interface LocationEditModalProps {
   onLocationSaved?: (location: Location) => void;
   initialValues?: Partial<LocationFormValues>;
   isEdit?: boolean;
+  surfaceTypes: { id: number; name: string }[];
+  onSaved?: (location: Location) => void;
 }
 
 const defaultValues: LocationFormValues = {
@@ -29,18 +31,17 @@ const defaultValues: LocationFormValues = {
   address: '',
   city: '',
   capacity: '',
-  surfaceType: '',
+  surfaceTypeId: undefined,
   hasFloodlight: false,
   facilities: '',
   latitude: '',
   longitude: '',
 };
 
-const LocationEditModal: React.FC<LocationEditModalProps> = ({ openLocationEditModal, onLocationEditModalClose, onLocationSaved, initialValues, isEdit }) => {
+const LocationEditModal: React.FC<LocationEditModalProps> = ({ openLocationEditModal, onLocationEditModalClose, onLocationSaved, initialValues, isEdit, surfaceTypes, onSaved }) => {
   const [values, setValues] = useState<LocationFormValues>(defaultValues);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [surfaceTypes, setSurfaceTypes] = useState<{ id: number; name: string }[]>([]);
   const [surfaceTypesLoading, setSurfaceTypesLoading] = useState(false);
 
     type OSMResult = { lat: string; lon: string; display_name: string };
@@ -73,8 +74,11 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({ openLocationEditM
     
   useEffect(() => {
     if (openLocationEditModal) {
+      console.log('LocationEditModal initialValues:', initialValues);
+      console.log('LocationEditModal initialValues.surfaceTypeId:', initialValues?.surfaceTypeId);
       setValues({ ...defaultValues, ...initialValues });
       setError(null);
+      /*
       setSurfaceTypesLoading(true);
       apiJson('/api/locations')
         .then(res => {
@@ -82,18 +86,19 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({ openLocationEditM
         })
         .catch(() => setSurfaceTypes([]))
         .finally(() => setSurfaceTypesLoading(false));
+      */
     }
   }, [openLocationEditModal, initialValues]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value, type, checked } = e.target;
       setValues((prev) => ({
-      ...prev,
-      [name]:
+        ...prev,
+        [name]:
           type === 'checkbox' ? checked :
-          name === 'latitude' || name === 'longitude' || name === 'capacity' || name === 'surfaceType'
-          ? (value === '' ? '' : Number(value))
-          : value,
+          name === 'latitude' || name === 'longitude' || name === 'capacity' || name === 'surfaceTypeId'
+            ? (value === '' ? undefined : Number(value))
+            : value,
       }));
   };
 
@@ -112,6 +117,7 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({ openLocationEditM
 
       if (onLocationSaved) onLocationSaved(res.location || res.data || values);
       onLocationEditModalClose();
+      onSaved?.(res.location || res.data || values);
     } catch (err: any) {
       setError(err?.message || 'Fehler beim Speichern');
     } finally {
@@ -272,8 +278,8 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({ openLocationEditM
           <TextField
             select
             label="Belag"
-            name="surfaceType"
-            value={values.surfaceType}
+            name="surfaceTypeId"
+            value={values.surfaceTypeId}
             onChange={handleChange}
             fullWidth
             margin="normal"
