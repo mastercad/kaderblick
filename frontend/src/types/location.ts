@@ -13,4 +13,5 @@ export type Location = {
   facilities?: string;
   permissions: Permissions;
   surfaceType?: SurfaceType;
+  surfaceTypeId: number;
 };

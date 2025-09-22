@@ -189,7 +189,7 @@ import { apiJson } from '../utils/api';
     };
 
     const stepValidation = [validateGeneralStep, validateQuestionsStep, validateSummaryStep];
-  const currentStepError = stepValidation[activeStep]();
+    const currentStepError = stepValidation[activeStep]();
 
     const handleNext = () => {
       // Markiere aktuellen Schritt als "touched" beim ersten Weiter-Klick
