@@ -274,6 +274,12 @@ class GamesController extends ApiController
                 } elseif ($gameEvent->getTeam() === $game->getAwayTeam()) {
                     ++$awayScore;
                 }
+            } elseif ($gameEvent->getGameEventType() === $gameEventOwnGoal) {
+                if ($gameEvent->getTeam() === $game->getHomeTeam()) {
+                    ++$awayScore;
+                } elseif ($gameEvent->getTeam() === $game->getAwayTeam()) {
+                    ++$homeScore;
+                }
             }
         }
 
