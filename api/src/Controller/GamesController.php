@@ -229,6 +229,7 @@ class GamesController extends AbstractController
     private function collectScores(array $gameEvents, Game $game): array
     {
         $gameEventGoal = $this->entityManager->getRepository(GameEventType::class)->findOneBy(['code' => 'goal']);
+        $gameEventOwnGoal = $this->entityManager->getRepository(GameEventType::class)->findOneBy(['code' => 'own_goal']);
 
         $homeScore = 0;
         $awayScore = 0;
@@ -239,6 +240,12 @@ class GamesController extends AbstractController
                     ++$homeScore;
                 } elseif ($gameEvent->getTeam() === $game->getAwayTeam()) {
                     ++$awayScore;
+                }
+            } else if ($gameEvent->getGameEventType() === $gameEventOwnGoal) {
+                if ($gameEvent->getTeam() === $game->getHomeTeam()) {
+                    ++$awayScore;
+                } elseif ($gameEvent->getTeam() === $game->getAwayTeam()) {
+                    ++$homeScore;
                 }
             }
         }
