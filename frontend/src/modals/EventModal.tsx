@@ -56,8 +56,9 @@ export const EventModal: React.FC<EventModalProps> = ({
 }) => {
   // Prüfen ob es sich um ein Spiel-Event handelt
   const selectedEventType = eventTypes.find(et => et.value === event.eventType);
-  const isGameEvent = selectedEventType?.label?.toLowerCase().includes('spiel') || 
-                     selectedEventType?.label?.toLowerCase() === 'spiel' || false;
+  const isGameEvent = selectedEventType?.label?.toLowerCase().includes('spiel') 
+    || selectedEventType?.label?.toLowerCase() === 'spiel' 
+    || false;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>

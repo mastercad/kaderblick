@@ -18,16 +18,24 @@ interface EditUserRolesModalProps {
 }
 
 const EditUserRolesModal: React.FC<EditUserRolesModalProps> = ({ open, onClose, user, onSave }) => {
-  const [roles, setRoles] = useState<string[]>(user?.roles || []);
+  // Normalize roles to always be an array
+  const normalizeRoles = (roles: any): string[] => {
+    if (Array.isArray(roles)) return roles;
+    if (roles && typeof roles === 'object') return Object.values(roles);
+    return [];
+  };
+  const [roles, setRoles] = useState<string[]>(normalizeRoles(user?.roles));
 
   React.useEffect(() => {
-    setRoles(user?.roles || []);
+    setRoles(normalizeRoles(user?.roles));
   }, [user]);
 
   const handleToggle = (role: string) => {
-    setRoles((prev) =>
-      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
-    );
+    setRoles((prev) => {
+      // prev should always be an array, but double check
+      const arr = Array.isArray(prev) ? prev : normalizeRoles(prev);
+      return arr.includes(role) ? arr.filter((r) => r !== role) : [...arr, role];
+    });
   };
 
   const handleSave = () => {
