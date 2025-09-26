@@ -32,8 +32,9 @@ class FeedbackController extends AbstractController
             $feedback->setUrl($jsonData['url']);
             $feedback->setUserAgent($jsonData['userAgent']);
 
-            if (isset($jsonData['screenshot']) 
-                && is_string($jsonData['screenshot']) 
+            if (
+                isset($jsonData['screenshot'])
+                && is_string($jsonData['screenshot'])
                 && str_starts_with($jsonData['screenshot'], 'data:image/png;base64,')
             ) {
                 $fileName = 'feedback_' . uniqid() . '.png';
