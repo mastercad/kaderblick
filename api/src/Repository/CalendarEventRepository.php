@@ -7,6 +7,7 @@ use App\Entity\CalendarEventType;
 use App\Entity\Game;
 use App\Entity\Location;
 use DateTime;
+use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -40,6 +41,28 @@ class CalendarEventRepository extends ServiceEntityRepository implements Optimiz
             ->setParameter('now', new DateTime())
             ->orderBy('ce.startDate', 'ASC')
             ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return CalendarEvent[]
+     */
+    public function findAllEventsBetween(DateTimeImmutable $start, DateTimeImmutable $end): array
+    {
+        return $this->createQueryBuilder('ce')
+            ->select('ce', 'cet', 'l', 'g', 'ht', 'at', 'gt', 'wd')
+            ->leftJoin('ce.calendarEventType', 'cet')
+            ->leftJoin('ce.location', 'l')
+            ->leftJoin('ce.game', 'g')
+            ->leftJoin('g.homeTeam', 'ht')
+            ->leftJoin('g.awayTeam', 'at')
+            ->leftJoin('g.gameType', 'gt')
+            ->leftJoin('ce.weatherData', 'wd')
+            ->where('ce.startDate BETWEEN :start AND :end')
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->orderBy('ce.startDate', 'ASC')
             ->getQuery()
             ->getResult();
     }

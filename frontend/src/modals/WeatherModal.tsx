@@ -163,7 +163,6 @@ const WeatherModal: React.FC<WeatherModalProps> = ({ open, onClose, eventId }) =
         )}
         {hourly.length > 0 ? (
           <Box sx={{ mb: 2, px: 2 }}>
-            {/* Temperaturkurve kompakt über den Kacheln */}
             <Box sx={{ width: '100%', height: 100, mb: 2, mt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="100%" height="80" viewBox="0 0 1000 80" preserveAspectRatio="none" style={{ width: '100%', height: 80 }}>
                 {(() => {
