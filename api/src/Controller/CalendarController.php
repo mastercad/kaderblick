@@ -95,6 +95,9 @@ class CalendarController extends AbstractController
                 'start' => $calendarEvent->getStartDate()->format('Y-m-d\TH:i:s'),
                 'end' => $endDate->format('Y-m-d\TH:i:s'),
                 'description' => $calendarEvent->getDescription(),
+                'weatherData' => [
+                    'weatherCode' => $calendarEvent->getWeatherData()?->getDailyWeatherData()['weathercode'][0] ?? null,
+                ],
                 'game' => $calendarEvent->getGame() ? [
                     'id' => $calendarEvent->getGame()->getId(),
                     'homeTeam' => [
@@ -117,7 +120,11 @@ class CalendarController extends AbstractController
                 ] : null,
                 'location' => $calendarEvent->getLocation() ? [
                     'id' => $calendarEvent->getLocation()->getId(),
-                    'name' => $calendarEvent->getLocation()->getName()
+                    'name' => $calendarEvent->getLocation()->getName(),
+                    'latitude' => $calendarEvent->getLocation()->getLatitude(),
+                    'longitude' => $calendarEvent->getLocation()->getLongitude(),
+                    'city' => $calendarEvent->getLocation()->getCity(),
+                    'address' => $calendarEvent->getLocation()->getAddress()
                 ] : null,
                 'permissions' => [
                     'canCreate' => $this->isGranted(CalendarEventVoter::CREATE, $calendarEvent->getGame() ?? null),
@@ -159,6 +166,32 @@ class CalendarController extends AbstractController
         }
 
         return $this->json(['success' => true]);
+    }
+
+    #[Route('/event/{id}/weather-data', name: 'event_weather_data', methods: ['GET'])]
+    public function viewEventWeatherData(CalendarEvent $calendarEvent): JsonResponse
+    {
+        $weatherData = $calendarEvent->getWeatherData();
+
+        $indexStart = $calendarEvent->getStartDate()->format('H');
+        $indexEnd = 23 - (23 - ($calendarEvent->getEndDate() ? $calendarEvent->getEndDate()->format('H') : 0));
+
+        $rawHourlyWeatherData = $weatherData->getHourlyWeatherData();
+        $hourlyWeatherData = [];
+
+        foreach ($rawHourlyWeatherData as $key => $information) {
+            foreach ($information as $index => $value) {
+                if ($index < (int) $indexStart || $index > (int) $indexEnd) {
+                    continue;
+                }
+                $hourlyWeatherData[$key][$index] = $value;
+            }
+        }
+
+        return $this->json([
+            'dailyWeatherData' => $weatherData ? $weatherData->getDailyWeatherData() : null,
+            'hourlyWeatherData' => $hourlyWeatherData,
+        ]);
     }
 
     /**

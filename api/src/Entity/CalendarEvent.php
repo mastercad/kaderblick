@@ -61,6 +61,9 @@ class CalendarEvent
     #[Groups(['calendar_event:read'])]
     private ?Location $location = null;
 
+    #[ORM\OneToOne(targetEntity: WeatherData::class, mappedBy: 'calendarEvent', cascade: ['persist', 'remove'])]
+    private ?WeatherData $weatherData = null;
+
     #[Groups(['calendar_event:read'])]
     #[ORM\OneToOne(targetEntity: Game::class, mappedBy: 'calendarEvent', cascade: ['persist', 'remove'])]
     private ?Game $game = null;
@@ -124,6 +127,22 @@ class CalendarEvent
     public function getCalendarEventType(): ?CalendarEventType
     {
         return $this->calendarEventType;
+    }
+
+    public function getWeatherData(): ?WeatherData
+    {
+        return $this->weatherData;
+    }
+
+    public function setWeatherData(?WeatherData $weatherData): self
+    {
+        $this->weatherData = $weatherData;
+        // set the owning side of the relation if necessary
+        if ($weatherData && $weatherData->getCalendarEvent() !== $this) {
+            $weatherData->setCalendarEvent($this);
+        }
+
+        return $this;
     }
 
     public function setCalendarEventType(?CalendarEventType $calendarEventType): self

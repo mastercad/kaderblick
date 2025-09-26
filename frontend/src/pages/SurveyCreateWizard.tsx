@@ -119,16 +119,27 @@ import { apiJson } from '../utils/api';
   const [teamsLoadError, setTeamsLoadError] = useState<string|null>(null);
   const [clubsLoadError, setClubsLoadError] = useState<string|null>(null);
   useEffect(() => {
-    apiJson<{entries: {id:number, name:string}[]}>('/api/teams/list')
-      .then(data => setAvailableTeams(data.entries))
+    apiJson<{teams: {id:number, name:string}[]}>('/api/teams/list')
+      .then(data => setAvailableTeams(data.teams))
       .catch(e => setTeamsLoadError('Fehler beim Laden der Teams: ' + (e?.message || 'Unknown error')));
-    apiJson<{entries: {id:number, name:string}[]}>('/api/clubs/list')
-      .then(data => setAvailableClubs(data.entries))
-      .catch(e => setClubsLoadError('Fehler beim Laden der Vereine: ' + (e?.message || 'Unknown error')));
+    apiJson<{clubs: {id:number, name:string}[]}>('/api/clubs/list')
+      .then((data) => {
+        if (data && typeof data === 'object') {
+        // Die eigentlichen Einträge stehen unter numerischen Keys
+        const clubList = Object.keys(data)
+          .filter(key => /^\d+$/.test(key))
+          .map(key => data[key]);
+        setAvailableClubs(clubList);
+      } else {
+        setAvailableClubs([]);
+      }
+    });
   }, []);
-    const [error, setError] = useState<string | null>(null);
-    const [editQuestionId, setEditQuestionId] = useState<string | null>(null);
-    const [questionDraft, setQuestionDraft] = useState<{ questionText: string; type: QuestionType; options: number[] }>({ questionText: '', type: 'single_choice', options: [] });
+  const [error, setError] = useState<string | null>(null);
+  // Zeigt Validierungsfehler erst nach Interaktion (Weiter-Klick) an
+  const [touched, setTouched] = useState<{ [step: number]: boolean }>({});
+  const [editQuestionId, setEditQuestionId] = useState<string | null>(null);
+  const [questionDraft, setQuestionDraft] = useState<{ questionText: string; type: QuestionType; options: number[] }>({ questionText: '', type: 'single_choice', options: [] });
   const [availableOptions, setAvailableOptions] = useState<SurveyOption[]>([]);
   const [optionsLoadError, setOptionsLoadError] = useState<string | null>(null);
 
@@ -181,6 +192,8 @@ import { apiJson } from '../utils/api';
     const currentStepError = stepValidation[activeStep]();
 
     const handleNext = () => {
+      // Markiere aktuellen Schritt als "touched" beim ersten Weiter-Klick
+      if (!touched[activeStep]) setTouched(t => ({ ...t, [activeStep]: true }));
       if (!currentStepError) setActiveStep((prev) => prev + 1);
     };
     const handleBack = () => setActiveStep((prev) => prev - 1);
@@ -556,14 +569,14 @@ import { apiJson } from '../utils/api';
               ))}
             </Stepper>
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            {currentStepError && <Alert severity="error" sx={{ mb: 2 }}>{currentStepError}</Alert>}
+            {(touched[activeStep] && currentStepError) && <Alert severity="error" sx={{ mb: 2 }}>{currentStepError}</Alert>}
             {optionsLoadError && <Alert severity="error" sx={{ mb: 2 }}>{optionsLoadError}</Alert>}
             {typesLoadError && <Alert severity="error" sx={{ mb: 2 }}>{typesLoadError}</Alert>}
             {renderStepContent()}
             <Box mt={3} display="flex" justifyContent="space-between">
               <Button disabled={activeStep === 0} onClick={handleBack}>Zurück</Button>
         {activeStep < steps.length - 1 && (
-          <Button variant="contained" onClick={handleNext} disabled={!!currentStepError}>
+          <Button variant="contained" onClick={handleNext}>
             Weiter
           </Button>
         )}

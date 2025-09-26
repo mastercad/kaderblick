@@ -52,7 +52,7 @@ const Leagues = () => {
 
   const handleDelete = async (leagueId: number) => {
     try {
-      await apiJson(`/api/league/${leagueId}`, { method: 'DELETE' });
+      await apiJson(`/api/leagues/${leagueId}`, { method: 'DELETE' });
       setLeagues(leagues => leagues.filter(c => c.id !== leagueId));
       setDeleteModalOpen(false);
     } catch (e) {

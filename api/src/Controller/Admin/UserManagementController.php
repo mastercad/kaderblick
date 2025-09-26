@@ -112,7 +112,7 @@ class UserManagementController extends AbstractController
         try {
             $user->setRoles($selectedRoles);
             $this->em->flush();
-            $answer = ['success' => true, 'message' => print_r($selectedRoles, true) . ' Benutzerrollen wurden erfolgreich aktualisiert.'];
+            $answer = ['success' => true, 'message' => 'Benutzerrollen wurden erfolgreich aktualisiert.'];
         } catch (Exception $e) {
             $answer = ['error' => 'Fehler beim Aktualisieren der Rollen: ' . $e->getMessage()];
         }

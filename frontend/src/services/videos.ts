@@ -52,10 +52,9 @@ export async function saveVideo(gameId: number, data: any): Promise<{ success: b
   });
 }
 
-export async function deleteVideo(videoId: number, csrfToken: string): Promise<{ success: boolean }> {
+export async function deleteVideo(videoId: number): Promise<{ success: boolean }> {
   return apiJson(`/videos/delete/${videoId}`, {
-    method: 'POST',
-    body: { _token: csrfToken },
+    method: 'DELETE',
     headers: { 'Content-Type': 'application/json' }
   });
 }

@@ -105,6 +105,10 @@ class GamesController extends ApiController
                     'id' => $calendarEvent->getId(),
                     'startDate' => $calendarEvent->getStartDate()?->format('c'),
                     'endDate' => $calendarEvent->getEndDate()?->format('c'),
+                    'weatherData' => $calendarEvent->getWeatherData() ? [
+                        'dailyWeatherData' => $calendarEvent->getWeatherData()->getDailyWeatherData(),
+                        'hourlyWeatherData' => $calendarEvent->getWeatherData()->getHourlyWeatherData(),
+                    ] : [],
                 ] : null,
                 'fussballDeUrl' => method_exists($game, 'getFussballDeUrl') ? $game->getFussballDeUrl() : null,
             ];
@@ -161,12 +165,13 @@ class GamesController extends ApiController
         $now = new DateTimeImmutable();
 
         $upcomingGames = $gameRepository->createQueryBuilder('g')
+            ->addSelect('ce', 'cet', 'ht', 'at', 'l', 'wd')
             ->leftJoin('g.calendarEvent', 'ce')
             ->leftJoin('ce.calendarEventType', 'cet')
             ->leftJoin('g.homeTeam', 'ht')
             ->leftJoin('g.awayTeam', 'at')
             ->leftJoin('g.location', 'l')
-            ->addSelect('ce', 'cet', 'ht', 'at', 'l')
+            ->leftJoin('ce.weatherData', 'wd')
             ->where('cet.name = :spiel')
             ->andWhere('ce.startDate > :now')
             ->andWhere('ce.endDate > :now OR ce.endDate IS NULL')
@@ -177,12 +182,13 @@ class GamesController extends ApiController
             ->getResult();
 
         $otherGames = $gameRepository->createQueryBuilder('g')
+            ->addSelect('ce', 'cet', 'ht', 'at', 'l', 'wd')
             ->leftJoin('g.calendarEvent', 'ce')
             ->leftJoin('ce.calendarEventType', 'cet')
             ->leftJoin('g.homeTeam', 'ht')
             ->leftJoin('g.awayTeam', 'at')
             ->leftJoin('g.location', 'l')
-            ->addSelect('ce', 'cet', 'ht', 'at', 'l')
+            ->leftJoin('ce.weatherData', 'wd')
             ->where('cet.name = :spiel')
             ->andWhere('ce.startDate <= :now')
             ->setParameter('spiel', 'Spiel')
@@ -219,6 +225,9 @@ class GamesController extends ApiController
                     'id' => $calendarEvent->getId(),
                     'startDate' => $calendarEvent->getStartDate()?->format('c'),
                     'endDate' => $calendarEvent->getEndDate()?->format('c'),
+                    'weatherData' => $calendarEvent->getWeatherData() ? [
+                        'weatherCode' => $calendarEvent->getWeatherData()->getDailyWeatherData()['weathercode'] ?? [],
+                    ] : [],
                 ] : null,
             ];
         };
@@ -263,6 +272,7 @@ class GamesController extends ApiController
     private function collectScores(array $gameEvents, Game $game): array
     {
         $gameEventGoal = $this->entityManager->getRepository(GameEventType::class)->findOneBy(['code' => 'goal']);
+        $gameEventOwnGoal = $this->entityManager->getRepository(GameEventType::class)->findOneBy(['code' => 'own_goal']);
 
         $homeScore = 0;
         $awayScore = 0;
@@ -273,6 +283,12 @@ class GamesController extends ApiController
                     ++$homeScore;
                 } elseif ($gameEvent->getTeam() === $game->getAwayTeam()) {
                     ++$awayScore;
+                }
+            } elseif ($gameEvent->getGameEventType() === $gameEventOwnGoal) {
+                if ($gameEvent->getTeam() === $game->getHomeTeam()) {
+                    ++$awayScore;
+                } elseif ($gameEvent->getTeam() === $game->getAwayTeam()) {
+                    ++$homeScore;
                 }
             }
         }
