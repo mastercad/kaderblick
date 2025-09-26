@@ -46,6 +46,8 @@ import { getGameEventIconByCode } from '../constants/gameEventIcons';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import YouTubeIcon from '@mui/icons-material/YouTube';
+import WeatherModal from '../modals/WeatherModal';
+import { WeatherDisplay } from '../components/WeatherIcons';
 
 interface GameDetailsProps {
   gameId: number;
@@ -66,12 +68,10 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
   const [eventFormOpen, setEventFormOpen] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<GameEvent | null>(null);
   const [syncing, setSyncing] = useState(false);
-  // Video State
   const [videos, setVideos] = useState<Video[]>([]);
   const [videoTypes, setVideoTypes] = useState<any[]>([]);
   const [youtubeLinks, setYoutubeLinks] = useState<YoutubeLink[]>([]);
   const [cameras, setCameras] = useState<any[]>([]);
-  // Mapping: Event-ID -> Array<Video>
   const [eventVideos, setEventVideos] = useState<Record<number, Video[]>>({});
   const [mappedCameras, setMappedCameras] = useState<Record<number, string>>({});
   const [videoDialogOpen, setVideoDialogOpen] = useState(false);
@@ -79,6 +79,8 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
   const [videoToEdit, setVideoToEdit] = useState<Video | null>(null);
   const [videoToDelete, setVideoToDelete] = useState<Video | null>(null);
   const [videoDeleteLoading, setVideoDeleteLoading] = useState(false);
+  const [weatherModalOpen, setWeatherModalOpen] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 
   useEffect(() => {
     loadGameDetails();
@@ -155,9 +157,7 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
     if (!videoToDelete) return;
     setVideoDeleteLoading(true);
     try {
-      // CSRF-Token muss ggf. aus Cookie oder Meta kommen, hier als Platzhalter
-      const csrfToken = '';
-      await deleteVideo(videoToDelete.id, csrfToken);
+      await deleteVideo(videoToDelete.id);
       setVideoToDelete(null);
       await loadVideos();
     } catch (e: any) {
@@ -244,6 +244,11 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
     await loadGameEvents(); // Nur Events neu laden, game bleibt erhalten
   };
 
+  const openWeatherModal = (eventId: number | null) => {
+    setSelectedEventId(eventId);
+    setWeatherModalOpen(true);
+  };
+
   const isGameRunning = () => {
     if (!game?.calendarEvent?.startDate || !game?.calendarEvent?.endDate) return false;
     const now = new Date();
@@ -312,30 +317,45 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
       {/* Game Info Card */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Typography variant="h5" component="h2" gutterBottom>
-            <strong>{game.homeTeam.name}</strong> vs <strong>{game.awayTeam.name}</strong>
-          </Typography>
-          
-          <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
-            {game.calendarEvent?.startDate && (
-              <>
-                <CalendarIcon />
-                <Typography variant="body2" color="text.secondary">
-                  {formatDateTime(game.calendarEvent.startDate)}
-                  {game.calendarEvent.endDate && ` - ${formatDateTime(game.calendarEvent.endDate).split(' ')[1]}`}
-                </Typography>
-              </>
-            )}
-            {game.location && (
-              <>
-                <Location
-                  name={game.location.name}
-                  latitude={game.location.latitude}
-                  longitude={game.location.longitude}
-                  address={game.location.address}
+          <Box sx={{ mb: 2, display: 'flex', flexDirection: 'row', alignItems: 'stretch', gap: 2 }}>
+            {/* Linke Box: Teams, Zeit, Location */}
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 1 }}>
+              <Typography variant="h5" component="h2" gutterBottom>
+                <strong>{game.homeTeam.name}</strong> vs <strong>{game.awayTeam.name}</strong>
+              </Typography>
+              {(game.calendarEvent?.startDate || game.location) && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  {game.calendarEvent?.startDate && (
+                    <>
+                      <CalendarIcon fontSize="small" />
+                      <Typography variant="body2" color="text.secondary">
+                        {formatDateTime(game.calendarEvent.startDate)}
+                        {game.calendarEvent.endDate && ` - ${formatDateTime(game.calendarEvent.endDate).split(' ')[1]}`}
+                      </Typography>
+                    </>
+                  )}
+                  {game.location && (
+                    <Location
+                      name={game.location.name}
+                      latitude={game.location.latitude ?? 0}
+                      longitude={game.location.longitude ?? 0}
+                      address={game.location.address ?? ''}
+                    />
+                  )}
+                </Box>
+              )}
+            </Box>
+            {/* Rechte Box: Weather Icon */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 80, pr: 2, pt: 1 }}
+              onClick={() => {
+                openWeatherModal(game.calendarEvent?.id);
+              }}>
+              <span style={{ cursor: 'pointer' }} title="Wetterdetails anzeigen">
+                <WeatherDisplay 
+                  code={game.calendarEvent?.weatherData?.dailyWeatherData?.weathercode?.[0]} theme={'light'}
                 />
-              </>
-            )}
+              </span>
+            </Box>
           </Box>
 
           <Box sx={{ mb: 2 }}>
@@ -349,7 +369,6 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
               <Chip label="Noch kein Ergebnis" color="default" />
             )}
           </Box>
-
           {game.fussballDeUrl && (
             <Box sx={{ mt: 2 }}>
               <Button
@@ -657,6 +676,12 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
         gameId={gameId}
         game={game}
         existingEvent={eventToEdit}
+      />
+
+      <WeatherModal
+        open={weatherModalOpen}
+        onClose={() => setWeatherModalOpen(false)}
+        eventId={selectedEventId}
       />
     </Box>
   );

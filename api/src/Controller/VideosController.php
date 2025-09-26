@@ -186,7 +186,7 @@ class VideosController extends AbstractController
         ]);
     }
 
-    #[Route('/videos/delete/{id}', name: 'videos_delete', methods: ['POST'])]
+    #[Route('/videos/delete/{id}', name: 'videos_delete', methods: ['DELETE'])]
     public function delete(
         int $id,
         Request $request,
@@ -197,10 +197,6 @@ class VideosController extends AbstractController
         $video = $videoRepository->find($id);
         if (!$video) {
             return new JsonResponse(['error' => 'Video nicht gefunden'], 404);
-        }
-        $token = $request->request->get('_token');
-        if (!$csrfTokenManager->isTokenValid(new CsrfToken('delete' . $video->getId(), $token))) {
-            return new JsonResponse(['error' => 'Ungültiges CSRF-Token'], 403);
         }
         $em->remove($video);
         $em->flush();

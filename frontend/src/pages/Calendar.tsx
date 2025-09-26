@@ -69,6 +69,7 @@ type CalendarEvent = {
   eventType?: { id: number; name?: string; color?: string };
   location?: { id?: number; name?: string };
   gameType?: { id?: number; name?: string };
+  weatherData?: { weatherCode?: number };
   game?: {
     homeTeam?: { id: number; name: string };
     awayTeam?: { id: number; name: string };
@@ -98,6 +99,16 @@ type Location = {
 
 type LocationsApiResponse = {
   locations: Location[];
+  permissions: {
+    canCreate: boolean;
+    canEdit: boolean;
+    canView: boolean;
+    canDelete: boolean;
+  };
+};
+
+type TeamsApiResponse = {
+  teams: Team[];
   permissions: {
     canCreate: boolean;
     canEdit: boolean;
@@ -188,7 +199,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   
   // Zusätzliche Daten
   const [eventTypes, setEventTypes] = useState<{ createAndEditAllowed: boolean; entries: CalendarEventType[] }>({ createAndEditAllowed: false, entries: [] });
-  const [teams, setTeams] = useState<{ createAndEditAllowed: boolean; teams: Team[] }>({ createAndEditAllowed: false, teams: [] });
+  const [teams, setTeams] = useState<Team[]>([]);
   const [gameTypes, setGameTypes] = useState<{ createAndEditAllowed: boolean; entries: GameType[] }>({ createAndEditAllowed: false, entries: [] });
   const [locations, setLocations] = useState<Location[]>([]);
 
@@ -245,12 +256,12 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   useEffect(() => {    
     Promise.all([
       apiJson<{ createAndEditAllowed: boolean; entries: CalendarEventType[] }>('/api/calendar-event-types').catch(() => ({ createAndEditAllowed: false, entries: [] })),
-      apiJson<{ createAndEditAllowed: boolean; teams: Team[] }>('/api/teams/list').catch(() => ({ createAndEditAllowed: false, teams: [] })),
+      apiJson<TeamsApiResponse[]>('/api/teams/list').catch(() => []),
       apiJson<{ createAndEditAllowed: boolean; entries: GameType[] }>('/api/game-types').catch(() => ({ createAndEditAllowed: false, entries: [] })),
       apiJson<LocationsApiResponse>('/api/locations').catch(() => ({ locations: [], permissions: { canCreate: false, canEdit: false, canView: false, canDelete: false } }))
     ]).then(([eventTypesData, teamsData, gameTypesData, locationsData]) => {
       setEventTypes(eventTypesData);
-      setTeams({ createAndEditAllowed: teamsData.createAndEditAllowed, entries: teamsData.teams || [] });
+      setTeams(teamsData.teams || []);
       setGameTypes(gameTypesData);
       setLocations(locationsData.locations || []);
     }).catch(console.error);
@@ -278,7 +289,8 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
           description: ev.description || '',
           eventType: ev.type || {},
           location: ev.location || {},
-          game: ev.game || undefined
+          game: ev.game || undefined,
+          weatherData: ev.weatherData || undefined
         })));
         setLoading(false);
       })
@@ -857,8 +869,6 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         </Box>
       </Box>
 
-
-
       {/* Event Details Modal */}
       <EventDetailsModal 
         open={!!selectedEvent} 
@@ -871,7 +881,8 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
           description: selectedEvent.description,
           type: selectedEvent.eventType,
           location: selectedEvent.location,
-          game: selectedEvent.game
+          game: selectedEvent.game,
+          weatherData: selectedEvent.weatherData
         } : null}
         onEdit={() => selectedEvent && handleEditEvent(selectedEvent)}
         showEdit={true}
@@ -896,7 +907,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         showDelete={!!editingEventId}
         event={eventFormData}
         eventTypes={eventTypes.entries.map(et => ({ value: et.id.toString(), label: et.name }))}
-        teams={teams.entries.map(t => ({ value: t.id.toString(), label: t.name }))}
+        teams={teams.map(t => ({ value: t.id.toString(), label: t.name }))}
         gameTypes={gameTypes.entries.map(gt => ({ value: gt.id.toString(), label: gt.name }))}
         locations={locations.map(l => ({ value: l.id.toString(), label: l.name }))}
         onChange={handleFormChange}

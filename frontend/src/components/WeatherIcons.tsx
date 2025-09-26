@@ -15,16 +15,13 @@ import {
   WiThunderstorm
 } from 'react-icons/wi';
 
-// Typ für Theme
 type Theme = 'light' | 'dark';
 
-// Typ für Wetter-Icon-Eintrag
 interface WeatherEntry {
   icon: React.ReactElement;
   description: string;
 }
 
-// Funktion, um Farbe abhängig vom Code und Theme zu liefern
 const getColor = (code: number, theme: Theme = 'light'): string => {
   const isDark = theme === 'dark';
   switch(code){
@@ -40,7 +37,6 @@ const getColor = (code: number, theme: Theme = 'light'): string => {
   }
 };
 
-// Wetter-Map Funktion
 export const weatherIcons = (theme: Theme = 'light'): Record<number, WeatherEntry> => ({
   0: { icon: <WiDaySunny size={48} color={getColor(0, theme)} />, description: "Klarer Himmel" },
   1: { icon: <WiDaySunnyOvercast size={48} color={getColor(1, theme)} />, description: "Wenige Wolken" },
@@ -72,15 +68,15 @@ export const weatherIcons = (theme: Theme = 'light'): Record<number, WeatherEntr
   99: { icon: <WiThunderstorm size={48} color={getColor(99, theme)} />, description: "Gewitter mit starkem Hagel" },
 });
 
-// Beispiel-Komponente für Anzeige
 interface WeatherDisplayProps {
-  code: number;
+  code?: number;
   theme?: Theme;
+  size?: number;
 }
 
-export const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ code, theme = 'light' }) => {
+export const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ code, theme = 'light', size = 48 }) => {
   const weatherMap = weatherIcons(theme);
-  const weather = weatherMap[code] || { icon: <WiCloudy size={48} />, description: "Unbekanntes Wetter" };
+  const weather = weatherMap[code ?? 99999] || { icon: <WiCloudy size={size} />, description: "Unbekanntes Wetter" };
 
   return (
     <div title={`${weather.description}`}>
