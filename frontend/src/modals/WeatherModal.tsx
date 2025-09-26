@@ -82,7 +82,7 @@ const WeatherModal: React.FC<WeatherModalProps> = ({ open, onClose, eventId }) =
         {error && (
           <Alert severity="error">{error}</Alert>
         )}
-        {data && (
+        {data && data.hourlyWeatherData && data.hourlyWeatherData.time ? (
           <Box sx={{ mt: 2 }}>
             <Grid container spacing={2}>
               {Object.entries(data.hourlyWeatherData.time).map(([index, time]) => {
@@ -91,7 +91,6 @@ const WeatherModal: React.FC<WeatherModalProps> = ({ open, onClose, eventId }) =
                 const weatherCode = data.hourlyWeatherData.weathercode ? data.hourlyWeatherData.weathercode[index] : 0;
                 const precipitation = data.hourlyWeatherData.precipitation[index];
                 const clouds = data.hourlyWeatherData.cloudcover ? data.hourlyWeatherData.cloudcover[index] : 0;
-                
                 // Hintergrundfarbe je nach Wetter
                 let bgColor = '#ffe082'; // sonnig
                 if (precipitation > 0.5) bgColor = '#90caf9'; // regen
@@ -133,7 +132,9 @@ const WeatherModal: React.FC<WeatherModalProps> = ({ open, onClose, eventId }) =
               })}
             </Grid>
           </Box>
-        )}
+        ) : data && (!data.hourlyWeatherData || !Array.isArray(data.hourlyWeatherData.time)) ? (
+          <Typography>Keine Wetterdaten vorhanden</Typography>
+        ) : null}
         {!loading && !error && !data && (
           <Typography>Keine Wetterdaten verfügbar.</Typography>
         )}
