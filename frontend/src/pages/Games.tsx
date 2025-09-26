@@ -24,6 +24,8 @@ import { fetchGamesOverview, GamesOverviewData } from '../services/games';
 import { Game, GameWithScore } from '../types/games';
 import { useAuth } from '../context/AuthContext';
 import Location from '../components/Location';
+import { WeatherDisplay } from '../components/WeatherIcons';
+import WeatherModal from '../modals/WeatherModal';
 
 interface GamesProps {
   onGameSelect?: (gameId: number) => void;
@@ -34,6 +36,13 @@ export default function Games({ onGameSelect }: GamesProps) {
   const [data, setData] = useState<GamesOverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [weatherModalOpen, setWeatherModalOpen] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  
+  const openWeatherModal = (eventId: number | null) => {
+    setSelectedEventId(eventId);
+    setWeatherModalOpen(true);
+  };
 
   useEffect(() => {
     loadGamesOverview();
@@ -110,6 +119,16 @@ export default function Games({ onGameSelect }: GamesProps) {
     score?: { homeScore: number | null; awayScore: number | null } 
   }) => (
     <ListItem disablePadding sx={{ display: 'flex', alignItems: 'stretch' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pr: 2, pt: 1 }}
+        onClick={() => {
+          openWeatherModal(game.calendarEvent ? game.calendarEvent.id : null);
+        }}>
+          <span style={{ cursor: 'pointer', marginRight: 8 }} title="Wetterdetails anzeigen">
+            <WeatherDisplay 
+              code={game.calendarEvent?.weatherData?.weatherCode} theme={'light'}
+            />
+          </span>
+      </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <ListItemButton onClick={() => handleGameClick(game.id)} sx={{ alignItems: 'flex-start' }}>
           <ListItemText
@@ -251,6 +270,12 @@ export default function Games({ onGameSelect }: GamesProps) {
           Keine Spiele gefunden.
         </Alert>
       )}
+
+      <WeatherModal
+        open={weatherModalOpen}
+        onClose={() => setWeatherModalOpen(false)}
+        eventId={selectedEventId}
+      />
     </Box>
   );
 }

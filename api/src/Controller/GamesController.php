@@ -97,12 +97,13 @@ class GamesController extends AbstractController
         $now = new DateTimeImmutable();
 
         $upcomingGames = $gameRepository->createQueryBuilder('g')
+            ->addSelect('ce', 'cet', 'ht', 'at', 'l', 'wd')
             ->leftJoin('g.calendarEvent', 'ce')
             ->leftJoin('ce.calendarEventType', 'cet')
             ->leftJoin('g.homeTeam', 'ht')
             ->leftJoin('g.awayTeam', 'at')
             ->leftJoin('g.location', 'l')
-            ->addSelect('ce', 'cet', 'ht', 'at', 'l')
+            ->leftJoin('ce.weatherData', 'wd')
             ->where('cet.name = :spiel')
             ->andWhere('ce.startDate > :now')
             ->andWhere('ce.endDate > :now OR ce.endDate IS NULL')
@@ -113,12 +114,13 @@ class GamesController extends AbstractController
             ->getResult();
 
         $otherGames = $gameRepository->createQueryBuilder('g')
+            ->addSelect('ce', 'cet', 'ht', 'at', 'l', 'wd')
             ->leftJoin('g.calendarEvent', 'ce')
             ->leftJoin('ce.calendarEventType', 'cet')
             ->leftJoin('g.homeTeam', 'ht')
             ->leftJoin('g.awayTeam', 'at')
             ->leftJoin('g.location', 'l')
-            ->addSelect('ce', 'cet', 'ht', 'at', 'l')
+            ->leftJoin('ce.weatherData', 'wd')
             ->where('cet.name = :spiel')
             ->andWhere('ce.startDate <= :now')
             ->setParameter('spiel', 'Spiel')

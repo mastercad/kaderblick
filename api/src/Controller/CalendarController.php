@@ -161,6 +161,13 @@ class CalendarController extends AbstractController
         return $this->json(['success' => true]);
     }
 
+    #[Route('/event/{id}/weather-data', name: 'event_weather_data', methods: ['GET'])]
+    public function viewEventWeatherData(CalendarEvent $calendarEvent): JsonResponse
+    {
+        $weatherData = $calendarEvent->getWeatherData();
+        return $this->json($weatherData, 200, [], ['groups' => ['weather_data:read']]);
+    }
+
     /**
      * Drag & Drop endpunkt für die Aktualisierung von Kalendereinträgen.
      */
