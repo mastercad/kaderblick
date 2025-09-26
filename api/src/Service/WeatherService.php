@@ -57,16 +57,22 @@ final class WeatherService
         $daysBack = $now->modify('-90 days');
         $daysForward = $now->modify('+14 days');
 
-        $calendarEvents = $calendarEventRepository->findUpcoming();
+        $calendarEvents = $calendarEventRepository->findAllEventsBetween($daysBack, $daysForward);
 
         foreach ($calendarEvents as $event) {
-            if ($event->getStartDate() < $daysBack || $event->getStartDate() > $daysForward) {
-                echo 'EVENT ' . $event->getStartDate()->format('Y-m-d') . ' NICHT IN RANGE!';
+            // Events zwischen daysBack und daysForward
+            $isInRange = $event->getStartDate() >= $daysBack && $event->getStartDate() <= $daysForward;
+            // Vergangene Events nach daysBack, vor heute, ohne WeatherData
+            $isPastWithoutWeather = $event->getStartDate() < $now && $event->getStartDate() >= $daysBack && null === $event->getWeatherData();
+            if (!($isInRange || $isPastWithoutWeather)) {
+                echo 'SKIPPE ';
+                dump($event);
                 continue;
             }
 
             if (null === $event->getLocation() || null === $event->getLocation()->getLatitude() || null === $event->getLocation()->getLongitude()) {
-                echo 'KEINE LOCATION DATA!';
+                echo 'SKIPPE WEIL LOCATION FEHLT!!!!';
+                dump($event);
                 continue;
             }
 
@@ -74,7 +80,8 @@ final class WeatherService
                 $this->generateApiRequestUrl(
                     $event->getLocation()->getLatitude(),
                     $event->getLocation()->getLongitude(),
-                    $event->getStartDate()
+                    $event->getStartDate(),
+                    $event->getEndDate() ?? $event->getStartDate()
                 )
             );
 
@@ -82,7 +89,6 @@ final class WeatherService
                 $weatherDataEntity = new WeatherData();
                 $weatherDataEntity->setCalendarEvent($event);
                 $event->setWeatherData($weatherDataEntity);
-                $this->entityManager->persist($weatherDataEntity);
             } else {
                 $weatherDataEntity = $event->getWeatherData();
             }
@@ -109,9 +115,10 @@ final class WeatherService
         return json_decode($response->getBody()->getContents(), true);
     }
 
-    private function generateApiRequestUrl(float $latitude, float $longitude, DateTimeInterface $date): string
+    private function generateApiRequestUrl(float $latitude, float $longitude, DateTimeInterface $startDate, DateTimeInterface $endDate): string
     {
-        $dateString = $date->format('Y-m-d');
+        $startDateString = $startDate->format('Y-m-d');
+        $endDateString = $endDate->format('Y-m-d');
 
         $params = [
             'latitude' => $latitude,
@@ -119,8 +126,8 @@ final class WeatherService
             'hourly' => implode(',', $this->hourlySettings),
             'daily' => implode(',', $this->dailySettings),
             'timezone' => 'auto',
-            'start_date' => $dateString,
-            'end_date' => $dateString,
+            'start_date' => $startDateString,
+            'end_date' => $endDateString,
         ];
 
         return $this->weatherApiUrl . '?' . http_build_query($params);
