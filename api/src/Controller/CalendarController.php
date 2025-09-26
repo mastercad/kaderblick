@@ -176,8 +176,8 @@ class CalendarController extends AbstractController
 
         if (!$weatherData instanceof WeatherData) {
             return $this->json([
-                'dailyWeatherData' => [],
-                'hourlyWeatherData' => [],
+                'dailyWeatherData' => null,
+                'hourlyWeatherData' => null
             ]);
         }
 
