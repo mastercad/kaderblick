@@ -74,8 +74,6 @@ class FeedbackController extends AbstractController
         $this->addFlash('success', 'Feedback wurde als gelesen markiert.');
 
         return $this->json(['success' => true, 'message' => 'Feedback wurde als gelesen markiert.']);
-
-        //        return $this->redirectToRoute('admin_feedback_index');
     }
 
     #[Route('/{id}/resolve', name: 'admin_feedback_resolve', methods: ['POST'])]
@@ -93,7 +91,5 @@ class FeedbackController extends AbstractController
         $this->addFlash('success', 'Feedback wurde als erledigt markiert.');
 
         return $this->json(['success' => true, 'message' => 'Feedback wurde als erledigt markiert.']);
-
-        //        return $this->redirectToRoute('admin_feedback_index');
     }
 }

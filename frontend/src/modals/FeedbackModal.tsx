@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Snackbar from '@mui/material/Snackbar';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, Select, MenuItem, FormControl, InputLabel,
@@ -28,6 +29,8 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
   const handleScreenshot = async () => {
     setError(null);
     setLoading(true);
@@ -57,8 +60,10 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) => {
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setLoading(true);
-      setError(null);
-      setSuccess(null);
+  setError(null);
+  setSuccess(null);
+  setShowSuccess(false);
+  setShowError(false);
       try {
         const payload: Record<string, any> = {
           type,
@@ -75,17 +80,20 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) => {
         });
         if (response.ok) {
           setSuccess('Vielen Dank für Ihr Feedback!');
+          setShowSuccess(true);
           setType('bug');
           setMessage('');
           setAttachScreenshot(false);
           setScreenshot(null);
           setTimeout(() => {
+            setShowSuccess(false);
             setSuccess(null);
             onClose();
-          }, 1200);
+          }, 2000);
         } else {
           const data = await response.json();
           setError(data.message || 'Fehler beim Senden des Feedbacks');
+          setShowError(true);
         }
       } catch (err) {
         setError('Fehler beim Senden des Feedbacks');
@@ -103,16 +111,17 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) => {
       setScreenshot(null);
       setSuccess(null);
       setError(null);
+      setShowSuccess(false);
+      setShowError(false);
     }
   }, [open]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ bgcolor: theme.palette.background.paper, fontWeight: 600 }}>Feedback</DialogTitle>
-      <DialogContent sx={{ bgcolor: theme.palette.background.paper }}>
-        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <>
+      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ bgcolor: theme.palette.background.paper, fontWeight: 600 }}>Feedback</DialogTitle>
+        <DialogContent sx={{ bgcolor: theme.palette.background.paper }}>
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <FormControl fullWidth required>
             <InputLabel id="feedback-type-label">Feedback-Typ</InputLabel>
             <Select
@@ -155,9 +164,24 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) => {
               {loading ? <CircularProgress size={24} /> : 'Senden'}
             </Button>
           </DialogActions>
-        </Box>
-      </DialogContent>
-    </Dialog>
+          </Box>
+        </DialogContent>
+      </Dialog>
+      <Snackbar
+        open={showSuccess}
+        autoHideDuration={2000}
+        onClose={() => setShowSuccess(false)}
+        message={success}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+      <Snackbar
+        open={showError}
+        autoHideDuration={3000}
+        onClose={() => setShowError(false)}
+        message={error ? error : ''}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+    </>
   );
 };
 

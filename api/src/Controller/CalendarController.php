@@ -9,6 +9,7 @@ use App\Entity\GameType;
 use App\Entity\Location;
 use App\Entity\Team;
 use App\Entity\User;
+use App\Entity\WeatherData;
 use App\Repository\CalendarEventRepository;
 use App\Repository\ParticipationRepository;
 use App\Security\Voter\CalendarEventVoter;
@@ -173,6 +174,13 @@ class CalendarController extends AbstractController
     {
         $weatherData = $calendarEvent->getWeatherData();
 
+        if (!$weatherData instanceof WeatherData) {
+            return $this->json([
+                'dailyWeatherData' => [],
+                'hourlyWeatherData' => [],
+            ]);
+        }
+
         $indexStart = $calendarEvent->getStartDate()->format('H');
         $indexEnd = 23 - (23 - ($calendarEvent->getEndDate() ? $calendarEvent->getEndDate()->format('H') : 0));
 
@@ -189,7 +197,7 @@ class CalendarController extends AbstractController
         }
 
         return $this->json([
-            'dailyWeatherData' => $weatherData ? $weatherData->getDailyWeatherData() : null,
+            'dailyWeatherData' => $weatherData->getDailyWeatherData() ?: [],
             'hourlyWeatherData' => $hourlyWeatherData,
         ]);
     }
