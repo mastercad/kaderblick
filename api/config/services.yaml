@@ -13,6 +13,7 @@ parameters:
     github_repo_name: '%env(GITHUB_REPO_NAME)%'
     vapid_public_key: '%env(VAPID_PUBLIC_KEY)%'
     vapid_private_key: '%env(VAPID_PRIVATE_KEY)%'
+    weather_api_url: '%env(WEATHER_API_URL)%'
 
 services:
     # default configuration for services in *this* file
@@ -25,6 +26,7 @@ services:
             $githubToken: '%env(resolve:GITHUB_TOKEN)%'
             $githubRepoOwner: '%env(resolve:GITHUB_REPO_OWNER)%'
             $githubRepoName: '%env(resolve:GITHUB_REPO_NAME)%'
+            $weatherApiUrl: '%env(resolve:WEATHER_API_URL)%'
 #        bind:
 #            $mailerDsn: '%env(MAILER_DSN1)%'
 #            $mailerDsn: 'smtp://%env(MAILER_USER)%:%env(MAILER_PASSWORD)%@byte-artist.de:587'

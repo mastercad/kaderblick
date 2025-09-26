@@ -52,8 +52,8 @@ security:
         ROLE_GUEST:       []
         ROLE_USER:        [ROLE_GUEST]
         ROLE_SUPPORTER:   [ROLE_USER]
-        ROLE_CLUB:        [ROLE_USER]
-        ROLE_ADMIN:       [ROLE_USER]
+        ROLE_CLUB:        [ROLE_SUPPORTER]
+        ROLE_ADMIN:       [ROLE_CLUB]
         ROLE_SUPERADMIN:  [ROLE_ADMIN]
 
     access_control:

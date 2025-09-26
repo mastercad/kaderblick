@@ -12,6 +12,8 @@ import Divider from '@mui/material/Divider';
 import React, { useState, useEffect } from 'react';
 import CircularProgress from '@mui/material/CircularProgress';
 import { apiJson } from '../utils/api';
+import { WeatherDisplay } from '../components/WeatherIcons';
+import Location from '../components/Location';
 
 export interface EventDetailsModalProps {
   open: boolean;
@@ -24,6 +26,7 @@ export interface EventDetailsModalProps {
     description?: string;
     type?: { name?: string; color?: string };
     location?: { name?: string };
+    weatherData?: { weatherCode?: number };
     game?: {
       homeTeam?: { name: string };
       awayTeam?: { name: string };
@@ -69,6 +72,7 @@ export interface EventDetailsModalProps {
       is_game: boolean;
       title: string;
       type: string;
+      weatherData?: { weatherCode?: number };
     },
     participations: Array<{
       user_id: number;
@@ -102,12 +106,19 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [weatherModalOpen, setWeatherModalOpen] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  
+  const openWeatherModal = (eventId: number | null) => {
+    setSelectedEventId(eventId);
+    setWeatherModalOpen(true);
+  };
 
   useEffect(() => {
     if (!event || !open) return;
     setLoading(true);
     Promise.all([
-      apiJson(`/api/participation/statuses/`),
+      apiJson(`/api/participation/statuses`),
 //      apiJson(`/api/participation/current/${event.id}`).catch(() => null),
       apiJson(`/api/participation/event/${event.id}`).catch(() => []),
     ])
@@ -172,38 +183,30 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>{event.title}</DialogTitle>
       <DialogContent dividers>
-        <Box mb={2}>
-          <Typography variant="subtitle2" color="text.secondary">
-            {event.type?.name && (
-              <span style={{ color: event.type.color || undefined, fontWeight: 600 }}>{event.type.name}</span>
-            )}
-            {event.location?.name && (
-              <>
-                {' '}| <span>{event.location.name}</span>
-              </>
-            )}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mt={1}>
-            {(() => {
-              const startDate = new Date(event.start);
-              const endDate = new Date(event.end);
-              const isSameDay = startDate.toDateString() === endDate.toDateString();
-              const startFormatted = startDate.toLocaleString('de-DE', {
-                weekday: 'short',
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              });
-              if (isSameDay) {
-                const endTimeFormatted = endDate.toLocaleString('de-DE', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                });
-                return `${startFormatted} – ${endTimeFormatted}`;
-              } else {
-                const endFormatted = endDate.toLocaleString('de-DE', {
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box mb={2}>
+            <Typography variant="subtitle2" color="text.secondary">
+              {event.type?.name && (
+                <span style={{ color: event.type.color || undefined, fontWeight: 600 }}>{event.type.name}</span>
+              )}
+              {event.location?.name && (
+                <>
+                  <br />
+                  <Location 
+                    name={event.location.name} 
+                    latitude={event.location.latitude} 
+                    longitude={event.location.longitude}
+                    address={`${event.location.city}, ${event.location.address}`.trim()}
+                  />
+                </>
+              )}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mt={1}>
+              {(() => {
+                const startDate = new Date(event.start);
+                const endDate = new Date(event.end);
+                const isSameDay = startDate.toDateString() === endDate.toDateString();
+                const startFormatted = startDate.toLocaleString('de-DE', {
                   weekday: 'short',
                   day: '2-digit',
                   month: '2-digit',
@@ -211,10 +214,36 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                   hour: '2-digit',
                   minute: '2-digit',
                 });
-                return `${startFormatted} – ${endFormatted}`;
-              }
-            })()}
-          </Typography>
+                if (isSameDay) {
+                  const endTimeFormatted = endDate.toLocaleString('de-DE', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  });
+                  return `${startFormatted} – ${endTimeFormatted}`;
+                } else {
+                  const endFormatted = endDate.toLocaleString('de-DE', {
+                    weekday: 'short',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  });
+                  return `${startFormatted} – ${endFormatted}`;
+                }
+              })()}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pr: 2, pt: 1 }}
+            onClick={() => {
+              openWeatherModal(event.id);
+            }}>
+            <span style={{ cursor: 'pointer', marginRight: 8 }} title="Wetterdetails anzeigen">
+              <WeatherDisplay 
+                code={event.weatherData?.weatherCode} theme={'light'}
+              />
+            </span>
+          </Box>
         </Box>
         {event.game && (
           <Box mb={2}>
@@ -255,7 +284,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
               )}
               {/* Teilnahme-Buttons */}
               <Stack direction="row" spacing={2} id="participationButtons" mb={2}>
-                {Array.isArray(participationStatuses) && participationStatuses.length > 0 ? (
+                {Array.isArray(participationStatuses) && participationStatuses.length > 0 && (
                   participationStatuses.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(status => (
                     <Button
                       key={status.id}
@@ -269,13 +298,6 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                       {status.name}
                     </Button>
                   ))
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    Keine Teilnahme-Statusdaten verfügbar.
-                    {process.env.NODE_ENV === 'development' && (
-                      <pre style={{ fontSize: 10, color: '#c00' }}>{JSON.stringify(participationStatuses, null, 2)}</pre>
-                    )}
-                  </Typography>
                 )}
               </Stack>
               {/* Notizfeld */}

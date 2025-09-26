@@ -35,6 +35,11 @@ export interface Game {
   location?: Location;
   gameType?: GameType;
   calendarEvent?: CalendarEvent;
+  weatherData?: {
+    weatherCode?: number[];
+    dailyWeatherData?: Record<string, any>;
+    hourlyWeatherData?: Record<string, any>;
+  };
   fussballDeUrl?: string;
 }
 
