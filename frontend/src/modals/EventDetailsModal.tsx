@@ -13,6 +13,7 @@ import React, { useState, useEffect } from 'react';
 import CircularProgress from '@mui/material/CircularProgress';
 import { apiJson } from '../utils/api';
 import { WeatherDisplay } from '../components/WeatherIcons';
+import WeatherModal from './WeatherModal';
 import Location from '../components/Location';
 
 export interface EventDetailsModalProps {
@@ -348,6 +349,12 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
           <Button onClick={onEdit} color="secondary" variant="outlined">Bearbeiten</Button>
         )}
       </DialogActions>
+
+      <WeatherModal
+        open={weatherModalOpen}
+        onClose={() => setWeatherModalOpen(false)}
+        eventId={selectedEventId}
+      />
     </Dialog>
   );
 };
