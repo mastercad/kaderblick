@@ -193,7 +193,6 @@ const WeatherModal: React.FC<WeatherModalProps> = ({ open, onClose, eventId }) =
               </svg>
               <Typography variant="caption" sx={{ color: '#1976d2', mt: 0.5 }}>Temperaturverlauf</Typography>
             </Box>
-            {/* Stündliche Wetterkarten direkt unter der Kurve, keine Redundanz */}
             <Grid container spacing={2} justifyContent="center">
               {hourly.map((h, i) => (
                 <Grid key={i} item xs={12} sm={6} md={3}>
