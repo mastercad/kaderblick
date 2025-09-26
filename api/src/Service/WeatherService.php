@@ -61,12 +61,12 @@ final class WeatherService
 
         foreach ($calendarEvents as $event) {
             if ($event->getStartDate() < $daysBack || $event->getStartDate() > $daysForward) {
-                echo "EVENT ".$event->getStartDate()->format('Y-m-d'). " NICHT IN RANGE!";
+                echo 'EVENT ' . $event->getStartDate()->format('Y-m-d') . ' NICHT IN RANGE!';
                 continue;
             }
 
-            if ($event->getLocation() === null || $event->getLocation()->getLatitude() === null || $event->getLocation()->getLongitude() === null) {
-                echo "KEINE LOCATION DATA!";
+            if (null === $event->getLocation() || null === $event->getLocation()->getLatitude() || null === $event->getLocation()->getLongitude()) {
+                echo 'KEINE LOCATION DATA!';
                 continue;
             }
 
@@ -78,7 +78,7 @@ final class WeatherService
                 )
             );
 
-            if ($event->getWeatherData() === null) {
+            if (null === $event->getWeatherData()) {
                 $weatherDataEntity = new WeatherData();
                 $weatherDataEntity->setCalendarEvent($event);
                 $event->setWeatherData($weatherDataEntity);

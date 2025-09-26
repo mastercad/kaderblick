@@ -128,7 +128,7 @@ class CalendarEvent
     {
         return $this->calendarEventType;
     }
-    
+
     public function getWeatherData(): ?WeatherData
     {
         return $this->weatherData;
@@ -141,6 +141,7 @@ class CalendarEvent
         if ($weatherData && $weatherData->getCalendarEvent() !== $this) {
             $weatherData->setCalendarEvent($this);
         }
+
         return $this;
     }
 

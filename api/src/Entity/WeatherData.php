@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Entity;
 
 use App\Repository\WeatherRepository;
@@ -34,6 +35,7 @@ class WeatherData
     public function setCalendarEvent(?CalendarEvent $calendarEvent): self
     {
         $this->calendarEvent = $calendarEvent;
+
         return $this;
     }
 
@@ -51,6 +53,7 @@ class WeatherData
     public function setDailyWeatherData(array $daily): self
     {
         $this->dailyWeatherData = $daily;
+
         return $this;
     }
 
@@ -68,6 +71,7 @@ class WeatherData
     public function setHourlyWeatherData(array $hourly): self
     {
         $this->hourlyWeatherData = $hourly;
+
         return $this;
     }
 }

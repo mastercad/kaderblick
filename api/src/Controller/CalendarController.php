@@ -181,7 +181,7 @@ class CalendarController extends AbstractController
 
         foreach ($rawHourlyWeatherData as $key => $information) {
             foreach ($information as $index => $value) {
-                if ($index < (int)$indexStart || $index > (int)$indexEnd) {
+                if ($index < (int) $indexStart || $index > (int) $indexEnd) {
                     continue;
                 }
                 $hourlyWeatherData[$key][$index] = $value;
