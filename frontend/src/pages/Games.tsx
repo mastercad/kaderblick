@@ -26,6 +26,7 @@ import { useAuth } from '../context/AuthContext';
 import Location from '../components/Location';
 import { WeatherDisplay } from '../components/WeatherIcons';
 import WeatherModal from '../modals/WeatherModal';
+import { formatDateTime, formatTime } from '../utils/formatter';
 
 interface GamesProps {
   onGameSelect?: (gameId: number) => void;
@@ -65,19 +66,6 @@ export default function Games({ onGameSelect }: GamesProps) {
     if (onGameSelect) {
       onGameSelect(gameId);
     }
-  };
-
-  // Zeige Zeit immer als UTC
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    return `${pad(date.getUTCDate())}.${pad(date.getUTCMonth() + 1)}.${date.getUTCFullYear()} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    return `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
   };
 
   if (loading) {

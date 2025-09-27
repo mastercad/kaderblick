@@ -168,6 +168,8 @@ class ReportController extends AbstractController
         $reportData = $reportDataService->generateReportData($config);
 
         return $this->json([
+            'name' => $report->getName(),
+            'description' => $report->getDescription(),
             'config' => $config,
             'labels' => $reportData['labels'],
             'datasets' => $reportData['datasets'],

@@ -1,5 +1,4 @@
 import { apiJson } from '../utils/api';
-import { User } from '../types/user';
 
 export interface WidgetData {
   id: string;
@@ -9,6 +8,10 @@ export interface WidgetData {
   position: number;
   config?: any;
   reportId?: number;
+  name?: string;
+  description?: string;
+  enabled: boolean;
+  default: boolean;
 }
 
 export async function fetchDashboardWidgets(): Promise<WidgetData[]> {

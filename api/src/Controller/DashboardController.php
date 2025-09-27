@@ -57,6 +57,8 @@ class DashboardController extends AbstractController
             return [
                 'id' => $widget->getId(),
                 'type' => $widget->getType(),
+                'name' => 'report' === $widget->getType() ? $widget->getReportDefinition()->getName() : null,
+                'description' => 'report' === $widget->getType() ? $widget->getReportDefinition()->getDescription() : null,
                 'width' => $widget->getWidth(),
                 'position' => $widget->getPosition(),
                 'config' => $widget->getConfig(),
