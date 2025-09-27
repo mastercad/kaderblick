@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -222,7 +221,7 @@ function DashboardContent() {
               widget.type === 'news' ? 'Neuigkeiten' :
               widget.type === 'messages' ? 'Nachrichten' :
               widget.type === 'calendar' ? 'Kalender' :
-              widget.type === 'report' ? 'Report' :
+              widget.type === 'report' ? widget.name ?? 'Report' :
               widget.type}
             loading={isRefreshing(widget.id)}
             onRefresh={() => handleRefresh(widget.id)}
