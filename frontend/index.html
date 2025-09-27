@@ -3,15 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="format-detection" content="telephone=no" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#1976d2" />
-  <link rel="apple-touch-icon" href="/images/icon-192.png" />
-  <title>Kaderblick - Fußballverein Management</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#1976d2" />
+    <link rel="apple-touch-icon" href="/images/icon-192.png" />
+    <title>Kaderblick - Fußballverein Management</title>
   </head>
   <body>
     <div id="preload-fallback" style="position:fixed;inset:0;z-index:9999;display:flex;justify-content:center;align-items:center;background:linear-gradient(135deg,#43a047 0%,#a5d6a7 100%);">
@@ -46,7 +46,6 @@
     </div>
     <div id="root"></div>
     <script type="module">
-      // Entferne das Fallback sobald React die App rendert
       const removePreload = () => {
         const el = document.getElementById('preload-fallback');
         if (el) el.remove();
@@ -55,7 +54,6 @@
         const root = document.getElementById('root');
         if (root) {
           const observer = new MutationObserver(() => {
-            // Sobald React etwas in #root rendert, entferne das Fallback
             if (root.childNodes.length > 0) {
               removePreload();
               observer.disconnect();
