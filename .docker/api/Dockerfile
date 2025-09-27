@@ -61,7 +61,6 @@ RUN mkdir -p var/log \
 
 EXPOSE 80
 
-# Cronjob für Wetterdaten-Sammeln einrichten
 RUN echo "0 3 * * * www-data cd /var/www/symfony && /usr/local/bin/php bin/console app:collect-weather-data-for-events >> /var/log/cron.log 2>&1" > /etc/cron.d/collect-weather-data-for-events
 RUN chmod 0644 /etc/cron.d/collect-weather-data-for-events && crontab /etc/cron.d/collect-weather-data-for-events
 
