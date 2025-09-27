@@ -36,6 +36,17 @@ export default defineConfig({
       }
     }),
   ],
+  /* Wahrscheinlich sinnfrei, bleibt aber erstmal drin, der login modal für google sso jetzt erstmal so funktioniert */
+  server: {
+    middlewareMode: false,
+    setupMiddlewares(middlewares) {
+      middlewares.use((req, res, next) => {
+        res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
+        next();
+      });
+      return middlewares;
+    }
+  },
   build: {
     sourcemap: true
   }

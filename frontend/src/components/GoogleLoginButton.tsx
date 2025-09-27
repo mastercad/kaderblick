@@ -1,17 +1,23 @@
 import Button from '@mui/material/Button';
 import GoogleIcon from '@mui/icons-material/Google';
 import { BACKEND_URL } from '../../config';
+import { apiJson } from '../utils/api';
 
 export default function GoogleLoginButton() {
     const handleGoogleLogin = () => {
         const width = 500, height = 600;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-        window.open(
-            `${BACKEND_URL}/connect/google`,
-            'GoogleLogin',
-            `width=${width},height=${height},left=${left},top=${top},popup=yes`
-        );
+        const left = (screen.width/2)-(width/2);
+        const top = (screen.height/2)-(height/2);
+        const popup = window.open(`${BACKEND_URL}/connect/google`, 'GoogleLogin', `width=${width},height=${height},top=${top},left=${left}`);
+        if (!popup) return;
+        const pollTimer = setInterval(function() {
+            if (popup.closed) {
+                clearInterval(pollTimer);
+                apiJson('/api/about-me')
+                    .then(() => window.location.reload())
+                    .catch(() => {/* do nothing */});
+            }
+        }, 500);
     };
 
     return (

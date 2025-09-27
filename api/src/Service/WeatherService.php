@@ -65,14 +65,10 @@ final class WeatherService
             // Vergangene Events nach daysBack, vor heute, ohne WeatherData
             $isPastWithoutWeather = $event->getStartDate() < $now && $event->getStartDate() >= $daysBack && null === $event->getWeatherData();
             if (!($isInRange || $isPastWithoutWeather)) {
-                echo 'SKIPPE ';
-                dump($event);
                 continue;
             }
 
             if (null === $event->getLocation() || null === $event->getLocation()->getLatitude() || null === $event->getLocation()->getLongitude()) {
-                echo 'SKIPPE WEIL LOCATION FEHLT!!!!';
-                dump($event);
                 continue;
             }
 
