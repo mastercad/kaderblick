@@ -253,6 +253,13 @@ class VideosController extends AbstractController
             $cameras[(int) $videoEntry->getCamera()->getId()][(int) $videoEntry->getSort()] = $videoEntry;
         }
 
+        foreach ($cameras as $cameraId => $currentVideos) {
+            ksort($currentVideos);
+            $cameras[$cameraId] = $currentVideos;
+        }
+
+        ksort($cameras);
+
         /* TODO potenziell performancelastig, aber aktuell nicht so tragisch */
         foreach ($cameras as $camera => $currentVideos) {
             $currentStart = 0;

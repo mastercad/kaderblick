@@ -119,7 +119,6 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   const [weatherModalOpen, setWeatherModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [teamRideModalOpen, setTeamRideModalOpen] = useState(false);
-  const [addTeamRideModalOpen, setAddTeamRideModalOpen] = useState(false);
   const [teamRideStatus, setTeamRideStatus] = useState<'none'|'full'|'free'>('none');
 
   const tourSteps = [
