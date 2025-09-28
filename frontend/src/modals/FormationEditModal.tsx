@@ -70,9 +70,9 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
   // Initialdaten laden
   useEffect(() => {
     if (open) {
-      apiJson<{ entries: Team[] }>(`/api/teams`)
+      apiJson<{ teams: Team[] }>(`/api/teams`)
         .then(data => {
-          const loadedTeams = Array.isArray(data.entries) ? data.entries : [];
+          const loadedTeams = Array.isArray(data.teams) ? data.teams : [];
           setTeams(loadedTeams);
           if (loadedTeams.length === 1) {
             setSelectedTeam(loadedTeams[0].id);

@@ -14,7 +14,7 @@ import Calendar from './pages/Calendar';
 import Reports from './pages/ReportsOverview';
 import GamesContainer from './pages/GamesContainer';
 import TestPage from './pages/TestPage';
-import TeamOutfit from './pages/TeamOutfit';
+import SizeGuide from './pages/SizeGuide';
 import News from './pages/News';
 import UserRelations from './pages/UserRelations';
 import SurveyList from './pages/SurveyList';
@@ -105,7 +105,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/surveys" element={<ProtectedRoute><SurveyList /></ProtectedRoute>} />
-                <Route path="/trainer-outfits" element={<ProtectedRoute><TeamOutfit /></ProtectedRoute>} />
+                <Route path="/team-size-guide" element={<ProtectedRoute><SizeGuide /></ProtectedRoute>} />
                 <Route path="/games" element={<ProtectedRoute><GamesContainer /></ProtectedRoute>} />
                 <Route path="/calendar" element={<ProtectedRoute><Calendar setCalendarFabHandler={() => {}} /></ProtectedRoute>} />
                 <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />

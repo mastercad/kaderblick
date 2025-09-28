@@ -8,10 +8,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 
-class TeamOutfitController extends AbstractController
+class TeamSizeGuideController extends AbstractController
 {
-    #[Route('/api/teams/outfit-overview', name: 'api_teams_outfit_overview', methods: ['GET'])]
-    public function outfitOverview(): JsonResponse
+    #[Route('/api/teams/size-guide-overview', name: 'api_teams_size_guide_overview', methods: ['GET'])]
+    public function sizeGuideOverview(): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();

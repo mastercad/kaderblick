@@ -5,7 +5,7 @@ import createEventImage from '../../public/images/landing_page/create_event.png?
 import eventZusageImage from '../../public/images/landing_page/event_zusage.png?url'
 import gamesImage from '../../public/images/landing_page/games.png?url'
 
-import '../styles/HomeParallax.css';
+import '../styles/home-parallax.css';
 
 const sections = [
   {

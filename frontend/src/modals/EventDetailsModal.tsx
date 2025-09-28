@@ -17,6 +17,7 @@ import WeatherModal from './WeatherModal';
 import Location from '../components/Location';
 import { FaCar } from 'react-icons/fa';
 import TeamRideDetailsModal from './TeamRideDetailsModal';
+import TourTooltip from '../components/TourTooltip';
 
 export interface EventDetailsModalProps {
   open: boolean;
@@ -121,7 +122,39 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   const [addTeamRideModalOpen, setAddTeamRideModalOpen] = useState(false);
   const [teamRideStatus, setTeamRideStatus] = useState<'none'|'full'|'free'>('none');
 
-  // TeamRide-Status für Icon-Farbe laden
+  const tourSteps = [
+    {
+      target: "event-details",
+      content: "Hier findest du alle wichtigen Infos zum Event. Schau dich ruhig um!",
+    },
+    {
+      target: "event-action-button",
+      content: "Mit diesem Button kannst du dich zum Event anmelden oder abmelden!",
+    },
+    {
+      target: "participation-note",
+      content: "Teile hier optional mit, warum du diesen Status gesetzt hast.",
+    },
+    /*
+    {
+      target: "current-participation-status",
+      content: "Hier siehst du deinen aktuellen Anmeldestatus für dieses Event.",
+    },
+    */
+    {
+      target: "participations-list",
+      content: "In der Teilnehmerliste siehst du, wer sich sonst noch angemeldet hat.",
+    },
+    {
+      target: "weather-information",
+      content: "Hier findest du Informationen zum vorraussichtlichen Wetter, dabei werden Wetterinformationen nur über die Zeit des Events angezeigt.",
+    },
+    {
+      target: "teamride-information",
+      content: "Hier findest du Informationen zu Fahrgemeinschaften, kannst eine Fahrgemeinschaft anbieten bzw. einen Platz buchen.",
+    },
+  ];
+
   useEffect(() => {
     if (!event?.id || !open) {
       setTeamRideStatus('none');
@@ -156,19 +189,15 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     setLoading(true);
     Promise.all([
       apiJson(`/api/participation/statuses`),
-//      apiJson(`/api/participation/current/${event.id}`).catch(() => null),
       apiJson(`/api/participation/event/${event.id}`).catch(() => []),
     ])
-//      .then(([statusesResponse, current, list]) => {
       .then(([statusesResponse, list]) => {
         console.log('API participation/statuses response:', statusesResponse);
         if (!Array.isArray(statusesResponse.statuses)) {
           console.error('FEHLER: participation/statuses liefert kein Array!', statusesResponse);
         }
         setParticipationStatuses(Array.isArray(statusesResponse.statuses) ? statusesResponse.statuses : []);
-//        setCurrentParticipation(current);
         setParticipations(list.participations);
-//        setNote(current?.note || '');
       })
       .catch(() => {
         setParticipationStatuses([]);
@@ -188,19 +217,15 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     })
       .then(() => {
         return Promise.all([
-//          apiJson(`/api/participation/current/${event.id}`),
           apiJson(`/api/participation/event/${event.id}`),
         ]);
       })
-//      .then(([current, list]) => {
       .then(([list]) => {
-//        setCurrentParticipation(current);
         setParticipations(list.participations);
       })
       .finally(() => setSaving(false));
   };
 
-  // Teilnehmer gruppieren
   const groupedParticipations: Record<string, { statusName: string; color?: string; icon?: string; participants: typeof participations }> = {};
   participations.forEach(p => {
     if (!groupedParticipations[p.status.name]) {
@@ -218,10 +243,11 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{event.title}</DialogTitle>
+      <DialogTitle id="event-title">{event.title}</DialogTitle>
       <DialogContent dividers>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box mb={2}>
+        <Box id="event-details">
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Box mb={2}>
             <Typography variant="subtitle2" color="text.secondary">
               {event.type?.name && (
                 <span style={{ color: event.type.color || undefined, fontWeight: 600 }}>{event.type.name}</span>
@@ -275,7 +301,9 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pr: 2, pt: 1 }}
               onClick={() => {
                 openWeatherModal(event.id);
-              }}>
+              }}
+              id="weather-information"
+              >
               <span style={{ cursor: 'pointer', marginRight: 8 }} title="Wetterdetails anzeigen">
                 <WeatherDisplay 
                   code={event.weatherData?.weatherCode} theme={'light'}
@@ -285,7 +313,9 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pr: 2, pt: 1 }}
               onClick={() => {
                 openTeamRideDetails(event.id);
-              }}>
+              }}
+              id="teamride-information"
+              >
                 <FaCar 
                   size={32}
                   style={{ 
@@ -313,10 +343,10 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
             <Typography variant="body2">{event.description}</Typography>
           </Box>
         )}
+        </Box>
 
         {/* Teilnahme-Sektion */}
-        <Divider sx={{ my: 2 }} />
-        <Box id="participationSection">
+        <Box>
           <Typography variant="h6" gutterBottom>Teilnahme</Typography>
           {loading ? (
             <Box display="flex" alignItems="center" justifyContent="center" my={2}><CircularProgress /></Box>
@@ -324,7 +354,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
             <>
               {/* Aktueller Status */}
               {currentParticipation && (
-                <Box id="currentParticipationStatus" mb={2}>
+                <Box id="current-participation-status" mb={2}>
                   <Chip
                     label={
                       <span>
@@ -337,7 +367,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                 </Box>
               )}
               {/* Teilnahme-Buttons */}
-              <Stack direction="row" spacing={2} id="participationButtons" mb={2}>
+              <Stack id="event-action-button" direction="row" spacing={2} mb={2}>
                 {Array.isArray(participationStatuses) && participationStatuses.length > 0 && (
                   participationStatuses.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(status => (
                     <Button
@@ -355,9 +385,9 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                 )}
               </Stack>
               {/* Notizfeld */}
-              <Box mb={2}>
+              <Box mb={2}
+                id="participation-note">
                 <TextField
-                  id="participationNote"
                   label="Notiz (optional)"
                   value={note}
                   onChange={e => setNote(e.target.value)}
@@ -369,7 +399,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                 />
               </Box>
               {/* Teilnehmerliste */}
-              <Box id="participationsList" mb={2}>
+              <Box id="participations-list" mb={2}>
                 <Typography variant="subtitle2" gutterBottom>Teilnehmer</Typography>
                 {participations.length === 0 ? (
                   <Typography variant="body2" color="text.secondary">Noch keine Rückmeldungen.</Typography>
@@ -414,6 +444,9 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
         onClose={() => setTeamRideModalOpen(false)}
         eventId={selectedEventId}
       />
+
+      <TourTooltip steps={tourSteps} />
+
     </Dialog>
   );
 };

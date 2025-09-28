@@ -1,14 +1,15 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-
-import './index.css';
-import './styles/mobile-responsive.css';
-import App from './App.tsx';
+import App from './App';
 import { ToastProvider } from './context/ToastContext';
-import { AuthProvider } from './context/AuthContext.tsx';
+import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { ThemeProvider as CustomThemeProvider } from './context/ThemeContext';
 import { BrowserRouter } from 'react-router-dom';
+
+import './index.css';
+import './styles/tour-tool-tip.css';
+import './styles/mobile-responsive.css';
 
 const theme = createTheme();
 
