@@ -21,7 +21,6 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import MenuIcon from '@mui/icons-material/Menu';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-// Admin-Dropdown Icons
 import GroupsIcon from '@mui/icons-material/Groups';
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
@@ -40,6 +39,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import BusinessIcon from '@mui/icons-material/Business';
+import CheckroomIcon from '@mui/icons-material/Checkroom';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import PublicIcon from '@mui/icons-material/Public';
@@ -82,7 +82,8 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
   ];
 
   const trainerMenuItems = [
-    { key: 'trainer-outfits', label: 'Kleidergrößen' },
+    { key: 'team-size-guide', label: 'Team Size Guide', icon: <CheckroomIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+    { key: 'formations', label: 'Aufstellungen', page: 'formations', icon: <GroupWorkIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
   ];
 
   const adminMenuSections = [
@@ -239,6 +240,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                             selected={location.pathname === `/${item.key}`}
                             onClick={() => handleTrainerMenuClick(item.key)}
                           >
+                            {item.icon}
                             {item.label}
                           </MenuItem>
                         ))}

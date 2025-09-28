@@ -28,8 +28,8 @@ class CoachTeamPlayerService
                 foreach ($coach->getCoachTeamAssignments() as $assignment) {
                     if ($this->isCurrentAssignment($assignment->getStartDate(), $assignment->getEndDate())) {
                         $team = $assignment->getTeam();
-                        if (!in_array($team, $teams, true)) {
-                            $teams[] = $team;
+                        if (!isset($teams[$team->getId()])) {
+                            $teams[$team->getId()] = $team;
                         }
                     }
                 }

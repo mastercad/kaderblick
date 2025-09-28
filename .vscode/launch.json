@@ -10,7 +10,7 @@
           "request": "launch",
           "port": 9003,
           "pathMappings": {
-            "/var/www/symfony": "${workspaceFolder}/app/"
+            "/var/www/symfony": "${workspaceFolder}/api/"
           },
           "ignore": ["**/vendor/**"]
         },

@@ -55,7 +55,7 @@ const aggregateSizes = (teams: Team[], key: keyof Player): SizeSummary => {
   return summary;
 };
 
-const TeamOutfit: React.FC = () => {
+const SizeGuide: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +68,7 @@ const TeamOutfit: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
-    apiJson("/api/teams/outfit-overview")
+    apiJson("/api/teams/size-guide-overview")
       .then(setTeams)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -85,7 +85,7 @@ const TeamOutfit: React.FC = () => {
 
   return (
     <Box sx={{ width: '100%', px: { xs: 2, md: 4 }, py: { xs: 2, md: 4 } }}>
-      <Typography variant="h4" component="h1" mb={3}>Outfit-Übersicht für Trainer</Typography>
+      <Typography variant="h4" component="h1" mb={3}>Size Guide</Typography>
       {teams.map((team) => {
         // Team-spezifische Zusammenfassungen
         const shortsSummary = team.players.reduce((acc: SizeSummary, p) => {
@@ -180,4 +180,4 @@ const TeamOutfit: React.FC = () => {
   );
 };
 
-export default TeamOutfit;
+export default SizeGuide;
