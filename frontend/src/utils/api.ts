@@ -56,13 +56,17 @@ export async function apiRequest(endpoint: string, options: ApiRequestOptions = 
 /**
  * Vereinfachte API-Funktion die direkt JSON zurückgibt
  */
-export async function apiJson<T = any>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
+export async function apiJson<T = any>(endpoint: string, options: ApiRequestOptions = {}): Promise<T | { error: string }> {
   const response = await apiRequest(endpoint, options);
-  
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-    throw new Error(errorData.message || `HTTP ${response.status}`);
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    data = { error: 'Unknown error' };
   }
-  
-  return response.json();
+  if (!response.ok) {
+    // Fehlerobjekt direkt zurückgeben
+    return typeof data === 'object' && data.error ? data : { error: data.message || `HTTP ${response.status}` };
+  }
+  return data;
 }
