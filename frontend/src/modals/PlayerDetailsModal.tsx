@@ -36,7 +36,7 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ open, playerId,
 
     useEffect(() => {
         if (open) {
-            apiJson<PlayerDetailsResponse>(`/api/playeres/${playerId}`)
+            apiJson<PlayerDetailsResponse>(`/api/players/${playerId}`)
                 .then(data => {
                     setPlayer(data.player);
                 })
@@ -130,7 +130,7 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ open, playerId,
                 onConfirm={async () => {
                     if (!deletePlayer) return;
                     try {
-                        await apiJson(`/playeres/${deletePlayer.id}/delete`, { method: 'DELETE' });
+                        await apiJson(`/players/${deletePlayer.id}/delete`, { method: 'DELETE' });
                     } catch (e) {
                         // Fehlerbehandlung ggf. Toast
                     } finally {

@@ -81,7 +81,7 @@ export async function previewReport(report: Report): Promise<{ preview?: string;
   });
 
   try {
-    const response = await fetch('/reports/preview', {
+    const response = await apiJson('/reports/preview', {
       method: 'POST',
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
