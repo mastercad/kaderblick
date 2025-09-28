@@ -3,7 +3,6 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
-import Grid from '@mui/material/Grid';
 import { DashboardWidget } from '../components/DashboardWidget';
 import { UpcomingEventsWidget } from '../widgets/UpcomingEventsWidget';
 import { NewsWidget } from '../widgets/NewsWidget';
@@ -22,7 +21,6 @@ import { reorderWidgets } from '../services/reorderWidgets';
 import { DashboardDndKitWrapper } from '../dnd/DashboardDndKitWrapper';
 import { DynamicConfirmationModal } from '../modals/DynamicConfirmationModal';
 import { deleteWidget } from '../services/deleteWidget';
-import { refreshWidget } from '../services/refreshWidget';
 import { WidgetRefreshProvider, useWidgetRefresh } from '../context/WidgetRefreshContext';
 
 export default function Dashboard() {
@@ -43,8 +41,6 @@ function DashboardContent() {
   const [reports, setReports] = useState<ReportDefinition[]>([]);
   const [selectedReportIds, setSelectedReportIds] = useState<number[]>([]);
   const [reportsLoading, setReportsLoading] = useState(false);
-
-  // Settings modal state
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsWidgetId, setSettingsWidgetId] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -61,13 +57,9 @@ function DashboardContent() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Handler für Toolbar-Buttons (Refresh, Delete, Settings)
   const handleRefresh = async (id: string) => {
     try {
-      // Trigger das Refresh im Context (zeigt Loading-State)
       triggerRefresh(id);
-      // Der tatsächliche API-Call wird durch die Widget-Komponenten gehandelt
-      // basierend auf dem getRefreshTrigger aus dem Context
     } catch (error) {
       console.error('Error refreshing widget:', error);
     }
@@ -94,6 +86,7 @@ function DashboardContent() {
     setDeleteModalOpen(false);
     setDeleteWidgetId(null);
   };
+  
   const handleSettings = (id: string) => {
     setSettingsWidgetId(id);
     setSettingsOpen(true);

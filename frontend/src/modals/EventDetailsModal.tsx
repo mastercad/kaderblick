@@ -15,6 +15,9 @@ import { apiJson } from '../utils/api';
 import { WeatherDisplay } from '../components/WeatherIcons';
 import WeatherModal from './WeatherModal';
 import Location from '../components/Location';
+import { FaCar } from 'react-icons/fa';
+import TeamRideDetailsModal from './TeamRideDetailsModal';
+import AddTeamRideModal from './AddTeamRideModal';
 
 export interface EventDetailsModalProps {
   open: boolean;
@@ -109,10 +112,17 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [weatherModalOpen, setWeatherModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [teamRideModalOpen, setTeamRideModalOpen] = useState(false);
+  const [addTeamRideModalOpen, setAddTeamRideModalOpen] = useState(false);
   
   const openWeatherModal = (eventId: number | null) => {
     setSelectedEventId(eventId);
     setWeatherModalOpen(true);
+  };
+
+  const openTeamRideDetails = (eventId: number | null) => {
+    setSelectedEventId(eventId);
+    setTeamRideModalOpen(true);
   };
 
   useEffect(() => {
@@ -235,15 +245,23 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
               })()}
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pr: 2, pt: 1 }}
-            onClick={() => {
-              openWeatherModal(event.id);
-            }}>
-            <span style={{ cursor: 'pointer', marginRight: 8 }} title="Wetterdetails anzeigen">
-              <WeatherDisplay 
-                code={event.weatherData?.weatherCode} theme={'light'}
-              />
-            </span>
+          <Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pr: 2, pt: 1 }}
+              onClick={() => {
+                openWeatherModal(event.id);
+              }}>
+              <span style={{ cursor: 'pointer', marginRight: 8 }} title="Wetterdetails anzeigen">
+                <WeatherDisplay 
+                  code={event.weatherData?.weatherCode} theme={'light'}
+                />
+              </span>
+            </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pr: 2, pt: 1 }}
+              onClick={() => {
+                openTeamRideDetails(event.id);
+              }}>
+                <FaCar size={32} style={{ cursor: 'pointer', marginRight: 8 }} title="Fahrgemeinschaften anzeigen" />
+            </Box>
           </Box>
         </Box>
         {event.game && (
@@ -353,6 +371,12 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
       <WeatherModal
         open={weatherModalOpen}
         onClose={() => setWeatherModalOpen(false)}
+        eventId={selectedEventId}
+      />
+      
+      <TeamRideDetailsModal
+        open={teamRideModalOpen}
+        onClose={() => setTeamRideModalOpen(false)}
         eventId={selectedEventId}
       />
     </Dialog>

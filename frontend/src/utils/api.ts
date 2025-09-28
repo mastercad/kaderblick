@@ -1,4 +1,3 @@
-
 import { BACKEND_URL } from '../../config';
 
 // Hilfsfunktion: JWT aus Cookie extrahieren
