@@ -17,7 +17,6 @@ import WeatherModal from './WeatherModal';
 import Location from '../components/Location';
 import { FaCar } from 'react-icons/fa';
 import TeamRideDetailsModal from './TeamRideDetailsModal';
-import AddTeamRideModal from './AddTeamRideModal';
 
 export interface EventDetailsModalProps {
   open: boolean;
@@ -29,7 +28,13 @@ export interface EventDetailsModalProps {
     end: Date | string;
     description?: string;
     type?: { name?: string; color?: string };
-    location?: { name?: string };
+    location?: { 
+      name?: string,
+      latitude?: number,
+      longitude?: number,
+      city?: string,
+      address?: string
+    };
     weatherData?: { weatherCode?: number };
     game?: {
       homeTeam?: { name: string };
@@ -114,6 +119,27 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [teamRideModalOpen, setTeamRideModalOpen] = useState(false);
   const [addTeamRideModalOpen, setAddTeamRideModalOpen] = useState(false);
+  const [teamRideStatus, setTeamRideStatus] = useState<'none'|'full'|'free'>('none');
+
+  // TeamRide-Status für Icon-Farbe laden
+  useEffect(() => {
+    if (!event?.id || !open) {
+      setTeamRideStatus('none');
+      return;
+    }
+    apiJson(`/api/teamrides/event/${event.id}`)
+      .then(data => {
+        const rides = data.rides || [];
+        if (rides.length === 0) {
+          setTeamRideStatus('none');
+        } else if (rides.every(r => r.availableSeats === 0)) {
+          setTeamRideStatus('full');
+        } else {
+          setTeamRideStatus('free');
+        }
+      })
+      .catch(() => setTeamRideStatus('none'));
+  }, [event?.id, open]);
   
   const openWeatherModal = (eventId: number | null) => {
     setSelectedEventId(eventId);
@@ -260,7 +286,16 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
               onClick={() => {
                 openTeamRideDetails(event.id);
               }}>
-                <FaCar size={32} style={{ cursor: 'pointer', marginRight: 8 }} title="Fahrgemeinschaften anzeigen" />
+                <FaCar 
+                  size={32}
+                  style={{ 
+                    cursor: 'pointer', 
+                    marginRight: 8,
+                    color: teamRideStatus === 'none' ? '#888' : teamRideStatus === 'full' ? '#d32f2f' : '#388e3c',
+                    opacity: teamRideStatus === 'none' ? 0.6 : 1,
+                  }} 
+                  title={teamRideStatus === 'none' ? 'Keine Mitfahrgelegenheiten' : teamRideStatus === 'full' ? 'Alle Mitfahrgelegenheiten voll' : 'Plätze frei'}
+                />
             </Box>
           </Box>
         </Box>

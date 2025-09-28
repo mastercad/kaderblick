@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Alert from '@mui/material/Alert';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -31,6 +32,7 @@ const TeamRideDetailsModal: React.FC<TeamRideDetailsModalProps> = ({ open, onClo
   const [loading, setLoading] = useState(false);
   const [bookingRideId, setBookingRideId] = useState<number | null>(null);
   const [addTeamRideModalOpen, setAddTeamRideModalOpen] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!eventId || !open) return;
@@ -42,13 +44,19 @@ const TeamRideDetailsModal: React.FC<TeamRideDetailsModalProps> = ({ open, onClo
   }, [eventId, open]);
 
   const handleBookSeat = (rideId: number) => {
+    setBookingError(null);
     setBookingRideId(rideId);
     apiJson(`/api/teamrides/book/${rideId}`, { method: 'POST' })
-      .then(() => {
+      .then(response => {
+        if (response.error) {
+          setBookingError(response.error);
+          return;
+        }
         // Refresh rides
-        return apiJson(`/api/teamrides/event/${eventId}`);
+        return apiJson(`/api/teamrides/event/${eventId}`)
+          .then(data => setRides(data.rides || []));
       })
-      .then(data => setRides(data.rides || []))
+      .catch(() => setBookingError('Unbekannter Fehler beim Buchen.'))
       .finally(() => setBookingRideId(null));
   };
 
@@ -56,6 +64,9 @@ const TeamRideDetailsModal: React.FC<TeamRideDetailsModalProps> = ({ open, onClo
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Mitfahrgelegenheiten</DialogTitle>
       <DialogContent dividers>
+        {bookingError && (
+          <Alert severity="error" sx={{ mb: 2 }}>{bookingError}</Alert>
+        )}
         {loading ? (
           <Box display="flex" justifyContent="center" my={2}><CircularProgress /></Box>
         ) : (
