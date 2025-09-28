@@ -40,7 +40,15 @@ class VideosController extends AbstractController
             return new JsonResponse(['error' => 'Spiel nicht gefunden'], 404);
         }
 
-        $videos = $game->getVideos();
+        $rawVideos = $game->getVideos();
+        $videos = [];
+        /** @var Video $rawVideo */
+        foreach ($rawVideos as $rawVideo) {
+            $videos[$rawVideo->getSort()] = $rawVideo;
+        }
+
+        ksort($videos);
+
         $videoTypes = $videoTypeRepository->findAll();
         $cameras = $cameraRepository->findAll();
         $data = [];
