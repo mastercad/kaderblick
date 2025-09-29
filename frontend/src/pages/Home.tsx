@@ -8,7 +8,7 @@ import eventZusageImage from '../../public/images/landing_page/event_zusage.png?
 import gamesImage from '../../public/images/landing_page/game_overview.png?url'
 import reportsImage from '../../public/images/landing_page/reports.png?url'
 import locationNavigationLinkImage from '../../public/images/landing_page/location_navigationlink.png?url'
-import newsImage from '../public/images/landing_page/news.png?url'
+import newsImage from '../../public/images/landing_page/news.png?url'
 
 import '../styles/home-parallax.css';
 
