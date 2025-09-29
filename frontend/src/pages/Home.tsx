@@ -8,6 +8,7 @@ import eventZusageImage from '../../public/images/landing_page/event_zusage.png?
 import gamesImage from '../../public/images/landing_page/game_overview.png?url'
 import reportsImage from '../../public/images/landing_page/reports.png?url'
 import locationNavigationLinkImage from '../../public/images/landing_page/location_navigationlink.png?url'
+import newsImage from '../public/images/landing_page/news.png?url'
 
 import '../styles/home-parallax.css';
 
@@ -45,7 +46,7 @@ const sections = [
     text: `Umfangreiche Reports geben einen Überblick über Spielereignisse, Trainingsbeteiligung, Umfrageergebnisse und viele weitere Kennzahlen. Die Auswertungen sind individuell konfigurierbar, können exportiert und für Besprechungen oder die Vereinsentwicklung genutzt werden. So behältst du stets den Überblick über die Entwicklung deines Vereins und kannst gezielt Maßnahmen ableiten.`
   },
   {
-    image: createEventImage,
+    image: newsImage,
     text: `Das interne Messaging-System ermöglicht schnelle, sichere Kommunikation zwischen allen Mitgliedern, Teams oder Funktionären. News können für die gesamte Plattform, einzelne Vereine oder Teams veröffentlicht werden. Push-Benachrichtigungen und Lesebestätigungen sorgen dafür, dass wichtige Informationen alle erreichen. So bleibt dein Verein immer bestens informiert und vernetzt.`
   },
 ];
