@@ -128,9 +128,9 @@ function App() {
                 <Route path="leagues" element={<ProtectedRoute><Leagues /></ProtectedRoute>} />
                 <Route path="teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
                 <Route path="coachLicenses" element={<ProtectedRoute><CoachLicenses /></ProtectedRoute>} />
-                <Route path="/api/surveys/:surveyId" element={<ProtectedRoute><SurveyFill /></ProtectedRoute>} />
                 <Route path="/imprint" element={<ProtectedRoute><Imprint /></ProtectedRoute>} />
                 <Route path="/privacy" element={<ProtectedRoute><Privacy /></ProtectedRoute>} />
+                <Route path="/survey/fill/:surveyId" element={<ProtectedRoute><SurveyFill /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
               {!user && (
