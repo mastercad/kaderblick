@@ -50,10 +50,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const userData = await apiJson<User>('/api/about-me');
-      setUser(userData);
-//      console.log('Auth check successful:', userData);
+      if (userData && typeof userData === 'object' && 'error' in userData) {
+        setUser(null);
+      } else {
+        setUser(userData as User);
+      }
     } catch (error) {
-//      console.error('Auth check failed:', error);
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -62,28 +64,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (credentials: { email: string; password: string }) => {
     try {
-      await apiJson('/api/login', {
+      const result = await apiJson('/api/login', {
         method: 'POST',
         body: credentials
       });
-      
+      if (result && typeof result === 'object' && 'error' in result) {
+        // Fehler vom Backend, z.B. Invalid credentials
+        setUser(null);
+        throw result;
+      }
       // Nach erfolgreichem Login User-Daten laden
       await checkAuthStatus();
     } catch (error) {
+      setUser(null);
       throw error; // Fehler weiterwerfen für UI-Handling
     }
   };
 
   const loginWithGoogle = (authData: AuthData) => {
-//    console.log('Processing Google auth data:', authData);
-    
     if (authData.success && authData.user) {
-      // Token werden als HttpOnly Cookies gesetzt
-      // Wir setzen nur die User-Daten im State
       setUser(authData.user);
-//      console.log('Google login successful:', authData.user);
     } else {
-//      console.error('Google login failed:', authData.error || authData.message);
       throw new Error(authData.message || authData.error || 'Google-Login fehlgeschlagen');
     }
   };
@@ -92,7 +93,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await apiRequest('/api/logout', { method: 'POST' });
     } catch (error) {
-//      console.error('Logout request failed:', error);
     } finally {
       // Immer User-State zurücksetzen
       setUser(null);
