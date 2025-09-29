@@ -227,20 +227,17 @@ class VideosController extends AbstractController
             $eventSeconds = ($event->getTimestamp()->getTimestamp() - $startTimestamp);
 
             foreach ($videos as $cameraId => $currentVideos) {
-                $elapsedTime = 0;
-                foreach ($currentVideos as $startTime => $video) {
+                foreach ($currentVideos as $videoStart => $video) {
                     if (!$this->isGranted(VideoVoter::VIEW, $video)) {
                         continue;
                     }
-                    if (
-                        $startTime <= ($eventSeconds + $video->getGameStart())
-                        && (int) ($startTime + $video->getLength()) >= (int) ($eventSeconds + $video->getGameStart())
-                    ) {
-                        $seconds = $eventSeconds - $elapsedTime + (int) $video->getGameStart() + $this->youtubeLinkStartOffset;
-                        $youtubeLinks[(int) $event->getId()][(int) $cameraId][] = $video->getUrl() .
-                            '&t=' . $seconds . 's';
+                    $gameStart = (int) $video->getGameStart();
+                    $length = (int) $video->getLength();
+                    // Prüfe, ob das Event im Zeitbereich des Videos liegt
+                    if ($gameStart <= $eventSeconds && $eventSeconds < $gameStart + $length) {
+                        $seconds = $eventSeconds - $gameStart + $this->youtubeLinkStartOffset;
+                        $youtubeLinks[(int) $event->getId()][(int) $cameraId][] = $video->getUrl() . '&t=' . $seconds . 's';
                     }
-                    $elapsedTime += $video->getLength();
                 }
             }
         }
@@ -251,7 +248,7 @@ class VideosController extends AbstractController
     /**
      * @return array<int, array<int, Video>> $videos
      */
-    private function orderVideos(Game $game): array
+    protected function orderVideos(Game $game): array
     {
         $videosEntries = $game->getVideos()->toArray();
         $videos = [];
@@ -278,5 +275,10 @@ class VideosController extends AbstractController
         }
 
         return $videos;
+    }
+
+    public function setYoutubeLinkStartOffset(int $offset): void
+    {
+        $this->youtubeLinkStartOffset = $offset;
     }
 }
