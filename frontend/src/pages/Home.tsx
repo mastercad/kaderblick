@@ -50,33 +50,18 @@ const sections = [
     text: `Das interne Messaging-System ermöglicht schnelle, sichere Kommunikation zwischen allen Mitgliedern, Teams oder Funktionären. News können für die gesamte Plattform, einzelne Vereine oder Teams veröffentlicht werden. Push-Benachrichtigungen und Lesebestätigungen sorgen dafür, dass wichtige Informationen alle erreichen. So bleibt dein Verein immer bestens informiert und vernetzt.`
   },
 ];
+
 export default function Home() {
   const theme = useTheme();
   const [activeSection, setActiveSection] = useState(0);
-  const parallaxRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY || window.pageYOffset;
-      let foundIdx = 0;
-      parallaxRefs.current.forEach((ref, idx) => {
-        if (!ref) return;
-        const rect = ref.getBoundingClientRect();
-        const top = rect.top + scrollY;
-        const bottom = top + rect.height;
-        if (scrollY + window.innerHeight / 2 >= top && scrollY + window.innerHeight / 2 < bottom) {
-          foundIdx = idx;
-        }
-      });
-      setActiveSection(foundIdx);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // Navigation: z.B. mit Buttons oder Pfeilen
+  const handlePrev = () => setActiveSection(s => Math.max(0, s - 1));
+  const handleNext = () => setActiveSection(s => Math.min(sections.length - 1, s + 1));
 
   return (
-    <div style={{ width: '100vw', overflowX: 'hidden', background: theme.palette.background.default }}>
+    <div style={{ width: '100vw', minHeight: '100vh', background: '#fff', overflowX: 'hidden' }}>
       <Box sx={{ py: { xs: 4, md: 8 }, px: { xs: 2, md: 4 }, width: '100%' }}>
         <Typography variant="h2" align="center" gutterBottom fontWeight={800} color={theme.palette.primary.main}>
           Kaderblick – Die Plattform für deinen Verein
@@ -85,52 +70,143 @@ export default function Home() {
           Organisiere, plane und erlebe deinen Verein auf eine völlig neue, moderne Art. Entdecke alle Funktionen im Überblick!
         </Typography>
       </Box>
-      {/* Parallax Sections: nur Hintergrund */}
-      {sections.map((section, idx) => (
-        <section
-          key={idx}
-          ref={el => { parallaxRefs.current[idx] = el as HTMLDivElement | null; }}
-          className="parallax-section parallax-demo"
-          style={{
-            backgroundImage: `url(${section.image})`,
-            backgroundSize: 'cover',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center',
-            minHeight: idx === sections.length - 1 ? '100vh' : undefined,
-          }}
-        />
-      ))}
-      {/* Fixierter Text-Overlay */}
-      <div
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 100,
-          width: '90vw',
-          maxWidth: 900,
-          pointerEvents: 'none'
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: 'stretch',
+          justifyContent: 'center',
+          gap: { xs: 4, md: 8 },
+          px: { xs: 2, md: 8 },
+          py: { xs: 2, md: 6 },
+          width: '100%',
+          maxWidth: 1400,
+          margin: '0 auto',
         }}
       >
-        <div className="parallax-text" style={{ pointerEvents: 'auto' }}>
+        <Box
+          sx={{
+            flex: '0 0 420px',
+            maxWidth: { xs: '100%', md: 480 },
+            minWidth: 220,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#f7f7f7',
+            borderRadius: '1.2rem',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
+            p: { xs: 2, md: 4 },
+            height: { xs: 220, md: 340 },
+            cursor: 'pointer',
+          }}
+          onClick={() => setModalOpen(true)}
+          title="Bild vergrößern"
+        >
+          <img
+            src={sections[activeSection].image}
+            alt="Vorschau"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              borderRadius: '1rem',
+              background: '#fff',
+              pointerEvents: 'none',
+            }}
+          />
+        </Box>
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            background: '#f7f7f7',
+            borderRadius: '1.2rem',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
+            p: { xs: 2, md: 4 },
+            minHeight: { xs: 220, md: 340 },
+          }}
+        >
           <Typography
             variant="h5"
-            align="center"
+            align="left"
             sx={{
-              color: '#fff',
+              color: '#222',
               fontWeight: 400,
-              textShadow: '0 2px 16px rgba(0,0,0,0.7)',
-              mb: 2,
-              px: { xs: 1, md: 4 },
               fontSize: { xs: '1rem', md: '1.15rem' },
               lineHeight: 1.5,
+              px: { xs: 1, md: 2 },
             }}
           >
             {sections[activeSection].text}
           </Typography>
+        </Box>
+      </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2 }}>
+        <button onClick={handlePrev} disabled={activeSection === 0} style={{ padding: '0.7em 1.2em', fontSize: '1.1em', borderRadius: '0.7em', border: 'none', background: '#eee', cursor: 'pointer' }}>Zurück</button>
+        <button onClick={handleNext} disabled={activeSection === sections.length - 1} style={{ padding: '0.7em 1.2em', fontSize: '1.1em', borderRadius: '0.7em', border: 'none', background: '#eee', cursor: 'pointer' }}>Weiter</button>
+      </Box>
+      {/* Modal für Großansicht */}
+      {modalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.7)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <img
+              src={sections[activeSection].image}
+              alt="Großansicht"
+              style={{
+                maxWidth: '90vw',
+                maxHeight: '90vh',
+                borderRadius: '1.5rem',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+                background: '#fff',
+                display: 'block',
+              }}
+              onClick={() => setModalOpen(false)}
+            />
+            <button
+              onClick={() => setModalOpen(false)}
+              style={{
+                position: 'absolute',
+                top: '-18px',
+                right: '-18px',
+                zIndex: 10000,
+                background: 'rgba(255,255,255,0.96)',
+                border: 'none',
+                borderRadius: '50%',
+                width: 36,
+                height: 36,
+                cursor: 'pointer',
+                boxShadow: '0 1px 6px rgba(0,0,0,0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background 0.2s',
+                padding: 0,
+              }}
+              aria-label="Schließen"
+              onMouseOver={e => (e.currentTarget.style.background = 'rgba(230,230,230,1)')}
+              onMouseOut={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.96)')}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 5L13 13M13 5L5 13" stroke="#222" strokeWidth="2.2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
