@@ -50,26 +50,25 @@ const sections = [
     text: `Das interne Messaging-System ermöglicht schnelle, sichere Kommunikation zwischen allen Mitgliedern, Teams oder Funktionären. News können für die gesamte Plattform, einzelne Vereine oder Teams veröffentlicht werden. Push-Benachrichtigungen und Lesebestätigungen sorgen dafür, dass wichtige Informationen alle erreichen. So bleibt dein Verein immer bestens informiert und vernetzt.`
   },
 ];
-
 export default function Home() {
   const theme = useTheme();
-  const [offsets, setOffsets] = useState(Array(sections.length).fill(0));
+  const [activeSection, setActiveSection] = useState(0);
   const parallaxRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     const handleScroll = () => {
-      setOffsets(
-        parallaxRefs.current.map((ref) => {
-          if (!ref) return 0;
-          const rect = ref.getBoundingClientRect();
-          const windowHeight = window.innerHeight;
-          const scrollY = window.scrollY || window.pageYOffset;
-          const elementY = rect.top + scrollY;
-          const speed = 0.5; // Stärkerer Parallax-Effekt
-          const offset = (scrollY - elementY + windowHeight / 2) * speed;
-          return offset;
-        })
-      );
+      const scrollY = window.scrollY || window.pageYOffset;
+      let foundIdx = 0;
+      parallaxRefs.current.forEach((ref, idx) => {
+        if (!ref) return;
+        const rect = ref.getBoundingClientRect();
+        const top = rect.top + scrollY;
+        const bottom = top + rect.height;
+        if (scrollY + window.innerHeight / 2 >= top && scrollY + window.innerHeight / 2 < bottom) {
+          foundIdx = idx;
+        }
+      });
+      setActiveSection(foundIdx);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
@@ -86,6 +85,7 @@ export default function Home() {
           Organisiere, plane und erlebe deinen Verein auf eine völlig neue, moderne Art. Entdecke alle Funktionen im Überblick!
         </Typography>
       </Box>
+      {/* Parallax Sections: nur Hintergrund */}
       {sections.map((section, idx) => (
         <section
           key={idx}
@@ -93,33 +93,44 @@ export default function Home() {
           className="parallax-section parallax-demo"
           style={{
             backgroundImage: `url(${section.image})`,
-            backgroundSize: 'contain',
+            backgroundSize: 'cover',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
+            minHeight: idx === sections.length - 1 ? '100vh' : undefined,
           }}
-        >
-{/*          <div className="parallax-gradient" /> */}
-          <div className="parallax-content">
-            <img src={section.image} alt="Section Preview Image" className="browser-mockup" />
-            <div className="parallax-text">
-              <Typography
-                variant="h4"
-                align="center"
-                sx={{
-                  color: '#fff',
-                  fontWeight: 700,
-                  textShadow: '0 2px 16px rgba(0,0,0,0.7)',
-                  mb: 2,
-                  px: { xs: 2, md: 8 },
-                  fontSize: { xs: '1.1rem', md: '1.35rem' },
-                }}
-              >
-                {section.text}
-              </Typography>
-            </div>
-          </div>
-        </section>
+        />
       ))}
+      {/* Fixierter Text-Overlay */}
+      <div
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 100,
+          width: '90vw',
+          maxWidth: 900,
+          pointerEvents: 'none'
+        }}
+      >
+        <div className="parallax-text" style={{ pointerEvents: 'auto' }}>
+          <Typography
+            variant="h5"
+            align="center"
+            sx={{
+              color: '#fff',
+              fontWeight: 400,
+              textShadow: '0 2px 16px rgba(0,0,0,0.7)',
+              mb: 2,
+              px: { xs: 1, md: 4 },
+              fontSize: { xs: '1rem', md: '1.15rem' },
+              lineHeight: 1.5,
+            }}
+          >
+            {sections[activeSection].text}
+          </Typography>
+        </div>
+      </div>
     </div>
   );
 }
