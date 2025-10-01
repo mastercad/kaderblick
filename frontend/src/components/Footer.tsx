@@ -1,18 +1,27 @@
+
 import React from 'react';
 import { Box, Container, Link, Typography, useTheme } from '@mui/material';
+import { useLocation } from 'react-router-dom';
 
 const Footer: React.FC = () => {
   const theme = useTheme();
+  const location = useLocation();
+  const isHome = location.pathname === '/' || location.pathname === '';
+
   return (
     <Box
       component="footer"
       sx={{
         mt: 'auto',
         py: 3,
-        background: theme.palette.mode === 'dark'
-          ? 'linear-gradient(45deg, #1b5e20 30%, #2e7d32 90%)'
-          : 'linear-gradient(45deg, #2e7d32 30%, #4caf50 90%)',
-        color: theme.palette.getContrastText(theme.palette.primary.main),
+        background: isHome
+          ? 'transparent'
+          : theme.palette.mode === 'dark'
+            ? 'linear-gradient(45deg, #1b5e20 30%, #2e7d32 90%)'
+            : 'linear-gradient(45deg, #2e7d32 30%, #4caf50 90%)',
+        color: isHome
+          ? '#fff'
+          : theme.palette.getContrastText(theme.palette.primary.main),
       }}
     >
       <Container maxWidth="md" sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>

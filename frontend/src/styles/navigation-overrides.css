@@ -1,0 +1,11 @@
+.navigation-transparent-btn {
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.navigation-transparent-btn:hover, .navigation-transparent-btn:active, .navigation-transparent-btn.Mui-selected {
+  background: rgba(255,255,255,0.08) !important;
+  color: inherit !important;
+}

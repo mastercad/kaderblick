@@ -17,11 +17,11 @@ export interface WidgetSettingsModalProps {
 }
 
 const GRID_OPTIONS = [
-  { value: 3, label: 'Schmal (3/12, 25%)' },
-  { value: 4, label: 'Normal (4/12, 33%)' },
-  { value: 6, label: 'Halbe Breite (6/12, 50%)' },
-  { value: 8, label: 'Groß (8/12, 66%)' },
-  { value: 12, label: 'Volle Breite (12/12, 100%)' },
+  { value: 3, label: 'Schmal (25%)' },
+  { value: 4, label: 'Normal (33%)' },
+  { value: 6, label: 'Halbe Breite (50%)' },
+  { value: 8, label: 'Groß (66%)' },
+  { value: 12, label: 'Volle Breite (100%)' },
 ];
 
 export const WidgetSettingsModal: React.FC<WidgetSettingsModalProps> = ({ open, currentWidth, onClose, onSave }) => {
