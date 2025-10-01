@@ -90,13 +90,15 @@ export default function Home() {
         <section
           key={idx}
           ref={el => { parallaxRefs.current[idx] = el as HTMLDivElement | null; }}
-          className="parallax-section parallax-demo"
+          className="parallax-section parallax-demo parallax-bg-centered"
           style={{
             backgroundImage: `url(${section.image})`,
-            backgroundSize: 'cover',
+            backgroundAttachment: 'fixed',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
-            minHeight: idx === sections.length - 1 ? '100vh' : undefined,
+            backgroundSize: 'auto 60vh',
+            minHeight: idx === sections.length - 1 ? '100vh' : '80vh',
+            padding: '7vh 0',
           }}
         />
       ))}
