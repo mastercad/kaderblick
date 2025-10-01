@@ -160,7 +160,7 @@ export default function LandingGallery({ sections }: LandingGalleryProps) {
                   mb: 2,
                   textTransform: 'uppercase',
                   textAlign: 'left',
-                  fontSize: '5vw',
+                  fontSize: 'clamp(1.5rem, 5vw, 3rem)',
                   color: (theme) => theme.palette.primary.main
                 }}
               >
