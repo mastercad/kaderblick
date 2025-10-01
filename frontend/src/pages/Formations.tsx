@@ -47,7 +47,7 @@ const Formations: React.FC = () => {
   }, []);
 
   return (
-    <Box sx={{ mt: 4, p: 3 }}>
+    <Box sx={{ p: 3 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Typography variant="h4">Meine Teamaufstellungen</Typography>
         <Button

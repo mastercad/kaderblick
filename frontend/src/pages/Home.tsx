@@ -1,136 +1,132 @@
-import { useRef, useEffect, useState } from 'react';
-import { Box, Typography, useTheme } from '@mui/material';
-import calendarImage from '../../public/images/landing_page/calendar.png?url'
-import surceyImage from '../../public/images/landing_page/surveys.png?url'
-import coachImage from '../../public/images/landing_page/coach.png?url'
-import createEventImage from '../../public/images/landing_page/create_event.png?url'
-import eventZusageImage from '../../public/images/landing_page/event_zusage.png?url'
-import gamesImage from '../../public/images/landing_page/game_overview.png?url'
-import reportsImage from '../../public/images/landing_page/reports.png?url'
-import locationNavigationLinkImage from '../../public/images/landing_page/location_navigationlink.png?url'
-import newsImage from '../../public/images/landing_page/news.png?url'
 
-import '../styles/home-parallax.css';
 
-const sections = [
-  {
-    image: calendarImage,
-    text: `Mit Kaderblick kannst du sämtliche Vereins-Events wie Spiele, Trainings, Treffen oder Feiern zentral planen und verwalten. Jeder Termin wird automatisch in einen übersichtlichen, modernen Kalender eingetragen, der für alle Mitglieder zugänglich ist. Trainer und Organisatoren können Events mit wenigen Klicks anlegen, bearbeiten oder absagen. Die Teilnehmer sehen auf einen Blick, was ansteht, und können sich direkt über die Plattform anmelden oder abmelden. Push-Benachrichtigungen und Erinnerungen sorgen dafür, dass niemand einen wichtigen Termin verpasst. Die Kalenderansicht ist intuitiv, filterbar nach Kategorien oder Zeiträumen und auch auf Mobilgeräten optimal nutzbar.`
-  },
-  {
-    image: eventZusageImage,
-    text: `Für jedes Event können Mitglieder mit nur einem Klick Zu- oder Absagen abgeben. Die Rückmeldungen sind für Trainer und Teammitglieder sofort sichtbar, sodass die Planung von Aufstellungen, Fahrgemeinschaften oder Verpflegung einfach und transparent wird. Automatische Erinnerungen helfen, die Beteiligung zu erhöhen. Die Plattform zeigt übersichtlich, wer zugesagt, abgesagt oder sich noch nicht entschieden hat – auch für wiederkehrende Termine oder Serien.`
-  },
-  {
-    image: surceyImage,
-    text: `Mit dem flexiblen Umfragesystem kannst du beliebige Feedbacks, Abstimmungen oder Meinungsbilder einholen. Erstelle eigene Fragen, Mehrfach- oder Einfachauswahl, Freitextfelder oder Bewertungsskalen. Die Umfragen lassen sich gezielt an Teams, Gruppen oder den gesamten Verein richten. Die Ergebnisse werden grafisch ausgewertet und können für spätere Analysen exportiert werden. So erhältst du wertvolle Einblicke und kannst die Vereinsarbeit gezielt verbessern.`
-  },
-  {
-    image: gamesImage,
-    text: `Alle Spiele werden in einer zentralen Übersicht dargestellt. Für jedes Spiel können detaillierte Ereignisse wie Tore, Karten, Auswechslungen oder besondere Momente mit Zeitstempel erfasst werden. Zusätzlich lassen sich Videos zu den Spielen hochladen und mit den jeweiligen Spielereignissen verknüpfen. So kann man später gezielt zu jedem Ereignis im Video springen und die Szene analysieren – ein wertvolles Tool für Trainer, Spieler und Fans.`
-  },
-  {
-    image: coachImage,
-    text: `Trainer erhalten einen eigenen Bereich, in dem sie Spielaufstellungen planen, Taktiken hinterlegen und Notizen zu Spielern oder Gegnern erfassen können. Die Aufstellungen können per Drag & Drop erstellt und für jedes Spiel individuell angepasst werden. Taktische Varianten, Wechseloptionen und Formationen sind übersichtlich darstellbar. So wird die Spielvorbereitung digital, effizient und nachvollziehbar.`
-  },
-  {
-    image: createEventImage,
-    text: `Die Plattform ermöglicht das Anlegen und Verwalten beliebig vieler Vereine, Teams, Spieler und Trainer. Jeder Eintrag kann mit umfangreichen Informationen, Bildern und Kontaktdaten versehen werden. Die Zuordnung zu Teams, Altersklassen oder Funktionen ist flexibel. Historien, Statistiken und individuelle Profile sorgen für Transparenz und eine optimale Organisation des Vereinslebens.`
-  },
-  {
-    image: locationNavigationLinkImage,
-    text: `Jeder Spiel- oder Trainingsort ist mit Adresse, Karte und Link zur Navigation hinterlegt. Über einen Klick kann die Route direkt auf dem Mobilgerät in der bevorzugten Navigations-App geöffnet werden. So finden alle Teilnehmer und Eltern schnell und unkompliziert zum Austragungsort. Auch Fahrgemeinschaften lassen sich so besser organisieren.`
-  },
-  {
-    image: reportsImage,
-    text: `Umfangreiche Reports geben einen Überblick über Spielereignisse, Trainingsbeteiligung, Umfrageergebnisse und viele weitere Kennzahlen. Die Auswertungen sind individuell konfigurierbar, können exportiert und für Besprechungen oder die Vereinsentwicklung genutzt werden. So behältst du stets den Überblick über die Entwicklung deines Vereins und kannst gezielt Maßnahmen ableiten.`
-  },
-  {
-    image: newsImage,
-    text: `Das interne Messaging-System ermöglicht schnelle, sichere Kommunikation zwischen allen Mitgliedern, Teams oder Funktionären. News können für die gesamte Plattform, einzelne Vereine oder Teams veröffentlicht werden. Push-Benachrichtigungen und Lesebestätigungen sorgen dafür, dass wichtige Informationen alle erreichen. So bleibt dein Verein immer bestens informiert und vernetzt.`
-  },
-];
+import React, { useEffect } from 'react';
+import { Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+
 export default function Home() {
-  const theme = useTheme();
-  const [activeSection, setActiveSection] = useState(0);
-  const parallaxRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY || window.pageYOffset;
-      let foundIdx = 0;
-      parallaxRefs.current.forEach((ref, idx) => {
-        if (!ref) return;
-        const rect = ref.getBoundingClientRect();
-        const top = rect.top + scrollY;
-        const bottom = top + rect.height;
-        if (scrollY + window.innerHeight / 2 >= top && scrollY + window.innerHeight / 2 < bottom) {
-          foundIdx = idx;
-        }
-      });
-      setActiveSection(foundIdx);
+    const original = document.body.style.background;
+    document.body.style.background = `url(/images/landing_page/background.jpg) center center / cover no-repeat fixed`;
+    return () => {
+      document.body.style.background = original;
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <div style={{ width: '100vw', overflowX: 'hidden', background: theme.palette.background.default }}>
-      <Box sx={{ py: { xs: 4, md: 8 }, px: { xs: 2, md: 4 }, width: '100%' }}>
-        <Typography variant="h2" align="center" gutterBottom fontWeight={800} color={theme.palette.primary.main}>
-          Kaderblick – Die Plattform für deinen Verein
-        </Typography>
-        <Typography variant="h5" align="center" color="text.secondary" paragraph sx={{ mb: 6 }}>
-          Organisiere, plane und erlebe deinen Verein auf eine völlig neue, moderne Art. Entdecke alle Funktionen im Überblick!
-        </Typography>
-      </Box>
-      {/* Parallax Sections: nur Hintergrund */}
-      {sections.map((section, idx) => (
-        <section
-          key={idx}
-          ref={el => { parallaxRefs.current[idx] = el as HTMLDivElement | null; }}
-          className="parallax-section parallax-demo"
-          style={{
-            backgroundImage: `url(${section.image})`,
-            backgroundSize: 'cover',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center',
-            minHeight: idx === sections.length - 1 ? '100vh' : undefined,
-          }}
-        />
-      ))}
-      {/* Fixierter Text-Overlay */}
+    <div
+      style={{
+        flex: '1 1 0%',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'none',
+        overflow: 'hidden',
+      }}
+    >
+      <style>{`
+        @media (max-width: 600px) {
+          .home-outer {
+            justify-content: center !important;
+            align-items: center !important;
+            padding: 0 !important;
+          }
+          .home-content {
+            align-items: center !important;
+            text-align: center !important;
+            padding: 0 !important;
+            margin-top: 55vw !important;
+          }
+          .home-title {
+            font-size: 12vw !important;
+            text-align: center !important;
+          }
+          .home-subtitle {
+            font-size: 6vw !important;
+            text-align: center !important;
+          }
+          .home-btn {
+            align-self: center !important;
+            margin-top: 8vw !important;
+            padding-right: 0 !important;
+          }
+        }
+      `}</style>
+
       <div
+        className="home-outer"
         style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 100,
-          width: '90vw',
-          maxWidth: 900,
-          pointerEvents: 'none'
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          paddingRight: '7%',
+          position: 'relative',
         }}
       >
-        <div className="parallax-text" style={{ pointerEvents: 'auto' }}>
-          <Typography
-            variant="h5"
-            align="center"
-            sx={{
+        <div
+          className="home-content"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            width: '50vw',
+            minWidth: 320,
+            maxWidth: '90vw',
+            textAlign: 'right',
+            fontFamily: 'Impact, "Arial Black", sans-serif',
+            paddingRight: 0,
+            marginTop: '4vw'
+          }}
+        >
+          <span
+            className="home-title"
+            style={{
+              fontSize: '8vw',
               color: '#fff',
-              fontWeight: 400,
-              textShadow: '0 2px 16px rgba(0,0,0,0.7)',
-              mb: 2,
-              px: { xs: 1, md: 4 },
-              fontSize: { xs: '1rem', md: '1.15rem' },
-              lineHeight: 1.5,
+              whiteSpace: 'nowrap',
+              lineHeight: 1,
+              textAlign: 'right',
             }}
           >
-            {sections[activeSection].text}
-          </Typography>
+            <span style={{ color: '#018606' }}>K</span>ADERBLICK
+          </span>
+          <span
+            className="home-subtitle"
+            style={{
+              fontSize: '4.16vw',
+              color: '#fff',
+              marginTop: 0,
+              textAlign: 'right',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            DEINEN VEREIN IM BLICK
+          </span>
+        </div>
+        <div
+          className="home-btn"
+          style={{
+            marginTop: '8vw',
+            alignSelf: 'flex-end',
+            paddingRight: '13%',
+          }}
+        >
+          <Button
+            variant="contained"
+            color="success"
+            sx={{ p: 3, fontSize: '2rem' }}
+            onClick={() => navigate('/landing')}
+          >
+            Jetzt starten
+          </Button>
         </div>
       </div>
+      {/* Footer wird von App.tsx global gerendert und bleibt immer unten */}
     </div>
   );
 }

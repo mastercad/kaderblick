@@ -57,7 +57,7 @@ const News: React.FC = () => {
   }, []);
 
   return (
-    <Box sx={{mx: 'auto', mt: 4, p: 3 }}>
+    <Box sx={{mx: 'auto', p: 3 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={4}>
         <Typography variant="h4">News</Typography>
         {news.length > 0 && (

@@ -47,7 +47,7 @@ const SurveyList: React.FC = () => {
   if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
-    <Box sx={{mx: 'auto', mt: 4, p: 3 }}>
+    <Box sx={{mx: 'auto', p: 3 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={4}>
         <Typography variant="h4">Umfragen</Typography>
         {surveys.length > 0 && (

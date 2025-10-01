@@ -68,6 +68,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
   const [trainerDrawerOpen, setTrainerDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const isHome = location.pathname === '/' || location.pathname === '';
 
   // Navigation items configuration
   const navigationItems = [
@@ -180,17 +181,35 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
 
   return (
     <>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{ flexGrow: 1, cursor: 'pointer', userSelect: 'none' }}
-            onClick={() => navigate('/')}
-            title="Zur Startseite"
-          >
-            Kaderblick
-          </Typography>
+      {/* Platzhalter für festen Header, damit der Seiteninhalt nicht überlappt */}
+      <Box sx={{ height: { xs: 56, md: 64 } }} />
+      <AppBar
+        position="fixed"
+        sx={{
+          background: isHome
+            ? 'transparent'
+            : 'linear-gradient(45deg, #2e7d32 30%, #4caf50 90%)',
+          backgroundColor: 'transparent',
+          boxShadow: 'none',
+          color: '#fff',
+          transition: 'background 0.3s',
+        }}
+      >
+        <Toolbar sx={{ color: '#fff' }}>
+      <Typography
+        variant="h6"
+        component="div"
+        sx={{ flexGrow: 1, cursor: 'pointer', userSelect: 'none' }}
+        onClick={() => navigate('/')}
+        title="Zur Startseite"
+        style={{ fontFamily: 'Impact, \"Arial Black\", sans-serif', fontSize: '2rem' }}
+      >
+        {location.pathname !== '/' && (
+          <>
+            <span style={{ color: '#018606', textShadow: '0 1px 6px #fff, 0 0px 2px #fff' }}>K</span>ADERBLICK
+          </>
+        )}
+      </Typography>
 
           {isAuthenticated ? (
             <>
@@ -204,10 +223,13 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                         color="inherit"
                         disabled={item.disabled}
                         onClick={() => !item.disabled && navigate(`/${item.key}`)}
+                        className="navigation-transparent-btn"
                         sx={{
-                          backgroundColor: location.pathname === `/${item.key}` ? 'rgba(255,255,255,0.1)' : 'transparent',
+                          fontWeight: 500,
+                          borderRadius: 2,
                           minWidth: 'auto',
-                          px: 2
+                          px: 2,
+                          py: 1,
                         }}
                       >
                         {item.label}
@@ -220,12 +242,15 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                       <Button
                         color="inherit"
                         onClick={handleTrainerMenuOpen}
+                        className="navigation-transparent-btn"
                         sx={{
-                          backgroundColor: location.pathname?.startsWith('/trainer-') ? 'rgba(255,255,255,0.1)' : 'transparent',
-                        minWidth: 'auto',
-                        px: 2
-                      }}
-                      endIcon={<ArrowDropDownIcon />}
+                          fontWeight: 500,
+                          borderRadius: 2,
+                          minWidth: 'auto',
+                          px: 2,
+                          py: 1,
+                        }}
+                        endIcon={<ArrowDropDownIcon />}
                       >
                         Trainer
                       </Button>
@@ -253,10 +278,13 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                       <Button
                         color="inherit"
                         onClick={handleAdminMenuOpen}
+                        className="navigation-transparent-btn"
                         sx={{
-                          backgroundColor: Boolean(adminMenuAnchor) ? 'rgba(255,255,255,0.1)' : 'transparent',
+                          fontWeight: 500,
+                          borderRadius: 2,
                           minWidth: 'auto',
-                          px: 2
+                          px: 2,
+                          py: 1,
                         }}
                         endIcon={<ArrowDropDownIcon />}
                       >
@@ -312,14 +340,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
 
               {/* Common Controls */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {/* Theme Toggle Button */}
-                <IconButton 
-                  onClick={toggleTheme} 
-                  color="inherit"
-                  title={mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                >
-                  {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-                </IconButton>
+                {/* Theme Toggle Button entfernt, da nur noch ein Theme */}
                 
                 {/* Notification Center */}
                 <NotificationCenter />
@@ -340,16 +361,20 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
             </>
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {/* Theme Toggle Button für nicht eingeloggte Benutzer */}
-              <IconButton 
-                onClick={toggleTheme} 
-                color="inherit"
-                title={mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
-              >
-                {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-              </IconButton>
+              {/* Theme Toggle Button entfernt, da nur noch ein Theme */}
               
-              <Button color="inherit" onClick={onOpenAuth}>
+              <Button
+                color="inherit"
+                onClick={onOpenAuth}
+                className="navigation-transparent-btn"
+                sx={{
+                  fontWeight: 500,
+                  borderRadius: 2,
+                  minWidth: 'auto',
+                  px: 2,
+                  py: 1,
+                }}
+              >
                 Login / Register
               </Button>
             </Box>

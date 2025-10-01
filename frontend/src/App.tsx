@@ -9,6 +9,7 @@ import { NotificationProvider } from './context/NotificationContext';
 import { useAuth } from './context/AuthContext';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
+import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import Calendar from './pages/Calendar';
 import Reports from './pages/ReportsOverview';
@@ -100,9 +101,10 @@ function App() {
                 onOpenProfile={() => setShowProfile(true)}
               />
             )}
-            <Box component="main" sx={{ flexGrow: 1, width: '100%', position: 'relative' }}>
+            <Box component="main" sx={{ flex: 1, width: '100%', position: 'relative' }}>
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/landing" element={<LandingPage />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/surveys" element={<ProtectedRoute><SurveyList /></ProtectedRoute>} />
                 <Route path="/team-size-guide" element={<ProtectedRoute><SizeGuide /></ProtectedRoute>} />
