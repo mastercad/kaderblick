@@ -164,7 +164,7 @@ export default function LandingGallery({ sections }: LandingGalleryProps) {
                   color: (theme) => theme.palette.primary.main
                 }}
               >
-                {section.name?.toUpperCase?.() || ''}
+                {section.name?.toUpperCase() || ''}
               </Typography>
               <Typography
                 variant="body1"
