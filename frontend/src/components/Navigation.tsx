@@ -340,7 +340,14 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
 
               {/* Common Controls */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {/* Theme Toggle Button entfernt, da nur noch ein Theme */}
+                {/* Theme Toggle Button */}
+                <IconButton 
+                  onClick={toggleTheme} 
+                  color="inherit"
+                  title={mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                >
+                  {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+                </IconButton>
                 
                 {/* Notification Center */}
                 <NotificationCenter />
@@ -362,7 +369,14 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               {/* Theme Toggle Button entfernt, da nur noch ein Theme */}
-              
+              <IconButton 
+                onClick={toggleTheme} 
+                color="inherit"
+                title={mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              >
+                {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+              </IconButton>
+
               <Button
                 color="inherit"
                 onClick={onOpenAuth}
