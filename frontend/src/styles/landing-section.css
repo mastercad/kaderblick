@@ -160,7 +160,7 @@
   }
 
   .landing-section {
-    padding: 2rem 5%;
+    padding: 8rem 5% 2rem 5%;
     height: auto;
     min-height: 100vh;
   }
@@ -168,7 +168,7 @@
 
 @media (max-width: 600px) {
   .landing-section {
-    padding: 2rem 2%;
+    padding: 7rem 2% 2rem 2%;
   }
 
   .landing-section-content {

@@ -1,9 +1,22 @@
-import React, { useState } from 'react';
-import { Box, Typography, IconButton, Modal } from '@mui/material';
+import React, { useState, useMemo } from 'react';
+import { Box, Typography, IconButton, Modal, Button } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import '../styles/landing-section.css';
+
+const callToActionTexts = [
+  'Jetzt dabei sein',
+  'Jetzt umsehen',
+  'Jetzt entdecken',
+  'Jetzt loslegen',
+  'Jetzt ausprobieren',
+  'Jetzt mitmachen',
+  'Kostenlos starten',
+  'Jetzt anmelden',
+  'Mehr erfahren',
+  'Los geht\'s',
+];
 
 interface LandingSectionProps {
   name: string;
@@ -11,12 +24,18 @@ interface LandingSectionProps {
   additionalImages?: string[];
   text: string;
   reverse?: boolean;
+  onAuthClick?: () => void;
 }
 
-export default function LandingSection({ name, image, additionalImages = [], text, reverse = false }: LandingSectionProps) {
+export default function LandingSection({ name, image, additionalImages = [], text, reverse = false, onAuthClick }: LandingSectionProps) {
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [thumbStart, setThumbStart] = useState(0);
   const thumbsPerPage = 3;
+
+  const ctaText = useMemo(() => {
+    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return callToActionTexts[hash % callToActionTexts.length];
+  }, [name]);
 
   const handleThumbPrev = () => setThumbStart((s) => Math.max(0, s - thumbsPerPage));
   const handleThumbNext = () => setThumbStart((s) => Math.min(additionalImages.length - thumbsPerPage, s + thumbsPerPage));
@@ -97,6 +116,31 @@ export default function LandingSection({ name, image, additionalImages = [], tex
       >
         {text}
       </Typography>
+      
+      {onAuthClick && (
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={onAuthClick}
+          sx={{
+            mt: 3,
+            py: 1.5,
+            px: 4,
+            fontSize: '1.1rem',
+            fontWeight: 600,
+            textTransform: 'none',
+            borderRadius: 2,
+            boxShadow: 3,
+            transition: 'all 0.3s',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: 6,
+            },
+          }}
+        >
+          {ctaText}
+        </Button>
+      )}
     </Box>
   );
 

@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Box } from '@mui/material';
 import HeroSection from '../components/HeroSection';
 import LandingSection from '../components/LandingSection';
 import FooterWithContact from '../components/FooterWithContact';
 import SectionNavigation from '../components/SectionNavigation';
+import AuthModal from '../modals/AuthModal';
 import calendarImage from '../../public/images/landing_page/calendar.png?url';
 import surceyImage from '../../public/images/landing_page/surveys.png?url';
 import coachImage from '../../public/images/landing_page/coach.png?url';
@@ -73,6 +74,7 @@ const sections = [
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     const original = document.body.style.background;
@@ -120,12 +122,7 @@ export default function Home() {
   }, []);
 
   const handleStartClick = () => {
-    if (containerRef.current) {
-      const firstSection = containerRef.current.children[1] as HTMLElement;
-      if (firstSection) {
-        firstSection.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
+    setAuthModalOpen(true);
   };
 
   return (
@@ -164,6 +161,7 @@ export default function Home() {
                 additionalImages={section.additionalImages}
                 text={section.text}
                 reverse={index % 2 === 1}
+                onAuthClick={() => setAuthModalOpen(true)}
               />
               {isLastSection && (
                 <Box sx={{ width: '100%', marginTop: 'auto' }}>
@@ -176,6 +174,7 @@ export default function Home() {
       </Box>
       
       <SectionNavigation sections={sections} containerRef={containerRef} />
+      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </>
   );
 }
