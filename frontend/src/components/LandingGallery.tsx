@@ -21,7 +21,6 @@ export default function LandingGallery({ sections }: LandingGalleryProps) {
   const [transitioning, setTransitioning] = useState(false);
   const [showNext, setShowNext] = useState(false);
   const [nextIndex, setNextIndex] = useState<number | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const section = sections[current];
   const additional = section.additionalImages || [];
   const [thumbStart, setThumbStart] = useState(0);
