@@ -1,3 +1,10 @@
+@font-face {
+  font-family: 'ImpactWeb';
+  src: url('/fonts/ImpactLTStd.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

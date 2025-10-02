@@ -17,79 +17,85 @@ export default function Home() {
   return (
     <div
       style={{
-        flex: '1 1 0%',
-        minHeight: 0,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         display: 'flex',
         flexDirection: 'column',
         background: 'none',
-        overflow: 'hidden',
       }}
     >
       <style>{`
+        .home-outer {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          align-items: flex-end;
+          padding-right: 7%;
+          padding-top: 7vh;
+          position: relative;
+        }
+        
         @media (max-width: 600px) {
           .home-outer {
-            justify-content: center !important;
-            align-items: center !important;
-            padding: 0 !important;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 0;
+            padding-top: 70%;
           }
           .home-content {
             align-items: center !important;
             text-align: center !important;
-            padding: 0 !important;
-            margin-top: 55vw !important;
+            width: 80%;
           }
           .home-title {
-            font-size: 12vw !important;
+            font-size: clamp(3rem, 16vw, 6rem) !important;
             text-align: center !important;
+            width: 100%;
+            white-space: normal !important;
+            word-wrap: break-word;
           }
           .home-subtitle {
-            font-size: 6vw !important;
+            font-size: clamp(1.5rem, 8vw, 3rem) !important;
             text-align: center !important;
+            margin-top: 0 !important;
+            width: 100%;
+            white-space: normal !important;
+            word-wrap: break-word;
           }
           .home-btn {
             align-self: center !important;
-            margin-top: 8vw !important;
+            margin-top: 10rem !important;
             padding-right: 0 !important;
+          }
+          .home-btn button {
+            padding: 1rem 2rem !important;
+            font-size: 1.25rem !important;
           }
         }
       `}</style>
 
-      <div
-        className="home-outer"
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'flex-end',
-          paddingRight: '7%',
-          position: 'relative',
-        }}
-      >
+      <div className="home-outer">
         <div
           className="home-content"
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-end',
-            width: '50vw',
-            minWidth: 320,
-            maxWidth: '90vw',
             textAlign: 'right',
-            fontFamily: 'Anton, Impact, "Arial Black", sans-serif',
-            paddingRight: 0,
-            marginTop: '10vw'
+            fontFamily: 'ImpactWeb, Anton, Impact, "Arial Black", sans-serif',
           }}
         >
           <span
             className="home-title"
             style={{
-              fontSize: '8vw',
+              fontSize: 'clamp(4rem, 12vw, 12rem)',
               color: '#fff',
               whiteSpace: 'nowrap',
               lineHeight: 1,
-              textAlign: 'right',
             }}
           >
             <span style={{ color: '#018606' }}>K</span>ADERBLICK
@@ -97,11 +103,10 @@ export default function Home() {
           <span
             className="home-subtitle"
             style={{
-              fontSize: '3.97vw',
+              fontSize: 'clamp(2rem, 5.97vw, 5.97rem)',
               color: '#fff',
-              marginTop: 0,
-              textAlign: 'right',
               whiteSpace: 'nowrap',
+              lineHeight: 1,
             }}
           >
             DEINEN VEREIN IM BLICK
@@ -110,9 +115,9 @@ export default function Home() {
         <div
           className="home-btn"
           style={{
-            marginTop: '8vw',
+            marginTop: '10rem',
             alignSelf: 'flex-end',
-            paddingRight: '13%',
+            paddingRight: '12%',
           }}
         >
           <Button
@@ -125,7 +130,6 @@ export default function Home() {
           </Button>
         </div>
       </div>
-      {/* Footer wird von App.tsx global gerendert und bleibt immer unten */}
     </div>
   );
 }
