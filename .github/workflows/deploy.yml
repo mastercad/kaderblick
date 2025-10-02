@@ -31,6 +31,7 @@ jobs:
       - name: Prepare files
         run: |
           mkdir -p build
+          sh ./frontend/scripts/set-publish-date.sh
           cp -r docker-compose.yml docker-compose.db.yml .docker api frontend build/
           
       - name: Deploy and switch
@@ -113,7 +114,6 @@ jobs:
             # echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > api/config/secrets/prod/prod.decrypt.private.php
             echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > api/config/secrets/prod/prod.decrypt.private.php
             chmod 655 api/config/secrets/prod/prod.decrypt.private.php
-
 
             # Staging-Container bauen und starten
             PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 docker compose -p staging up -d --build --force-recreate api frontend
