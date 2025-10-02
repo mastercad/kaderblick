@@ -17,79 +17,72 @@ export default function Home() {
   return (
     <div
       style={{
-        flex: '1 1 0%',
-        minHeight: 0,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         display: 'flex',
         flexDirection: 'column',
         background: 'none',
-        overflow: 'hidden',
       }}
     >
       <style>{`
+        .home-outer {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: flex-end;
+          padding-right: 7%;
+          position: relative;
+        }
+        
         @media (max-width: 600px) {
           .home-outer {
-            justify-content: center !important;
-            align-items: center !important;
-            padding: 0 !important;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
           }
           .home-content {
             align-items: center !important;
             text-align: center !important;
-            padding: 0 !important;
-            margin-top: 55vw !important;
           }
           .home-title {
-            font-size: 12vw !important;
+            font-size: clamp(3rem, 12vw, 6rem) !important;
             text-align: center !important;
           }
           .home-subtitle {
-            font-size: 6vw !important;
+            font-size: clamp(1.5rem, 6vw, 3rem) !important;
             text-align: center !important;
+            margin-top: 0 !important;
           }
           .home-btn {
             align-self: center !important;
-            margin-top: 8vw !important;
+            margin-top: 2rem !important;
             padding-right: 0 !important;
           }
         }
       `}</style>
 
-      <div
-        className="home-outer"
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'flex-end',
-          paddingRight: '7%',
-          position: 'relative',
-        }}
-      >
+      <div className="home-outer">
         <div
           className="home-content"
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-end',
-            width: '50vw',
-            minWidth: 320,
-            maxWidth: '90vw',
             textAlign: 'right',
-            fontFamily: 'Anton, Impact, "Arial Black", sans-serif',
-            paddingRight: 0,
-            marginTop: '10vw'
+            fontFamily: 'ImpactWeb, Anton, Impact, "Arial Black", sans-serif',
           }}
         >
           <span
             className="home-title"
             style={{
-              fontSize: '8vw',
+              fontSize: 'clamp(4rem, 12.5vw, 12.5rem)',
               color: '#fff',
               whiteSpace: 'nowrap',
               lineHeight: 1,
-              textAlign: 'right',
             }}
           >
             <span style={{ color: '#018606' }}>K</span>ADERBLICK
@@ -97,11 +90,11 @@ export default function Home() {
           <span
             className="home-subtitle"
             style={{
-              fontSize: '3.97vw',
+              fontSize: 'clamp(2rem, 6.33vw, 6.33rem)',
               color: '#fff',
-              marginTop: 0,
-              textAlign: 'right',
+              marginTop: 'clamp(-3rem, -2vw, -1.5rem)',
               whiteSpace: 'nowrap',
+              lineHeight: 1,
             }}
           >
             DEINEN VEREIN IM BLICK
@@ -110,9 +103,9 @@ export default function Home() {
         <div
           className="home-btn"
           style={{
-            marginTop: '8vw',
+            marginTop: 'clamp(2rem, 3vw, 4rem)',
             alignSelf: 'flex-end',
-            paddingRight: '13%',
+            paddingRight: '6%',
           }}
         >
           <Button
