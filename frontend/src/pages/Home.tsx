@@ -32,35 +32,48 @@ export default function Home() {
           flex: 1;
           display: flex;
           flex-direction: column;
-          justify-content: center;
+          justify-content: flex-start;
           align-items: flex-end;
           padding-right: 7%;
+          padding-top: 7vh;
           position: relative;
         }
         
         @media (max-width: 600px) {
           .home-outer {
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
             padding: 0;
+            padding-top: 70%;
           }
           .home-content {
             align-items: center !important;
             text-align: center !important;
+            width: 80%;
           }
           .home-title {
-            font-size: clamp(3rem, 12vw, 6rem) !important;
+            font-size: clamp(3rem, 16vw, 6rem) !important;
             text-align: center !important;
+            width: 100%;
+            white-space: normal !important;
+            word-wrap: break-word;
           }
           .home-subtitle {
-            font-size: clamp(1.5rem, 6vw, 3rem) !important;
+            font-size: clamp(1.5rem, 8vw, 3rem) !important;
             text-align: center !important;
             margin-top: 0 !important;
+            width: 100%;
+            white-space: normal !important;
+            word-wrap: break-word;
           }
           .home-btn {
             align-self: center !important;
-            margin-top: 2rem !important;
+            margin-top: 10rem !important;
             padding-right: 0 !important;
+          }
+          .home-btn button {
+            padding: 1rem 2rem !important;
+            font-size: 1.25rem !important;
           }
         }
       `}</style>
@@ -79,7 +92,7 @@ export default function Home() {
           <span
             className="home-title"
             style={{
-              fontSize: 'clamp(4rem, 12.5vw, 12.5rem)',
+              fontSize: 'clamp(4rem, 12vw, 12rem)',
               color: '#fff',
               whiteSpace: 'nowrap',
               lineHeight: 1,
@@ -90,9 +103,8 @@ export default function Home() {
           <span
             className="home-subtitle"
             style={{
-              fontSize: 'clamp(2rem, 6.33vw, 6.33rem)',
+              fontSize: 'clamp(2rem, 5.97vw, 5.97rem)',
               color: '#fff',
-              marginTop: 'clamp(-3rem, -2vw, -1.5rem)',
               whiteSpace: 'nowrap',
               lineHeight: 1,
             }}
@@ -103,9 +115,9 @@ export default function Home() {
         <div
           className="home-btn"
           style={{
-            marginTop: 'clamp(2rem, 3vw, 4rem)',
+            marginTop: '10rem',
             alignSelf: 'flex-end',
-            paddingRight: '6%',
+            paddingRight: '12%',
           }}
         >
           <Button
@@ -118,7 +130,6 @@ export default function Home() {
           </Button>
         </div>
       </div>
-      {/* Footer wird von App.tsx global gerendert und bleibt immer unten */}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, IconButton, Modal } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
@@ -35,19 +35,16 @@ export default function LandingGallery({ sections }: LandingGalleryProps) {
     
     setNextIndex(nextIdx);
     setShowNext(true);
-    
-    // Kleiner Delay, damit React das neue Bild erst rendert, bevor die Transition startet
-    setTimeout(() => {
-      setTransitioning(true);
-    }, 20);
-    
-    // Nach der Animation: Wechsel abschließen
-    setTimeout(() => {
-      setCurrent(nextIdx);
+    setTransitioning(true);
+  };
+
+  const handleTransitionEnd = () => {
+    if (transitioning && nextIndex !== null) {
+      setCurrent(nextIndex);
       setShowNext(false);
       setNextIndex(null);
       setTransitioning(false);
-    }, 1020);
+    }
   };
 
   const handlePrev = () => handleSwitch(-1);
@@ -101,11 +98,12 @@ export default function LandingGallery({ sections }: LandingGalleryProps) {
                       position: 'absolute',
                       left: 0,
                       top: 0,
-                      transition: transitioning ? 'transform 1s cubic-bezier(.77,0,.18,1)' : 'none',
+                      transition: 'transform 1s cubic-bezier(.77,0,.18,1)',
                       transform: transitioning ? 'translateY(-100%)' : 'translateY(0%)',
                       zIndex: transitioning ? 1 : 2,
                     }}
                     onClick={() => setModalImage(section.image)}
+                    onTransitionEnd={handleTransitionEnd}
                   />
                   {/* Nächstes Bild - scrollt von unten rein */}
                   {showNext && nextIndex !== null && (
@@ -127,7 +125,6 @@ export default function LandingGallery({ sections }: LandingGalleryProps) {
                     />
                   )}
                 </Box>
-                {/* Buttons außerhalb des overflow-hidden Containers */}
                 <IconButton
                   onClick={handlePrev}
                   sx={{
@@ -248,7 +245,6 @@ export default function LandingGallery({ sections }: LandingGalleryProps) {
           >
             {/* Slide-Container für Text */}
             <Box sx={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-              {/* Text: einfach wechseln, keine Animation */}
               <Box
                 width="100%"
                 sx={{
