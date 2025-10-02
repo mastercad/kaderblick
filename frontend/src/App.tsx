@@ -95,12 +95,10 @@ function App() {
       <NotificationProvider>
         <FabStackRoot>
           <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-            {user && (
-              <Navigation
-                onOpenAuth={() => setShowAuth(true)}
-                onOpenProfile={() => setShowProfile(true)}
-              />
-            )}
+            <Navigation
+              onOpenAuth={() => setShowAuth(true)}
+              onOpenProfile={() => setShowProfile(true)}
+            />
             <Box component="main" sx={{ flex: 1, width: '100%', position: 'relative' }}>
               <Routes>
                 <Route path="/" element={<Home />} />

@@ -40,17 +40,24 @@ const ContactModal: React.FC<ContactModalProps> = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ bgcolor: theme.palette.background.paper, fontWeight: 600 }}>Kontaktformular</DialogTitle>
+      <DialogTitle sx={{ bgcolor: theme.palette.background.paper, fontWeight: 600 }}>
+        Kontaktformular
+      </DialogTitle>
       <DialogContent sx={{ bgcolor: theme.palette.background.paper }}>
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box 
+          component="form"
+          onSubmit={handleSubmit} 
+          sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+        >
           <TextField
             label="Name"
             value={name}
             onChange={e => setName(e.target.value)}
             required
             autoFocus
+            sx={{ mt: 1 }}
           />
           <TextField
             label="E-Mail"

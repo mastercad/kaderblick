@@ -188,7 +188,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
         sx={{
           background: isHome
             ? 'transparent'
-            : 'linear-gradient(45deg, #2e7d32 30%, #4caf50 90%)',
+            : `linear-gradient(135deg, ${muiTheme.palette.primary.main} 0%, ${muiTheme.palette.secondary.main} 100%)`,
           backgroundColor: 'transparent',
           boxShadow: 'none',
           color: '#fff',
@@ -360,7 +360,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                   onClick={handleMenu}
                   color="inherit"
                 >
-                  <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
+                  <Avatar sx={{ width: 32, height: 32 }}>
                     {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                   </Avatar>
                 </IconButton>
