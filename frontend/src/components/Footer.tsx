@@ -16,9 +16,7 @@ const Footer: React.FC = () => {
         py: 3,
         background: isHome
           ? 'transparent'
-          : theme.palette.mode === 'dark'
-            ? 'linear-gradient(45deg, #1b5e20 30%, #2e7d32 90%)'
-            : 'linear-gradient(45deg, #2e7d32 30%, #4caf50 90%)',
+          : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
         color: isHome
           ? '#fff'
           : theme.palette.getContrastText(theme.palette.primary.main),

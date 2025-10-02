@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, Button, Box, Typography, TextField, InputAdornment, CircularProgress, Alert, Divider, IconButton, Chip, Stack
+    Button, Box, Typography, TextField, InputAdornment, CircularProgress, Alert, Divider, IconButton, Chip, Stack
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import Autocomplete from '@mui/material/Autocomplete';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -17,6 +16,7 @@ import { Team } from '../types/team';
 import { apiJson } from '../utils/api';
 import { toDateInputValue } from '../utils/date';
 import { CoachTeamAssignmentType } from '../types/coachTeamAssignmentType';
+import BaseModal from './BaseModal';
 
 interface CoachEditModalProps {
     openCoachEditModal: boolean;
@@ -226,14 +226,13 @@ const CoachEditModal: React.FC<CoachEditModalProps> = ({ openCoachEditModal, coa
     };
 
     return (
-        <Dialog open={openCoachEditModal} onClose={onCoachEditModalClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 2 }}>
-                Trainer bearbeiten
-                <IconButton aria-label="close" onClick={onCoachEditModalClose} size="small" sx={{ ml: 2 }}>
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-            <DialogContent>
+        <>
+            <BaseModal
+                open={openCoachEditModal}
+                onClose={onCoachEditModalClose}
+                maxWidth="md"
+                title="Trainer bearbeiten"
+            >
                 {loading ? (
                 <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
                     <CircularProgress />
@@ -512,7 +511,7 @@ const CoachEditModal: React.FC<CoachEditModalProps> = ({ openCoachEditModal, coa
                     </form>
                 </>
                 )}
-            </DialogContent>
+            </BaseModal>
             <ClubEditModal
                 openClubEditModal={openClubModal}
                 onClubEditModalClose={() => setOpenClubModal(false)}
@@ -549,7 +548,7 @@ const CoachEditModal: React.FC<CoachEditModalProps> = ({ openCoachEditModal, coa
                     setOpenNationalityModal(false);
                 }}
             />
-</Dialog>
+        </>
     );
 };
 

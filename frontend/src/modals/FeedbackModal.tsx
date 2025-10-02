@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import Snackbar from '@mui/material/Snackbar';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, Select, MenuItem, FormControl, InputLabel,
-  Checkbox, FormControlLabel, Box, Alert, useTheme, CircularProgress
+  Checkbox, FormControlLabel, Box, CircularProgress
 } from '@mui/material';
 import { apiRequest } from '../utils/api';
 import html2canvas from 'html2canvas';
+import BaseModal from './BaseModal';
 
 interface FeedbackModalProps {
   open: boolean;
@@ -21,10 +21,9 @@ const FEEDBACK_TYPES = [
 ];
 
 const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) => {
-  const theme = useTheme();
   const [type, setType] = useState('bug');
   const [message, setMessage] = useState('');
-    const [screenshot, setScreenshot] = useState<string | null>(null);
+  const [screenshot, setScreenshot] = useState<string | null>(null);
   const [attachScreenshot, setAttachScreenshot] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
@@ -57,13 +56,12 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) => {
     }
   };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
+    const handleSubmit = async () => {
       setLoading(true);
-  setError(null);
-  setSuccess(null);
-  setShowSuccess(false);
-  setShowError(false);
+      setError(null);
+      setSuccess(null);
+      setShowSuccess(false);
+      setShowError(false);
       try {
         const payload: Record<string, any> = {
           type,
@@ -118,10 +116,23 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) => {
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ bgcolor: theme.palette.background.paper, fontWeight: 600 }}>Feedback</DialogTitle>
-        <DialogContent sx={{ bgcolor: theme.palette.background.paper }}>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <BaseModal
+        open={open}
+        onClose={onClose}
+        title="Feedback"
+        maxWidth="sm"
+        actions={
+          <>
+            <Button onClick={onClose} color="secondary" variant="outlined" disabled={loading}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleSubmit} color="primary" variant="contained" disabled={loading || !message}>
+              {loading ? <CircularProgress size={24} /> : 'Senden'}
+            </Button>
+          </>
+        }
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           <FormControl fullWidth required>
             <InputLabel id="feedback-type-label">Feedback-Typ</InputLabel>
             <Select
@@ -152,21 +163,12 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) => {
             label="Screenshot anhängen"
           />
           {attachScreenshot && screenshot && (
-            <Box sx={{ mb: 2 }}>
+            <Box>
               <img src={screenshot} alt="Screenshot Vorschau" style={{ maxWidth: '100%', borderRadius: 8 }} />
             </Box>
           )}
-          <DialogActions sx={{ px: 0 }}>
-            <Button onClick={onClose} color="secondary" variant="outlined" disabled={loading}>
-              Abbrechen
-            </Button>
-            <Button type="submit" color="primary" variant="contained" disabled={loading || !message}>
-              {loading ? <CircularProgress size={24} /> : 'Senden'}
-            </Button>
-          </DialogActions>
-          </Box>
-        </DialogContent>
-      </Dialog>
+        </Box>
+      </BaseModal>
       <Snackbar
         open={showSuccess}
         autoHideDuration={2000}

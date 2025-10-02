@@ -67,6 +67,14 @@ const baseTheme: ThemeOptions = {
           '@media (max-width:600px)': {
             minHeight: 48,
           },
+          transition: 'all 0.2s ease-in-out',
+        },
+        contained: {
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          '&:hover': {
+            boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+            transform: 'translateY(-1px)',
+          },
         },
       },
     },
@@ -111,6 +119,21 @@ const baseTheme: ThemeOptions = {
         },
       },
     },
+    MuiAvatar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#018606',
+          transition: 'all 0.2s ease-in-out',
+          '&:hover': {
+            backgroundColor: '#02b008',
+          },
+        },
+        colorDefault: {
+          backgroundColor: '#018606',
+          color: '#ffffff',
+        },
+      },
+    },
   },
 };
 
@@ -120,27 +143,27 @@ export const lightTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#2e7d32', // Grün
-      light: '#60ad5e',
-      dark: '#005005',
+      main: '#018606', // Primäres Grün
+      light: '#02b008', // Hellere, frischere Variante für Hover
+      dark: '#015504', // Dunklere Variante
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#4caf50', // Helleres Grün
-      light: '#80e27e',
-      dark: '#087f23',
+      main: '#00c853', // Frisches, lebendiges Grün
+      light: '#5efc82',
+      dark: '#009624',
       contrastText: '#ffffff',
     },
     success: {
-      main: '#66bb6a',
+      main: '#00e676', // Leuchtend grün für Erfolg
     },
     background: {
-      default: '#fafafa',
+      default: '#f5f5f5', // Etwas wärmer als zuvor
       paper: '#ffffff',
     },
     text: {
-      primary: '#2e2e2e',
-      secondary: '#666666',
+      primary: '#1a1a1a', // Satteres Schwarz
+      secondary: '#424242', // Dunkleres Grau für besseren Kontrast
     },
   },
   components: {
@@ -148,7 +171,58 @@ export const lightTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          background: 'linear-gradient(45deg, #2e7d32 30%, #4caf50 90%)',
+          background: 'linear-gradient(135deg, #018606 0%, #00c853 100%)', // Frischer Gradient
+        },
+      },
+    },
+    MuiButton: {
+      ...baseTheme.components?.MuiButton,
+      styleOverrides: {
+        ...baseTheme.components?.MuiButton?.styleOverrides,
+        containedPrimary: {
+          backgroundColor: '#018606',
+          '&:hover': {
+            backgroundColor: '#02b008', // Heller beim Hover
+          },
+        },
+        containedSecondary: {
+          backgroundColor: '#00c853',
+          '&:hover': {
+            backgroundColor: '#5efc82', // Heller beim Hover
+          },
+        },
+        outlined: {
+          borderWidth: 2,
+          '&:hover': {
+            borderWidth: 2,
+            backgroundColor: 'rgba(1, 134, 6, 0.08)', // Leichter grüner Hintergrund
+          },
+        },
+        text: {
+          '&:hover': {
+            backgroundColor: 'rgba(1, 134, 6, 0.08)', // Leichter grüner Hintergrund
+          },
+        },
+      },
+    },
+    MuiFab: {
+      styleOverrides: {
+        root: {
+          transition: 'all 0.2s ease-in-out',
+        },
+        primary: {
+          backgroundColor: '#018606',
+          '&:hover': {
+            backgroundColor: '#02b008', // Heller beim Hover
+            transform: 'scale(1.05)',
+          },
+        },
+        secondary: {
+          backgroundColor: '#00c853',
+          '&:hover': {
+            backgroundColor: '#5efc82', // Heller beim Hover
+            transform: 'scale(1.05)',
+          },
         },
       },
     },
@@ -161,27 +235,27 @@ export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#4caf50', // Grün
-      light: '#80e27e',
-      dark: '#2e7d32',
-      contrastText: '#ffffff',
+      main: '#02b008', // Helles, lebendiges Grün für Dark Mode
+      light: '#5efc82',
+      dark: '#018606',
+      contrastText: '#000000',
     },
     secondary: {
-      main: '#66bb6a', // Helleres Grün
-      light: '#98ee99',
-      dark: '#338a3e',
+      main: '#00e676', // Leuchtendes Grün als Akzent
+      light: '#66ffa6',
+      dark: '#00b248',
       contrastText: '#000000',
     },
     success: {
-      main: '#4caf50',
+      main: '#00e676',
     },
     background: {
-      default: '#121212',
-      paper: '#1e1e1e',
+      default: '#0a0a0a', // Tieferes Schwarz
+      paper: '#1a1a1a', // Etwas heller für Kontrast
     },
     text: {
       primary: '#ffffff',
-      secondary: '#bbbbbb',
+      secondary: '#e0e0e0', // Helleres Grau für bessere Lesbarkeit
     },
   },
   components: {
@@ -189,17 +263,17 @@ export const darkTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          background: 'linear-gradient(45deg, #1b5e20 30%, #2e7d32 90%)',
+          background: 'linear-gradient(135deg, #018606 0%, #02b008 100%)', // Frischer Gradient
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          backgroundColor: '#1e1e1e',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          backgroundColor: '#1a1a1a',
+          boxShadow: '0 2px 12px rgba(2, 176, 8, 0.15)', // Grüner Gloweffekt
           '&:hover': {
-            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+            boxShadow: '0 4px 20px rgba(2, 176, 8, 0.25)', // Stärkerer Glow beim Hover
           },
         },
       },

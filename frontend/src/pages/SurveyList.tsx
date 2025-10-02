@@ -5,7 +5,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import LinkIcon from '@mui/icons-material/Link';
-import SurveyCreateWizard from './SurveyCreateWizard';
+import SurveyCreateWizard from '../modals/SurveyCreateWizard';
 import SurveyStatusDialog from './SurveyStatusDialog';
 import { ConfirmationModal } from '../modals/ConfirmationModal';
 import { apiJson } from '../utils/api';
@@ -182,12 +182,12 @@ const SurveyList: React.FC = () => {
         open={statusDialogOpen}
         onClose={() => setStatusDialogOpen(false)}
       />
-      <Dialog open={wizardOpen} onClose={() => { setWizardOpen(false); setEditSurvey(null); }} maxWidth="md" fullWidth>
-        <SurveyCreateWizard
-          onSurveyCreated={() => { setWizardOpen(false); setEditSurvey(null); setReloadFlag(f => f + 1); }}
-          editSurvey={editSurvey}
-        />
-      </Dialog>
+      <SurveyCreateWizard
+        open={wizardOpen}
+        onClose={() => { setWizardOpen(false); setEditSurvey(null); }}
+        onSurveyCreated={() => { setWizardOpen(false); setEditSurvey(null); setReloadFlag(f => f + 1); }}
+        editSurvey={editSurvey}
+      />
     </Box>
   );
 };

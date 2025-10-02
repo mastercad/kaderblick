@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, MenuItem, Select, InputLabel, FormControl, Alert
 } from '@mui/material';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 interface Club { id: number; name: string; }
 interface Team { id: number; name: string; }
@@ -61,81 +61,85 @@ const NewsCreateModal: React.FC<Props> = ({ open, onClose, onSuccess, clubs, tea
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>News erstellen</DialogTitle>
-      <form onSubmit={handleSubmit}>
-        <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <TextField
-            label="Titel"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            fullWidth
-            required
-            margin="normal"
-          />
-          <TextField
-            label="Inhalt"
-            value={content}
-            onChange={e => setContent(e.target.value)}
-            fullWidth
-            required
-            margin="normal"
-            multiline
-            minRows={4}
-          />
+    <BaseModal
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      title="News erstellen"
+      actions={
+        <>
+          <Button onClick={onClose} variant="outlined" color="secondary" disabled={loading}>Abbrechen</Button>
+          <Button type="submit" form="newsCreateForm" variant="contained" color="primary" disabled={loading}>Senden</Button>
+        </>
+      }
+    >
+      <form id="newsCreateForm" onSubmit={handleSubmit}>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        <TextField
+          label="Titel"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          fullWidth
+          required
+          sx={{ mt: 1 }}
+        />
+        <TextField
+          label="Inhalt"
+          value={content}
+          onChange={e => setContent(e.target.value)}
+          fullWidth
+          required
+          margin="normal"
+          multiline
+          minRows={4}
+        />
+        <FormControl fullWidth margin="normal" required>
+          <InputLabel id="visibility-label">Sichtbarkeit</InputLabel>
+          <Select
+            labelId="visibility-label"
+            value={visibility}
+            label="Sichtbarkeit"
+            onChange={e => setVisibility(e.target.value)}
+          >
+            {visibilityOptions.map(opt => (
+              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        {visibility === 'club' && (
           <FormControl fullWidth margin="normal" required>
-            <InputLabel id="visibility-label">Sichtbarkeit</InputLabel>
+            <InputLabel id="club-label">Verein</InputLabel>
             <Select
-              labelId="visibility-label"
-              value={visibility}
-              label="Sichtbarkeit"
-              onChange={e => setVisibility(e.target.value)}
+              labelId="club-label"
+              value={clubId}
+              label="Verein"
+              onChange={e => setClubId(e.target.value)}
             >
-              {visibilityOptions.map(opt => (
-                <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+              <MenuItem value="">Bitte wählen...</MenuItem>
+              {clubs.map(club => (
+                <MenuItem key={club.id} value={club.id}>{club.name}</MenuItem>
               ))}
             </Select>
           </FormControl>
-          {visibility === 'club' && (
-            <FormControl fullWidth margin="normal" required>
-              <InputLabel id="club-label">Verein</InputLabel>
-              <Select
-                labelId="club-label"
-                value={clubId}
-                label="Verein"
-                onChange={e => setClubId(e.target.value)}
-              >
-                <MenuItem value="">Bitte wählen...</MenuItem>
-                {clubs.map(club => (
-                  <MenuItem key={club.id} value={club.id}>{club.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-          {visibility === 'team' && (
-            <FormControl fullWidth margin="normal" required>
-              <InputLabel id="team-label">Team</InputLabel>
-              <Select
-                labelId="team-label"
-                value={teamId}
-                label="Team"
-                onChange={e => setTeamId(e.target.value)}
-              >
-                <MenuItem value="">Bitte wählen...</MenuItem>
-                {teams.map(team => (
-                  <MenuItem key={team.id} value={team.id}>{team.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} color="secondary" disabled={loading}>Abbrechen</Button>
-          <Button type="submit" variant="contained" disabled={loading}>Senden</Button>
-        </DialogActions>
+        )}
+        {visibility === 'team' && (
+          <FormControl fullWidth margin="normal" required>
+            <InputLabel id="team-label">Team</InputLabel>
+            <Select
+              labelId="team-label"
+              value={teamId}
+              label="Team"
+              onChange={e => setTeamId(e.target.value)}
+            >
+              <MenuItem value="">Bitte wählen...</MenuItem>
+              {teams.map(team => (
+                <MenuItem key={team.id} value={team.id}>{team.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
       </form>
-    </Dialog>
+    </BaseModal>
   );
 };
 

@@ -35,7 +35,7 @@ export default function Home() {
           justify-content: flex-start;
           align-items: flex-end;
           padding-right: 7%;
-          padding-top: 7vh;
+          padding-top: calc(7vh + 64px);
           position: relative;
         }
         
@@ -44,7 +44,7 @@ export default function Home() {
             justify-content: flex-start;
             align-items: center;
             padding: 0;
-            padding-top: 70%;
+            padding-top: calc(50% + 56px);
           }
           .home-content {
             align-items: center !important;
@@ -103,7 +103,7 @@ export default function Home() {
           <span
             className="home-subtitle"
             style={{
-              fontSize: 'clamp(2rem, 5.97vw, 5.97rem)',
+              fontSize: 'clamp(2rem, 6.1vw, 6.1rem)',
               color: '#fff',
               whiteSpace: 'nowrap',
               lineHeight: 1,
@@ -122,8 +122,15 @@ export default function Home() {
         >
           <Button
             variant="contained"
-            color="success"
-            sx={{ p: 3, fontSize: '2rem' }}
+            color="primary"
+            sx={{ 
+              p: 3, 
+              fontSize: '2rem',
+              border: '2px solid #fff',
+              '&:hover': {
+                border: '2px solid #fff',
+              }
+            }}
             onClick={() => navigate('/landing')}
           >
             Jetzt starten

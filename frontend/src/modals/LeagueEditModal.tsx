@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, Button, Box, TextField, CircularProgress, Alert, Divider, IconButton
+    Button, Box, TextField, CircularProgress, Alert, Divider
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import { League } from '../types/league';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 interface LeagueEditModalProps {
     openLeagueEditModal: boolean;
@@ -67,15 +67,13 @@ const LeagueEditModal: React.FC<LeagueEditModalProps> = ({ openLeagueEditModal, 
     };
 
     return (
-        <Dialog open={openLeagueEditModal} onClose={onLeagueEditModalClose} maxWidth="xs" fullWidth>
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 2 }}>
-                Liga bearbeiten
-                <IconButton aria-label="close" onClick={onLeagueEditModalClose} size="small" sx={{ ml: 2 }}>
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-            <DialogContent>
-                {loading ? (
+        <BaseModal
+            open={openLeagueEditModal}
+            onClose={onLeagueEditModalClose}
+            maxWidth="xs"
+            title="Liga bearbeiten"
+        >
+            {loading ? (
                     <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
                         <CircularProgress />
                     </Box>
@@ -100,8 +98,7 @@ const LeagueEditModal: React.FC<LeagueEditModalProps> = ({ openLeagueEditModal, 
                         </Box>
                     </form>
                 )}
-            </DialogContent>
-        </Dialog>
+        </BaseModal>
     );
 };
 

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, Button, Box, TextField, CircularProgress, Alert, Divider, IconButton
+    Button, Box, TextField, CircularProgress, Alert
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import { PlayerLicense } from '../types/playerLicense';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 interface PlayerLicenseEditModalProps {
     openPlayerLicenseEditModal: boolean;
@@ -67,42 +67,39 @@ const PlayerLicenseEditModal: React.FC<PlayerLicenseEditModalProps> = ({ openPla
     };
 
     return (
-        <Dialog open={openPlayerLicenseEditModal} onClose={onPlayerLicenseEditModalClose} maxWidth="xs" fullWidth>
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 2 }}>
-                Trainerlizenz bearbeiten
-                <IconButton aria-label="close" onClick={onPlayerLicenseEditModalClose} size="small" sx={{ ml: 2 }}>
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-            <DialogContent>
-                {loading ? (
-                    <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
-                        <CircularProgress />
+        <BaseModal
+            open={openPlayerLicenseEditModal}
+            onClose={onPlayerLicenseEditModalClose}
+            maxWidth="xs"
+            title="Trainerlizenz bearbeiten"
+        >
+            {loading ? (
+                <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
+                    <CircularProgress />
+                </Box>
+            ) : error ? (
+                <Alert severity="error">{error}</Alert>
+            ) : (
+                <form id="playerLicenseEditForm" autoComplete="off" onSubmit={handlePlayerLicenseEditSubmit}>
+                    <input type="hidden" name="id" value={playerLicense?.id} />
+                    <Box sx={{ bgcolor: 'background.default', p: 0 }}>
+                        <Box mb={2}>
+                            <TextField label="Name" name="name" value={playerLicense?.name || ''} onChange={handlePlayerLicenseEditChange} required fullWidth margin="normal" />
+                            <TextField label="Beschreibung" name="description" value={playerLicense?.description || ''} onChange={handlePlayerLicenseEditChange} fullWidth margin="normal" />
+                            <TextField label="Länder Code" name="countryCode" value={playerLicense?.countryCode || ''} onChange={handlePlayerLicenseEditChange} fullWidth margin="normal" />
+                        </Box>
                     </Box>
-                ) : error ? (
-                    <Alert severity="error">{error}</Alert>
-                ) : (
-                    <form id="playerLicenseEditForm" autoComplete="off" onSubmit={handlePlayerLicenseEditSubmit}>
-                        <input type="hidden" name="id" value={playerLicense?.id} />
-                        <Box sx={{ bgcolor: 'background.default', p: 0 }}>
-                            <Box mb={2}>
-                                <TextField label="Name" name="name" value={playerLicense?.name || ''} onChange={handlePlayerLicenseEditChange} required fullWidth margin="normal" />
-                                <TextField label="Beschreibung" name="description" value={playerLicense?.description || ''} onChange={handlePlayerLicenseEditChange} fullWidth margin="normal" />
-                                <TextField label="Länder Code" name="countryCode" value={playerLicense?.countryCode || ''} onChange={handlePlayerLicenseEditChange} fullWidth margin="normal" />
-                            </Box>
-                        </Box>
-                        <Box display="flex" justifyContent="flex-end" gap={2} mt={3} mb={1}>
-                            <Button onClick={onPlayerLicenseEditModalClose} variant="outlined" color="secondary">
-                                Abbrechen
-                            </Button>
-                            <Button type="submit" variant="contained" color="primary" disabled={saving}>
-                                {saving ? <CircularProgress size={20} /> : 'Speichern'}
-                            </Button>
-                        </Box>
-                    </form>
-                )}
-            </DialogContent>
-        </Dialog>
+                    <Box display="flex" justifyContent="flex-end" gap={2} mt={3} mb={1}>
+                        <Button onClick={onPlayerLicenseEditModalClose} variant="outlined" color="secondary">
+                            Abbrechen
+                        </Button>
+                        <Button type="submit" variant="contained" color="primary" disabled={saving}>
+                            {saving ? <CircularProgress size={20} /> : 'Speichern'}
+                        </Button>
+                    </Box>
+                </form>
+            )}
+        </BaseModal>
     );
 };
 

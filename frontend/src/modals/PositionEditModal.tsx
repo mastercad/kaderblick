@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, Button, Box, TextField, CircularProgress, Alert, Divider, IconButton
+    Button, Box, TextField, CircularProgress, Alert
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import { Position } from '../types/position';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 interface PositionEditModalProps {
     openPositionEditModal: boolean;
@@ -67,42 +67,39 @@ const PositionEditModal: React.FC<PositionEditModalProps> = ({ openPositionEditM
     };
 
     return (
-        <Dialog open={openPositionEditModal} onClose={onPositionEditModalClose} maxWidth="xs" fullWidth>
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 2 }}>
-                Position bearbeiten
-                <IconButton aria-label="close" onClick={onPositionEditModalClose} size="small" sx={{ ml: 2 }}>
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-            <DialogContent>
-                {loading ? (
-                    <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
-                        <CircularProgress />
+        <BaseModal
+            open={openPositionEditModal}
+            onClose={onPositionEditModalClose}
+            maxWidth="xs"
+            title="Position bearbeiten"
+        >
+            {loading ? (
+                <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
+                    <CircularProgress />
+                </Box>
+            ) : error ? (
+                <Alert severity="error">{error}</Alert>
+            ) : (
+                <form id="positionEditForm" autoComplete="off" onSubmit={handlePositionEditSubmit}>
+                    <input type="hidden" name="id" value={position?.id} />
+                    <Box sx={{ bgcolor: 'background.default', p: 0 }}>
+                        <Box mb={2}>
+                            <TextField label="Name" name="name" value={position?.name || ''} onChange={handlePositionEditChange} required fullWidth margin="normal" />
+                            <TextField label="Kurzname" name="shortName" value={position?.shortName || ''} onChange={handlePositionEditChange} fullWidth margin="normal" />
+                            <TextField label="Beschreibung" name="description" value={position?.description || ''} onChange={handlePositionEditChange} fullWidth margin="normal" multiline minRows={2} />
+                        </Box>
                     </Box>
-                ) : error ? (
-                    <Alert severity="error">{error}</Alert>
-                ) : (
-                    <form id="positionEditForm" autoComplete="off" onSubmit={handlePositionEditSubmit}>
-                        <input type="hidden" name="id" value={position?.id} />
-                        <Box sx={{ bgcolor: 'background.default', p: 0 }}>
-                            <Box mb={2}>
-                                <TextField label="Name" name="name" value={position?.name || ''} onChange={handlePositionEditChange} required fullWidth margin="normal" />
-                                <TextField label="Kurzname" name="shortName" value={position?.shortName || ''} onChange={handlePositionEditChange} fullWidth margin="normal" />
-                                <TextField label="Beschreibung" name="description" value={position?.description || ''} onChange={handlePositionEditChange} fullWidth margin="normal" multiline minRows={2} />
-                            </Box>
-                        </Box>
-                        <Box display="flex" justifyContent="flex-end" gap={2} mt={3} mb={1}>
-                            <Button onClick={onPositionEditModalClose} variant="outlined" color="secondary">
-                                Abbrechen
-                            </Button>
-                            <Button type="submit" variant="contained" color="primary" disabled={saving}>
-                                {saving ? <CircularProgress size={20} /> : 'Speichern'}
-                            </Button>
-                        </Box>
-                    </form>
-                )}
-            </DialogContent>
-        </Dialog>
+                    <Box display="flex" justifyContent="flex-end" gap={2} mt={3} mb={1}>
+                        <Button onClick={onPositionEditModalClose} variant="outlined" color="secondary">
+                            Abbrechen
+                        </Button>
+                        <Button type="submit" variant="contained" color="primary" disabled={saving}>
+                            {saving ? <CircularProgress size={20} /> : 'Speichern'}
+                        </Button>
+                    </Box>
+                </form>
+            )}
+        </BaseModal>
     );
 };
 

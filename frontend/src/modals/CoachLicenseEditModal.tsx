@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, Button, Box, TextField, CircularProgress, Alert, Divider, IconButton
+    Button, Box, TextField, CircularProgress, Alert, Divider
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import { CoachLicense } from '../types/coachLicense';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 interface CoachLicenseEditModalProps {
     openCoachLicenseEditModal: boolean;
@@ -67,15 +67,13 @@ const CoachLicenseEditModal: React.FC<CoachLicenseEditModalProps> = ({ openCoach
     };
 
     return (
-        <Dialog open={openCoachLicenseEditModal} onClose={onCoachLicenseEditModalClose} maxWidth="xs" fullWidth>
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 2 }}>
-                Trainerlizenz bearbeiten
-                <IconButton aria-label="close" onClick={onCoachLicenseEditModalClose} size="small" sx={{ ml: 2 }}>
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-            <DialogContent>
-                {loading ? (
+        <BaseModal
+            open={openCoachLicenseEditModal}
+            onClose={onCoachLicenseEditModalClose}
+            maxWidth="xs"
+            title="Trainerlizenz bearbeiten"
+        >
+            {loading ? (
                     <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
                         <CircularProgress />
                     </Box>
@@ -101,8 +99,7 @@ const CoachLicenseEditModal: React.FC<CoachLicenseEditModalProps> = ({ openCoach
                         </Box>
                     </form>
                 )}
-            </DialogContent>
-        </Dialog>
+        </BaseModal>
     );
 };
 

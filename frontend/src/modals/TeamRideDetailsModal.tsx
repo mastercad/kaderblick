@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Alert from '@mui/material/Alert';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
@@ -11,6 +7,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import AddTeamRideModal from './AddTeamRideModal';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 interface TeamRide {
   id: number;
@@ -61,9 +58,23 @@ const TeamRideDetailsModal: React.FC<TeamRideDetailsModalProps> = ({ open, onClo
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Mitfahrgelegenheiten</DialogTitle>
-      <DialogContent dividers>
+    <>
+      <BaseModal
+        open={open}
+        onClose={onClose}
+        title="Mitfahrgelegenheiten"
+        maxWidth="sm"
+        actions={
+          <>
+            <Button onClick={onClose} color="primary" variant="contained">
+              Schließen
+            </Button>
+            <Button onClick={() => setAddTeamRideModalOpen(true)} color="secondary" variant="outlined">
+              Mitfahrgelegenheit anbieten
+            </Button>
+          </>
+        }
+      >
         {bookingError && (
           <Alert severity="error" sx={{ mb: 2 }}>{bookingError}</Alert>
         )}
@@ -101,11 +112,7 @@ const TeamRideDetailsModal: React.FC<TeamRideDetailsModalProps> = ({ open, onClo
             )}
           </>
         )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} color="primary" variant="contained">Schließen</Button>
-        <Button onClick={() => setAddTeamRideModalOpen(true)} color="secondary" variant="outlined">Mitfahrgelegenheit anbieten</Button>
-      </DialogActions>
+      </BaseModal>
 
       <AddTeamRideModal open={addTeamRideModalOpen} onClose={() => setAddTeamRideModalOpen(false)} eventId={eventId} onAdded={() => {
         if (eventId) {
@@ -116,7 +123,7 @@ const TeamRideDetailsModal: React.FC<TeamRideDetailsModalProps> = ({ open, onClo
             .finally(() => setLoading(false));
         }
       }} />
-    </Dialog>
+    </>
   );
 };
 

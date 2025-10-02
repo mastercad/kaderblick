@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   FormControl,
@@ -24,6 +20,7 @@ import { ReportWidget } from '../widgets/ReportWidget';
 import { WidgetRefreshProvider } from '../context/WidgetRefreshContext';
 import { apiJson } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import BaseModal from './BaseModal';
 
 interface FieldOption {
   key: string;
@@ -259,20 +256,35 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>
-        {report ? 'Report bearbeiten' : 'Neuer Report'}
-      </DialogTitle>
-      
-      <DialogContent>
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Box display="flex" flexDirection={{ xs: 'column', lg: 'row' }} gap={3} height="70vh">
-            {/* Configuration Panel */}
-            <Box flex={1} overflow="auto" pr={{ lg: 2 }}>
-              {/* Basic Information */}
-              <TextField
-                fullWidth
-                label="Report Name"
+    <BaseModal
+      open={open}
+      onClose={onClose}
+      maxWidth="lg"
+      title={report ? 'Report bearbeiten' : 'Neuer Report'}
+      actions={
+        <>
+          <Button onClick={onClose} variant="outlined" color="secondary">
+            Abbrechen
+          </Button>
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            color="primary"
+            disabled={!currentReport.name || !currentReport.config.xField || !currentReport.config.yField}
+          >
+            Speichern
+          </Button>
+        </>
+      }
+    >
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Box display="flex" flexDirection={{ xs: 'column', lg: 'row' }} gap={3} height="70vh">
+          {/* Configuration Panel */}
+          <Box flex={1} overflow="auto" pr={{ lg: 2 }}>
+            {/* Basic Information */}
+            <TextField
+              fullWidth
+              label="Report Name"
                 value={currentReport.name}
                 onChange={(e) => setCurrentReport(prev => ({ ...prev, name: e.target.value }))}
                 margin="normal"
@@ -665,20 +677,6 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
             </Box>
           </Box>
         </DragDropContext>
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={onClose}>
-          Abbrechen
-        </Button>
-        <Button
-          onClick={handleSave}
-          variant="contained"
-          disabled={!currentReport.name || !currentReport.config.xField || !currentReport.config.yField}
-        >
-          Speichern
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseModal>
   );
 };

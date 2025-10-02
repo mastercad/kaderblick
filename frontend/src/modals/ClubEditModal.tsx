@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, TextField, InputAdornment, Switch, FormControlLabel, CircularProgress, Alert, Divider, IconButton
+    Button, Box, Typography, TextField, InputAdornment, Switch, FormControlLabel, CircularProgress, Alert, Divider
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import Autocomplete from '@mui/material/Autocomplete';
 import AddIcon from '@mui/icons-material/Add';
 import LocationEditModal from './LocationEditModal';
 import { Location } from '../types/location';
 import { Club } from '../types/club';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 interface ClubEditModalProps {
     openClubEditModal: boolean;
@@ -103,14 +103,13 @@ const ClubEditModal: React.FC<ClubEditModalProps> = ({ openClubEditModal, clubId
         };
 
     return (
-        <Dialog open={openClubEditModal} onClose={onClubEditModalClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 2 }}>
-                Verein bearbeiten
-                <IconButton aria-label="close" onClick={onClubEditModalClose} size="small" sx={{ ml: 2 }}>
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-            <DialogContent>
+        <>
+            <BaseModal
+                open={openClubEditModal}
+                onClose={onClubEditModalClose}
+                maxWidth="md"
+                title="Verein bearbeiten"
+            >
                 {loading ? (
                     <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
                         <CircularProgress />
@@ -270,7 +269,7 @@ const ClubEditModal: React.FC<ClubEditModalProps> = ({ openClubEditModal, clubId
                     </form>
                 </>
                 )}
-            </DialogContent>
+            </BaseModal>
             <LocationEditModal
                 openLocationEditModal={locationEditModalOpen}
                 onLocationEditModalClose={() => setLocationEditModalOpen(false)}
@@ -296,7 +295,7 @@ const ClubEditModal: React.FC<ClubEditModalProps> = ({ openClubEditModal, clubId
                     }
                 }}
             />
-</Dialog>
+        </>
     );
 };
 

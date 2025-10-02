@@ -1,7 +1,3 @@
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
@@ -18,6 +14,7 @@ import Location from '../components/Location';
 import { FaCar } from 'react-icons/fa';
 import TeamRideDetailsModal from './TeamRideDetailsModal';
 import TourTooltip from '../components/TourTooltip';
+import BaseModal from './BaseModal';
 
 export interface EventDetailsModalProps {
   open: boolean;
@@ -241,49 +238,55 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   if (!event) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle id="event-title">{event.title}</DialogTitle>
-      <DialogContent dividers>
+    <>
+      <BaseModal
+        open={open}
+        onClose={onClose}
+        title={event.title}
+        maxWidth="md"
+        actions={
+          <>
+            <Button onClick={onClose} color="primary" variant="contained">
+              Schließen
+            </Button>
+            {event.permissions?.canDelete && onDelete && (
+              <Button onClick={onDelete} color="error" variant="outlined">
+                Löschen
+              </Button>
+            )}
+            {((showEdit && onEdit) || event.permissions?.canEdit) && (
+              <Button onClick={onEdit} color="secondary" variant="outlined">
+                Bearbeiten
+              </Button>
+            )}
+          </>
+        }
+      >
         <Box id="event-details">
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Box mb={2}>
-            <Typography variant="subtitle2" color="text.secondary">
-              {event.type?.name && (
-                <span style={{ color: event.type.color || undefined, fontWeight: 600 }}>{event.type.name}</span>
-              )}
-              {event.location?.name && (
-                <>
-                  <br />
-                  <Location 
-                    name={event.location.name} 
-                    latitude={event.location.latitude} 
-                    longitude={event.location.longitude}
-                    address={`${event.location.city}, ${event.location.address}`.trim()}
-                  />
-                </>
-              )}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mt={1}>
-              {(() => {
-                const startDate = new Date(event.start);
-                const endDate = new Date(event.end);
-                const isSameDay = startDate.toDateString() === endDate.toDateString();
-                const startFormatted = startDate.toLocaleString('de-DE', {
-                  weekday: 'short',
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                });
-                if (isSameDay) {
-                  const endTimeFormatted = endDate.toLocaleString('de-DE', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  });
-                  return `${startFormatted} – ${endTimeFormatted}`;
-                } else {
-                  const endFormatted = endDate.toLocaleString('de-DE', {
+              <Typography variant="subtitle2" color="text.secondary">
+                {event.type?.name && (
+                  <span style={{ color: event.type.color || undefined, fontWeight: 600 }}>{event.type.name}</span>
+                )}
+                {event.location?.name && (
+                  <>
+                    <br />
+                    <Location 
+                      name={event.location.name} 
+                      latitude={event.location.latitude} 
+                      longitude={event.location.longitude}
+                      address={`${event.location.city}, ${event.location.address}`.trim()}
+                    />
+                  </>
+                )}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" mt={1}>
+                {(() => {
+                  const startDate = new Date(event.start);
+                  const endDate = new Date(event.end);
+                  const isSameDay = startDate.toDateString() === endDate.toDateString();
+                  const startFormatted = startDate.toLocaleString('de-DE', {
                     weekday: 'short',
                     day: '2-digit',
                     month: '2-digit',
@@ -291,40 +294,56 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                     hour: '2-digit',
                     minute: '2-digit',
                   });
-                  return `${startFormatted} – ${endFormatted}`;
-                }
-              })()}
-            </Typography>
-          </Box>
-          <Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pr: 2, pt: 1 }}
-              onClick={() => {
-                openWeatherModal(event.id);
-              }}
-              id="weather-information"
-              >
-              <span style={{ cursor: 'pointer', marginRight: 8 }} title="Wetterdetails anzeigen">
-                <WeatherDisplay 
-                  code={event.weatherData?.weatherCode} theme={'light'}
-                />
-              </span>
+                  if (isSameDay) {
+                    const endTimeFormatted = endDate.toLocaleString('de-DE', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    });
+                    return `${startFormatted} – ${endTimeFormatted}`;
+                  } else {
+                    const endFormatted = endDate.toLocaleString('de-DE', {
+                      weekday: 'short',
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    });
+                    return `${startFormatted} – ${endFormatted}`;
+                  }
+                })()}
+              </Typography>
             </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pr: 2, pt: 1 }}
-              onClick={() => {
-                openTeamRideDetails(event.id);
-              }}
-              id="teamride-information"
-              >
-                <FaCar 
-                  size={32}
-                  style={{ 
-                    cursor: 'pointer', 
-                    marginRight: 8,
-                    color: teamRideStatus === 'none' ? '#888' : teamRideStatus === 'full' ? '#d32f2f' : '#388e3c',
-                    opacity: teamRideStatus === 'none' ? 0.6 : 1,
-                  }} 
-                  title={teamRideStatus === 'none' ? 'Keine Mitfahrgelegenheiten' : teamRideStatus === 'full' ? 'Alle Mitfahrgelegenheiten voll' : 'Plätze frei'}
-                />
+            <Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pr: 2, pt: 1 }}
+                onClick={() => {
+                  openWeatherModal(event.id);
+                }}
+                id="weather-information"
+                >
+                <span style={{ cursor: 'pointer', marginRight: 8 }} title="Wetterdetails anzeigen">
+                  <WeatherDisplay 
+                    code={event.weatherData?.weatherCode} theme={'light'}
+                  />
+                </span>
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pr: 2, pt: 1 }}
+                onClick={() => {
+                  openTeamRideDetails(event.id);
+                }}
+                id="teamride-information"
+                >
+                  <FaCar 
+                    size={32}
+                    style={{ 
+                      cursor: 'pointer', 
+                      marginRight: 8,
+                      color: teamRideStatus === 'none' ? '#888' : teamRideStatus === 'full' ? '#d32f2f' : '#388e3c',
+                      opacity: teamRideStatus === 'none' ? 0.6 : 1,
+                    }} 
+                    title={teamRideStatus === 'none' ? 'Keine Mitfahrgelegenheiten' : teamRideStatus === 'full' ? 'Alle Mitfahrgelegenheiten voll' : 'Plätze frei'}
+                  />
+              </Box>
             </Box>
           </Box>
         </Box>
@@ -342,7 +361,6 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
             <Typography variant="body2">{event.description}</Typography>
           </Box>
         )}
-        </Box>
 
         {/* Teilnahme-Sektion */}
         <Box>
@@ -421,16 +439,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
             </>
           )}
         </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} color="primary" variant="contained">Schließen</Button>
-        {event.permissions?.canDelete && onDelete && (
-          <Button onClick={onDelete} color="error" variant="outlined">Löschen</Button>
-        )}
-        {((showEdit && onEdit) || event.permissions?.canEdit) && (
-          <Button onClick={onEdit} color="secondary" variant="outlined">Bearbeiten</Button>
-        )}
-      </DialogActions>
+      </BaseModal>
 
       <WeatherModal
         open={weatherModalOpen}
@@ -445,7 +454,6 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
       />
 
       <TourTooltip steps={tourSteps} />
-
-    </Dialog>
+    </>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Checkbox, FormControlLabel, CircularProgress, Autocomplete } from '@mui/material';
+import { Button, TextField, Checkbox, FormControlLabel, CircularProgress, Autocomplete } from '@mui/material';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 interface User {
   id: number;
@@ -137,17 +138,28 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ open, onClose, task }) =>
   };
 
   return (
-    <Dialog open={open} onClose={() => onClose(false)} maxWidth="sm" fullWidth>
-      <DialogTitle>Aufgabe {task ? 'bearbeiten' : 'anlegen'}</DialogTitle>
-      <DialogContent>
-        <TextField
-          label="Titel"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          fullWidth
-          margin="normal"
-        />
-        <TextField
+    <BaseModal
+      open={open}
+      onClose={() => onClose(false)}
+      maxWidth="sm"
+      title={`Aufgabe ${task ? 'bearbeiten' : 'anlegen'}`}
+      actions={
+        <>
+          <Button onClick={() => onClose(false)} variant="outlined" color="secondary" disabled={loading}>Abbrechen</Button>
+          <Button onClick={handleSave} variant="contained" color="primary" disabled={loading}>
+            {loading ? <CircularProgress size={24} /> : 'Speichern'}
+          </Button>
+        </>
+      }
+    >
+      <TextField
+        label="Titel"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        fullWidth
+        margin="normal"
+      />
+      <TextField
           label="Beschreibung"
           value={description}
           onChange={e => setDescription(e.target.value)}
@@ -265,14 +277,7 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ open, onClose, task }) =>
             )}
           </>
         )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => onClose(false)} disabled={loading}>Abbrechen</Button>
-        <Button onClick={handleSave} variant="contained" disabled={loading}>
-          {loading ? <CircularProgress size={24} /> : 'Speichern'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseModal>
   );
 };
 

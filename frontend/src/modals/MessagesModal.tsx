@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -32,8 +27,8 @@ import SendIcon from '@mui/icons-material/Send';
 import GroupIcon from '@mui/icons-material/Group';
 import AddIcon from '@mui/icons-material/Add';
 import ReplyIcon from '@mui/icons-material/Reply';
-import CloseIcon from '@mui/icons-material/Close';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 interface Message {
   id: string;
@@ -188,22 +183,29 @@ export const MessagesModal: React.FC<MessagesModalProps> = ({ open, onClose }) =
   return (
     <>
       {/* Main Messages Modal */}
-      <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-        <DialogTitle>
-          <Box display="flex" alignItems="center" justifyContent="space-between">
+      <BaseModal
+        open={open}
+        onClose={onClose}
+        maxWidth="lg"
+        title={
+          <Box display="flex" alignItems="center" justifyContent="space-between" width="100%" sx={{ gap: 2 }}>
             <Typography variant="h6">Nachrichten</Typography>
             <Button
               variant="contained"
+              color="primary"
               startIcon={<EditIcon />}
               onClick={() => setShowComposeModal(true)}
+              sx={{ flexShrink: 0 }}
             >
               Neue Nachricht
             </Button>
           </Box>
-        </DialogTitle>
-        
-        <DialogContent>
-          <Box display="flex" gap={2} height="500px">
+        }
+        actions={
+          <Button onClick={onClose} variant="outlined" color="secondary">Schließen</Button>
+        }
+      >
+        <Box display="flex" gap={2} height="500px">
             {/* Left Sidebar */}
             <Box width="250px" bgcolor="grey.50" p={2} borderRadius={1}>
               <Box mb={2}>
@@ -281,26 +283,29 @@ export const MessagesModal: React.FC<MessagesModalProps> = ({ open, onClose }) =
               </TableContainer>
             </Box>
           </Box>
-        </DialogContent>
-        
-        <DialogActions>
-          <Button onClick={onClose}>Schließen</Button>
-        </DialogActions>
-      </Dialog>
+      </BaseModal>
 
       {/* Compose Message Modal */}
-      <Dialog open={showComposeModal} onClose={() => setShowComposeModal(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          <Box display="flex" alignItems="center" justifyContent="space-between">
-            Neue Nachricht
-            <IconButton onClick={() => setShowComposeModal(false)}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        
-        <DialogContent>
-          <Box display="flex" flexDirection="column" gap={3} pt={1}>
+      <BaseModal
+        open={showComposeModal}
+        onClose={() => setShowComposeModal(false)}
+        maxWidth="md"
+        title="Neue Nachricht"
+        actions={
+          <>
+            <Button onClick={() => setShowComposeModal(false)} variant="outlined" color="secondary">Abbrechen</Button>
+            <Button 
+              variant="contained"
+              color="primary"
+              onClick={handleSendMessage}
+              disabled={loading || !composeForm.subject || !composeForm.content}
+            >
+              {loading ? 'Senden...' : 'Senden'}
+            </Button>
+          </>
+        }
+      >
+        <Box display="flex" flexDirection="column" gap={3} pt={1}>
             <Autocomplete
               multiple
               options={users}
@@ -354,69 +359,53 @@ export const MessagesModal: React.FC<MessagesModalProps> = ({ open, onClose }) =
               <Alert severity="error">{error}</Alert>
             )}
           </Box>
-        </DialogContent>
-        
-        <DialogActions>
-          <Button onClick={() => setShowComposeModal(false)}>Abbrechen</Button>
-          <Button 
-            variant="contained" 
-            onClick={handleSendMessage}
-            disabled={loading || !composeForm.subject || !composeForm.content}
-          >
-            {loading ? 'Senden...' : 'Senden'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      </BaseModal>
 
       {/* Message Detail Modal */}
-      <Dialog open={showMessageDetail} onClose={() => setShowMessageDetail(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          <Box display="flex" alignItems="center" justifyContent="space-between">
-            {selectedMessage?.subject}
-            <IconButton onClick={() => setShowMessageDetail(false)}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        
-        <DialogContent>
-          {selectedMessage && (
-            <Box>
-              <Box display="flex" justifyContent="space-between" mb={2}>
-                <Typography variant="body2">
-                  <strong>Von:</strong> {selectedMessage.sender}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Datum:</strong> {new Date(selectedMessage.sentAt).toLocaleString()}
-                </Typography>
-              </Box>
-              
-              {selectedMessage.recipients && (
-                <Typography variant="body2" mb={2}>
-                  <strong>An:</strong> {selectedMessage.recipients.map(r => r.name).join(', ')}
-                </Typography>
-              )}
-              
-              <Divider sx={{ my: 2 }} />
-              
-              <Typography variant="body1" component="div" sx={{ whiteSpace: 'pre-wrap' }}>
-                {selectedMessage.content}
+      <BaseModal
+        open={showMessageDetail}
+        onClose={() => setShowMessageDetail(false)}
+        maxWidth="md"
+        title={selectedMessage?.subject || ''}
+        actions={
+          <>
+            <Button onClick={() => setShowMessageDetail(false)} variant="outlined" color="secondary">Schließen</Button>
+            <Button 
+              variant="contained"
+              color="primary"
+              startIcon={<ReplyIcon />}
+              onClick={handleReply}
+            >
+              Antworten
+            </Button>
+          </>
+        }
+      >
+        {selectedMessage && (
+          <Box>
+            <Box display="flex" justifyContent="space-between" mb={2}>
+              <Typography variant="body2">
+                <strong>Von:</strong> {selectedMessage.sender}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Datum:</strong> {new Date(selectedMessage.sentAt).toLocaleString()}
               </Typography>
             </Box>
-          )}
-        </DialogContent>
-        
-        <DialogActions>
-          <Button onClick={() => setShowMessageDetail(false)}>Schließen</Button>
-          <Button 
-            variant="contained" 
-            startIcon={<ReplyIcon />}
-            onClick={handleReply}
-          >
-            Antworten
-          </Button>
-        </DialogActions>
-      </Dialog>
+            
+            {selectedMessage.recipients && (
+              <Typography variant="body2" mb={2}>
+                <strong>An:</strong> {selectedMessage.recipients.map(r => r.name).join(', ')}
+              </Typography>
+            )}
+            
+            <Divider sx={{ my: 2 }} />
+            
+            <Typography variant="body1" component="div" sx={{ whiteSpace: 'pre-wrap' }}>
+              {selectedMessage.content}
+            </Typography>
+          </Box>
+        )}
+      </BaseModal>
     </>
   );
 };

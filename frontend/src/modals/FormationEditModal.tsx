@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useToast } from '../context/ToastContext';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, Alert, CircularProgress, IconButton, List, ListItem, ListItemText, TextField, MenuItem
+  Button, Box, Typography, Alert, CircularProgress, IconButton, List, ListItem, ListItemText, TextField, MenuItem
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/AddCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 interface Player {
   id: number;
@@ -67,7 +68,6 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
   const pitchRef = useRef<HTMLDivElement>(null);
   const [draggedPlayerId, setDraggedPlayerId] = useState<number | null>(null);
 
-  // Initialdaten laden
   useEffect(() => {
     if (open) {
       apiJson<{ teams: Team[] }>(`/api/teams`)
@@ -77,7 +77,7 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
           if (loadedTeams.length === 1) {
             setSelectedTeam(loadedTeams[0].id);
           } else if (loadedTeams.length > 1) {
-            setSelectedTeam(loadedTeams[0].id); // Automatisch erstes Team wählen
+            setSelectedTeam(loadedTeams[0].id);
           }
         })
         .catch(() => setTeams([]));
@@ -89,7 +89,6 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
       setLoading(true);
       apiJson<any>(`/formation/${formationId}/edit`)
         .then(data => {
-          // Formation-Daten
           const f = data.formation;
           setFormation(f);
           setName(f.name);
@@ -130,11 +129,7 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
     if (open && selectedTeam) {
       apiJson<any>(`/formation/team/${selectedTeam}/players`)
         .then(data => {
-          // Debug-Ausgabe
-          // eslint-disable-next-line no-console
-          console.log('Geladene Spieler vom Backend:', data);
           if (Array.isArray(data.players)) {
-            // Backend liefert direkt ein Array von Spielern
             const mapped = data.players
               .filter((entry: any) => entry && entry.id)
               .map((entry: any) => ({
@@ -162,7 +157,6 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
     }
   }, [open, selectedTeam, teams]);
 
-  // Drag&Drop-Handler
   const handlePlayerMouseDown = (id: number) => (e: React.MouseEvent) => {
     setDraggedPlayerId(id);
     e.stopPropagation();
@@ -181,7 +175,6 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
     setDraggedPlayerId(null);
   };
 
-  // Spieler hinzufügen
   const addGenericPlayer = () => {
     const position = findFreePosition();
     setPlayers(players => [
@@ -199,9 +192,7 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
     setNextPlayerNumber(n => n + 1);
   };
 
-  // Freie Position finden
   const findFreePosition = () => {
-    // Einfache Gitter-Logik wie im Original
     const gridSize = 15;
     const startX = 15;
     const startY = 15;
@@ -217,12 +208,10 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
     return { x: 20 + Math.random() * 60, y: 20 + Math.random() * 60 };
   };
 
-  // Spieler entfernen
   const removePlayer = (id: number) => {
     setPlayers(players => players.filter(p => p.id !== id));
   };
 
-  // Spieler aus verfügbarer Liste zur Formation hinzufügen
   const addPlayerToFormation = (player: Player) => {
     if (players.some(p => p.playerId === player.id)) return;
     const position = findFreePosition();
@@ -241,13 +230,10 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
     setNextPlayerNumber(n => n + 1);
   };
 
-  // Speichern
   const handleSave = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Sende ausschließlich die aktuellen State-Werte!
-      // formationData muss alle Felder enthalten (players, code, timestamp, ...)
       const formationData = {
         ...(formation?.formationData || {}),
         players,
@@ -273,10 +259,8 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
         return;
       }
       showToast('Formation erfolgreich gespeichert!', 'success');
-      // Versuche, die Formation aus der Backend-Response zu holen
       let savedFormation = response && response.formation ? response.formation : null;
       if (!savedFormation) {
-        // Fallback: baue Formation aus aktuellem State (nur für neue Formation)
         savedFormation = {
           id: response && response.id ? response.id : Math.random(),
           name,
@@ -291,7 +275,6 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
       onSaved?.(savedFormation);
       onClose();
     } catch (err: any) {
-      // Fehlertext aus Error-Objekt oder Response anzeigen
       if (err && typeof err === 'object' && err.message) {
         setError(err.message);
       } else if (typeof err === 'string') {
@@ -305,122 +288,129 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{formationId ? 'Aufstellung bearbeiten' : 'Neue Aufstellung'}</DialogTitle>
-      <DialogContent>
-  {loading && <CircularProgress />}
-  {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-  {/* Toast wird global über ToastContext angezeigt */}
-        <Box display="flex" gap={3}>
-          <Box flex={2}>
-            <Box display="flex" gap={2} mb={2} mt={1}>
-              <TextField
-                label="Name der Aufstellung"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                fullWidth
-                required
-              />
-              <TextField
-                label="Team"
-                select
-                value={selectedTeam}
-                onChange={e => setSelectedTeam(Number(e.target.value))}
-                fullWidth
-                required
-              >
-                {Array.isArray(teams) && teams.length > 0
-                  ? teams.map(team => (
-                      <MenuItem key={team.id} value={team.id}>{team.name}</MenuItem>
-                    ))
-                  : <MenuItem value="" disabled>Keine Teams verfügbar</MenuItem>
-                }
-              </TextField>
-            </Box>
-            <Box
-              ref={pitchRef}
-              className={`pitch formation-background sports-field editable ${formation?.formationType.cssClass || 'field-default'}`}
-              sx={{
-                width: '100%',
-                height: 340,
-                backgroundImage: `url(/images/formation/${formation?.formationType.backgroundPath || 'fussballfeld_haelfte.jpg'})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                position: 'relative',
-                mb: 2,
-                cursor: draggedPlayerId ? 'grabbing' : 'default',
-              }}
-              data-background-image={formation?.formationType.backgroundPath || 'fussballfeld_haelfte.jpg'}
-              onMouseMove={handlePitchMouseMove}
-              onMouseUp={handlePitchMouseUp}
+    <BaseModal
+      open={open}
+      onClose={onClose}
+      title={formationId ? 'Aufstellung bearbeiten' : 'Neue Aufstellung'}
+      maxWidth="md"
+      actions={
+        <>
+          <Button onClick={onClose} variant="outlined" color="secondary">
+            Abbrechen
+          </Button>
+          <Button onClick={handleSave} variant="contained" color="primary" disabled={loading}>
+            {loading ? 'Speichern...' : 'Speichern'}
+          </Button>
+        </>
+      }
+    >
+      {loading && <Box display="flex" justifyContent="center" mb={2}><CircularProgress /></Box>}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      <Box display="flex" gap={3}>
+        <Box flex={2}>
+          <Box display="flex" gap={2} mb={2}>
+            <TextField
+              label="Name der Aufstellung"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Team"
+              select
+              value={selectedTeam}
+              onChange={e => setSelectedTeam(Number(e.target.value))}
+              fullWidth
+              required
             >
-              {players.map((player) => (
-                <Box
-                  key={player.id}
-                  sx={{
-                    position: 'absolute',
-                    left: `${player.x}%`,
-                    top: `${player.y}%`,
-                    width: 32,
-                    height: 32,
-                    bgcolor: player.isRealPlayer ? 'primary.main' : 'grey.500',
-                    color: 'white',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    fontSize: 18,
-                    border: '2px solid #fff',
-                    boxShadow: 2,
-                    transform: 'translate(-50%, -50%)',
-                    cursor: 'grab',
-                    userSelect: 'none',
-                  }}
-                  onMouseDown={handlePlayerMouseDown(player.id)}
-                >
-                  {player.number}
-                </Box>
-              ))}
-            </Box>
-            <Box display="flex" gap={2} mb={2}>
-              <Button variant="outlined" startIcon={<AddIcon />} onClick={addGenericPlayer}>Generischen Spieler hinzufügen</Button>
-            </Box>
+              {Array.isArray(teams) && teams.length > 0
+                ? teams.map(team => (
+                    <MenuItem key={team.id} value={team.id}>{team.name}</MenuItem>
+                  ))
+                : <MenuItem value="" disabled>Keine Teams verfügbar</MenuItem>
+              }
+            </TextField>
           </Box>
-          <Box flex={1}>
-            <Typography variant="subtitle1" mb={1}>Verfügbare Spieler</Typography>
-            {error === 'Keine Spieler gefunden' && (
-              <Alert severity="info" sx={{ mb: 1 }}>Keine Spieler für dieses Team gefunden.</Alert>
-            )}
-            <List dense>
-              {availablePlayers.map(player => (
-                <ListItem key={player.id} disablePadding secondaryAction={
-                  <Button size="small" variant="outlined" onClick={() => addPlayerToFormation(player)} disabled={players.some(p => p.playerId === player.id)}>
-                    Hinzufügen
-                  </Button>
-                }>
-                  <ListItemText primary={player.name} secondary={player.shirtNumber ? `#${player.shirtNumber}` : ''} />
-                </ListItem>
-              ))}
-            </List>
-            <Typography variant="subtitle1" mb={1} mt={3}>Spielerliste</Typography>
-            <List dense>
-              {players.map(player => (
-                <ListItem key={player.id}>
-                  <ListItemText primary={player.name} secondary={player.isRealPlayer ? `#${player.number}` : 'Generisch'} />
-                  <IconButton size="small" onClick={() => removePlayer(player.id)}><DeleteIcon fontSize="small" /></IconButton>
-                </ListItem>
-              ))}
-            </List>
+          <Box
+            ref={pitchRef}
+            className={`pitch formation-background sports-field editable ${formation?.formationType.cssClass || 'field-default'}`}
+            sx={{
+              width: '100%',
+              height: 340,
+              backgroundImage: `url(/images/formation/${formation?.formationType.backgroundPath || 'fussballfeld_haelfte.jpg'})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              position: 'relative',
+              mb: 2,
+              cursor: draggedPlayerId ? 'grabbing' : 'default',
+            }}
+            data-background-image={formation?.formationType.backgroundPath || 'fussballfeld_haelfte.jpg'}
+            onMouseMove={handlePitchMouseMove}
+            onMouseUp={handlePitchMouseUp}
+          >
+            {players.map((player) => (
+              <Box
+                key={player.id}
+                sx={{
+                  position: 'absolute',
+                  left: `${player.x}%`,
+                  top: `${player.y}%`,
+                  width: 32,
+                  height: 32,
+                  bgcolor: player.isRealPlayer ? 'primary.main' : 'grey.500',
+                  color: 'white',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: 18,
+                  border: '2px solid #fff',
+                  boxShadow: 2,
+                  transform: 'translate(-50%, -50%)',
+                  cursor: 'grab',
+                  userSelect: 'none',
+                }}
+                onMouseDown={handlePlayerMouseDown(player.id)}
+              >
+                {player.number}
+              </Box>
+            ))}
+          </Box>
+          <Box display="flex" gap={2} mb={2}>
+            <Button variant="outlined" startIcon={<AddIcon />} onClick={addGenericPlayer}>Generischen Spieler hinzufügen</Button>
           </Box>
         </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} variant="outlined">Abbrechen</Button>
-        <Button onClick={handleSave} variant="contained" disabled={loading}>Speichern</Button>
-      </DialogActions>
-    </Dialog>
+        <Box flex={1}>
+          <Typography variant="subtitle1" mb={1}>Verfügbare Spieler</Typography>
+          {error === 'Keine Spieler gefunden' && (
+            <Alert severity="info" sx={{ mb: 1 }}>Keine Spieler für dieses Team gefunden.</Alert>
+          )}
+          <List dense>
+            {availablePlayers.map(player => (
+              <ListItem key={player.id} disablePadding secondaryAction={
+                <Button size="small" variant="outlined" onClick={() => addPlayerToFormation(player)} disabled={players.some(p => p.playerId === player.id)}>
+                  Hinzufügen
+                </Button>
+              }>
+                <ListItemText primary={player.name} secondary={player.shirtNumber ? `#${player.shirtNumber}` : ''} />
+              </ListItem>
+            ))}
+          </List>
+          <Typography variant="subtitle1" mb={1} mt={3}>Spielerliste</Typography>
+          <List dense>
+            {players.map(player => (
+              <ListItem key={player.id}>
+                <ListItemText primary={player.name} secondary={player.isRealPlayer ? `#${player.number}` : 'Generisch'} />
+                <IconButton size="small" onClick={() => removePlayer(player.id)}><DeleteIcon fontSize="small" /></IconButton>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Box>
+    </BaseModal>
   );
 };
 

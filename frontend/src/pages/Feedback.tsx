@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Tabs, Tab, Badge, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, CircularProgress, IconButton, Tooltip } from '@mui/material';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { apiJson } from '../utils/api';
+import FeedbackResolveModal from '../modals/FeedbackResolveModal';
 
 interface FeedbackItem {
   id: number;
@@ -27,9 +28,8 @@ const FeedbackAdmin: React.FC = () => {
   const [resolved, setResolved] = useState<FeedbackItem[]>([]);
   const [stats, setStats] = useState<FeedbackStats>({});
   const [loading, setLoading] = useState(true);
-  const [resolveOpen, setResolveOpen] = useState<number|null>(null);
-  const [resolveNote, setResolveNote] = useState('');
-  const [resolving, setResolving] = useState(false);
+  const [resolveOpen, setResolveOpen] = useState(false);
+  const [resolvingItem, setResolvingItem] = useState<FeedbackItem | null>(null);
   const [screenshotModal, setScreenshotModal] = useState<{ open: boolean, path?: string }>({ open: false });
 
   const fetchData = async () => {
@@ -51,15 +51,14 @@ const FeedbackAdmin: React.FC = () => {
     fetchData();
   };
 
-  const handleResolve = async (id: number) => {
-    setResolving(true);
-    await apiJson(`/admin/feedback/${id}/resolve`, {
+  const handleResolve = async (comment: string) => {
+    if (!resolvingItem) return;
+    await apiJson(`/admin/feedback/${resolvingItem.id}/resolve`, {
       method: 'POST',
-      body: { adminNote: resolveNote },
+      body: { adminNote: comment },
     });
-    setResolving(false);
-    setResolveOpen(null);
-    setResolveNote('');
+    setResolveOpen(false);
+    setResolvingItem(null);
     fetchData();
   };
 
@@ -107,43 +106,15 @@ const FeedbackAdmin: React.FC = () => {
               <TableCell>{renderStatus(item)}</TableCell>
               <TableCell>
                 {!item.isRead && (
-                  <Button size="small" color="info" variant="outlined" onClick={() => handleMarkRead(item.id)}>
+                  <Button size="small" color="primary" variant="outlined" onClick={() => handleMarkRead(item.id)}>
                     Als gelesen markieren
                   </Button>
                 )}
                 {!item.isResolved && (
-                  <Button size="small" color="success" variant="contained" sx={{ ml: 1 }} onClick={() => { setResolveOpen(item.id); setResolveNote(''); }}>
+                  <Button size="small" color="primary" variant="contained" sx={{ ml: 1 }} onClick={() => { setResolvingItem(item); setResolveOpen(true); }}>
                     Erledigen
                   </Button>
                 )}
-                <Dialog open={resolveOpen === item.id} onClose={() => setResolveOpen(null)}>
-                  <DialogTitle>Feedback erledigen</DialogTitle>
-                  <DialogContent>
-                    <Typography variant="subtitle2" gutterBottom>Feedback:</Typography>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>{item.message}</Typography>
-                    {item.screenshotPath && (
-                      <Box sx={{ my: 2, textAlign: 'center' }}>
-                        <img src={item.screenshotPath} alt="Screenshot" style={{ maxWidth: 320, maxHeight: 240, borderRadius: 8, boxShadow: '0 2px 8px #0002' }} />
-                        <Typography variant="caption" color="text.secondary">Screenshot</Typography>
-                      </Box>
-                    )}
-                    <TextField
-                      label="Notiz/Kommentar"
-                      multiline
-                      minRows={2}
-                      fullWidth
-                      value={resolveNote}
-                      onChange={e => setResolveNote(e.target.value)}
-                      sx={{ mt: 2 }}
-                    />
-                  </DialogContent>
-                  <DialogActions>
-                    <Button onClick={() => setResolveOpen(null)} color="secondary">Abbrechen</Button>
-                    <Button onClick={() => handleResolve(item.id)} color="success" variant="contained" disabled={resolving}>
-                      Als erledigt markieren
-                    </Button>
-                  </DialogActions>
-                </Dialog>
               </TableCell>
             </TableRow>
           ))}
@@ -172,6 +143,12 @@ const FeedbackAdmin: React.FC = () => {
         <Box hidden={tab !== 1}>{renderTable(read, true)}</Box>
         <Box hidden={tab !== 2}>{renderTable(resolved, false)}</Box>
       </Box>
+      <FeedbackResolveModal
+        open={resolveOpen}
+        onClose={() => { setResolveOpen(false); setResolvingItem(null); }}
+        onResolve={handleResolve}
+        feedbackText={resolvingItem?.message || ''}
+      />
       <Dialog open={screenshotModal.open} onClose={() => setScreenshotModal({ open: false })} maxWidth="md">
         <DialogTitle>Anhang</DialogTitle>
         <DialogContent>

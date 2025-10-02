@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Dialog, DialogContent, DialogActions, Button, Box, Typography, CircularProgress, IconButton, Divider, Stack
+    Button, Box, Typography, CircularProgress, Stack, Divider
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { apiJson } from '../utils/api';
 import { Team } from '../types/team';
 import TeamDeleteConfirmationModal from './TeamDeleteConfirmationModal';
 import TeamEditModal from './TeamEditModal';
+import BaseModal from './BaseModal';
 
 interface TeamDetailsModalProps {
   teamDetailOpen: boolean;
@@ -35,75 +35,78 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({ teamDetailOpen, tea
     }, [teamDetailOpen]);
 
     return (
-        <Dialog open={teamDetailOpen} onClose={onClose} maxWidth="sm" fullWidth>
-            {team && team.permissions?.canView ? (
-                <>
-                    <Box display="flex" alignItems="center" justifyContent="space-between" px={3} pt={3} pb={1}>
+        <>
+            <BaseModal
+                open={teamDetailOpen}
+                onClose={onClose}
+                maxWidth="sm"
+                title={
+                    team && team.permissions?.canView ? (
                         <Box>
-                            <Typography variant="h5" component="span">{team.name}</Typography>
+                            <Typography variant="h6" component="span">{team.name}</Typography>
                             <Typography variant="subtitle2" component="span" sx={{ ml: 2, color: 'text.secondary' }}>({team.englishName})</Typography>
                         </Box>
-                        <IconButton aria-label="close" onClick={onClose} size="small" sx={{ ml: 2 }}>
-                            <CloseIcon />
-                        </IconButton>
-                    </Box>
-                    <DialogContent>
-                        <Box mb={2}>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>Beschreibung</Typography>
-                            <Typography variant="body1" sx={{ mb: 2 }}>{team.description}</Typography>
-                            <Divider sx={{ mb: 2 }} />
-                            <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
-                                <Box>
-                                    <Typography variant="body2" color="text.secondary">Code</Typography>
-                                    <Typography variant="body1">{team.code}</Typography>
-                                </Box>
-                                <Box>
-                                    <Typography variant="body2" color="text.secondary">Stichtag</Typography>
-                                    <Typography variant="body1">{team.referenceDate}</Typography>
-                                </Box>
-                                <Box>
-                                    <Typography variant="body2" color="text.secondary">Mindestalter</Typography>
-                                    <Typography variant="body1">{team.minAge} Jahre</Typography>
-                                </Box>
-                                <Box>
-                                    <Typography variant="body2" color="text.secondary">Höchstalter</Typography>
-                                    <Typography variant="body1">{team.maxAge} Jahre</Typography>
-                                </Box>
+                    ) : ''
+                }
+                actions={
+                    team?.permissions?.canView ? (
+                        <>
+                            {team.permissions?.canEdit && (
+                                <Button variant="contained" color="warning" startIcon={<EditIcon />}
+                                    size="small"
+                                    onClick={() => {
+                                        setTeamEditModalOpen(true);
+                                    }}
+                                    aria-label="Team bearbeiten"
+                                >
+                                    Bearbeiten
+                                </Button>
+                            )}
+                            {team.permissions.canDelete && (
+                                <Button variant="contained" color="error" startIcon={<DeleteIcon />}
+                                    onClick={() => {
+                                        setDeleteTeam(team);
+                                        setDeleteModalOpen(true);
+                                    }}
+                                    aria-label="Team löschen"
+                                >
+                                    Löschen
+                                </Button>
+                            )}
+                        </>
+                    ) : null
+                }
+            >
+                {team && team.permissions?.canView ? (
+                    <Box mb={2}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>Beschreibung</Typography>
+                        <Typography variant="body1" sx={{ mb: 2 }}>{team.description}</Typography>
+                        <Divider sx={{ mb: 2 }} />
+                        <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+                            <Box>
+                                <Typography variant="body2" color="text.secondary">Code</Typography>
+                                <Typography variant="body1">{team.code}</Typography>
+                            </Box>
+                            <Box>
+                                <Typography variant="body2" color="text.secondary">Stichtag</Typography>
+                                <Typography variant="body1">{team.referenceDate}</Typography>
+                            </Box>
+                            <Box>
+                                <Typography variant="body2" color="text.secondary">Mindestalter</Typography>
+                                <Typography variant="body1">{team.minAge} Jahre</Typography>
+                            </Box>
+                            <Box>
+                                <Typography variant="body2" color="text.secondary">Höchstalter</Typography>
+                                <Typography variant="body1">{team.maxAge} Jahre</Typography>
                             </Box>
                         </Box>
-                    </DialogContent>
-                    <DialogActions sx={{ justifyContent: 'flex-end', px: 3, pb: 2 }}>
-                        {team.permissions?.canEdit && (
-                            <Button variant="contained" color="warning" startIcon={<EditIcon />}
-                                size="small"
-                                onClick={() => {
-                                    setTeamEditModalOpen(true);
-                                }}
-                                sx={{ ml: 1 }}
-                                aria-label="Team bearbeiten"
-                            >
-                                Bearbeiten
-                            </Button>
-                        )}
-                        {team.permissions.canDelete && (
-                            <Button variant="contained" color="error" startIcon={<DeleteIcon />}
-                                onClick={() => {
-                                    setDeleteTeam(team);
-                                    setDeleteModalOpen(true);
-                                }}
-                                sx={{ ml: 1 }}
-                                aria-label="Team löschen"
-                            >
-                                Löschen
-                            </Button>
-                        )}
-                    </DialogActions>
-                </>
-            ) : (
-                <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
-                    <CircularProgress />
-                </Box>
-            )}
+                    </Box>
+                ) : (
+                    <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
+                        <CircularProgress />
+                    </Box>
+                )}
+            </BaseModal>
             <TeamDeleteConfirmationModal
                 open={deleteModalOpen}
                 teamName={deleteTeam?.name}
@@ -132,7 +135,7 @@ const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({ teamDetailOpen, tea
                     loadTeams();
                 }}
             />
-        </Dialog>
+        </>
     );
 };
 
