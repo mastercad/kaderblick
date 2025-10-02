@@ -1,8 +1,7 @@
-
-
 import React, { useEffect } from 'react';
 import { Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import "@fontsource/anton";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -78,9 +77,9 @@ export default function Home() {
             minWidth: 320,
             maxWidth: '90vw',
             textAlign: 'right',
-            fontFamily: 'Impact, "Arial Black", sans-serif',
+            fontFamily: 'Anton, Impact, "Arial Black", sans-serif',
             paddingRight: 0,
-            marginTop: '4vw'
+            marginTop: '10vw'
           }}
         >
           <span
@@ -98,7 +97,7 @@ export default function Home() {
           <span
             className="home-subtitle"
             style={{
-              fontSize: '4.16vw',
+              fontSize: '3.97vw',
               color: '#fff',
               marginTop: 0,
               textAlign: 'right',
