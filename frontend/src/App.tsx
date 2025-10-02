@@ -21,7 +21,7 @@ import UserRelations from './pages/UserRelations';
 import SurveyList from './pages/SurveyList';
 import SurveyFill from './pages/SurveyFill';
 import ProtectedRoute from './pages/ProtectedRoute';
-import AuthModal from './components/AuthModal';
+import AuthModal from './modals/AuthModal';
 import ProfileModal from './modals/ProfileModal';
 import Navigation from './components/Navigation';
 import FooterWithContact from './components/FooterWithContact';

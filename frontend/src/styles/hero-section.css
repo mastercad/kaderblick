@@ -1,0 +1,111 @@
+.hero-section {
+  width: 100%;
+  height: 100vh;
+  scroll-snap-align: start;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  top: 0;
+  left: 0;
+}
+
+.hero-outer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  padding-right: 7%;
+  position: relative;
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  font-family: 'ImpactWeb', 'Anton', Impact, 'Arial Black', sans-serif;
+  gap: 0;
+}
+
+.hero-title {
+  font-size: clamp(4rem, 12vw, 12rem);
+  color: #fff;
+  white-space: nowrap;
+  line-height: 0.9;
+  font-family: 'ImpactWeb', 'Anton', Impact, 'Arial Black', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.hero-title-highlight {
+  font-size: clamp(4rem, 12vw, 12rem);
+  color: #018606;
+  font-family: 'ImpactWeb', 'Anton', Impact, 'Arial Black', sans-serif;
+}
+
+.hero-subtitle {
+  font-size: clamp(2rem, 6.08vw, 6.08rem);
+  color: #fff;
+  white-space: nowrap;
+  line-height: 0.9;
+  font-family: 'ImpactWeb', 'Anton', Impact, 'Arial Black', sans-serif;
+  margin: 0;
+  padding: 0;
+  margin-top: 0rem;
+}
+
+.hero-btn-wrapper {
+  margin-top: 3rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 600px) {
+  .hero-outer {
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0;
+    padding-top: 50%;
+  }
+  
+  .hero-content {
+    align-items: center;
+    text-align: center;
+    width: 80%;
+  }
+
+  .hero-title-highlight {
+    font-size: clamp(3rem, 16vw, 6rem);
+    color: #018606;
+    font-family: 'ImpactWeb', 'Anton', Impact, 'Arial Black', sans-serif;
+  }
+  
+  .hero-title {
+    font-size: clamp(3rem, 16vw, 6rem);
+    text-align: center;
+    width: 100%;
+    white-space: normal;
+    word-wrap: break-word;
+  }
+  
+  .hero-subtitle {
+    font-size: clamp(1.5rem, 8vw, 3rem);
+    text-align: center;
+    margin-top: 0;
+    width: 100%;
+    white-space: normal;
+    word-wrap: break-word;
+  }
+  
+  .hero-btn-wrapper {
+    align-self: center;
+    margin-top: 10rem;
+    padding-right: 0;
+  }
+}
