@@ -26,12 +26,8 @@ export default function LandingGallery({ sections }: LandingGalleryProps) {
   const [thumbStart, setThumbStart] = useState(0);
   const thumbsPerPage = 3;
 
-  const handleSwitch = (dir: number) => {
-    if (transitioning) return;
-    
-    const nextIdx = dir === 1 
-      ? (current < sections.length - 1 ? current + 1 : 0) 
-      : (current > 0 ? current - 1 : sections.length - 1);
+  const handleGoToIndex = (nextIdx: number) => {
+    if (transitioning || nextIdx === current) return;
     
     setNextIndex(nextIdx);
     setShowNext(true);
@@ -46,6 +42,16 @@ export default function LandingGallery({ sections }: LandingGalleryProps) {
       setNextIndex(null);
       setTransitioning(false);
     }, 1050);
+  };
+
+  const handleSwitch = (dir: number) => {
+    if (transitioning) return;
+    
+    const nextIdx = dir === 1 
+      ? (current < sections.length - 1 ? current + 1 : 0) 
+      : (current > 0 ? current - 1 : sections.length - 1);
+    
+    handleGoToIndex(nextIdx);
   };
 
   const handlePrev = () => handleSwitch(-1);
@@ -212,20 +218,7 @@ export default function LandingGallery({ sections }: LandingGalleryProps) {
                   {sections.map((section, idx) => (
                     <Tooltip key={idx} title={section.name} arrow placement="top">
                       <Box
-                        onClick={() => {
-                          if (idx !== current && !transitioning) {
-                            const dir = idx > current ? 1 : -1;
-                            setNextIndex(idx);
-                            setShowNext(true);
-                            setTimeout(() => setTransitioning(true), 50);
-                            setTimeout(() => {
-                              setCurrent(idx);
-                              setShowNext(false);
-                              setNextIndex(null);
-                              setTransitioning(false);
-                            }, 1050);
-                          }
-                        }}
+                        onClick={() => handleGoToIndex(idx)}
                         sx={{
                           width: 12,
                         height: 12,
