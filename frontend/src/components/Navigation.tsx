@@ -368,7 +368,6 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
             </>
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {/* Theme Toggle Button entfernt, da nur noch ein Theme */}
               <IconButton 
                 onClick={toggleTheme} 
                 color="inherit"
