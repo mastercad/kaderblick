@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, Alert, CircularProgress, IconButton, Avatar, Chip, Divider, Link, Stack
+    Button, Box, Typography, Alert, CircularProgress, Avatar, Chip, Divider, Link, Stack
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -12,6 +11,7 @@ import { apiJson } from '../utils/api';
 import { Club } from '../types/club';
 import ClubDeleteConfirmationModal from '../modals/ClubDeleteConfirmationModal';
 import ClubEditModal from '../modals/ClubEditModal';
+import BaseModal from './BaseModal';
 
 interface ClubDetailsResponse {
     club: Club;
@@ -49,38 +49,76 @@ const Clubs: React.FC<ClubDetailsModalProps> = ({ open, clubId, onClose, loadClu
     }, [open]);
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <BaseModal
+            open={open}
+            onClose={onClose}
+            maxWidth="md"
+            title={
+                club && permissions?.canView ? (
+                    <Box display="flex" alignItems="center">
+                        {club.logoUrl ? (
+                            <Avatar src={club.logoUrl} alt={`Logo ${club.name}`} sx={{ width: 32, height: 32, mr: 2, bgcolor: 'white', border: '1px solid #eee' }} />
+                        ) : (
+                            <SportsSoccerIcon sx={{ fontSize: 32, color: 'text.secondary', mr: 2 }} />
+                        )}
+                        <Box>
+                            <Typography variant="h5" component="span">{club.name}</Typography>
+                            {club.shortName && (
+                                <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 1 }}>
+                                    ({club.shortName})
+                                </Typography>
+                            )}
+                            {typeof club.active !== 'undefined' && (
+                                <Chip
+                                    label={club.active ? 'Aktiv' : 'Inaktiv'}
+                                    color={club.active ? 'success' : 'default'}
+                                    size="small"
+                                    sx={{ ml: 1 }}
+                                />
+                            )}
+                        </Box>
+                    </Box>
+                ) : undefined
+            }
+            actions={
+                club && permissions?.canView && (permissions.canEdit || permissions.canDelete) ? (
+                    <>
+                        {permissions.canEdit && (
+                            <Button
+                                variant="contained"
+                                color="warning"
+                                startIcon={<EditIcon />}
+                                size="small"
+                                onClick={() => {
+                                    setClubEditModalOpen(true);
+                                }}
+                                sx={{ ml: 1 }}
+                                aria-label="Verein bearbeiten"
+                            >
+                                Bearbeiten
+                            </Button>
+                        )}
+                        {permissions.canDelete && (
+                            <Button
+                                variant="contained"
+                                color="error"
+                                startIcon={<DeleteIcon />}
+                                onClick={() => {
+                                    setDeleteClub(club);
+                                    setDeleteModalOpen(true);
+                                }}
+                                sx={{ ml: 1 }}
+                                aria-label="Verein löschen"
+                            >
+                                Löschen
+                            </Button>
+                        )}
+                    </>
+                ) : undefined
+            }
+        >
             {club && permissions?.canView ? (
                 <>
-                    <Box display="flex" alignItems="center" justifyContent="space-between" px={3} pt={3} pb={1}>
-                        <Box display="flex" alignItems="center">
-                            {club.logoUrl ? (
-                                <Avatar src={club.logoUrl} alt={`Logo ${club.name}`} sx={{ width: 32, height: 32, mr: 2, bgcolor: 'white', border: '1px solid #eee' }} />
-                            ) : (
-                                <SportsSoccerIcon sx={{ fontSize: 32, color: 'text.secondary', mr: 2 }} />
-                            )}
-                            <Box>
-                                <Typography variant="h5" component="span">{club.name}</Typography>
-                                {club.shortName && (
-                                    <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 1 }}>
-                                        ({club.shortName})
-                                    </Typography>
-                                )}
-                                {typeof club.active !== 'undefined' && (
-                                    <Chip
-                                        label={club.active ? 'Aktiv' : 'Inaktiv'}
-                                        color={club.active ? 'success' : 'default'}
-                                        size="small"
-                                        sx={{ ml: 1 }}
-                                    />
-                                )}
-                            </Box>
-                        </Box>
-                        <IconButton aria-label="close" onClick={onClose} size="small" sx={{ ml: 2 }}>
-                            <CloseIcon />
-                        </IconButton>
-                    </Box>
-                    <DialogContent>
                         <Box mb={3}>
                             <Typography variant="h6" color="primary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                                 <InfoIcon sx={{ mr: 1 }} /> Vereinsinfo
@@ -169,36 +207,7 @@ const Clubs: React.FC<ClubDetailsModalProps> = ({ open, clubId, onClose, loadClu
                                 </Alert>
                             )}
                         </Box>
-                    </DialogContent>
-                    <DialogActions sx={{ justifyContent: 'flex-end', px: 3, pb: 2 }}>
-                        { permissions?.canEdit && (
-                            <Button variant="contained" color="warning" startIcon={<EditIcon />}
-                                size="small"
-                                onClick={() => {
-                                    setClubEditModalOpen(true);
-                                }}
-                                sx={{ ml: 1 }}
-                                aria-label="Verein bearbeiten"
-                            >
-                                Bearbeiten
-                            </Button>
-                        )}
-                        { permissions.canDelete && (
-                        <>
-                            <Button variant="contained" color="error" startIcon={<DeleteIcon />}
-                                onClick={() => {
-                                setDeleteClub(club);
-                                setDeleteModalOpen(true);
-                                }}
-                                sx={{ ml: 1 }}
-                                aria-label="Verein löschen"
-                            >
-                                Löschen
-                            </Button>
-                        </>
-                        )}
-                    </DialogActions>
-                </>
+                    </>
             ) : (
                 <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
                     <CircularProgress />
@@ -231,7 +240,7 @@ const Clubs: React.FC<ClubDetailsModalProps> = ({ open, clubId, onClose, loadClu
                     loadClubs();
                 }}
             />
-        </Dialog>
+        </BaseModal>
     );
 };
 

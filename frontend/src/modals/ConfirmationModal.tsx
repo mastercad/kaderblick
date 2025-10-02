@@ -1,9 +1,6 @@
 import React from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
+import BaseModal from './BaseModal';
 
 interface ConfirmationModalProps {
   open: boolean;
@@ -26,14 +23,22 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   cancelText = 'Abbrechen',
   confirmColor = 'primary',
 }) => (
-  <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-    <DialogTitle>{title}</DialogTitle>
-    <DialogContent>
-      <p>{message}</p>
-    </DialogContent>
-    <DialogActions>
-      <Button onClick={onClose} color="secondary">{cancelText}</Button>
-      <Button onClick={onConfirm} color={confirmColor} variant="contained">{confirmText}</Button>
-    </DialogActions>
-  </Dialog>
+  <BaseModal
+    open={open}
+    onClose={onClose}
+    title={title}
+    maxWidth="xs"
+    actions={
+      <>
+        <Button onClick={onClose} color="secondary" variant="outlined">
+          {cancelText}
+        </Button>
+        <Button onClick={onConfirm} color={confirmColor} variant="contained">
+          {confirmText}
+        </Button>
+      </>
+    }
+  >
+    <p>{message}</p>
+  </BaseModal>
 );

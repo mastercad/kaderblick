@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useToast } from '../context/ToastContext';
 import {
-	Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, Card, CardHeader, CardContent, IconButton, TextField, MenuItem, Checkbox, ListItemText
+	Button, Box, Typography, Card, CardHeader, CardContent, IconButton, TextField, MenuItem, Checkbox, ListItemText
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 // Typdefinitionen
 export type RelationType = {
@@ -120,21 +121,30 @@ const UserRelationEditModal: React.FC<UserRelationEditModalProps> = ({ open, onC
     }
 
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-			<DialogTitle>Benutzer zuordnen: {user.fullName}</DialogTitle>
-			<DialogContent>
-				{loading ? <Typography>Lade...</Typography> : (
-					<>
-						{/* Spielerzuordnungen */}
-						<Card sx={{ mb: 3 }}>
-							<CardHeader title="Spielerzuordnungen" action={<Button onClick={() => handleAdd('player')} startIcon={<AddIcon />}>Hinzufügen</Button>} />
-							<CardContent>
+		<BaseModal
+			open={open}
+			onClose={onClose}
+			maxWidth="md"
+			title={`Benutzer zuordnen: ${user.fullName}`}
+			actions={
+				<>
+					<Button variant="outlined" color="secondary" onClick={onClose}>Abbrechen</Button>
+					<Button variant="contained" color="primary" onClick={handleSave} disabled={loading}>Speichern</Button>
+				</>
+			}
+		>
+			{loading ? <Typography>Lade...</Typography> : (
+				<>
+					{/* Spielerzuordnungen */}
+					<Card sx={{ mb: 3 }}>
+						<CardHeader title="Spielerzuordnungen" action={<Button onClick={() => handleAdd('player')} startIcon={<AddIcon />}>Hinzufügen</Button>} />
+						<CardContent>
                                 {Array.isArray(playerRelations) && playerRelations.filter(rel => rel && rel.relationType && typeof rel.relationType.id !== 'undefined').map((rel, idx) => (
                                     <Box key={idx} display="flex" gap={2} alignItems="center" mb={1}>
                                         <TextField
                                             select
                                             label="Beziehungstyp"
-                                            value={rel.relationType.id}
+                                            value={rel.relationType?.id}
                                             onChange={e => handleChange('player', idx, 'relationType', relationTypes.find(rt => rt.id === +e.target.value) || null)}
                                             sx={{ minWidth: 180 }}
                                             size="small"
@@ -175,12 +185,12 @@ const UserRelationEditModal: React.FC<UserRelationEditModalProps> = ({ open, onC
                                         <IconButton color="error" onClick={() => handleRemove('player', idx)}><DeleteIcon /></IconButton>
                                     </Box>
                                 ))}
-							</CardContent>
-						</Card>
-						{/* Trainerzuordnungen */}
-						<Card sx={{ mb: 3 }}>
-							<CardHeader title="Trainerzuordnungen" action={<Button onClick={() => handleAdd('coach')} startIcon={<AddIcon />}>Hinzufügen</Button>} />
-							<CardContent>
+						</CardContent>
+					</Card>
+					{/* Trainerzuordnungen */}
+					<Card sx={{ mb: 3 }}>
+						<CardHeader title="Trainerzuordnungen" action={<Button onClick={() => handleAdd('coach')} startIcon={<AddIcon />}>Hinzufügen</Button>} />
+						<CardContent>
                                 {Array.isArray(coachRelations) && coachRelations.filter(rel => rel && rel.relationType && typeof rel.relationType.id !== 'undefined').map((rel, idx) => (
                                     <Box key={idx} display="flex" gap={2} alignItems="center" mb={1}>
                                         <TextField
@@ -227,16 +237,11 @@ const UserRelationEditModal: React.FC<UserRelationEditModalProps> = ({ open, onC
                                         <IconButton color="error" onClick={() => handleRemove('coach', idx)}><DeleteIcon /></IconButton>
                                     </Box>
                                 ))}
-							</CardContent>
-						</Card>
-					</>
-				)}
-			</DialogContent>
-			<DialogActions>
-				<Button onClick={onClose}>Abbrechen</Button>
-				<Button variant="contained" onClick={handleSave} disabled={loading}>Speichern</Button>
-			</DialogActions>
-		</Dialog>
+						</CardContent>
+					</Card>
+				</>
+			)}
+		</BaseModal>
 	);
 };
 

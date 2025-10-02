@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
-  Card,
-  CardContent,
   Stepper,
   Step,
   StepLabel,
@@ -14,6 +12,7 @@ import {
   MenuItem
 } from '@mui/material';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
   type QuestionType = 'single_choice' | 'multiple_choice' | 'text' | 'scale_1_5' | 'scale_1_10';
 
@@ -42,11 +41,13 @@ import { apiJson } from '../utils/api';
   const steps = ['Allgemein', 'Fragen', 'Zusammenfassung'];
 
   interface SurveyCreateWizardProps {
+    open: boolean;
+    onClose: () => void;
     onSurveyCreated?: () => void;
     editSurvey?: any | null; // TODO: Replace 'any' with proper Survey type if available
   }
 
-  const SurveyCreateWizard: React.FC<SurveyCreateWizardProps> = ({ onSurveyCreated, editSurvey }) => {
+  const SurveyCreateWizard: React.FC<SurveyCreateWizardProps> = ({ open, onClose, onSurveyCreated, editSurvey }) => {
     const [activeStep, setActiveStep] = useState(0);
     const [form, setForm] = useState<SurveyFormData>(() => {
       if (editSurvey) {
@@ -483,16 +484,11 @@ import { apiJson } from '../utils/api';
         }
         setSubmitSuccess(true);
         if (onSurveyCreated) {
-          setTimeout(() => onSurveyCreated(), 1000);
-        } else {
-          setTimeout(() => {
-            if (window.history.length > 1) {
-              window.history.back();
-            } else {
-              window.location.href = '/';
-            }
-          }, 1500);
+          onSurveyCreated();
         }
+        setTimeout(() => {
+          onClose();
+        }, 1500);
       } catch (e: any) {
         let msg = 'Unbekannter Fehler beim Speichern';
         if (e && typeof e === 'object') {
@@ -557,46 +553,50 @@ import { apiJson } from '../utils/api';
     };
 
     return (
-      <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
-        <Card>
-          <CardContent>
-            <Typography variant="h5" mb={2}>Neue Umfrage erstellen</Typography>
-            <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
-              {steps.map(label => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            {(touched[activeStep] && currentStepError) && <Alert severity="error" sx={{ mb: 2 }}>{currentStepError}</Alert>}
-            {optionsLoadError && <Alert severity="error" sx={{ mb: 2 }}>{optionsLoadError}</Alert>}
-            {typesLoadError && <Alert severity="error" sx={{ mb: 2 }}>{typesLoadError}</Alert>}
-            {renderStepContent()}
-            <Box mt={3} display="flex" justifyContent="space-between">
-              <Button disabled={activeStep === 0} onClick={handleBack}>Zurück</Button>
-        {activeStep < steps.length - 1 && (
-          <Button variant="contained" onClick={handleNext}>
-            Weiter
-          </Button>
-        )}
-        {activeStep === steps.length - 1 && (
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={e => {
-              e.preventDefault();
-              if (!currentStepError) handleSubmit();
-            }}
-            disabled={isSubmitting || submitSuccess || !!currentStepError}
-          >
-          {isSubmitting ? 'Speichere...' : 'Fertigstellen'}
-          </Button>
-        )}
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
+      <BaseModal
+        open={open}
+        onClose={onClose}
+        title={editSurvey ? 'Umfrage bearbeiten' : 'Neue Umfrage erstellen'}
+        maxWidth="md"
+        actions={
+          <>
+            <Button disabled={activeStep === 0} onClick={handleBack}>
+              Zurück
+            </Button>
+            {activeStep < steps.length - 1 && (
+              <Button variant="contained" onClick={handleNext}>
+                Weiter
+              </Button>
+            )}
+            {activeStep === steps.length - 1 && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={e => {
+                  e.preventDefault();
+                  if (!currentStepError) handleSubmit();
+                }}
+                disabled={isSubmitting || submitSuccess || !!currentStepError}
+              >
+                {isSubmitting ? 'Speichere...' : 'Fertigstellen'}
+              </Button>
+            )}
+          </>
+        }
+      >
+        <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
+          {steps.map(label => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {(touched[activeStep] && currentStepError) && <Alert severity="error" sx={{ mb: 2 }}>{currentStepError}</Alert>}
+        {optionsLoadError && <Alert severity="error" sx={{ mb: 2 }}>{optionsLoadError}</Alert>}
+        {typesLoadError && <Alert severity="error" sx={{ mb: 2 }}>{typesLoadError}</Alert>}
+        {renderStepContent()}
+      </BaseModal>
     );
   };
 

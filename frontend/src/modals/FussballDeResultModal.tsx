@@ -1,10 +1,7 @@
 import React from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import BaseModal from './BaseModal';
 
 export interface FussballDeResultModalProps {
   open: boolean;
@@ -18,26 +15,28 @@ export interface FussballDeResultModalProps {
 }
 
 const FussballDeResultModal: React.FC<FussballDeResultModalProps> = ({ open, onClose, results }) => (
-  <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-    <DialogTitle>Ergebnisse von Fussball.de</DialogTitle>
-    <DialogContent>
-      {results && results.length > 0 ? (
-        <>
-          {results.map((res, idx) => (
-            <div key={idx} style={{ marginBottom: 16 }}>
-              <Typography variant="subtitle1">{res.team1} vs. {res.team2}</Typography>
-              <Typography variant="body2">{res.score} &mdash; {res.date}</Typography>
-            </div>
-          ))}
-        </>
-      ) : (
-        <Typography variant="body2">Keine Ergebnisse gefunden.</Typography>
-      )}
-    </DialogContent>
-    <DialogActions>
-      <Button onClick={onClose} color="primary">Schließen</Button>
-    </DialogActions>
-  </Dialog>
+  <BaseModal
+    open={open}
+    onClose={onClose}
+    maxWidth="md"
+    title="Ergebnisse von Fussball.de"
+    actions={
+      <Button onClick={onClose} color="primary" variant="contained">Schließen</Button>
+    }
+  >
+    {results && results.length > 0 ? (
+      <>
+        {results.map((res, idx) => (
+          <div key={idx} style={{ marginBottom: 16 }}>
+            <Typography variant="subtitle1">{res.team1} vs. {res.team2}</Typography>
+            <Typography variant="body2">{res.score} &mdash; {res.date}</Typography>
+          </div>
+        ))}
+      </>
+    ) : (
+      <Typography variant="body2">Keine Ergebnisse gefunden.</Typography>
+    )}
+  </BaseModal>
 );
 
 export default FussballDeResultModal;

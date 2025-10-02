@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Dialog, DialogContent, DialogActions, Button, Box, Typography, CircularProgress, IconButton, Avatar, Chip, Divider, Stack, Tooltip
+    Button, Box, Typography, CircularProgress, Avatar, Chip, Divider, Stack, Tooltip
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
@@ -10,6 +9,7 @@ import { apiJson } from '../utils/api';
 import { Coach } from '../types/coach';
 import CoachDeleteConfirmationModal from './CoachDeleteConfirmationModal';
 import CoachEditModal from './CoachEditModal';
+import BaseModal from './BaseModal';
 
 interface CoachDetailsResponse {
     coach: Coach;
@@ -50,10 +50,13 @@ const CoachDetailsModal: React.FC<CoachDetailsModalProps> = ({ open, coachId, on
     const getNationalities = () => coach?.nationalityAssignments?.map(a => a.nationality) || [];
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            {coach && coach.permissions?.canView ? (
-                <>
-                    <Box display="flex" alignItems="center" justifyContent="space-between" px={3} pt={3} pb={1}>
+        <>
+            <BaseModal
+                open={open}
+                onClose={onClose}
+                maxWidth="sm"
+                title={
+                    coach && coach.permissions?.canView ? (
                         <Box display="flex" alignItems="center">
                             {coach.profilePicturePath ? (
                                 <Avatar src={coach.profilePicturePath} alt={`${coach.firstName} ${coach.lastName}`} sx={{ width: 48, height: 48, mr: 2, bgcolor: 'white', border: '1px solid #eee' }} />
@@ -68,11 +71,27 @@ const CoachDetailsModal: React.FC<CoachDetailsModalProps> = ({ open, coachId, on
                                 <Typography variant="body2" color="text.secondary">Geburtsdatum: {coach.birthDate}</Typography>
                             </Box>
                         </Box>
-                        <IconButton aria-label="close" onClick={onClose} size="small" sx={{ ml: 2 }}>
-                            <CloseIcon />
-                        </IconButton>
-                    </Box>
-                    <DialogContent>
+                    ) : undefined
+                }
+                actions={
+                    coach && coach.permissions?.canView && (coach.permissions.canEdit || coach.permissions.canDelete) ? (
+                        <>
+                            {coach.permissions.canEdit && (
+                                <Button variant="contained" color="warning" startIcon={<EditIcon />} size="small" onClick={() => setCoachEditModalOpen(true)} sx={{ ml: 1 }}>
+                                    Bearbeiten
+                                </Button>
+                            )}
+                            {coach.permissions.canDelete && (
+                                <Button variant="contained" color="error" startIcon={<DeleteIcon />} onClick={() => { setDeleteCoach(coach); setDeleteModalOpen(true); }} sx={{ ml: 1 }}>
+                                    Löschen
+                                </Button>
+                            )}
+                        </>
+                    ) : undefined
+                }
+            >
+                {coach && coach.permissions?.canView ? (
+                    <>
                         <Stack spacing={3}>
                             {/* Teams */}
                             <Box>
@@ -104,25 +123,13 @@ const CoachDetailsModal: React.FC<CoachDetailsModalProps> = ({ open, coachId, on
                                 </Stack>
                             </Box>
                         </Stack>
-                    </DialogContent>
-                    <DialogActions sx={{ justifyContent: 'flex-end', px: 3, pb: 2 }}>
-                        {coach.permissions?.canEdit && (
-                            <Button variant="contained" color="warning" startIcon={<EditIcon />} size="small" onClick={() => setCoachEditModalOpen(true)} sx={{ ml: 1 }}>
-                                Bearbeiten
-                            </Button>
-                        )}
-                        {coach.permissions?.canDelete && (
-                            <Button variant="contained" color="error" startIcon={<DeleteIcon />} onClick={() => { setDeleteCoach(coach); setDeleteModalOpen(true); }} sx={{ ml: 1 }}>
-                                Löschen
-                            </Button>
-                        )}
-                    </DialogActions>
-                </>
-            ) : (
-                <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
-                    <CircularProgress />
-                </Box>
-            )}
+                    </>
+                ) : (
+                    <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
+                        <CircularProgress />
+                    </Box>
+                )}
+            </BaseModal>
             <CoachDeleteConfirmationModal
                 open={deleteModalOpen}
                 coachName={deleteCoach?.firstName + ' ' + deleteCoach?.lastName}
@@ -150,7 +157,7 @@ const CoachDetailsModal: React.FC<CoachDetailsModalProps> = ({ open, coachId, on
                     loadCoaches();
                 }}
             />
-        </Dialog>
+        </>
     );
 };
 

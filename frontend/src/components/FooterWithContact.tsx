@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import ContactModal from './ContactModal';
+import ContactModal from '../modals/ContactModal';
 import Footer from './Footer';
 
 const FooterWithContact: React.FC = () => {

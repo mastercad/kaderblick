@@ -1,8 +1,4 @@
 import React from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import List from '@mui/material/List';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -14,6 +10,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
 import EventIcon from '@mui/icons-material/Event';
 import DescriptionIcon from '@mui/icons-material/Description';
+import BaseModal from './BaseModal';
 
 interface AddWidgetModalProps {
   open: boolean;
@@ -37,27 +34,31 @@ export const AddWidgetModal: React.FC<AddWidgetModalProps> = ({
   onAdd,
   onReportWidgetFlow,
 }) => (
-  <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-    <DialogTitle>Widget hinzufügen</DialogTitle>
-    <DialogContent>
-      <List>
-        {widgetOptions.map(opt => (
-          <ListItemButton
-            key={opt.type}
-            onClick={
-              opt.type === 'report'
-                ? onReportWidgetFlow
-                : () => onAdd(opt.type)
-            }
-          >
-            <ListItemIcon>{opt.icon}</ListItemIcon>
-            <ListItemText primary={opt.label} />
-          </ListItemButton>
-        ))}
-      </List>
-    </DialogContent>
-    <DialogActions>
-      <Button onClick={onClose} color="secondary">Abbrechen</Button>
-    </DialogActions>
-  </Dialog>
+  <BaseModal
+    open={open}
+    onClose={onClose}
+    title="Widget hinzufügen"
+    maxWidth="sm"
+    actions={
+      <Button onClick={onClose} color="secondary" variant="outlined">
+        Abbrechen
+      </Button>
+    }
+  >
+    <List>
+      {widgetOptions.map(opt => (
+        <ListItemButton
+          key={opt.type}
+          onClick={
+            opt.type === 'report'
+              ? onReportWidgetFlow
+              : () => onAdd(opt.type)
+          }
+        >
+          <ListItemIcon>{opt.icon}</ListItemIcon>
+          <ListItemText primary={opt.label} />
+        </ListItemButton>
+      ))}
+    </List>
+  </BaseModal>
 );

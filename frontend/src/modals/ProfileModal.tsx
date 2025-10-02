@@ -2,10 +2,6 @@ import React from 'react';
 import LinkIcon from '@mui/icons-material/Link';
 import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
@@ -14,6 +10,7 @@ import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import Alert from '@mui/material/Alert';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 interface ProfileData {
   firstName: string;
@@ -152,25 +149,47 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
   const shirtSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
   const pantsSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '28/30', '30/30', '32/30', '34/30', '36/30', '28/32', '30/32', '32/32', '34/32', '36/32'];
 
+  const titleWithLink = (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      Profil bearbeiten
+      <Tooltip title={relations.length > 0 ? 'Mit Profil(en) verknüpft' : 'Mit keinem Profil verknüpft'}>
+        <span>
+          <IconButton
+            size="small"
+            onClick={() => relations.length > 0 && setRelationsOpen(true)}
+            sx={{ color: relations.length > 0 ? 'success.main' : 'grey.400' }}
+            disabled={relations.length === 0}
+          >
+            <LinkIcon />
+          </IconButton>
+        </span>
+      </Tooltip>
+    </Box>
+  );
+
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          Profil bearbeiten
-          <Tooltip title={relations.length > 0 ? 'Mit Profil(en) verknüpft' : 'Mit keinem Profil verknüpft'}>
-            <span>
-              <IconButton
-                size="small"
-                onClick={() => relations.length > 0 && setRelationsOpen(true)}
-                sx={{ color: relations.length > 0 ? 'success.main' : 'grey.400', ml: 1 }}
-                disabled={relations.length === 0}
-              >
-                <LinkIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </DialogTitle>
-      <DialogContent>
+      <BaseModal
+        open={open}
+        onClose={onClose}
+        title={titleWithLink}
+        maxWidth="md"
+        actions={
+          <>
+            <Button onClick={onClose} variant="outlined" color="secondary">
+              Abbrechen
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              color="primary" 
+              variant="contained"
+              disabled={loading}
+            >
+              {loading ? 'Speichere...' : 'Speichern'}
+            </Button>
+          </>
+        }
+      >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
             <TextField
@@ -271,47 +290,40 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
           </Box>
           
           {message && (
-            <Alert severity={message.type} sx={{ mt: 2 }}>
+            <Alert severity={message.type}>
               {message.text}
             </Alert>
           )}
         </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Abbrechen</Button>
-        <Button 
-          onClick={handleSave} 
-          color="primary" 
-          variant="contained"
-          disabled={loading}
-        >
-          {loading ? 'Speichere...' : 'Speichern'}
-        </Button>
-      </DialogActions>
-      </Dialog>
+      </BaseModal>
+      
       {/* Modal für UserRelation-Übersicht */}
-      <Dialog open={relationsOpen} onClose={() => setRelationsOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Verknüpfte Profile</DialogTitle>
-        <DialogContent>
-          {relations.length === 0 ? (
-            <Typography color="text.secondary">Keine Verknüpfungen vorhanden.</Typography>
-          ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {relations.map(rel => (
-                <Box key={rel.id} sx={{ p: 1, border: '1px solid #eee', borderRadius: 1 }}>
-                  <Typography variant="subtitle1">{rel.fullName}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Typ: {rel.category} - {rel.identifier}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRelationsOpen(false)}>Schließen</Button>
-        </DialogActions>
-      </Dialog>
+      <BaseModal
+        open={relationsOpen}
+        onClose={() => setRelationsOpen(false)}
+        title="Verknüpfte Profile"
+        maxWidth="sm"
+        actions={
+          <Button onClick={() => setRelationsOpen(false)} variant="contained">
+            Schließen
+          </Button>
+        }
+      >
+        {relations.length === 0 ? (
+          <Typography color="text.secondary">Keine Verknüpfungen vorhanden.</Typography>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {relations.map(rel => (
+              <Box key={rel.id} sx={{ p: 1, border: '1px solid #eee', borderRadius: 1 }}>
+                <Typography variant="subtitle1">{rel.fullName}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Typ: {rel.category} - {rel.identifier}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </BaseModal>
     </>
   );
 };

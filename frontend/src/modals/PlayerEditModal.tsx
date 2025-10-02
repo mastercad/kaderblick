@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, Button, Box, Typography, TextField, InputAdornment, CircularProgress, Alert, Divider, IconButton, Chip, Stack
+    Button, Box, Typography, TextField, InputAdornment, CircularProgress, Alert, Divider, Chip, Stack, IconButton
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import Autocomplete from '@mui/material/Autocomplete';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -19,6 +18,7 @@ import { toDateInputValue } from '../utils/date';
 import { PlayerTeamAssignmentType } from '../types/playerTeamAssignmentType';
 import { StrongFeet } from '../types/strongFeet';
 import { Position } from '../types/position';
+import BaseModal from './BaseModal';
 
 interface PlayerEditModalProps {
     openPlayerEditModal: boolean;
@@ -241,14 +241,13 @@ const PlayerEditModal: React.FC<PlayerEditModalProps> = ({ openPlayerEditModal, 
     };
 
     return (
-        <Dialog open={openPlayerEditModal} onClose={onPlayerEditModalClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 2 }}>
-                Spieler bearbeiten
-                <IconButton aria-label="close" onClick={onPlayerEditModalClose} size="small" sx={{ ml: 2 }}>
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-            <DialogContent>
+        <>
+            <BaseModal
+                open={openPlayerEditModal}
+                onClose={onPlayerEditModalClose}
+                maxWidth="md"
+                title="Spieler bearbeiten"
+            >
                 {loading ? (
                 <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
                     <CircularProgress />
@@ -628,7 +627,7 @@ const PlayerEditModal: React.FC<PlayerEditModalProps> = ({ openPlayerEditModal, 
                     </form>
                 </>
                 )}
-            </DialogContent>
+            </BaseModal>
             <ClubEditModal
                 openClubEditModal={openClubModal}
                 onClubEditModalClose={() => setOpenClubModal(false)}
@@ -667,7 +666,7 @@ const PlayerEditModal: React.FC<PlayerEditModalProps> = ({ openPlayerEditModal, 
                     setOpenNationalityModal(false);
                 }}
             />
-</Dialog>
+        </>
     );
 };
 

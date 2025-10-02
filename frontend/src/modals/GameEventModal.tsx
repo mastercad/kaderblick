@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiJson } from '../utils/api';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Select,
@@ -12,8 +8,7 @@ import {
   InputLabel,
   FormControl,
   Box,
-  Typography,
-  Divider
+  Typography
 } from '@mui/material';
 import { 
   fetchGameEventTypes,
@@ -23,6 +18,7 @@ import {
 } from '../services/games';
 import { Game, GameEvent, GameEventType, Player, SubstitutionReason } from '../types/games';
 import { getGameEventIconByCode } from '../constants/gameEventIcons';
+import BaseModal from './BaseModal';
 
 interface GameEventModalProps {
   open: boolean;
@@ -242,54 +238,91 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {existingEvent ? 'Ereignis bearbeiten' : 'Neues Spielereignis'}
-      </DialogTitle>
-      <DialogContent>
-        <Box sx={{ mt: 1 }}>
-          <Typography variant="h6" gutterBottom>
-            {game.homeTeam.name} vs {game.awayTeam.name}
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, mb: 2 }}>
-            {/* Linke Spalte: Event-Details */}
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <FormControl fullWidth required sx={{ mb: 2 }}>
-                <InputLabel>Team</InputLabel>
-                <Select
-                  value={formData.team}
-                  onChange={e => handleInputChange('team', e.target.value)}
-                  label="Team"
-                >
-                  <MenuItem value="">Team wählen…</MenuItem>
-                  <MenuItem value={game.homeTeam.id}>{game.homeTeam.name}</MenuItem>
-                  <MenuItem value={game.awayTeam.id}>{game.awayTeam.name}</MenuItem>
-                </Select>
-              </FormControl>
-              <FormControl fullWidth required sx={{ mb: 2 }}>
-                <InputLabel>Event-Typ</InputLabel>
-                <Select
-                  value={formData.eventType}
-                  onChange={e => handleInputChange('eventType', e.target.value)}
-                  label="Event-Typ"
-                >
-                  <MenuItem value="">Event-Typ wählen…</MenuItem>
-                  {eventTypes.map((type) => (
-                    <MenuItem key={type.id} value={type.id}>
-                      <span style={{ color: type.color, marginLeft: 8 }}>{ getGameEventIconByCode(type.code) }</span>
-                      {type.name}
+    <BaseModal
+      open={open}
+      onClose={handleClose}
+      title={existingEvent ? 'Ereignis bearbeiten' : 'Neues Spielereignis'}
+      maxWidth="md"
+      actions={
+        <>
+          <Button onClick={handleClose} disabled={loading} variant="outlined" color="secondary">
+            Abbrechen
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            color="primary"
+            disabled={loading || !formData.eventType || !formData.team || !formData.player || !formData.minute}
+          >
+            {loading ? 'Speichere...' : 'Speichern'}
+          </Button>
+        </>
+      }
+    >
+      <Box>
+        <Typography variant="h6" gutterBottom>
+          {game.homeTeam.name} vs {game.awayTeam.name}
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, mb: 2 }}>
+          {/* Linke Spalte: Event-Details */}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <FormControl fullWidth required sx={{ mb: 2 }}>
+              <InputLabel>Team</InputLabel>
+              <Select
+                value={formData.team}
+                onChange={e => handleInputChange('team', e.target.value)}
+                label="Team"
+              >
+                <MenuItem value="">Team wählen…</MenuItem>
+                <MenuItem value={game.homeTeam.id}>{game.homeTeam.name}</MenuItem>
+                <MenuItem value={game.awayTeam.id}>{game.awayTeam.name}</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth required sx={{ mb: 2 }}>
+              <InputLabel>Event-Typ</InputLabel>
+              <Select
+                value={formData.eventType}
+                onChange={e => handleInputChange('eventType', e.target.value)}
+                label="Event-Typ"
+              >
+                <MenuItem value="">Event-Typ wählen…</MenuItem>
+                {eventTypes.map((type) => (
+                  <MenuItem key={type.id} value={type.id}>
+                    <span style={{ color: type.color, marginLeft: 8 }}>{ getGameEventIconByCode(type.code) }</span>
+                    {type.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth required sx={{ mb: 2 }}>
+              <InputLabel>Spieler</InputLabel>
+              <Select
+                value={formData.player}
+                onChange={e => handleInputChange('player', e.target.value)}
+                label="Spieler"
+              >
+                <MenuItem value="">Spieler wählen…</MenuItem>
+                {Object.values(filteredPlayers).map((player) => {
+                  const shirtNumber = (player as any).shirtNumber;
+                  const fullName = (player as any).fullName ?? `${(player as any).firstName ?? ''} ${(player as any).lastName ?? ''}`.trim();
+                  return (
+                    <MenuItem key={player.id} value={player.id}>
+                      {shirtNumber ? `#${shirtNumber} ` : ''}{fullName}
                     </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl fullWidth required sx={{ mb: 2 }}>
-                <InputLabel>Spieler</InputLabel>
+                  );
+                })}
+              </Select>
+            </FormControl>
+            {/* Zweiter Spieler (bei Wechsel) */}
+            {isSubstitution() && (
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Zweiter Spieler (bei Wechsel)</InputLabel>
                 <Select
-                  value={formData.player}
-                  onChange={e => handleInputChange('player', e.target.value)}
-                  label="Spieler"
+                  value={formData.relatedPlayer}
+                  onChange={e => handleInputChange('relatedPlayer', e.target.value)}
+                  label="Zweiter Spieler (bei Wechsel)"
                 >
-                  <MenuItem value="">Spieler wählen…</MenuItem>
+                  <MenuItem value="">Zweiter Spieler wählen…</MenuItem>
                   {Object.values(filteredPlayers).map((player) => {
                     const shirtNumber = (player as any).shirtNumber;
                     const fullName = (player as any).fullName ?? `${(player as any).firstName ?? ''} ${(player as any).lastName ?? ''}`.trim();
@@ -301,93 +334,59 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
                   })}
                 </Select>
               </FormControl>
-              {/* Zweiter Spieler (bei Wechsel) */}
-              {isSubstitution() && (
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Zweiter Spieler (bei Wechsel)</InputLabel>
-                  <Select
-                    value={formData.relatedPlayer}
-                    onChange={e => handleInputChange('relatedPlayer', e.target.value)}
-                    label="Zweiter Spieler (bei Wechsel)"
-                  >
-                    <MenuItem value="">Zweiter Spieler wählen…</MenuItem>
-                    {Object.values(filteredPlayers).map((player) => {
-                      const shirtNumber = (player as any).shirtNumber;
-                      const fullName = (player as any).fullName ?? `${(player as any).firstName ?? ''} ${(player as any).lastName ?? ''}`.trim();
-                      return (
-                        <MenuItem key={player.id} value={player.id}>
-                          {shirtNumber ? `#${shirtNumber} ` : ''}{fullName}
-                        </MenuItem>
-                      );
-                    })}
-                  </Select>
-                </FormControl>
-              )}
-              {/* Grund für Wechsel */}
-              {isSubstitution() && (
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Grund für Wechsel</InputLabel>
-                  <Select
-                    value={formData.reason}
-                    onChange={e => handleInputChange('reason', e.target.value)}
-                    label="Grund für Wechsel"
-                  >
-                    <MenuItem value="">Grund für Wechsel wählen…</MenuItem>
-                    {substitutionReasons.map((reason) => (
-                      <MenuItem key={reason.id} value={reason.id}>
-                        {reason.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              )}
-            </Box>
-            {/* Rechte Spalte: Zeit */}
-            <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'flex-start' }}>
-              <Typography variant="h3" fontWeight="bold" sx={{ mb: 2 }}>{currentTime.toLocaleTimeString()}</Typography>
-              <Typography variant="body2">Seit Startzeit vergangene Sekunden:</Typography>
-              <Button
-                variant="outlined"
-                color="primary"
-                sx={{ fontSize: '1.5rem', mt: 1, mb: 2 }}
-                onClick={() => setFormData(prev => ({ ...prev, minute: elapsedSeconds }))}
-              >
-                {elapsedSeconds} <span style={{ marginLeft: 8 }}><i className="fas fa-clock" /></span>
-              </Button>
-            </Box>
+            )}
+            {/* Grund für Wechsel */}
+            {isSubstitution() && (
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Grund für Wechsel</InputLabel>
+                <Select
+                  value={formData.reason}
+                  onChange={e => handleInputChange('reason', e.target.value)}
+                  label="Grund für Wechsel"
+                >
+                  <MenuItem value="">Grund für Wechsel wählen…</MenuItem>
+                  {substitutionReasons.map((reason) => (
+                    <MenuItem key={reason.id} value={reason.id}>
+                      {reason.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
           </Box>
-          {/* Neue Zeile: Zeit und Beschreibung */}
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField
-              label="Sekunden | MM:SS | HH:MM:SS"
-              value={formData.minute}
-              onChange={e => handleInputChange('minute', e.target.value)}
-              fullWidth
-              required
-              inputProps={{ style: { textAlign: 'right' } }}
-              sx={{ maxWidth: 180 }}
-            />
-            <TextField
-              label="Beschreibung (optional)"
-              value={formData.description}
-              onChange={e => handleInputChange('description', e.target.value)}
-              fullWidth
-            />
+          {/* Rechte Spalte: Zeit */}
+          <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'flex-start' }}>
+            <Typography variant="h3" fontWeight="bold" sx={{ mb: 2 }}>{currentTime.toLocaleTimeString()}</Typography>
+            <Typography variant="body2">Seit Startzeit vergangene Sekunden:</Typography>
+            <Button
+              variant="outlined"
+              color="primary"
+              sx={{ fontSize: '1.5rem', mt: 1, mb: 2 }}
+              onClick={() => setFormData(prev => ({ ...prev, minute: elapsedSeconds }))}
+            >
+              {elapsedSeconds} <span style={{ marginLeft: 8 }}><i className="fas fa-clock" /></span>
+            </Button>
           </Box>
         </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} disabled={loading}>
-          Abbrechen
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={loading || !formData.eventType || !formData.team || !formData.player || !formData.minute}
-        >
-          {loading ? 'Speichere...' : 'Speichern'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+        {/* Neue Zeile: Zeit und Beschreibung */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+          <TextField
+            label="Sekunden | MM:SS | HH:MM:SS"
+            value={formData.minute}
+            onChange={e => handleInputChange('minute', e.target.value)}
+            fullWidth
+            required
+            inputProps={{ style: { textAlign: 'right' } }}
+            sx={{ maxWidth: 180 }}
+          />
+          <TextField
+            label="Beschreibung (optional)"
+            value={formData.description}
+            onChange={e => handleInputChange('description', e.target.value)}
+            fullWidth
+          />
+        </Box>
+      </Box>
+    </BaseModal>
   );
 };

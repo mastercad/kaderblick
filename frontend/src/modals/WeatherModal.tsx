@@ -1,10 +1,6 @@
 import { Grid } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  IconButton,
   Typography,
   CircularProgress,
   Alert,
@@ -12,9 +8,9 @@ import {
   Card,
   CardContent
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import { WeatherDisplay } from '../components/WeatherIcons';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 interface WeatherModalProps {
   open: boolean;
@@ -126,17 +122,15 @@ const WeatherModal: React.FC<WeatherModalProps> = ({ open, onClose, eventId }) =
   const hourly = getHourlyPoints();
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>
-        Wetter Informationen
-        <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}>
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent>
-        {loading && <CircularProgress />}
-        {error && <Alert severity="error">{error}</Alert>}
-        {day && (
+    <BaseModal
+      open={open}
+      onClose={onClose}
+      maxWidth="lg"
+      title="Wetter Informationen"
+    >
+      {loading && <CircularProgress />}
+      {error && <Alert severity="error">{error}</Alert>}
+      {day && (
           <Box sx={{ mb: 3 }}>
             <Card sx={{ background: (day.precipitation ?? 0) > 0.5 ? '#90caf9' : (day.clouds ?? 0) > 60 ? '#e0e0e0' : '#ffe082', borderRadius: 4, boxShadow: 3, p: 2 }}>
               <CardContent>
@@ -194,7 +188,7 @@ const WeatherModal: React.FC<WeatherModalProps> = ({ open, onClose, eventId }) =
             </Box>
             <Grid container spacing={2} justifyContent="center">
               {hourly.map((h, i) => (
-                <Grid key={i} item xs={12} sm={6} md={3}>
+                <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
                   <Card sx={{ background: h.precipitation > 0.5 ? '#90caf9' : h.clouds > 60 ? '#e0e0e0' : '#ffe082', borderRadius: 3, boxShadow: 2, p: 1 }}>
                     <CardContent sx={{ p: 1 }}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 1 }}>
@@ -220,8 +214,7 @@ const WeatherModal: React.FC<WeatherModalProps> = ({ open, onClose, eventId }) =
         ) : (!loading && !error && !data) ? (
           <Typography>Keine Wetterdaten verfügbar.</Typography>
         ) : null}
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 }
 

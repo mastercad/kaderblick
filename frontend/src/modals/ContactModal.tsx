@@ -1,58 +1,88 @@
-import React from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
+import React, { useState } from 'react';
+import { Button, TextField, Box, Alert } from '@mui/material';
+import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
-export interface ContactModalProps {
+interface ContactModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: { name: string; email: string; message: string }) => void;
-  initialData?: { name: string; email: string; message: string };
 }
 
-const ContactModal: React.FC<ContactModalProps> = ({ open, onClose, onSubmit, initialData }) => {
-  const [form, setForm] = React.useState(initialData || { name: '', email: '', message: '' });
+const ContactModal: React.FC<ContactModalProps> = ({ open, onClose }) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  React.useEffect(() => {
-    setForm(initialData || { name: '', email: '', message: '' });
-  }, [initialData, open]);
+  const handleSubmit = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await apiJson('/api/contact', {
+        method: 'POST',
+        body: { name, email, message },
+      });
+      setSuccess('Nachricht erfolgreich gesendet!');
+      setName('');
+      setEmail('');
+      setMessage('');
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message || 'Fehler beim Senden der Nachricht.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Kontakt aufnehmen</DialogTitle>
-      <DialogContent>
+    <BaseModal
+      open={open}
+      onClose={onClose}
+      title="Kontaktformular"
+      maxWidth="sm"
+      actions={
+        <>
+          <Button onClick={onClose} color="secondary" variant="outlined" disabled={loading}>
+            Abbrechen
+          </Button>
+          <Button onClick={handleSubmit} color="primary" variant="contained" disabled={loading}>
+            Senden
+          </Button>
+        </>
+      }
+    >
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+        {success && <Alert severity="success">{success}</Alert>}
+        {error && <Alert severity="error">{error}</Alert>}
         <TextField
           label="Name"
-          value={form.name}
-          onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-          margin="normal"
-          fullWidth
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
+          autoFocus
         />
         <TextField
           label="E-Mail"
-          value={form.email}
-          onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-          margin="normal"
-          fullWidth
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
         />
         <TextField
           label="Nachricht"
-          value={form.message}
-          onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-          margin="normal"
-          fullWidth
+          value={message}
+          onChange={e => setMessage(e.target.value)}
+          required
           multiline
-          minRows={3}
+          minRows={4}
         />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Abbrechen</Button>
-        <Button onClick={() => onSubmit(form)} color="primary" variant="contained">Senden</Button>
-      </DialogActions>
-    </Dialog>
+      </Box>
+    </BaseModal>
   );
 };
 

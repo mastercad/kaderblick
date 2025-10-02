@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Modal, Typography, TextField, Button, MenuItem, CircularProgress, Alert, FormControlLabel } from '@mui/material';
+import { Box, Typography, TextField, Button, MenuItem, CircularProgress, Alert, FormControlLabel } from '@mui/material';
 import { apiJson } from '../utils/api';
 import { Location } from '../types/location';
+import BaseModal from './BaseModal';
 
 export type LocationFormValues = {
   id?: number;
@@ -38,55 +39,54 @@ const defaultValues: LocationFormValues = {
   longitude: '',
 };
 
-const LocationEditModal: React.FC<LocationEditModalProps> = ({ openLocationEditModal, onLocationEditModalClose, onLocationSaved, initialValues, isEdit, surfaceTypes, onSaved }) => {
+const LocationEditModal: React.FC<LocationEditModalProps> = ({ openLocationEditModal, onLocationEditModalClose, onLocationSaved, initialValues, isEdit, onSaved }) => {
   const [values, setValues] = useState<LocationFormValues>(defaultValues);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [surfaceTypesLoading, setSurfaceTypesLoading] = useState(false);
-
-    type OSMResult = { lat: string; lon: string; display_name: string };
-    const [osmResults, setOsmResults] = useState<OSMResult[]>([]);
-    const [osmLoading, setOsmLoading] = useState(false);
-    const [osmError, setOsmError] = useState<string | null>(null);
-    const fetchCoordinatesFromOSM = async () => {
-        setOsmLoading(true);
-        setOsmError(null);
-        setOsmResults([]);
-        try {
-        const query = `${values.name} ${values.address} ${values.city}`.trim();
-        const url = `/api/locations/osm-coordinates?query=${encodeURIComponent(query)}`;
-        const res = await apiJson(url);
-        if (Array.isArray(res) && res.length > 0) {
-            setOsmResults(res);
-            if (res.length === 1) {
-            setValues((prev) => ({ ...prev, latitude: Number(res[0].lat), longitude: Number(res[0].lon) }));
-            setOsmResults([]);
-            }
-        } else {
-            setOsmError('Keine Ergebnisse gefunden.');
-        }
-        } catch (e) {
-        setOsmError('Fehler bei der OSM-Anfrage');
-        } finally {
-        setOsmLoading(false);
-        }
-    };
+  const [surfaceTypes, setSurfaceTypes] = useState([]);
+  const [osmResults, setOsmResults] = useState<OSMResult[]>([]);
+  const [osmLoading, setOsmLoading] = useState(false);
+  const [osmError, setOsmError] = useState<string | null>(null);
+  const fetchCoordinatesFromOSM = async () => {
+      setOsmLoading(true);
+      setOsmError(null);
+      setOsmResults([]);
+      try {
+      const query = `${values.name} ${values.address} ${values.city}`.trim();
+      const url = `/api/locations/osm-coordinates?query=${encodeURIComponent(query)}`;
+      const res = await apiJson(url);
+      if (Array.isArray(res) && res.length > 0) {
+          setOsmResults(res);
+          if (res.length === 1) {
+          setValues((prev) => ({ ...prev, latitude: Number(res[0].lat), longitude: Number(res[0].lon) }));
+          setOsmResults([]);
+          }
+      } else {
+          setOsmError('Keine Ergebnisse gefunden.');
+      }
+      } catch (e) {
+      setOsmError('Fehler bei der OSM-Anfrage');
+      } finally {
+      setOsmLoading(false);
+      }
+  };
     
+  type OSMResult = { lat: string; lon: string; display_name: string };
+
   useEffect(() => {
     if (openLocationEditModal) {
       console.log('LocationEditModal initialValues:', initialValues);
       console.log('LocationEditModal initialValues.surfaceTypeId:', initialValues?.surfaceTypeId);
       setValues({ ...defaultValues, ...initialValues });
       setError(null);
-      /*
       setSurfaceTypesLoading(true);
       apiJson('/api/locations')
         .then(res => {
           setSurfaceTypes(Array.isArray(res.surfaceTypes) ? res.surfaceTypes : []);
         })
         .catch(() => setSurfaceTypes([]))
-        .finally(() => setSurfaceTypesLoading(false));
-      */
+      .finally(() => setSurfaceTypesLoading(false));
     }
   }, [openLocationEditModal, initialValues]);
 
@@ -126,23 +126,14 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({ openLocationEditM
   };
 
   return (
-    <Modal open={openLocationEditModal} onClose={onLocationEditModalClose}>
-      <Box sx={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        bgcolor: 'background.paper',
-        boxShadow: 24,
-        p: 4,
-        minWidth: 350,
-        borderRadius: 2,
-        maxHeight: '90vh',
-        overflowY: 'auto',
-      }}>
-        <Typography variant="h6" mb={2}>{isEdit ? 'Spielstätte bearbeiten' : 'Neue Spielstätte anlegen'}</Typography>
-        <form onSubmit={handleSubmit}>
-          <TextField
+    <BaseModal
+      open={openLocationEditModal}
+      onClose={onLocationEditModalClose}
+      maxWidth="sm"
+      title={isEdit ? 'Spielstätte bearbeiten' : 'Neue Spielstätte anlegen'}
+    >
+      <form id="locationEditForm" onSubmit={handleSubmit}>
+        <TextField
             label="Name*"
             name="name"
             value={values.name}
@@ -290,15 +281,14 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({ openLocationEditM
             ))}
           </TextField>
           {error && <Typography color="error" mt={1}>{error}</Typography>}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-            <Button onClick={onLocationEditModalClose} color="secondary" sx={{ mr: 2 }} disabled={loading}>Abbrechen</Button>
-            <Button type="submit" variant="contained" disabled={loading}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
+            <Button onClick={onLocationEditModalClose} variant="outlined" color="secondary" disabled={loading}>Abbrechen</Button>
+            <Button type="submit" variant="contained" color="primary" disabled={loading}>
               {loading ? <CircularProgress size={22} /> : (isEdit ? 'Speichern' : 'Anlegen')}
             </Button>
           </Box>
         </form>
-      </Box>
-    </Modal>
+    </BaseModal>
   );
 };
 

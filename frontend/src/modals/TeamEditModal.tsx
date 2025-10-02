@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, TextField, InputAdornment, Switch, FormControlLabel, CircularProgress, Alert, Divider, IconButton
+    Button, Box, Typography, TextField, InputAdornment, Switch, FormControlLabel, CircularProgress, Alert, Divider
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import Autocomplete from '@mui/material/Autocomplete';
 import AddIcon from '@mui/icons-material/Add';
 import AgeGroupEditModal from './AgeGroupEditModal';
@@ -11,6 +10,7 @@ import { AgeGroup } from '../types/ageGroup';
 import { League } from '../types/league';
 import { Team } from '../types/team';
 import { apiJson } from '../utils/api';
+import BaseModal from './BaseModal';
 
 interface TeamEditModalProps {
     openTeamEditModal: boolean;
@@ -123,14 +123,13 @@ const TeamEditModal: React.FC<TeamEditModalProps> = ({ openTeamEditModal, teamId
     };
 
     return (
-        <Dialog open={openTeamEditModal} onClose={onTeamEditModalClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 2 }}>
-                Verein bearbeiten
-                <IconButton aria-label="close" onClick={onTeamEditModalClose} size="small" sx={{ ml: 2 }}>
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-            <DialogContent>
+        <>
+            <BaseModal
+                open={openTeamEditModal}
+                onClose={onTeamEditModalClose}
+                maxWidth="md"
+                title="Verein bearbeiten"
+            >
                 {loading ? (
                     <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
                         <CircularProgress />
@@ -302,16 +301,15 @@ const TeamEditModal: React.FC<TeamEditModalProps> = ({ openTeamEditModal, teamId
                     </form>
                 </>
                 )}
-            </DialogContent>
+            </BaseModal>
             <AgeGroupEditModal
                 openAgeGroupEditModal={ageGroupEditModalOpen}
+                ageGroupId={null}
                 onAgeGroupEditModalClose={() => setAgeGroupEditModalOpen(false)}
-                isEdit={false}
-                onLocationSaved={(newAgeGroup: Location) => {
+                onAgeGroupSaved={(newAgeGroup) => {
                     setAgeGroupEditModalOpen(false);
                     if (newAgeGroup && newAgeGroup.id) {
                         loadAgeGroups();
-
                         setAgeGroups(prev => [...prev, newAgeGroup]);
 
                         if (!team) {
@@ -327,13 +325,12 @@ const TeamEditModal: React.FC<TeamEditModalProps> = ({ openTeamEditModal, teamId
             />
             <LeagueEditModal
                 openLeagueEditModal={leagueEditModalOpen}
+                leagueId={null}
                 onLeagueEditModalClose={() => setLeagueEditModalOpen(false)}
-                isEdit={false}
-                onLocationSaved={(newLeague: League) => {
+                onLeagueSaved={(newLeague) => {
                     setLeagueEditModalOpen(false);
                     if (newLeague && newLeague.id) {
                         loadLeagues();
-
                         setLeagues(prev => [...prev, newLeague]);
 
                         if (!team) {
@@ -347,7 +344,7 @@ const TeamEditModal: React.FC<TeamEditModalProps> = ({ openTeamEditModal, teamId
                     }
                 }}
             />
-</Dialog>
+        </>
     );
 };
 

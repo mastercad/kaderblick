@@ -1,10 +1,7 @@
 import React from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
+import BaseModal from './BaseModal';
 
 interface AlertModalProps {
   open: boolean;
@@ -23,17 +20,19 @@ export const AlertModal: React.FC<AlertModalProps> = ({
   severity = 'info',
   closeText = 'OK',
 }) => (
-  <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-    {title && <DialogTitle>{title}</DialogTitle>}
-    <DialogContent>
-      <Alert severity={severity}>
-        {message}
-      </Alert>
-    </DialogContent>
-    <DialogActions>
+  <BaseModal
+    open={open}
+    onClose={onClose}
+    title={title}
+    maxWidth="sm"
+    actions={
       <Button onClick={onClose} color="primary" variant="contained">
         {closeText}
       </Button>
-    </DialogActions>
-  </Dialog>
+    }
+  >
+    <Alert severity={severity}>
+      {message}
+    </Alert>
+  </BaseModal>
 );
