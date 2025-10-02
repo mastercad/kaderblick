@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, IconButton, Modal } from '@mui/material';
+import { Box, Typography, IconButton, Modal, Tooltip } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -35,16 +35,17 @@ export default function LandingGallery({ sections }: LandingGalleryProps) {
     
     setNextIndex(nextIdx);
     setShowNext(true);
-    setTransitioning(true);
-  };
-
-  const handleTransitionEnd = () => {
-    if (transitioning && nextIndex !== null) {
-      setCurrent(nextIndex);
+    
+    setTimeout(() => {
+      setTransitioning(true);
+    }, 50);
+    
+    setTimeout(() => {
+      setCurrent(nextIdx);
       setShowNext(false);
       setNextIndex(null);
       setTransitioning(false);
-    }
+    }, 1050);
   };
 
   const handlePrev = () => handleSwitch(-1);
@@ -86,25 +87,42 @@ export default function LandingGallery({ sections }: LandingGalleryProps) {
                   boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
                   aspectRatio: '2 / 1',
                 }}>
-                  {/* Aktuelles Bild - scrollt nach oben raus */}
-                  <img
-                    src={section.image}
-                    alt="Vorschau"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      cursor: 'pointer',
-                      position: 'absolute',
-                      left: 0,
-                      top: 0,
-                      transition: 'transform 1s cubic-bezier(.77,0,.18,1)',
-                      transform: transitioning ? 'translateY(-100%)' : 'translateY(0%)',
-                      zIndex: transitioning ? 1 : 2,
-                    }}
-                    onClick={() => setModalImage(section.image)}
-                    onTransitionEnd={handleTransitionEnd}
-                  />
+                  {/* Aktuelles Bild */}
+                  {!showNext && (
+                    <img
+                      src={section.image}
+                      alt="Vorschau"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        cursor: 'pointer',
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                      }}
+                      onClick={() => setModalImage(section.image)}
+                    />
+                  )}
+                  {/* Bild während Transition - scrollt nach oben raus */}
+                  {showNext && (
+                    <img
+                      src={section.image}
+                      alt="Alt"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        cursor: 'pointer',
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        transition: 'transform 1s cubic-bezier(.77,0,.18,1)',
+                        transform: transitioning ? 'translateY(-100%)' : 'translateY(0%)',
+                        zIndex: 1,
+                      }}
+                    />
+                  )}
                   {/* Nächstes Bild - scrollt von unten rein */}
                   {showNext && nextIndex !== null && (
                     <img
@@ -182,6 +200,50 @@ export default function LandingGallery({ sections }: LandingGalleryProps) {
                   <ArrowForwardIosIcon fontSize="small" />
                 </IconButton>
               </Box>
+              
+              {/* Punkt-Navigation */}
+              {sections.length > 1 && (
+                <Box 
+                  display="flex" 
+                  justifyContent="center" 
+                  gap={1.5} 
+                  sx={{ mt: 2, mb: 2 }}
+                >
+                  {sections.map((section, idx) => (
+                    <Tooltip key={idx} title={section.name} arrow placement="top">
+                      <Box
+                        onClick={() => {
+                          if (idx !== current && !transitioning) {
+                            const dir = idx > current ? 1 : -1;
+                            setNextIndex(idx);
+                            setShowNext(true);
+                            setTimeout(() => setTransitioning(true), 50);
+                            setTimeout(() => {
+                              setCurrent(idx);
+                              setShowNext(false);
+                              setNextIndex(null);
+                              setTransitioning(false);
+                            }, 1050);
+                          }
+                        }}
+                        sx={{
+                          width: 12,
+                        height: 12,
+                        borderRadius: '50%',
+                        bgcolor: idx === current ? 'primary.main' : 'rgba(0,0,0,0.2)',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s',
+                        '&:hover': {
+                          bgcolor: idx === current ? 'primary.main' : 'rgba(0,0,0,0.4)',
+                          transform: 'scale(1.2)',
+                        },
+                      }}
+                    />
+                    </Tooltip>
+                  ))}
+                </Box>
+              )}
+              
               {additional.length > 0 && (
                 <Box display="flex" alignItems="center" gap={1} sx={{ mt: { xs: 2, md: 0 } }}>
                   <IconButton
