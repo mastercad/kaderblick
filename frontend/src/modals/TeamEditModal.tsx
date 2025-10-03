@@ -128,7 +128,7 @@ const TeamEditModal: React.FC<TeamEditModalProps> = ({ openTeamEditModal, teamId
                 open={openTeamEditModal}
                 onClose={onTeamEditModalClose}
                 maxWidth="md"
-                title="Verein bearbeiten"
+                title="Team bearbeiten"
             >
                 {loading ? (
                     <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
@@ -179,7 +179,7 @@ const TeamEditModal: React.FC<TeamEditModalProps> = ({ openTeamEditModal, teamId
                                                 if ((option as any).id === 'new') {
                                                     return (
                                                         <li {...props} style={{ display: 'flex', alignItems: 'center', color: '#1976d2', fontWeight: 500 }}>
-                                                            <AddIcon fontSize="small" style={{ marginRight: 8 }} /> Neue Sportstätte anlegen...
+                                                            <AddIcon fontSize="small" style={{ marginRight: 8 }} /> Neue Altersgruppe anlegen...
                                                         </li>
                                                     );
                                                 }

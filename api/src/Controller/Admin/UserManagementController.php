@@ -17,17 +17,14 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/users', name: 'admin_users_')]
 #[IsGranted('ROLE_ADMIN')]
 class UserManagementController extends AbstractController
 {
-    public function __construct(
-        private EntityManagerInterface $em,
-        private RoleHierarchyInterface $roleHierarchy
-    ) {
+    public function __construct(private EntityManagerInterface $em)
+    {
     }
 
     #[Route('', name: 'index', methods: ['GET'])]
@@ -98,16 +95,6 @@ class UserManagementController extends AbstractController
         }
 
         $answer = ['id' => $user->getId()];
-
-        // Prüfen ob der aktuelle Benutzer die ausgewählten Rollen vergeben darf
-        $userRoles = $this->roleHierarchy->getReachableRoleNames($currentUser->getRoles());
-        foreach ($selectedRoles as $role) {
-            if (!in_array($role, $userRoles)) {
-                $answer['error'] = 'Sie haben nicht die Berechtigung, diese Rolle zu vergeben: ' . $role;
-
-                return $this->json($answer);
-            }
-        }
 
         try {
             $user->setRoles($selectedRoles);
@@ -264,8 +251,7 @@ class UserManagementController extends AbstractController
 
             return $this->json([
                 'status' => 'error',
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString() // Im Produktivbetrieb entfernen!
+                'message' => $e->getMessage()
             ], 400);
         }
     }
