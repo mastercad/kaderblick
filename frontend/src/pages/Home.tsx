@@ -5,6 +5,8 @@ import LandingSection from '../components/LandingSection';
 import FooterWithContact from '../components/FooterWithContact';
 import SectionNavigation from '../components/SectionNavigation';
 import AuthModal from '../modals/AuthModal';
+import { useHomeScroll } from '../context/HomeScrollContext';
+import { useAuth } from '../context/AuthContext';
 import calendarImage from '../../public/images/landing_page/calendar.png?url';
 import surceyImage from '../../public/images/landing_page/surveys.png?url';
 import coachImage from '../../public/images/landing_page/coach.png?url';
@@ -75,6 +77,8 @@ export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const { setIsOnHeroSection } = useHomeScroll();
+  const { user } = useAuth();
 
   useEffect(() => {
     const original = document.body.style.background;
@@ -113,13 +117,28 @@ export default function Home() {
       }
     };
 
+    const handleScroll = () => {
+      const heroSection = heroRef.current;
+      if (!heroSection) return;
+
+      const heroRect = heroSection.getBoundingClientRect();
+      const isOnHero = heroRect.top >= -heroRect.height / 2 && heroRect.top <= heroRect.height / 2;
+      
+      setIsOnHeroSection(isOnHero);
+    };
+
     container.addEventListener('wheel', handleWheel, { passive: false });
+    container.addEventListener('scroll', handleScroll);
+
+    // Initial check
+    handleScroll();
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('scroll', handleScroll);
       if (scrollTimeout) clearTimeout(scrollTimeout);
     };
-  }, []);
+  }, [setIsOnHeroSection]);
 
   const handleStartClick = () => {
     setAuthModalOpen(true);
@@ -161,7 +180,7 @@ export default function Home() {
                 additionalImages={section.additionalImages}
                 text={section.text}
                 reverse={index % 2 === 1}
-                onAuthClick={() => setAuthModalOpen(true)}
+                onAuthClick={!user ? () => setAuthModalOpen(true) : undefined}
               />
               {isLastSection && (
                 <Box sx={{ width: '100%', marginTop: 'auto' }}>
