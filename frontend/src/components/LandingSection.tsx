@@ -146,7 +146,6 @@ export default function LandingSection({ name, image, additionalImages = [], tex
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('CTA Button clicked, calling onAuthClick');
             onAuthClick();
           }}
           sx={{
