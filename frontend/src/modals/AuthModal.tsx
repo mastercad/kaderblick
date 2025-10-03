@@ -1,11 +1,12 @@
-import Dialog from '@mui/material/Dialog';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
+import Box from '@mui/material/Box';
 import { useState, useEffect } from 'react';
 import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
 import Alert from '@mui/material/Alert';
 import { useAuth } from '../context/AuthContext';
+import BaseModal from './BaseModal';
 
 interface AuthModalProps {
   open: boolean;
@@ -23,6 +24,7 @@ interface GoogleAuthMessage {
     name: string;
     firstName: string;
     lastName: string;
+    roles: { [key: string]: string };
   };
   error?: string;
   message?: string;
@@ -86,25 +88,42 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
   if (!open) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth">
-            <Tab label="Login" value="login" />
-            <Tab label="Register" value="register" />
+    <BaseModal 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="sm"
+      title={
+        <Tabs 
+          value={tab} 
+          onChange={(_, v) => setTab(v)} 
+          variant="fullWidth"
+          sx={{ 
+            width: '100%',
+            borderBottom: 1,
+            borderColor: 'divider',
+          }}
+        >
+          <Tab label="Login" value="login" />
+          <Tab label="Register" value="register" />
         </Tabs>
-        
+      }
+      showCloseButton={true}
+    >
+      <Box>
         {googleLoginError && (
-          <Alert severity="error" sx={{ m: 2 }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
             {googleLoginError}
           </Alert>
         )}
         
         {googleLoginSuccess && (
-          <Alert severity="success" sx={{ m: 2 }}>
+          <Alert severity="success" sx={{ mb: 2 }}>
             {googleLoginSuccess}
           </Alert>
         )}
         
         {tab === 'login' ? <LoginForm onSuccess={onClose} /> : <RegisterForm />}
-    </Dialog>
+      </Box>
+    </BaseModal>
   );
 }

@@ -16,6 +16,18 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/images/icon-192.png" />
 
+    <!-- Preload ImpactWeb font -->
+    <link rel="preload" href="/fonts/ImpactLTStd.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+      @font-face {
+        font-family: 'ImpactWeb';
+        src: url('/fonts/ImpactLTStd.woff2') format('woff2');
+        font-weight: normal;
+        font-style: normal;
+        font-display: block;
+      }
+    </style>
+
     <title>Kaderblick - Dein Verein im Blick</title>
 
     <!-- Open Graph / Facebook / WhatsApp -->
@@ -35,55 +47,187 @@
     <meta name="twitter:title" content="KADERBLICK – Dein Verein im Blick" />
     <meta name="twitter:description" content="Organisiere deinen Verein, werte Spiele aus, erstelle Analysen, teile News, Spiele und mehr! Mit Kaderblick hast du alle Vereinsdaten, Spielberichte und Statistiken immer im Blick – einfach, sicher und mobil." />
     <meta name="twitter:image" content="https://kaderblick.byte-artist.de/images/share_bg.png" />
+    
+    <!-- Preload Screen Styles (match HeroSection exactly) -->
+    <style>
+      /* Navigation offset simulation */
+      .preload-nav-spacer {
+        height: 64px;
+      }
+      @media (max-width: 600px) {
+        .preload-nav-spacer {
+          height: 56px;
+        }
+      }
+      
+      .preload-outer {
+        height: calc(100% - 64px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
+        padding-right: 7%;
+        position: relative;
+      }
+      .preload-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        text-align: right;
+        font-family: 'ImpactWeb', 'Anton', Impact, 'Arial Black', sans-serif;
+        gap: 0;
+      }
+      .preload-title {
+        font-size: clamp(4rem, 12vw, 12rem) !important;
+        color: #fff !important;
+        white-space: nowrap !important;
+        line-height: 0.9 !important;
+        font-family: 'ImpactWeb', 'Anton', Impact, 'Arial Black', sans-serif !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+      }
+      .preload-title-highlight {
+        color: #018606 !important;
+      }
+      .preload-subtitle {
+        font-size: clamp(2rem, 6.08vw, 6.08rem) !important;
+        color: #fff !important;
+        white-space: nowrap !important;
+        line-height: 0.9 !important;
+        font-family: 'ImpactWeb', 'Anton', Impact, 'Arial Black', sans-serif !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        margin-top: 0rem !important;
+        display: block !important;
+      }
+      /* Media queries with fixed px for responsiveness */
+      @media (max-width: 1600px) {
+        .preload-title { font-size: clamp(3.5rem, 11vw, 11rem) !important; }
+        .preload-subtitle { font-size: clamp(1.75rem, 5.5vw, 5.5rem) !important; }
+      }
+      @media (max-width: 1200px) {
+        .preload-title { font-size: clamp(3rem, 9vw, 9rem) !important; }
+        .preload-subtitle { font-size: clamp(1.5rem, 4.5vw, 4.5rem) !important; }
+      }
+      @media (max-width: 900px) {
+        .preload-title { font-size: clamp(2.5rem, 8vw, 8rem) !important; }
+        .preload-subtitle { font-size: clamp(1.25rem, 4vw, 4rem) !important; }
+      }
+      .preload-progress-wrapper {
+        margin-top: 3rem;
+        width: 100%;
+        max-width: 500px;
+      }
+      /* Mobile anpassungen (wie HeroSection) */
+      @media (max-width: 600px) {
+        .preload-outer {
+          height: calc(100% - 56px);
+          justify-content: center;
+          align-items: center;
+          padding: 0;
+        }
+        .preload-content {
+          align-items: center;
+          text-align: center;
+          width: 80%;
+        }
+        .preload-title {
+          font-size: clamp(3rem, 16vw, 6rem) !important;
+          text-align: center;
+          width: 100%;
+          white-space: normal;
+          word-wrap: break-word;
+        }
+        .preload-subtitle {
+          font-size: clamp(1.5rem, 8vw, 3rem) !important;
+          text-align: center;
+          margin-top: 0;
+          width: 100%;
+          white-space: normal;
+          word-wrap: break-word;
+        }
+        .preload-progress-wrapper {
+          max-width: 90%;
+          margin-top: 10rem; /* Match mobile hero button spacing */
+        }
+      }
+    </style>
   </head>
-  <body>
-    <div id="preload-fallback" style="position:fixed;inset:0;z-index:9999;display:flex;justify-content:center;align-items:center;background:linear-gradient(135deg,#43a047 0%,#a5d6a7 100%);">
-      <div>
-        <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="glowGreen" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-              <stop offset="0%" stop-color="#b9f6ca" stop-opacity="0.8" />
-              <stop offset="100%" stop-color="#43a047" stop-opacity="0" />
-            </radialGradient>
-            <linearGradient id="ballGradientGreen" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#a5d6a7" />
-              <stop offset="1" stop-color="#43a047" />
-            </linearGradient>
-          </defs>
-          <circle cx="60" cy="60" r="48" fill="url(#ballGradientGreen)" stroke="#fff" stroke-width="4" />
-          <circle cx="60" cy="60" r="54" fill="url(#glowGreen)">
-            <animate attributeName="r" values="54;60;54" dur="1.2s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.7;1;0.7" dur="1.2s" repeatCount="indefinite" />
-          </circle>
-          <g>
-            <polygon points="60,40 70,60 60,80 50,60" fill="#fff" stroke="#388e3c" stroke-width="2">
-              <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.8s" repeatCount="indefinite" />
-            </polygon>
-            <circle cx="60" cy="60" r="10" fill="#b9f6ca" stroke="#388e3c" stroke-width="2">
-              <animateTransform attributeName="transform" type="scale" from="1" to="1.2" begin="0s" dur="0.8s" repeatCount="indefinite" />
-            </circle>
-          </g>
-        </svg>
-        <div style="margin-top:24px;color:#fff;font-weight:700;font-size:22px;letter-spacing:2px;text-shadow:0 2px 8px #388e3c;text-align:center;">Kaderblick wird geladen...</div>
+  <body style="margin:0 !important;padding:0 !important;overflow:hidden !important;width:100vw !important;height:100vh !important;position:fixed !important;">
+    <div id="preload-fallback" style="position:fixed;inset:0;z-index:999999;background-image:url('/images/landing_page/background.jpg');background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#000;">
+      <div class="preload-outer">
+        <div class="preload-content">
+          <!-- KADERBLICK Title -->
+          <span class="preload-title">
+            <span class="preload-title-highlight">K</span>ADERBLICK
+          </span>
+          <!-- Subtitle -->
+          <span class="preload-subtitle">
+            DEINEN VEREIN IM BLICK
+          </span>
+          <!-- Loading Bar -->
+          <div class="preload-progress-wrapper">
+            <div style="width:100%;height:8px;border-radius:4px;background-color:rgba(255,255,255,0.2);overflow:hidden;">
+              <div id="preload-progress-bar" style="height:100%;width:0%;border-radius:4px;background-color:#018606;box-shadow:0 0 10px rgba(1,134,6,0.5);transition:width 0.3s ease;"></div>
+            </div>
+            <div id="preload-progress-text" style="margin-top:0.75rem;color:#fff;font-size:0.9rem;font-weight:500;text-shadow:0 2px 4px rgba(0,0,0,0.5);font-family:'Roboto',sans-serif;letter-spacing:1px;text-align:center;opacity:0.9;">0%</div>
+          </div>
+        </div>
       </div>
     </div>
-    <div id="root"></div>
+    <div id="root" style="display:none;"></div>
     <script type="module">
-      const removePreload = () => {
-        const el = document.getElementById('preload-fallback');
-        if (el) el.remove();
-      };
-      window.addEventListener('DOMContentLoaded', () => {
+      // Keep preload screen until app signals ready
+      window.removePreloadScreen = function() {
+        const preload = document.getElementById('preload-fallback');
         const root = document.getElementById('root');
-        if (root) {
-          const observer = new MutationObserver(() => {
-            if (root.childNodes.length > 0) {
-              removePreload();
-              observer.disconnect();
-            }
+        const body = document.body;
+        
+        if (preload && root) {
+          // Show root first
+          root.style.display = 'block';
+          
+          // Small delay to ensure Hero is rendered, then fade out preload
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              preload.style.transition = 'opacity 0.3s ease-out';
+              preload.style.opacity = '0';
+              
+              setTimeout(() => {
+                preload.remove();
+                // Unlock body styles
+                body.style.position = 'static';
+                body.style.overflow = 'auto';
+                body.style.width = 'auto';
+                body.style.height = 'auto';
+              }, 300);
+            });
           });
-          observer.observe(root, { childList: true });
         }
+      };
+      
+      // Simulate loading progress
+      let progress = 0;
+      const progressBar = document.getElementById('preload-progress-bar');
+      const progressText = document.getElementById('preload-progress-text');
+      const progressInterval = setInterval(() => {
+        if (progress >= 95) { // Stop at 95%, wait for app ready signal
+          clearInterval(progressInterval);
+          return;
+        }
+        const increment = progress < 30 ? 15 : progress < 70 ? 10 : 5;
+        progress = Math.min(progress + increment, 95);
+        if (progressBar) progressBar.style.width = progress + '%';
+        if (progressText) progressText.textContent = Math.round(progress) + '%';
+      }, 200);
+      
+      // Listen for app ready signal
+      window.addEventListener('app-ready', () => {
+        clearInterval(progressInterval);
+        if (progressBar) progressBar.style.width = '100%';
+        if (progressText) progressText.textContent = '100%';
+        setTimeout(() => window.removePreloadScreen(), 300);
       });
     </script>
     <script type="module" src="/src/main.tsx"></script>

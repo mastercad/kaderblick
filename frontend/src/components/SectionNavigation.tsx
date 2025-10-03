@@ -42,7 +42,14 @@ export default function SectionNavigation({ sections, containerRef }: SectionNav
   };
 
   return (
-    <Box className="section-navigation">
+    <Box 
+      className="section-navigation"
+      sx={{
+        opacity: activeIndex === 0 ? 0 : 1,
+        pointerEvents: activeIndex === 0 ? 'none' : 'auto',
+        transition: 'opacity 0.3s ease',
+      }}
+    >
       {/* Hero Section Dot */}
       <Tooltip title="Home" placement="left" arrow>
         <Box

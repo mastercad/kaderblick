@@ -1,5 +1,5 @@
 import { useTheme } from './context/ThemeContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
@@ -57,41 +57,16 @@ function App() {
   const isHome = location.pathname === '/' || location.pathname === '';
   const showLoginButton = !isHome || (isHome && isOnHeroSection);
 
+  // Signal when app is ready (auth loaded)
+  useEffect(() => {
+    if (!isLoading) {
+      window.dispatchEvent(new Event('app-ready'));
+    }
+  }, [isLoading]);
+
+  // Keep rendering even during loading - preload screen will stay visible
   if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1, minHeight: '100vh', background: 'linear-gradient(135deg, #43a047 0%, #a5d6a7 100%)' }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <radialGradient id="glowGreen" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-                <stop offset="0%" stopColor="#b9f6ca" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#43a047" stopOpacity="0" />
-              </radialGradient>
-              <linearGradient id="ballGradientGreen" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#a5d6a7" />
-                <stop offset="1" stopColor="#43a047" />
-              </linearGradient>
-            </defs>
-            <circle cx="60" cy="60" r="48" fill="url(#ballGradientGreen)" stroke="#fff" strokeWidth="4" />
-            <circle cx="60" cy="60" r="54" fill="url(#glowGreen)">
-              <animate attributeName="r" values="54;60;54" dur="1.2s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.7;1;0.7" dur="1.2s" repeatCount="indefinite" />
-            </circle>
-            <g>
-              <polygon points="60,40 70,60 60,80 50,60" fill="#fff" stroke="#388e3c" strokeWidth="2">
-                <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.8s" repeatCount="indefinite" />
-              </polygon>
-              <circle cx="60" cy="60" r="10" fill="#b9f6ca" stroke="#388e3c" strokeWidth="2">
-                <animateTransform attributeName="transform" type="scale" from="1" to="1.2" begin="0s" dur="0.8s" repeatCount="indefinite" />
-              </circle>
-            </g>
-          </svg>
-          <Box sx={{ mt: 3, color: '#fff', fontWeight: 700, fontSize: 22, letterSpacing: 2, textShadow: '0 2px 8px #388e3c', textAlign: 'center' }}>
-            Kaderblick wird geladen...
-          </Box>
-        </Box>
-      </Box>
-    );
+    return null; // Return null while loading, preload screen stays visible
   }
 
   return (

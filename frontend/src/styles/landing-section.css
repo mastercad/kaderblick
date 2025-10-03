@@ -113,6 +113,16 @@
   color: #fff;
 }
 
+/* CTA Button im Text-Bereich (Desktop) */
+.landing-section-cta-button {
+  display: inline-flex;
+}
+
+/* Separater CTA Button für Mobile - standardmäßig versteckt */
+.landing-section-cta-wrapper-mobile {
+  display: none;
+}
+
 .landing-section-branding {
   width: 100%;
   display: flex;
@@ -159,36 +169,121 @@
 @media (max-width: 960px) {
   .landing-section-content {
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
   }
 
-  .landing-section-image-wrapper,
+  /* Reihenfolge für Mobile: Titel -> Text -> Bild -> CTA Button */
+  .landing-section-content {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Text-Wrapper (enthält Titel) kommt zuerst */
   .landing-section-text-wrapper {
+    order: 1;
     width: 100%;
+    gap: 1rem;
+  }
+  
+  /* Bild-Wrapper kommt danach */
+  .landing-section-image-wrapper {
+    order: 2;
+    width: 100%;
+  }
+  
+  /* Desktop CTA Button verstecken */
+  .landing-section-cta-button {
+    display: none !important;
+  }
+  
+  /* Mobile CTA Button anzeigen und nach Bildern platzieren */
+  .landing-section-cta-wrapper-mobile {
+    display: flex;
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-top: 1.5rem;
   }
 
   .landing-section {
-    padding: 8rem 5% 2rem 5%;
+    padding: 5rem 4% 2rem 4%;
     height: auto;
     min-height: 100vh;
+    justify-content: space-between;
+  }
+  
+  .landing-section-title {
+    font-size: clamp(2rem, 8vw, 3rem);
+    margin-bottom: 0.5rem;
+  }
+  
+  .landing-section-text-wrapper {
+    gap: 1rem;
+  }
+  
+  .landing-section-main-image {
+    aspect-ratio: 16 / 9;
+  }
+  
+  /* Thumbnails: 3 pro Zeile in Mobile - schmaler */
+  .landing-section-thumbnails {
+    gap: 0.3rem;
+  }
+  
+  .landing-section-thumbnail {
+    flex: 0 0 auto;
+    width: 80px;
+    max-width: 80px;
+    height: 60px;
+  }
+  
+  /* Branding bleibt unten links */
+  .landing-section-branding {
+    padding-left: 4%;
+    padding-bottom: 1.5rem;
   }
 }
 
 @media (max-width: 600px) {
   .landing-section {
-    padding: 7rem 2% 2rem 2%;
+    padding: 4.5rem 3% 1.5rem 3%;
   }
 
   .landing-section-content {
-    gap: 1.5rem;
+    gap: 1rem;
   }
 
-  .landing-section-thumbnails {
-    flex-wrap: wrap;
+  .landing-section-title {
+    font-size: clamp(1.8rem, 7vw, 2.5rem);
+  }
+  
+  .landing-section-text {
+    font-size: 14px;
+    line-height: 1.6;
   }
 
   .landing-section-thumbnail {
-    max-width: 100px;
+    width: 70px;
+    max-width: 70px;
     height: 50px;
+  }
+  
+  /* Mobile CTA Button Spacing */
+  .landing-section-cta-wrapper-mobile {
+    margin-top: 1rem;
+  }
+  
+  /* Branding bleibt unten links */
+  .landing-section-branding {
+    padding-left: 3%;
+    padding-bottom: 1rem;
+  }
+  
+  .landing-section-branding-title {
+    font-size: clamp(1.5rem, 5vw, 4rem);
+  }
+  
+  .landing-section-branding-subtitle {
+    font-size: clamp(0.8rem, 2.5vw, 2rem);
   }
 }

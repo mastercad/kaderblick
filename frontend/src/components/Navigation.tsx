@@ -17,8 +17,6 @@ import Divider from '@mui/material/Divider';
 import Collapse from '@mui/material/Collapse';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
 import MenuIcon from '@mui/icons-material/Menu';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -29,6 +27,8 @@ import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import ShieldIcon from '@mui/icons-material/Shield';
 import PersonBadgeIcon from '@mui/icons-material/Badge';
 import PersonIcon from '@mui/icons-material/Person';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import LogoutIcon from '@mui/icons-material/Logout';
 import RoomIcon from '@mui/icons-material/Room';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
@@ -46,7 +46,6 @@ import PublicIcon from '@mui/icons-material/Public';
 import SchoolIcon from '@mui/icons-material/School';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import { useHomeScroll } from '../context/HomeScrollContext';
 import { NotificationCenter } from './NotificationCenter';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -61,7 +60,6 @@ interface NavigationProps {
 
 export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProps) {
   const { user, isAuthenticated, logout } = useAuth();
-  const { mode, toggleTheme } = useTheme();
   const { isOnHeroSection } = useHomeScroll();
   const muiTheme = useMuiTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
@@ -345,15 +343,6 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
 
               {/* Common Controls */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {/* Theme Toggle Button */}
-                <IconButton 
-                  onClick={toggleTheme} 
-                  color="inherit"
-                  title={mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                >
-                  {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-                </IconButton>
-                
                 {/* Notification Center */}
                 <NotificationCenter />
                 
@@ -373,17 +362,6 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
             </>
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-
-              {showLoginButton && (
-              <IconButton 
-                onClick={toggleTheme} 
-                color="inherit"
-                title={mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
-              >
-                {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-              </IconButton>
-              )}
-
               {!user && showLoginButton && (
                 <Button
                   variant="contained"
@@ -498,12 +476,18 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
             </Typography>
           </Box>
         </MenuItem>
-        <MenuItem onClick={() => { handleClose(); onOpenProfile(); }}>Profil</MenuItem>
+        <MenuItem onClick={() => { handleClose(); onOpenProfile(); }}>
+          <AccountCircleIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} />
+          Profil
+        </MenuItem>
         <NavigationMessagesButton 
           variant="icon-with-text" 
           text="Nachrichten" 
         />
-        <MenuItem onClick={handleLogout}>Logout</MenuItem>
+        <MenuItem onClick={handleLogout}>
+          <LogoutIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} />
+          Logout
+        </MenuItem>
       </Menu>
     </>
   );
