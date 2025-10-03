@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Box, Typography, IconButton, Modal, Button } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
@@ -30,7 +30,29 @@ interface LandingSectionProps {
 export default function LandingSection({ name, image, additionalImages = [], text, reverse = false, onAuthClick }: LandingSectionProps) {
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [thumbStart, setThumbStart] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
   const thumbsPerPage = 3;
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Setze isVisible basierend darauf, ob die Section sichtbar ist
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => {
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
+      }
+    };
+  }, []);
 
   const ctaText = useMemo(() => {
     const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -121,7 +143,12 @@ export default function LandingSection({ name, image, additionalImages = [], tex
         <Button
           variant="contained"
           color="primary"
-          onClick={onAuthClick}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('CTA Button clicked, calling onAuthClick');
+            onAuthClick();
+          }}
           sx={{
             mt: 3,
             py: 1.5,
@@ -146,7 +173,7 @@ export default function LandingSection({ name, image, additionalImages = [], tex
 
   return (
     <>
-      <Box className="landing-section">
+      <Box ref={sectionRef} className={`landing-section ${isVisible ? 'visible' : ''}`}>
         <Box className="landing-section-content">
           {reverse ? (
             <>

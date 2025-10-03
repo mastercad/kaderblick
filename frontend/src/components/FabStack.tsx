@@ -8,6 +8,11 @@ const FabStack: React.FC = () => {
   const fabStack = useFabStack();
   const { user } = useAuth();
 
+  // Nur anzeigen wenn User eingeloggt ist
+  if (!user) {
+    return null;
+  }
+
   return (
     <Box
       sx={{
@@ -21,7 +26,7 @@ const FabStack: React.FC = () => {
         alignItems: 'center',
       }}
     >
-      {user && <FeedbackFab />}
+      <FeedbackFab />
       {fabStack?.fabs.map(fab => (
         <React.Fragment key={fab.key}>{fab.node}</React.Fragment>
       ))}

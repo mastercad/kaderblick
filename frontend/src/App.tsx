@@ -6,10 +6,10 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import { lightTheme, darkTheme } from './theme/theme';
 import { NotificationProvider } from './context/NotificationContext';
+import { HomeScrollProvider, useHomeScroll } from './context/HomeScrollContext';
 import { useAuth } from './context/AuthContext';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
-import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import Calendar from './pages/Calendar';
 import Reports from './pages/ReportsOverview';
@@ -51,6 +51,11 @@ function App() {
   const currentTheme = mode === 'dark' ? darkTheme : lightTheme;
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const location = useLocation();
+  const { isOnHeroSection } = useHomeScroll();
+  
+  const isHome = location.pathname === '/' || location.pathname === '';
+  const showLoginButton = !isHome || (isHome && isOnHeroSection);
 
   if (isLoading) {
     return (
@@ -93,16 +98,16 @@ function App() {
     <MuiThemeProvider theme={currentTheme}>
       <CssBaseline />
       <NotificationProvider>
-        <FabStackRoot>
-          <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-            <Navigation
-              onOpenAuth={() => setShowAuth(true)}
-              onOpenProfile={() => setShowProfile(true)}
-            />
+        <HomeScrollProvider>
+          <FabStackRoot>
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+              <Navigation
+                onOpenAuth={() => setShowAuth(true)}
+                onOpenProfile={() => setShowProfile(true)}
+              />
             <Box component="main" sx={{ flex: 1, width: '100%', position: 'relative' }}>
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/landing" element={<LandingPage />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/surveys" element={<ProtectedRoute><SurveyList /></ProtectedRoute>} />
                 <Route path="/team-size-guide" element={<ProtectedRoute><SizeGuide /></ProtectedRoute>} />
@@ -133,19 +138,13 @@ function App() {
                 <Route path="/survey/fill/:surveyId" element={<ProtectedRoute><SurveyFill /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
-              {!user && (
-                <Box sx={{ position: 'fixed', top: 24, right: 24, zIndex: 2000 }}>
-                  <Button variant="contained" onClick={() => setShowAuth(true)}>
-                    Login / Register
-                  </Button>
-                </Box>
-              )}
             </Box>
             <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
             <ProfileModal open={showProfile} onClose={() => setShowProfile(false)} />
             <FooterWithContact />
           </Box>
         </FabStackRoot>
+      </HomeScrollProvider>
       </NotificationProvider>
     </MuiThemeProvider>
   );

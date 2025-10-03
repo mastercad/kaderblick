@@ -47,6 +47,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useHomeScroll } from '../context/HomeScrollContext';
 import { NotificationCenter } from './NotificationCenter';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme as useMuiTheme } from '@mui/material/styles';
@@ -61,6 +62,7 @@ interface NavigationProps {
 export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const { mode, toggleTheme } = useTheme();
+  const { isOnHeroSection } = useHomeScroll();
   const muiTheme = useMuiTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -69,6 +71,10 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
   const navigate = useNavigate();
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '';
+
+  // Show button: either not on home page, OR on home page but on hero section
+  const showLoginButton = !isHome || (isHome && isOnHeroSection);
+  console.log('Navigation Debug:', { isHome, isOnHeroSection, showLoginButton, pathname: location.pathname });
 
   // Navigation items configuration
   const navigationItems = [
@@ -368,6 +374,8 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
             </>
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+
+              {showLoginButton && (
               <IconButton 
                 onClick={toggleTheme} 
                 color="inherit"
@@ -375,21 +383,31 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
               >
                 {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
               </IconButton>
+              )}
 
-              <Button
-                color="inherit"
-                onClick={onOpenAuth}
-                className="navigation-transparent-btn"
-                sx={{
-                  fontWeight: 500,
-                  borderRadius: 2,
-                  minWidth: 'auto',
-                  px: 2,
-                  py: 1,
-                }}
-              >
-                Login / Register
-              </Button>
+              {!user && showLoginButton && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={onOpenAuth}
+                  sx={{
+                    fontWeight: 500,
+                    borderRadius: 2,
+                    minWidth: 'auto',
+                    px: 2,
+                    py: 1,
+                    color: '#fff',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                      transform: 'translateY(-2px)',
+                      boxShadow: 3,
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  Login / Register
+                </Button>
+              )}
             </Box>
           )}
         </Toolbar>
