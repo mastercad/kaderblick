@@ -124,7 +124,6 @@ export default function Home() {
       const heroRect = heroSection.getBoundingClientRect();
       const isOnHero = heroRect.top >= -heroRect.height / 2 && heroRect.top <= heroRect.height / 2;
       
-      console.log('Home Scroll Debug:', { top: heroRect.top, height: heroRect.height, isOnHero });
       setIsOnHeroSection(isOnHero);
     };
 
