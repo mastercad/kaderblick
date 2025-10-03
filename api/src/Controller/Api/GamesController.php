@@ -10,6 +10,7 @@ use App\Repository\CameraRepository;
 use App\Repository\GameEventRepository;
 use App\Repository\GameRepository;
 use App\Repository\VideoTypeRepository;
+use App\Security\Voter\GameEventVoter;
 use App\Security\Voter\VideoVoter;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -111,6 +112,10 @@ class GamesController extends ApiController
                     ] : [],
                 ] : null,
                 'fussballDeUrl' => method_exists($game, 'getFussballDeUrl') ? $game->getFussballDeUrl() : null,
+                'permissions' => [
+                    'can_create_videos' => $this->isGranted(VideoVoter::CREATE, $game->getHomeTeam()) || $this->isGranted(VideoVoter::CREATE, $game->getAwayTeam()),
+                    'can_create_game_events' => $this->isGranted(GameEventVoter::CREATE, $game)
+                ]
             ];
         };
 
