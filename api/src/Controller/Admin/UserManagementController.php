@@ -17,17 +17,14 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/users', name: 'admin_users_')]
 #[IsGranted('ROLE_ADMIN')]
 class UserManagementController extends AbstractController
 {
-    public function __construct(
-        private EntityManagerInterface $em,
-        private RoleHierarchyInterface $roleHierarchy
-    ) {
+    public function __construct(private EntityManagerInterface $em)
+    {
     }
 
     #[Route('', name: 'index', methods: ['GET'])]
