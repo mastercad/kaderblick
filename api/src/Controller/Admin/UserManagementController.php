@@ -99,16 +99,6 @@ class UserManagementController extends AbstractController
 
         $answer = ['id' => $user->getId()];
 
-        // Prüfen ob der aktuelle Benutzer die ausgewählten Rollen vergeben darf
-        $userRoles = $this->roleHierarchy->getReachableRoleNames($currentUser->getRoles());
-        foreach ($selectedRoles as $role) {
-            if (!in_array($role, $userRoles)) {
-                $answer['error'] = 'Sie haben nicht die Berechtigung, diese Rolle zu vergeben: ' . $role;
-
-                return $this->json($answer);
-            }
-        }
-
         try {
             $user->setRoles($selectedRoles);
             $this->em->flush();
@@ -264,8 +254,7 @@ class UserManagementController extends AbstractController
 
             return $this->json([
                 'status' => 'error',
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString() // Im Produktivbetrieb entfernen!
+                'message' => $e->getMessage()
             ], 400);
         }
     }
