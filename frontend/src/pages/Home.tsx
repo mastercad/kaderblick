@@ -29,7 +29,7 @@ const callToActionTexts = [
   'Kostenlos starten',
   'Jetzt anmelden',
   'Mehr erfahren',
-  'Los geht\'s',
+  'Los geht’s',
 ];
 
 // Fisher-Yates Shuffle Algorithmus
