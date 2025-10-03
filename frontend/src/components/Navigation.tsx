@@ -74,7 +74,6 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
 
   // Show button: either not on home page, OR on home page but on hero section
   const showLoginButton = !isHome || (isHome && isOnHeroSection);
-  console.log('Navigation Debug:', { isHome, isOnHeroSection, showLoginButton, pathname: location.pathname });
 
   // Navigation items configuration
   const navigationItems = [
