@@ -10,6 +10,7 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /**
  * @template-extends Voter<string, Video>
+ * @template-extends Voter<string, Team>
  */
 final class VideoVoter extends Voter
 {
@@ -52,7 +53,6 @@ final class VideoVoter extends Voter
                 foreach ($user->getUserRelations() as $userRelation) {
                     if ($userRelation->getPlayer()) {
                         foreach ($userRelation->getPlayer()->getPlayerTeamAssignments() as $assignment) {
-                            /** @var Team $subject */
                             if ($assignment->getTeam() === $subject) {
                                 return true;
                             }
@@ -61,7 +61,6 @@ final class VideoVoter extends Voter
 
                     if ($userRelation->getCoach()) {
                         foreach ($userRelation->getCoach()->getCoachTeamAssignments() as $assignment) {
-                            /** @var Team $subject */
                             if ($assignment->getTeam() === $subject) {
                                 return true;
                             }

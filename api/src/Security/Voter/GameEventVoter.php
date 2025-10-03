@@ -10,6 +10,7 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /**
  * @template-extends Voter<string, GameEvent>
+ * @template-extends Voter<string, Game>
  */
 final class GameEventVoter extends Voter
 {
@@ -51,7 +52,10 @@ final class GameEventVoter extends Voter
                 foreach ($user->getUserRelations() as $userRelation) {
                     if ($userRelation->getPlayer()) {
                         foreach ($userRelation->getPlayer()->getPlayerTeamAssignments() as $assignment) {
-                            if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
+                            if (
+                                $assignment->getTeam() === $subject->getHomeTeam()
+                                || $assignment->getTeam() === $subject->getAwayTeam()
+                            ) {
                                 return true;
                             }
                         }
@@ -59,7 +63,10 @@ final class GameEventVoter extends Voter
 
                     if ($userRelation->getCoach()) {
                         foreach ($userRelation->getCoach()->getCoachTeamAssignments() as $assignment) {
-                            if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
+                            if (
+                                $assignment->getTeam() === $subject->getHomeTeam()
+                                || $assignment->getTeam() === $subject->getAwayTeam()
+                            ) {
                                 return true;
                             }
                         }
@@ -83,6 +90,7 @@ final class GameEventVoter extends Voter
                 foreach ($user->getUserRelations() as $userRelation) {
                     if ($userRelation->getPlayer()) {
                         foreach ($userRelation->getPlayer()->getPlayerTeamAssignments() as $assignment) {
+                            /** @var GameEvent $subject */
                             if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
                                 return true;
                             }
@@ -91,6 +99,7 @@ final class GameEventVoter extends Voter
 
                     if ($userRelation->getCoach()) {
                         foreach ($userRelation->getCoach()->getCoachTeamAssignments() as $assignment) {
+                            /** @var GameEvent $subject */
                             if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
                                 return true;
                             }

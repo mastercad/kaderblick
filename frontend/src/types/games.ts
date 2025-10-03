@@ -41,6 +41,16 @@ export interface Game {
     hourlyWeatherData?: Record<string, any>;
   };
   fussballDeUrl?: string;
+  permissions?: {
+    can_create_videos?: boolean;
+    can_view_videos?: boolean;
+    can_edit_videos?: boolean;
+    can_delete_videos?: boolean;
+    can_create_game_events?: boolean;
+    can_view_game_events?: boolean;
+    can_edit_game_events?: boolean;
+    can_delete_game_events?: boolean;
+  };
 }
 
 export interface GameEventType {

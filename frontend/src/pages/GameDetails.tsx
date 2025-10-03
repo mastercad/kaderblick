@@ -43,8 +43,6 @@ import { ConfirmationModal } from '../modals/ConfirmationModal';
 import { GameEventModal } from '../modals/GameEventModal';
 import Location from '../components/Location';
 import { getGameEventIconByCode } from '../constants/gameEventIcons';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import WeatherModal from '../modals/WeatherModal';
 import { WeatherDisplay } from '../components/WeatherIcons';
@@ -241,18 +239,12 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
   };
 
   const canCreateEvents = () => {
-    return true; // Für Entwicklung, ggf. entfernen
-
-    if (!user || !user.roles) return false;
-    let roles: string[] = [];
-    if (Array.isArray(user.roles)) {
-      roles = user.roles as string[];
-    } else if (typeof user.roles === 'string') {
-      roles = [user.roles];
-    }
-    const allowed = roles.includes('ROLE_ADMIN') || roles.includes('ROLE_TRAINER');
-    return allowed;
+    return game?.permissions?.can_create_game_events ?? false;
   };
+
+  const canCreateVideos = () => {
+    return game?.permissions?.can_create_videos ?? false;
+  }
 
   if (loading) {
     return (
@@ -527,7 +519,7 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
         <CardHeader
           title="Videos"
           action={
-            user && (
+            canCreateVideos() && (
               <Button
                 variant="contained"
                 startIcon={<VideoIcon />}
