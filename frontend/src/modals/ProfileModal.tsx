@@ -9,8 +9,13 @@ import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import Alert from '@mui/material/Alert';
+import Switch from '@mui/material/Switch';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { apiJson } from '../utils/api';
 import BaseModal from './BaseModal';
+import { useTheme } from '../context/ThemeContext';
 
 interface ProfileData {
   firstName: string;
@@ -40,6 +45,7 @@ export interface ProfileModalProps {
 }
 
 const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) => {
+  const { mode, toggleTheme } = useTheme();
   const [form, setForm] = React.useState<ProfileData>({
     firstName: '',
     lastName: '',
@@ -267,6 +273,26 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
                 <MenuItem key={size} value={size}>{size}</MenuItem>
               ))}
             </TextField>
+          </Box>
+          
+          <Divider sx={{ my: 2 }} />
+          
+          {/* Theme-Einstellung */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+              <Typography variant="subtitle1">Design</Typography>
+            </Box>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={mode === 'dark'}
+                  onChange={toggleTheme}
+                  color="primary"
+                />
+              }
+              label={mode === 'dark' ? 'Dark Mode' : 'Light Mode'}
+            />
           </Box>
           
           <Divider sx={{ my: 2 }} />

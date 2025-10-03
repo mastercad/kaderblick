@@ -18,6 +18,30 @@ import locationNavigationLinkImage from '../../public/images/landing_page/locati
 import newsImage from '../../public/images/landing_page/news.png?url';
 import '../styles/scroll-snap.css';
 
+// CTA-Texte für die Landing Sections
+const callToActionTexts = [
+  'Jetzt dabei sein',
+  'Jetzt umsehen',
+  'Jetzt entdecken',
+  'Jetzt loslegen',
+  'Jetzt ausprobieren',
+  'Jetzt mitmachen',
+  'Kostenlos starten',
+  'Jetzt anmelden',
+  'Mehr erfahren',
+  'Los geht\'s',
+];
+
+// Fisher-Yates Shuffle Algorithmus
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 const sections = [
   {
     name: 'Events',
@@ -74,11 +98,14 @@ const sections = [
 ];
 
 export default function Home() {
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
   const { setIsOnHeroSection } = useHomeScroll();
   const { user } = useAuth();
+  
+  // Shuffle CTA-Texte einmalig beim Mount
+  const [shuffledCtaTexts] = useState(() => shuffleArray(callToActionTexts));
 
   useEffect(() => {
     const original = document.body.style.background;
@@ -144,6 +171,17 @@ export default function Home() {
     setAuthModalOpen(true);
   };
 
+  const handleScrollToFirstSection = () => {
+    const container = containerRef.current;
+    if (!container) return;
+    
+    // Erste Landing Section ist das zweite Child (nach Hero)
+    const firstSection = container.children[1] as HTMLElement;
+    if (firstSection) {
+      firstSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <>
       <Box 
@@ -159,7 +197,11 @@ export default function Home() {
           padding: 0,
         }}
       >
-        <HeroSection onStartClick={handleStartClick} heroRef={heroRef} />
+        <HeroSection 
+          onStartClick={handleStartClick} 
+          heroRef={heroRef}
+          onScrollDown={handleScrollToFirstSection}
+        />
         
         {sections.map((section, index) => {
           const isLastSection = index === sections.length - 1;
@@ -181,6 +223,7 @@ export default function Home() {
                 text={section.text}
                 reverse={index % 2 === 1}
                 onAuthClick={!user ? () => setAuthModalOpen(true) : undefined}
+                ctaText={shuffledCtaTexts[index % shuffledCtaTexts.length]}
               />
               {isLastSection && (
                 <Box sx={{ width: '100%', marginTop: 'auto' }}>

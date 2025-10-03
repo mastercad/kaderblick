@@ -1,22 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Box, Typography, IconButton, Modal, Button } from '@mui/material';
+import { Box, Typography, IconButton, Modal, Button, useMediaQuery, useTheme } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import '../styles/landing-section.css';
-
-const callToActionTexts = [
-  'Jetzt dabei sein',
-  'Jetzt umsehen',
-  'Jetzt entdecken',
-  'Jetzt loslegen',
-  'Jetzt ausprobieren',
-  'Jetzt mitmachen',
-  'Kostenlos starten',
-  'Jetzt anmelden',
-  'Mehr erfahren',
-  'Los geht\'s',
-];
 
 interface LandingSectionProps {
   name: string;
@@ -25,14 +12,17 @@ interface LandingSectionProps {
   text: string;
   reverse?: boolean;
   onAuthClick?: () => void;
+  ctaText?: string; // CTA-Text wird von außen übergeben
 }
 
-export default function LandingSection({ name, image, additionalImages = [], text, reverse = false, onAuthClick }: LandingSectionProps) {
+export default function LandingSection({ name, image, additionalImages = [], text, reverse = false, onAuthClick, ctaText = 'Jetzt starten' }: LandingSectionProps) {
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [thumbStart, setThumbStart] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
-  const thumbsPerPage = 3;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const thumbsPerPage = 3; // Immer 3 Bilder
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -53,11 +43,6 @@ export default function LandingSection({ name, image, additionalImages = [], tex
       }
     };
   }, []);
-
-  const ctaText = useMemo(() => {
-    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return callToActionTexts[hash % callToActionTexts.length];
-  }, [name]);
 
   const handleThumbPrev = () => setThumbStart((s) => Math.max(0, s - thumbsPerPage));
   const handleThumbNext = () => setThumbStart((s) => Math.min(additionalImages.length - thumbsPerPage, s + thumbsPerPage));
@@ -139,10 +124,12 @@ export default function LandingSection({ name, image, additionalImages = [], tex
         {text}
       </Typography>
       
+      {/* CTA Button in Desktop im Text-Bereich */}
       {onAuthClick && (
         <Button
           variant="contained"
           color="primary"
+          className="landing-section-cta-button"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -170,6 +157,37 @@ export default function LandingSection({ name, image, additionalImages = [], tex
     </Box>
   );
 
+  // Separater CTA Button nur für Mobile (wird nach Bildern angezeigt)
+  const ctaButtonMobile = onAuthClick ? (
+    <Box className="landing-section-cta-wrapper-mobile">
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onAuthClick();
+        }}
+        sx={{
+          py: 1.5,
+          px: 4,
+          fontSize: '1.1rem',
+          fontWeight: 600,
+          textTransform: 'none',
+          borderRadius: 2,
+          boxShadow: 3,
+          transition: 'all 0.3s',
+          '&:hover': {
+            transform: 'translateY(-2px)',
+            boxShadow: 6,
+          },
+        }}
+      >
+        {ctaText}
+      </Button>
+    </Box>
+  ) : null;
+
   return (
     <>
       <Box ref={sectionRef} className={`landing-section ${isVisible ? 'visible' : ''}`}>
@@ -178,11 +196,13 @@ export default function LandingSection({ name, image, additionalImages = [], tex
             <>
               {textSection}
               {imageSection}
+              {ctaButtonMobile}
             </>
           ) : (
             <>
               {imageSection}
               {textSection}
+              {ctaButtonMobile}
             </>
           )}
         </Box>

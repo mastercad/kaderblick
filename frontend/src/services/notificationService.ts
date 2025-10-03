@@ -6,7 +6,7 @@ type NotificationListener = (notification: Omit<AppNotification, 'read'>) => voi
 
 class NotificationService {
   private listeners: NotificationListener[] = [];
-  private pollingInterval: number | null = null;
+  private pollingInterval: any | null = null;
   private pushSubscription: PushSubscription | null = null;
   private serviceWorkerRegistration: ServiceWorkerRegistration | null = null;
 

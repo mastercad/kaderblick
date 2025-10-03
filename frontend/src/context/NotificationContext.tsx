@@ -3,6 +3,7 @@ import { AppNotification, NotificationContextType } from '../types/notifications
 import { notificationService } from '../services/notificationService';
 import { ToastContainer } from '../components/ToastContainer';
 import { apiJson } from '../utils/api';
+import { useAuth } from './AuthContext';
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
@@ -21,10 +22,16 @@ interface NotificationProviderProps {
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [toasts, setToasts] = useState<AppNotification[]>([]);
+  const { user, isAuthenticated } = useAuth();
 
-  // Lade gespeicherte Notifications beim Start
   useEffect(() => {
-    // Lade aktuelle Notifications vom Server statt localStorage
+    if (!isAuthenticated || !user) {
+      setNotifications([]);
+      setToasts([]);
+      notificationService.stopListening();
+      return;
+    }
+
     apiJson('/api/notifications')
     .then(data => {
       const serverNotifications = data.notifications.map((n: any) => ({
@@ -36,7 +43,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     })
     .catch(error => {
       console.error('Failed to load notifications:', error);
-      // Fallback zu localStorage
       const saved = localStorage.getItem('notifications');
       if (saved) {
         try {
@@ -51,13 +57,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       }
     });
 
-    // Starte Notification Service (ersetzt SSE)
     notificationService.startListening();
     
-    // Füge Listener für eingehende Notifications hinzu
-    const removeListener = notificationService.addListener((notificationData) => {
-//      console.log('Push notification received:', notificationData);
-      
+    const removeListener = notificationService.addListener((notificationData) => {      
       const newNotification: AppNotification = {
         ...notificationData,
         read: false,
@@ -65,30 +67,23 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         showPush: notificationData.showPush !== false,   // Standard: true
       };
 
-//      console.log('Adding notification to state:', newNotification);
       setNotifications(prev => {
-        // Prüfen ob Notification bereits existiert (keine Duplikate)
         const exists = prev.find(n => n.id === newNotification.id);
         if (exists) {
-//          console.log('Notification already exists, skipping:', newNotification.id);
           return prev;
         }
         
-        // Toast anzeigen falls gewünscht und noch nicht in Toast-Liste
         if (newNotification.showToast) {
           setToasts(prevToasts => {
             const toastExists = prevToasts.find(t => t.id === newNotification.id);
             if (!toastExists) {
-//              console.log('Adding toast notification');
               return [...prevToasts, newNotification];
             }
             return prevToasts;
           });
         }
         
-        // Push-Notification anzeigen falls erlaubt und gewünscht
         if (newNotification.showPush && 'Notification' in window && (window as any).Notification.permission === 'granted') {
-//          console.log('Showing desktop notification');
           new (window as any).Notification(newNotification.title, {
             body: newNotification.message,
             icon: '/favicon.ico',
@@ -104,12 +99,13 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       notificationService.stopListening();
       removeListener();
     };
-  }, []);
+  }, [isAuthenticated, user]);
 
-  // Speichere Notifications bei Änderungen
   useEffect(() => {
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-  }, [notifications]);
+    if (isAuthenticated && user) {
+      localStorage.setItem('notifications', JSON.stringify(notifications));
+    }
+  }, [notifications, isAuthenticated, user]);
 
   const addNotification = useCallback((notification: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => {
     const newNotification: AppNotification = {
