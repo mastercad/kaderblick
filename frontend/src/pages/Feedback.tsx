@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Tabs, Tab, Badge, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip, CircularProgress, IconButton, Tooltip } from '@mui/material';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
-import { apiJson } from '../utils/api';
 import FeedbackResolveModal from '../modals/FeedbackResolveModal';
+import { BACKEND_URL } from '../../config';
+import { apiJson } from '../utils/api';
 
 interface FeedbackItem {
   id: number;
@@ -154,7 +155,7 @@ const FeedbackAdmin: React.FC = () => {
         <DialogContent>
           {screenshotModal.path && (
             <Box sx={{ textAlign: 'center' }}>
-              <img src={screenshotModal.path} alt="Screenshot" style={{ maxWidth: '100%', maxHeight: 500, borderRadius: 8, boxShadow: '0 2px 8px #0002' }} />
+              <img src={`${BACKEND_URL}${screenshotModal.path}`} alt="Screenshot" style={{ maxWidth: '100%', maxHeight: 500, borderRadius: 8, boxShadow: '0 2px 8px #0002' }} />
             </Box>
           )}
         </DialogContent>

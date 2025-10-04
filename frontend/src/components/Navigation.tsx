@@ -44,14 +44,15 @@ import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import PublicIcon from '@mui/icons-material/Public';
 import SchoolIcon from '@mui/icons-material/School';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme as useMuiTheme } from '@mui/material/styles';
+
 import { useAuth } from '../context/AuthContext';
 import { useHomeScroll } from '../context/HomeScrollContext';
 import { NotificationCenter } from './NotificationCenter';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme as useMuiTheme } from '@mui/material/styles';
 import NavigationMessagesButton from './NavigationMessagesButton';
-import React from 'react';
+import { BACKEND_URL } from '../../config';
 
 interface NavigationProps {
   onOpenAuth: () => void;
@@ -82,7 +83,6 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
     { key: 'games', label: 'Spiele', disabled: false },
     { key: 'reports', label: 'Reports', disabled: false },
     { key: 'calendar', label: 'Kalender', disabled: false },
-//    { key: 'test', label: 'Test', disabled: false },
   ];
 
   const trainerMenuItems = [
@@ -355,7 +355,15 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                   color="inherit"
                 >
                   <Avatar sx={{ width: 32, height: 32 }}>
-                    {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                    {user?.avatarFile ? (
+                      <img
+                        src={`${BACKEND_URL}/uploads/avatar/${user.avatarFile}`}
+                        alt={user?.firstName || user?.email || 'Avatar'}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'
+                    )}
                   </Avatar>
                 </IconButton>
               </Box>

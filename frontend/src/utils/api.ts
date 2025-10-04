@@ -23,21 +23,21 @@ export async function apiRequest(endpoint: string, options: ApiRequestOptions = 
     headers = {}
   } = options;
 
-
   // JWT aus Cookie holen und als Authorization-Header setzen
   const jwt = getJwtFromCookie();
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
   const config: RequestInit = {
     method,
     credentials: 'include', // Immer Cookies mitschicken
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(jwt ? { 'Authorization': `Bearer ${jwt}` } : {}),
       ...headers
     }
   };
 
   if (body && method !== 'GET') {
-    config.body = JSON.stringify(body);
+    config.body = isFormData ? body : JSON.stringify(body);
   }
 
   const url = `${BACKEND_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;

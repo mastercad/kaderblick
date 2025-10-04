@@ -58,17 +58,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', nullable: true)]
     private ?string $verificationToken = null;
 
-    public function getGoogleId(): ?string
-    {
-        return $this->googleId;
-    }
-
-    public function setGoogleId(?string $googleId): self
-    {
-        $this->googleId = $googleId;
-
-        return $this;
-    }
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $avatarFilename = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTime $verificationExpires = null;
@@ -596,15 +587,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function eraseCredentials(): void
-    {
-    }
-
-    public function __toString(): string
-    {
-        return $this->getFullName();
-    }
-
     /**
      * @return Collection<int, Camera>
      */
@@ -663,5 +645,37 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         return $this;
+    }
+
+    public function getAvatarFilename(): ?string
+    {
+        return $this->avatarFilename;
+    }
+
+    public function setAvatarFilename(?string $avatarFilename): self
+    {
+        $this->avatarFilename = $avatarFilename;
+        return $this;
+    }
+
+    public function getGoogleId(): ?string
+    {
+        return $this->googleId;
+    }
+
+    public function setGoogleId(?string $googleId): self
+    {
+        $this->googleId = $googleId;
+
+        return $this;
+    }
+
+    public function eraseCredentials(): void
+    {
+    }
+
+    public function __toString(): string
+    {
+        return $this->getFullName();
     }
 }

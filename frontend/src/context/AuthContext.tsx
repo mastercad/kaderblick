@@ -15,6 +15,7 @@ interface User {
   isCoach?: boolean;
   isPlayer?: boolean;
   roles: { [key: string]: string };
+  avatarFile?: string;
 }
 
 interface AuthData {

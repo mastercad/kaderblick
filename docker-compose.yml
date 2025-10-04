@@ -8,6 +8,7 @@ services:
       - "${API_PORT:-8081}:80"
     volumes:
       - ./api:/var/www/symfony
+      - ./public/uploads:/var/www/symfony/public/uploads
     environment:
       DATABASE_URL: mysql://kaderblick:kaderblick@db:3306/kaderblick
       XDEBUG_MODE: develop,debug
