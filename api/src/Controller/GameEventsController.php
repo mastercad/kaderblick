@@ -146,8 +146,9 @@ class GameEventsController extends AbstractController
         }
 
         foreach ($player->getUserRelations() as $userRelation) {
-            if ($userRelation->getRelationType()->getCategory() === 'player'
-                && $userRelation->getRelationType()->getIdentifier() === 'self_player'
+            if (
+                'player' === $userRelation->getRelationType()->getCategory()
+                && 'self_player' === $userRelation->getRelationType()->getIdentifier()
             ) {
                 $user = $userRelation->getUser();
                 if ($user->getAvatarFilename()) {
