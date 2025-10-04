@@ -35,26 +35,26 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) => {
     setLoading(true);
     try {
       // Modal und Backdrop für Screenshot ausblenden
-  const modal = document.querySelector('.MuiDialog-root') as HTMLElement | null;
-  const backdrop = document.querySelector('.MuiBackdrop-root') as HTMLElement | null;
-  const prevModalDisplay = modal ? modal.style.display : null;
-  const prevBackdropDisplay = backdrop ? backdrop.style.display : null;
-  if (modal) modal.style.display = 'none';
-  if (backdrop) backdrop.style.display = 'none';
-      await new Promise(res => setTimeout(res, 100));
-      const canvas = await html2canvas(document.body, {useCORS: true, logging: false});
-      const dataUrl = canvas.toDataURL('image/png');
-      setScreenshot(dataUrl);
-      // Modal und Backdrop wieder einblenden
-  if (modal && prevModalDisplay !== null) modal.style.display = prevModalDisplay;
-  if (backdrop && prevBackdropDisplay !== null) backdrop.style.display = prevBackdropDisplay;
-    } catch (err) {
-      setError('Screenshot konnte nicht erstellt werden');
-      setAttachScreenshot(false);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const modal = document.querySelector('.MuiDialog-root') as HTMLElement | null;
+      const backdrop = document.querySelector('.MuiBackdrop-root') as HTMLElement | null;
+      const prevModalDisplay = modal ? modal.style.display : null;
+      const prevBackdropDisplay = backdrop ? backdrop.style.display : null;
+      if (modal) modal.style.display = 'none';
+      if (backdrop) backdrop.style.display = 'none';
+          await new Promise(res => setTimeout(res, 100));
+          const canvas = await html2canvas(document.body, {useCORS: true, logging: false});
+          const dataUrl = canvas.toDataURL('image/png');
+          setScreenshot(dataUrl);
+          // Modal und Backdrop wieder einblenden
+      if (modal && prevModalDisplay !== null) modal.style.display = prevModalDisplay;
+      if (backdrop && prevBackdropDisplay !== null) backdrop.style.display = prevBackdropDisplay;
+        } catch (err) {
+          setError('Screenshot konnte nicht erstellt werden');
+          setAttachScreenshot(false);
+        } finally {
+          setLoading(false);
+        }
+      };
 
     const handleSubmit = async () => {
       setLoading(true);

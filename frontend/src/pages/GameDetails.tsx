@@ -47,6 +47,7 @@ import YouTubeIcon from '@mui/icons-material/YouTube';
 import WeatherModal from '../modals/WeatherModal';
 import { WeatherDisplay } from '../components/WeatherIcons';
 import { formatEventTime, formatDateTime } from '../utils/formatter'
+import { User } from '../components/User';
 
 interface GameDetailsProps {
   gameId: number;
@@ -475,10 +476,12 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
                               getGameEventIconByCode(icon)
                             }
                             </span>
-                            <strong>{e.type ?? e?.gameEventType.name ?? 'Unbekannt'}</strong>
-                            {playerDisplay && (
-                              <> – {playerDisplay}</>
-                            )}
+                            <strong style={{ marginRight: 10 }}>{e.type ?? e?.gameEventType.name ?? 'Unbekannt'}</strong>
+                            <User icon={e.player?.playerAvatarUrl }
+                              name={playerDisplay || 'Unbekannt'}
+                              avatarSize={26}
+                              fontSize={12}
+                            />
                             {e.description && (
                               <span style={{ color: '#888', marginLeft: 8 }}>{e.description}</span>
                             )}

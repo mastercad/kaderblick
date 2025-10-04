@@ -169,6 +169,29 @@ class CalendarController extends AbstractController
         return $this->json(['success' => true]);
     }
 
+    /**
+     * Drag & Drop endpunkt für die Aktualisierung von Kalendereinträgen.
+     */
+    #[Route('/event/{id}', name: 'event_update', methods: ['PUT'])]
+    public function updateCalendarEvent(CalendarEvent $calendarEvent, Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        $this->updateEventFromData($calendarEvent, $data);
+        $entityManager->flush();
+
+        return $this->json(['success' => true]);
+    }
+
+    #[Route('/event/{id}', name: 'event_delete', methods: ['DELETE'])]
+    public function deleteEvent(CalendarEvent $calendarEvent, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $entityManager->remove($calendarEvent);
+        $entityManager->flush();
+
+        return $this->json(['success' => true]);
+    }
+
     #[Route('/event/{id}/weather-data', name: 'event_weather_data', methods: ['GET'])]
     public function viewEventWeatherData(CalendarEvent $calendarEvent): JsonResponse
     {
@@ -200,29 +223,6 @@ class CalendarController extends AbstractController
             'dailyWeatherData' => $weatherData->getDailyWeatherData() ?: [],
             'hourlyWeatherData' => $hourlyWeatherData,
         ]);
-    }
-
-    /**
-     * Drag & Drop endpunkt für die Aktualisierung von Kalendereinträgen.
-     */
-    #[Route('/event/{id}', name: 'event_update', methods: ['PUT'])]
-    public function updateCalendarEvent(CalendarEvent $calendarEvent, Request $request, EntityManagerInterface $entityManager): JsonResponse
-    {
-        $data = json_decode($request->getContent(), true);
-
-        $this->updateEventFromData($calendarEvent, $data);
-        $entityManager->flush();
-
-        return $this->json(['success' => true]);
-    }
-
-    #[Route('/event/{id}', name: 'event_delete', methods: ['DELETE'])]
-    public function deleteEvent(CalendarEvent $calendarEvent, EntityManagerInterface $entityManager): JsonResponse
-    {
-        $entityManager->remove($calendarEvent);
-        $entityManager->flush();
-
-        return $this->json(['success' => true]);
     }
 
     #[Route('/event/notify', name: 'event_notify', methods: ['POST'])]

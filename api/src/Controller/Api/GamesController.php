@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 use App\Entity\Game;
 use App\Entity\GameEvent;
 use App\Entity\GameEventType;
+use App\Entity\Player;
 use App\Entity\Video;
 use App\Repository\CameraRepository;
 use App\Repository\GameEventRepository;
@@ -137,11 +138,13 @@ class GamesController extends ApiController
                     'id' => $event->getPlayer()->getId(),
                     'firstName' => $event->getPlayer()->getFirstName(),
                     'lastName' => $event->getPlayer()->getLastName(),
+                    'playerAvatarUrl' => $this->retrievePlayerAvatarUrl($event->getPlayer()),
                 ] : null,
                 'relatedPlayer' => $event->getRelatedPlayer() ? [
                     'id' => $event->getRelatedPlayer()->getId(),
                     'firstName' => $event->getRelatedPlayer()->getFirstName(),
                     'lastName' => $event->getRelatedPlayer()->getLastName(),
+                    'playerAvatarUrl' => $this->retrievePlayerAvatarUrl($event->getRelatedPlayer()),
                 ] : null,
                 'team' => $event->getTeam() ? [
                     'id' => $event->getTeam()->getId(),
@@ -162,6 +165,27 @@ class GamesController extends ApiController
             //            'videoTypes' => $videoTypeRepository->findAll(),
             //            'cameras' => $cameras,
         ]);
+    }
+
+    private function retrievePlayerAvatarUrl(?Player $player): ?string
+    {
+        if (null === $player) {
+            return null;
+        }
+
+        foreach ($player->getUserRelations() as $userRelation) {
+            if (
+                'player' === $userRelation->getRelationType()->getCategory()
+                && 'self_player' === $userRelation->getRelationType()->getIdentifier()
+            ) {
+                $user = $userRelation->getUser();
+                if ($user->getAvatarFilename()) {
+                    return $user->getAvatarFilename();
+                }
+            }
+        }
+
+        return null;
     }
 
     #[Route('/overview', name: 'overview', methods: ['GET'])]

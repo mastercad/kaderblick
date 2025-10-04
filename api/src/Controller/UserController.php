@@ -7,6 +7,7 @@ use App\Entity\UserRelation;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/api/users', name: 'api_users_', methods: ['GET'])]
@@ -55,5 +56,59 @@ class UserController extends AbstractController
                 'category' => $userRelation->getRelationType()->getCategory()
             ], $user->getUserRelations()->toArray())
         );
+    }
+
+    #[Route('/upload-avatar', name: 'upload_avatar', methods: ['POST'])]
+    public function uploadAvatar(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $file = $request->files->get('file');
+        if (!$file) {
+            return $this->json(['error' => 'No file uploaded'], 400);
+        }
+
+        // Zielverzeichnis (z.B. public/uploads/avatar/)
+        $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads/avatar';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        // Dateiname generieren (z.B. avatar_USERID_TIMESTAMP.EXT)
+        $ext = $file->guessExtension() ?: 'png';
+        $filename = 'avatar_' . $user->getId() . '_' . time() . '.' . $ext;
+        $file->move($uploadDir, $filename);
+
+        // Altes Avatar ggf. löschen
+        $old = $user->getAvatarFilename();
+        if ($old && file_exists($uploadDir . '/' . $old)) {
+            @unlink($uploadDir . '/' . $old);
+        }
+
+        // User-Entity aktualisieren
+        $user->setAvatarFilename($filename);
+        $this->entityManager->flush();
+
+        // URL für Frontend
+        $url = '/uploads/avatar/' . $filename;
+
+        return $this->json(['url' => $url]);
+    }
+
+    #[Route('/remove-avatar', name: 'remove_avatar', methods: ['DELETE'])]
+    public function removeAvatar(): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads/avatar';
+        $old = $user->getAvatarFilename();
+
+        if ($old && file_exists($uploadDir . '/' . $old)) {
+            @unlink($uploadDir . '/' . $old);
+            $user->setAvatarFilename(null);
+            $this->entityManager->flush();
+        }
+
+        return $this->json(['success' => true]);
     }
 }

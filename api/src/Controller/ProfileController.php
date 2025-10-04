@@ -62,6 +62,7 @@ class ProfileController extends AbstractController
             'roles' => $user->getRoles(),
             'isCoach' => $isCoach,
             'isPlayer' => $isPlayer,
+            'avatarFile' => $user->getAvatarFilename(),
         ]);
     }
 
