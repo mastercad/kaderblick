@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Game;
 use App\Entity\GameEvent;
+use App\Entity\Player;
 use App\Repository\GameEventRepository;
 use App\Repository\GameEventTypeRepository;
 use App\Repository\PlayerRepository;
@@ -127,6 +128,7 @@ class GameEventsController extends AbstractController
                 'minute' => $this->calculateDateDiffInSeconds($event->getGame()->getCalendarEvent()->getStartDate(), $event->getTimestamp()),
                 'player' => $event->getPlayer()?->getFullName(),
                 'playerId' => $event->getPlayer()?->getId(),
+                'playerAvatarUrl' => $this->retrievePlayerAvatarUrl($event->getPlayer()),
                 'relatedPlayer' => $event->getRelatedPlayer()?->getFullName(),
                 'relatedPlayerId' => $event->getRelatedPlayer()?->getId(),
                 'teamId' => $event->getTeam()->getId(),
@@ -135,6 +137,26 @@ class GameEventsController extends AbstractController
         }
 
         return $this->json($result);
+    }
+
+    private function retrievePlayerAvatarUrl(?Player $player): ?string
+    {
+        if (null === $player) {
+            return null;
+        }
+
+        foreach ($player->getUserRelations() as $userRelation) {
+            if ($userRelation->getRelationType()->getCategory() === 'player'
+                && $userRelation->getRelationType()->getIdentifier() === 'self_player'
+            ) {
+                $user = $userRelation->getUser();
+                if ($user->getAvatarFilename()) {
+                    return $user->getAvatarFilename();
+                }
+            }
+        }
+
+        return null;
     }
 
     #[Route('/api/game/{gameId}/event/{eventId}', name: 'api_game_event_update', methods: ['PUT', 'PATCH'])]

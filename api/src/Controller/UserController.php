@@ -91,6 +91,7 @@ class UserController extends AbstractController
 
         // URL für Frontend
         $url = '/uploads/avatar/' . $filename;
+
         return $this->json(['url' => $url]);
     }
 
@@ -101,7 +102,7 @@ class UserController extends AbstractController
         $user = $this->getUser();
         $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads/avatar';
         $old = $user->getAvatarFilename();
-        
+
         if ($old && file_exists($uploadDir . '/' . $old)) {
             @unlink($uploadDir . '/' . $old);
             $user->setAvatarFilename(null);

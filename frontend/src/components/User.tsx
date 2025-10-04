@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Badge from "@mui/material/Badge";
 import { FaUserAlt } from "react-icons/fa";
+import { BACKEND_URL } from "../../config";
 // Alternativ: import { FaFutbol } from "react-icons/fa";
 
 interface UserProps {
@@ -22,7 +23,7 @@ export const User: React.FC<UserProps> = ({ icon, name, avatarSize = 48, fontSiz
   let avatarContent: React.ReactNode;
   if (typeof icon === "string") {
     if (icon && icon.trim() !== "") {
-      avatarContent = <Avatar src={icon} alt="Avatar" sx={{ width: avatarSize, height: avatarSize }} />;
+      avatarContent = <Avatar src={`${BACKEND_URL}/uploads/avatar/${icon}`} alt="Avatar" sx={{ width: avatarSize, height: avatarSize }} />;
     } else {
       avatarContent = <Avatar sx={{ width: avatarSize, height: avatarSize }}><FaUserAlt size={iconInnerSize} /></Avatar>;
     }

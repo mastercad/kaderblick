@@ -655,6 +655,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setAvatarFilename(?string $avatarFilename): self
     {
         $this->avatarFilename = $avatarFilename;
+
         return $this;
     }
 

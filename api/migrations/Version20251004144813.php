@@ -37,7 +37,7 @@ final class Version20251004144813 extends AbstractMigration
             !$this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\MariaDb1010Platform,
             "Migration can only be executed safely on '\Doctrine\DBAL\Platforms\MariaDb1010Platform'."
         );
-        
+
         $this->addSql(<<<'SQL'
             ALTER TABLE users DROP avatar_filename
         SQL);
