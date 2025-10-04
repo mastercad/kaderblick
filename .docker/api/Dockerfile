@@ -61,8 +61,16 @@ RUN mkdir -p var/log \
 
 EXPOSE 80
 
-RUN echo "0 3 * * * www-data cd /var/www/symfony && /usr/local/bin/php bin/console app:collect-weather-data-for-events >> /var/log/cron.log 2>&1" > /etc/cron.d/collect-weather-data-for-events
-RUN chmod 0644 /etc/cron.d/collect-weather-data-for-events && crontab /etc/cron.d/collect-weather-data-for-events
+# Cronfile erstellen
+RUN echo "0 3 * * * cd /var/www/symfony && /usr/local/bin/php bin/console app:collect-weather-data-for-events >> /var/log/cron.log 2>&1" \
+    > /etc/cron.d/collect-weather-data-for-events \
+    && chmod 0644 /etc/cron.d/collect-weather-data-for-events \
+    && crontab -u www-data /etc/cron.d/collect-weather-data-for-events
 
-# Start Apache und Cron im Vordergrund
-CMD service cron start && apache2-foreground
+# Logdatei vorbereiten
+RUN touch /var/log/cron.log \
+    && chown www-data:www-data /var/log/cron.log \
+    && chmod 664 /var/log/cron.log
+
+# CMD: Cron im Foreground + Apache
+CMD cron && apache2-foreground
