@@ -19,9 +19,6 @@ interface VideoDialogProps {
 }
 
 export default function VideoModal({ open, onClose, onSave, videoTypes, cameras, initialData = {}, loading }: VideoDialogProps) {
-  console.log('VideoModal initialData:', initialData);
-  console.log('VideoModal videoTypes:', videoTypes);
-  console.log('VideoModal cameras:', cameras);
   const [form, setForm] = useState({
     video_id: initialData.id || '',
     name: initialData.name || '',
@@ -35,10 +32,6 @@ export default function VideoModal({ open, onClose, onSave, videoTypes, cameras,
   });
 
   useEffect(() => {
-    // Debug-Ausgabe für Vorauswahl-Problem
-    console.log('VideoModal initialData:', initialData);
-    console.log('VideoModal videoTypes:', videoTypes);
-    console.log('VideoModal cameras:', cameras);
     setForm({
       video_id: initialData.id || '',
       name: initialData.name || '',
@@ -50,7 +43,6 @@ export default function VideoModal({ open, onClose, onSave, videoTypes, cameras,
       camera: initialData.camera?.id ? initialData.camera.id : '',
       length: initialData.length || ''
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialData?.id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
