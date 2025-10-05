@@ -43,15 +43,15 @@ jobs:
           script: |
             set -e
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
-            CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
+            ROOT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
             
             # Nur prod secrets und jwt kopieren
             mkdir -p "$RELEASE_DIR/api/config/secrets/prod"
             mkdir -p "$RELEASE_DIR/api/config/jwt"
-            
-            if [ -d "$CURRENT_DIR" ]; then
-              [ -d "$CURRENT_DIR/api/config/jwt" ] && \
-                cp -r "$CURRENT_DIR/api/config/jwt/"* "$RELEASE_DIR/api/config/jwt/"
+
+            if [ -d "$ROOT_DIR" ]; then
+              [ -d "$ROOT_DIR/api/config/jwt" ] && \
+                cp -r "$ROOT_DIR/api/config/jwt/"* "$RELEASE_DIR/api/config/jwt/"
             fi
             
             chmod -R 755 "$RELEASE_DIR"
@@ -156,13 +156,29 @@ jobs:
 
             chmod -R 777 $CURRENT_DIR/api/var
 
-            mkdir -p "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads"
+            # ------------------------------
+            # Shared uploads vorbereiten
+            # ------------------------------
+            SHARED_UPLOADS="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads"
+            mkdir -p "$SHARED_UPLOADS"
+            chown -R www-data:www-data "$SHARED_UPLOADS"
+            chmod -R 775 "$SHARED_UPLOADS"
 
-            chown -R www-data:www-data /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads
-            chmod -R 775 /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads
+            # ------------------------------
+            # Alte Upload-Ordner im Release löschen (falls vorhanden)
+            # ------------------------------
+            if [ -L "$RELEASE_DIR/api/public/uploads" ] || [ -d "$RELEASE_DIR/api/public/uploads" ]; then
+                rm -rf "$RELEASE_DIR/api/public/uploads"
+            fi
+            if [ -L "$RELEASE_DIR/frontend/public/uploads" ] || [ -d "$RELEASE_DIR/frontend/public/uploads" ]; then
+                rm -rf "$RELEASE_DIR/frontend/public/uploads"
+            fi
 
-            ln -sfn "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads" "$RELEASE_DIR/api/public/uploads"
-            ln -sfn "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads" "$RELEASE_DIR/frontend/public/uploads"
+            # ------------------------------
+            # Symlinks auf Shared Uploads setzen
+            # ------------------------------
+            ln -s "$SHARED_UPLOADS" "$RELEASE_DIR/api/public/uploads"
+            ln -s "$SHARED_UPLOADS" "$RELEASE_DIR/frontend/public/uploads"
 
             # Production-Container aus getaggten Images starten
             cd $CURRENT_DIR
