@@ -195,16 +195,37 @@ jobs:
             set -e
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
             SHARED_UPLOADS="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads"
+            CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current"
 
             mkdir -p "$SHARED_UPLOADS"
             chown -R www-data:www-data "$SHARED_UPLOADS"
             chmod -R 775 "$SHARED_UPLOADS"
 
-            if [ -L "$RELEASE_DIR/public/uploads" ]; then
+            if [ -L "$CURRENT_DIR/public/uploads" ] || [ -d "$CURRENT_DIR/public/uploads" ]; then
+                rm -rf "$CURRENT_DIR/public/uploads"
+            fi
+
+            if [ -L "$RELEASE_DIR/public/uploads" ] || [ -d "$RELEASE_DIR/public/uploads" ]; then
                 rm -rf "$RELEASE_DIR/public/uploads"
             fi
 
-            ln -s "$SHARED_UPLOADS" "$RELEASE_DIR/public/uploads"
+            if [ -L "$CURRENT_DIR/api/public/uploads" ] || [ -d "$CURRENT_DIR/api/public/uploads" ]; then
+                rm -rf "$CURRENT_DIR/api/public/uploads"
+            fi
+
+            if [ -L "$RELEASE_DIR/api/public/uploads" ] || [ -d "$RELEASE_DIR/api/public/uploads" ]; then
+                rm -rf "$RELEASE_DIR/api/public/uploads"
+            fi
+
+            if [ -L "$CURRENT_DIR/frontend/public/uploads" ] || [ -d "$CURRENT_DIR/frontend/public/uploads" ]; then
+                rm -rf "$CURRENT_DIR/frontend/public/uploads"
+            fi
+
+            if [ -L "$RELEASE_DIR/frontend/public/uploads" ] || [ -d "$RELEASE_DIR/frontend/public/uploads" ]; then
+                rm -rf "$RELEASE_DIR/frontend/public/uploads"
+            fi
+
+            ln -s "$SHARED_UPLOADS" "$RELEASE_DIR/frontend/public/uploads"
 
       # ------------------------------
       # Activate Release (Zero-Downtime)
