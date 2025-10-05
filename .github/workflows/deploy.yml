@@ -38,7 +38,7 @@ jobs:
         run: echo "dir=/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
 
       # ------------------------------
-      # Prepare files for deploy
+      # Prepare build files
       # ------------------------------
       - name: Prepare files
         run: |
@@ -49,7 +49,7 @@ jobs:
       # ------------------------------
       # Copy build files to server
       # ------------------------------
-      - name: Copy files
+      - name: Copy files to server
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -60,9 +60,9 @@ jobs:
           strip_components: 1
 
       # ------------------------------
-      # Deploy & switch release directory
+      # Deploy secrets & JWT
       # ------------------------------
-      - name: Deploy and switch
+      - name: Deploy secrets & JWT
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -73,7 +73,6 @@ jobs:
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
             ROOT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
 
-            # Nur prod secrets und jwt kopieren
             mkdir -p "$RELEASE_DIR/api/config/secrets/prod"
             mkdir -p "$RELEASE_DIR/api/config/jwt"
 
@@ -85,9 +84,9 @@ jobs:
             chown -R kaderblick-ftp-admin:psacln "$RELEASE_DIR"
 
       # ------------------------------
-      # Prepare Docker & Volumes
+      # Prepare Docker environment & DB
       # ------------------------------
-      - name: Prepare Docker environment & release
+      - name: Ensure DB container is running
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -100,19 +99,8 @@ jobs:
 
             docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
             docker volume inspect kaderblick-data >/dev/null 2>&1 || docker volume create kaderblick-data
-            docker volume inspect kaderblick-db-data || docker volume create kaderblick-db-data
+            docker volume inspect kaderblick-db-data >/dev/null 2>&1 || docker volume create kaderblick-db-data
 
-      # ------------------------------
-      # Ensure DB container running
-      # ------------------------------
-      - name: Ensure DB container running
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            set -e
             if docker ps --filter "name=kaderblick-db" --filter "status=running" | grep -q kaderblick-db; then
               echo "DB Container läuft"
             else
@@ -137,6 +125,9 @@ jobs:
             echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> api/.env
             echo "VITE_BACKEND_URL=https://api.kaderblick.byte-artist.de" > frontend/.env
 
+            echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > api/config/secrets/prod/prod.decrypt.private.php
+            chmod 655 api/config/secrets/prod/prod.decrypt.private.php
+
       # ------------------------------
       # Build & start Staging
       # ------------------------------
@@ -152,7 +143,6 @@ jobs:
             cd "$RELEASE_DIR"
 
             docker compose -p staging down --remove-orphans api frontend
-
             PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 docker compose -p staging up -d --build --force-recreate api frontend
 
       # ------------------------------
@@ -178,25 +168,7 @@ jobs:
             fi
 
       # ------------------------------
-      # Activate release (Zero-Downtime)
-      # ------------------------------
-      - name: Activate Release
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            set -e
-            RELEASE_DIR="${{ steps.release.outputs.dir }}"
-            CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current"
-
-            docker compose -p production down --remove-orphans api frontend
-            ln -sfn "$RELEASE_DIR" "$CURRENT_DIR"
-            chmod -R 777 "$CURRENT_DIR/api/var"
-
-      # ------------------------------
-      # Prepare uploads symlinks
+      # Prepare shared uploads symlinks
       # ------------------------------
       - name: Prepare uploads symlinks
         uses: appleboy/ssh-action@master
@@ -220,9 +192,9 @@ jobs:
             ln -s "$SHARED_UPLOADS" "$RELEASE_DIR/frontend/public/uploads"
 
       # ------------------------------
-      # Start Production & cleanup Staging
+      # Activate Release (Zero-Downtime)
       # ------------------------------
-      - name: Start Production & cleanup
+      - name: Activate Release
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -230,7 +202,12 @@ jobs:
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
             set -e
+            RELEASE_DIR="${{ steps.release.outputs.dir }}"
             CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current"
+
+            docker compose -p production down --remove-orphans api frontend
+            ln -sfn "$RELEASE_DIR" "$CURRENT_DIR"
+            chmod -R 777 "$CURRENT_DIR/api/var"
 
             cd "$CURRENT_DIR"
             docker compose -p production up -d --force-recreate api frontend
