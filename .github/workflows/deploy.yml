@@ -47,6 +47,21 @@ jobs:
           cp -r docker-compose.yml docker-compose.db.yml .docker api frontend build/
 
       # ------------------------------
+      # Create release directory for SCP
+      # ------------------------------
+      - name: Create release directory on server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.PLESK_USERNAME }}
+          password: ${{ secrets.PLESK_PASSWORD }}
+          script: |
+            set -e
+            mkdir -p "${{ steps.release.outputs.dir }}"
+            chmod 755 "${{ steps.release.outputs.dir }}"
+            chown -R ${{ secrets.PLESK_USERNAME }}:psacln "${{ steps.release.outputs.dir }}"
+
+      # ------------------------------
       # Copy build files to server
       # ------------------------------
       - name: Copy files to server
