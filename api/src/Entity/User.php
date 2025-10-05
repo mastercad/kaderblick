@@ -160,6 +160,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->camerasCreated = new ArrayCollection();
         $this->camerasUpdated = new ArrayCollection();
         $this->videoSegments = new ArrayCollection();
+        $this->videoSegments = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -680,6 +681,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function eraseCredentials(): void
     {
+    }
+
+    /**
+     * @return Collection<int, VideoSegment>
+     */
+    public function getVideoSegments(): Collection
+    {
+        return $this->videoSegments;
+    }
+
+    public function addVideoSegment(VideoSegment $videoSegment): static
+    {
+        if (!$this->videoSegments->contains($videoSegment)) {
+            $this->videoSegments->add($videoSegment);
+            $videoSegment->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVideoSegment(VideoSegment $videoSegment): static
+    {
+        if ($this->videoSegments->removeElement($videoSegment)) {
+            // set the owning side to null (unless already changed)
+            if ($videoSegment->getUser() === $this) {
+                $videoSegment->setUser(null);
+            }
+        }
+
+        return $this;
     }
 
     /**

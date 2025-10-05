@@ -52,6 +52,7 @@ import { useHomeScroll } from '../context/HomeScrollContext';
 import { NotificationCenter } from './NotificationCenter';
 import NavigationMessagesButton from './NavigationMessagesButton';
 import { BACKEND_URL } from '../../config';
+import UserAvatar from './UserAvatar';
 
 interface NavigationProps {
   onOpenAuth: () => void;
@@ -384,23 +385,14 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                       : theme.palette.primary.contrastText,
                   }}
                 >
-                  <Avatar sx={{
-                    width: 32,
-                    height: 32,
-                    color: isHome
-                      ? '#fff'
-                      : theme.palette.primary.contrastText,
-                  }}>
-                    {user?.avatarFile ? (
-                      <img
-                        src={`${BACKEND_URL}/uploads/avatar/${user.avatarFile}`}
-                        alt={user?.firstName || user?.email || 'Avatar'}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'
-                    )}
-                  </Avatar>
+                  <UserAvatar
+                    icon={user?.avatarFile || undefined}
+                    name=""
+                    avatarSize={32}
+                    fontSize={16}
+                    svgFrameUrl="/images/avatar/platform_goal_king_filled.svg"
+                    bottomNumber={5}
+                  />
                 </IconButton>
               </Box>
             </>
