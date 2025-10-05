@@ -35,7 +35,7 @@ jobs:
       # ------------------------------
       - name: Generate release directory name
         id: release
-        run: echo "dir=/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
+        run: echo "dir=${{ secrets.MAIN_PROJECT_PATH }}/releases/$(date +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
 
       # ------------------------------
       # Prepare build files
@@ -86,7 +86,7 @@ jobs:
           script: |
             set -e
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
-            ROOT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
+            ROOT_DIR="${{ secrets.MAIN_PROJECT_PATH }}"
 
             mkdir -p "$RELEASE_DIR/api/config/secrets/prod"
             mkdir -p "$RELEASE_DIR/api/config/jwt"
@@ -194,8 +194,8 @@ jobs:
           script: |
             set -e
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
-            SHARED_UPLOADS="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads"
-            CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current"
+            SHARED_UPLOADS="${{ secrets.MAIN_PROJECT_PATH }}/public/uploads"
+            CURRENT_DIR="${{ secrets.MAIN_PROJECT_PATH }}/current"
 
             mkdir -p "$SHARED_UPLOADS"
             chown -R www-data:www-data "$SHARED_UPLOADS"
@@ -225,7 +225,7 @@ jobs:
                 rm -rf "$RELEASE_DIR/frontend/public/uploads"
             fi
 
-            ln -s "$SHARED_UPLOADS" "$RELEASE_DIR/frontend/public/uploads"
+            ln -s "$SHARED_UPLOADS" "$RELEASE_DIR/public/uploads"
 
       # ------------------------------
       # Activate Release (Zero-Downtime)
@@ -239,7 +239,7 @@ jobs:
           script: |
             set -e
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
-            CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current"
+            CURRENT_DIR="${{ secrets.MAIN_PROJECT_PATH }}/current"
 
             docker compose -p production down --remove-orphans api frontend
             ln -sfn "$RELEASE_DIR" "$CURRENT_DIR"
