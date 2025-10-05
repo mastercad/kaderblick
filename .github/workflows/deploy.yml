@@ -47,6 +47,19 @@ jobs:
           cp -r docker-compose.yml docker-compose.db.yml .docker api frontend build/
 
       # ------------------------------
+      # Copy build files to server
+      # ------------------------------
+      - name: Copy files
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.PLESK_USERNAME }}
+          password: ${{ secrets.PLESK_PASSWORD }}
+          source: "build/*"
+          target: "${{ steps.release.outputs.dir }}"
+          strip_components: 1
+
+      # ------------------------------
       # Deploy & switch release directory
       # ------------------------------
       - name: Deploy and switch
@@ -70,19 +83,6 @@ jobs:
 
             chmod -R 755 "$RELEASE_DIR/api" "$RELEASE_DIR/frontend"
             chown -R kaderblick-ftp-admin:psacln "$RELEASE_DIR"
-
-      # ------------------------------
-      # Copy build files to server
-      # ------------------------------
-      - name: Copy files
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.PLESK_USERNAME }}
-          password: ${{ secrets.PLESK_PASSWORD }}
-          source: "build/*"
-          target: "${{ steps.release.outputs.dir }}"
-          strip_components: 1
 
       # ------------------------------
       # Prepare Docker & Volumes
