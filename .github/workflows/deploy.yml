@@ -200,9 +200,14 @@ jobs:
             chown -R www-data:www-data "$SHARED_UPLOADS"
             chmod -R 775 "$SHARED_UPLOADS"
 
-            [ -L "$RELEASE_DIR/api/public/uploads" ] || [ -d "$RELEASE_DIR/api/public/uploads" ] && rm -rf "$RELEASE_DIR/api/public/uploads"
-            [ -L "$RELEASE_DIR/frontend/public/uploads" ] || [ -d "$RELEASE_DIR/frontend/public/uploads" ] && rm -rf "$RELEASE_DIR/frontend/public/uploads"
+            if [ -L "$RELEASE_DIR/api/public/uploads" ] || [ -d "$RELEASE_DIR/api/public/uploads" ]; then
+                rm -rf "$RELEASE_DIR/api/public/uploads"
+            fi
 
+            if [ -L "$RELEASE_DIR/frontend/public/uploads" ] || [ -d "$RELEASE_DIR/frontend/public/uploads" ]; then
+                rm -rf "$RELEASE_DIR/frontend/public/uploads"
+            fi
+            
             ln -s "$SHARED_UPLOADS" "$RELEASE_DIR/api/public/uploads"
             ln -s "$SHARED_UPLOADS" "$RELEASE_DIR/frontend/public/uploads"
 
