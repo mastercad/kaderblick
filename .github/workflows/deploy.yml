@@ -2,38 +2,53 @@ name: Deploy to Alfahosting
 
 on:
   push:
-    branches: 
+    branches:
       - main
 
 jobs:
   quality-assurance:
     uses: ./.github/workflows/qa.yml
     secrets: inherit
-  
+
   deployment:
     runs-on: ubuntu-latest
     needs: quality-assurance
     timeout-minutes: 30
 
     steps:
+      # ------------------------------
+      # Checkout repository
+      # ------------------------------
       - uses: actions/checkout@v3
-  
+
+      # ------------------------------
+      # Cache Composer vendors
+      # ------------------------------
       - name: Cache Composer vendors
         uses: actions/cache@v3
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
-          
+
+      # ------------------------------
+      # Generate release directory
+      # ------------------------------
       - name: Generate release directory name
         id: release
         run: echo "dir=/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/releases/$(date +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
 
+      # ------------------------------
+      # Prepare files for deploy
+      # ------------------------------
       - name: Prepare files
         run: |
           mkdir -p build
           sh ./frontend/scripts/set-publish-date.sh
           cp -r docker-compose.yml docker-compose.db.yml .docker api frontend build/
-          
+
+      # ------------------------------
+      # Deploy & switch release directory
+      # ------------------------------
       - name: Deploy and switch
         uses: appleboy/ssh-action@master
         with:
@@ -44,19 +59,21 @@ jobs:
             set -e
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
             ROOT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de"
-            
+
             # Nur prod secrets und jwt kopieren
             mkdir -p "$RELEASE_DIR/api/config/secrets/prod"
             mkdir -p "$RELEASE_DIR/api/config/jwt"
 
-            if [ -d "$ROOT_DIR" ]; then
-              [ -d "$ROOT_DIR/api/config/jwt" ] && \
-                cp -r "$ROOT_DIR/api/config/jwt/"* "$RELEASE_DIR/api/config/jwt/"
+            if [ -d "$ROOT_DIR/api/config/jwt" ]; then
+              cp -r "$ROOT_DIR/api/config/jwt/"* "$RELEASE_DIR/api/config/jwt/" 2>/dev/null || true
             fi
-            
-            chmod -R 755 "$RELEASE_DIR"
+
+            chmod -R 755 "$RELEASE_DIR/api" "$RELEASE_DIR/frontend"
             chown -R kaderblick-ftp-admin:psacln "$RELEASE_DIR"
 
+      # ------------------------------
+      # Copy build files to server
+      # ------------------------------
       - name: Copy files
         uses: appleboy/scp-action@master
         with:
@@ -67,7 +84,10 @@ jobs:
           target: "${{ steps.release.outputs.dir }}"
           strip_components: 1
 
-      - name: Activate release
+      # ------------------------------
+      # Prepare Docker & Volumes
+      # ------------------------------
+      - name: Prepare Docker environment & release
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -76,119 +96,146 @@ jobs:
           script: |
             set -e
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
-            CURRENT_DIR=/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current
             cd "$RELEASE_DIR"
 
-            # erstelle im bedarfsfall netzwerk
             docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
-            
             docker volume inspect kaderblick-data >/dev/null 2>&1 || docker volume create kaderblick-data
+            docker volume inspect kaderblick-db-data || docker volume create kaderblick-db-data
 
-            # baue und starte im bedarfsfall db container
+      # ------------------------------
+      # Ensure DB container running
+      # ------------------------------
+      - name: Ensure DB container running
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
             if docker ps --filter "name=kaderblick-db" --filter "status=running" | grep -q kaderblick-db; then
               echo "DB Container läuft"
             else
-              docker volume inspect kaderblick-db-data || docker volume create kaderblick-db-data
               docker compose -f docker-compose.db.yml -p production up -d --build --force-recreate db
             fi
-            
-            # Alte Staging-Container stoppen und entfernen
-            docker compose -p staging down --remove-orphans api frontend
+
+      # ------------------------------
+      # Prepare .env files
+      # ------------------------------
+      - name: Prepare .env files
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            RELEASE_DIR="${{ steps.release.outputs.dir }}"
+            cd "$RELEASE_DIR"
 
             cp api/.env.dist api/.env
             echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> api/.env
-            #            echo "CORS_ALLOW_ORIGIN=http://frontend" >> api/.env
             echo "VITE_BACKEND_URL=https://api.kaderblick.byte-artist.de" > frontend/.env
 
-            # ich bin mir ehrlich gesagt gerade gar nicht mehr sicher, ob das hier noch so sinn macht, die kommen ja immer mit dem branch aktuell rein
-            if [ -d "$CURRENT_DIR" ]; then
-              if [ -d "$CURRENT_DIR/api/config/jwt" ]; then
-                mkdir -p "$RELEASE_DIR/api/config/jwt"
-                cp -r "$CURRENT_DIR/api/config/jwt/"* "$RELEASE_DIR/api/config/jwt/" 2>/dev/null || true
-              fi
-            fi
-            
-            chmod -R 755 "$RELEASE_DIR"
+      # ------------------------------
+      # Build & start Staging
+      # ------------------------------
+      - name: Build & start Staging
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            RELEASE_DIR="${{ steps.release.outputs.dir }}"
+            cd "$RELEASE_DIR"
 
-            mkdir -p api/config/secrets/prod
-            # echo "<?php return \"${{ secrets.PROD_DECRYPT_KEY }}\"; ?>" > api/config/secrets/prod/prod.decrypt.private.php
-            echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > api/config/secrets/prod/prod.decrypt.private.php
-            chmod 655 api/config/secrets/prod/prod.decrypt.private.php
+            docker compose -p staging down --remove-orphans api frontend
 
-            # Staging-Container bauen und starten
             PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 docker compose -p staging up -d --build --force-recreate api frontend
 
-            # Nach erfolgreichem Staging: Images für Production taggen (immer aktuellste Image-ID verwenden)
-            FRONTEND_IMAGE_ID=$(docker images staging-frontend:latest --format "{{.ID}}" | head -n 1)
-            if [ -n "$FRONTEND_IMAGE_ID" ]; then
-              docker tag $FRONTEND_IMAGE_ID production-frontend:latest
-            fi
-            API_IMAGE_ID=$(docker images staging-api:latest --format "{{.ID}}" | head -n 1)
-            if [ -n "$API_IMAGE_ID" ]; then
-              docker tag $API_IMAGE_ID production-api:latest
-            fi
-
-            ###### WORKAROUND FÜR FIXTURES ######
-            #            sed -i 's/^APP_ENV=prod$/APP_ENV=dev/' api/.env
-            #            docker compose -p staging exec -T api env APP_ENV=dev composer install --dev
-            #            echo "Spiele Fixtures für stammdaten ein"
-            #            docker compose -p staging exec -T api bin/console doctrine:fixtures:load -n --group=master
-            ###### ENDE WORKAROUND FÜR FIXTURES ######
-
-            sed -i 's/^APP_ENV=dev$/APP_ENV=prod/' api/.env
-            docker compose -p staging exec -T api env APP_ENV=dev composer install
-
-            docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
+      # ------------------------------
+      # Staging migrations & Composer
+      # ------------------------------
+      - name: Staging migrations & Composer
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            RELEASE_DIR="${{ steps.release.outputs.dir }}"
+            cd "$RELEASE_DIR"
 
             docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
-
+            docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
             docker compose -p staging exec -T api bin/console secrets:decrypt-to-local --force --env=prod
 
             if [ ! -f api/config/jwt/private.pem ] || [ ! -f api/config/jwt/public.pem ]; then
               docker compose -p staging exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
             fi
 
-            # Vor Aktivierung alte Production-Container stoppen
+      # ------------------------------
+      # Activate release (Zero-Downtime)
+      # ------------------------------
+      - name: Activate Release
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            RELEASE_DIR="${{ steps.release.outputs.dir }}"
+            CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current"
+
             docker compose -p production down --remove-orphans api frontend
-
-            # Aktivierung
             ln -sfn "$RELEASE_DIR" "$CURRENT_DIR"
+            chmod -R 777 "$CURRENT_DIR/api/var"
 
-            chmod -R 777 $CURRENT_DIR/api/var
-
-            # ------------------------------
-            # Shared uploads vorbereiten
-            # ------------------------------
+      # ------------------------------
+      # Prepare uploads symlinks
+      # ------------------------------
+      - name: Prepare uploads symlinks
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            RELEASE_DIR="${{ steps.release.outputs.dir }}"
             SHARED_UPLOADS="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads"
+
             mkdir -p "$SHARED_UPLOADS"
             chown -R www-data:www-data "$SHARED_UPLOADS"
             chmod -R 775 "$SHARED_UPLOADS"
 
-            # ------------------------------
-            # Alte Upload-Ordner im Release löschen (falls vorhanden)
-            # ------------------------------
-            if [ -L "$RELEASE_DIR/api/public/uploads" ] || [ -d "$RELEASE_DIR/api/public/uploads" ]; then
-                rm -rf "$RELEASE_DIR/api/public/uploads"
-            fi
-            if [ -L "$RELEASE_DIR/frontend/public/uploads" ] || [ -d "$RELEASE_DIR/frontend/public/uploads" ]; then
-                rm -rf "$RELEASE_DIR/frontend/public/uploads"
-            fi
+            [ -L "$RELEASE_DIR/api/public/uploads" ] || [ -d "$RELEASE_DIR/api/public/uploads" ] && rm -rf "$RELEASE_DIR/api/public/uploads"
+            [ -L "$RELEASE_DIR/frontend/public/uploads" ] || [ -d "$RELEASE_DIR/frontend/public/uploads" ] && rm -rf "$RELEASE_DIR/frontend/public/uploads"
 
-            # ------------------------------
-            # Symlinks auf Shared Uploads setzen
-            # ------------------------------
             ln -s "$SHARED_UPLOADS" "$RELEASE_DIR/api/public/uploads"
             ln -s "$SHARED_UPLOADS" "$RELEASE_DIR/frontend/public/uploads"
 
-            # Production-Container aus getaggten Images starten
-            cd $CURRENT_DIR
+      # ------------------------------
+      # Start Production & cleanup Staging
+      # ------------------------------
+      - name: Start Production & cleanup
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            CURRENT_DIR="/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/current"
 
-            echo "starte production aus staging Images"
+            cd "$CURRENT_DIR"
             docker compose -p production up -d --force-recreate api frontend
-
-            # Staging-Container stoppen und entfernen
             docker compose -p staging down api frontend
             docker compose -p staging rm api frontend
 
-            # Cleanup
-            cd ../releases && ls -t | tail -n +4 | xargs rm -rf
+            # Cleanup old releases
+            cd ../releases && ls -1dt * | tail -n +4 | xargs -r rm -rf
