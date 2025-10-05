@@ -53,8 +53,8 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.PLESK_USERNAME }}
-          password: ${{ secrets.PLESK_PASSWORD }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
           script: |
             set -e
             mkdir -p "${{ steps.release.outputs.dir }}"
