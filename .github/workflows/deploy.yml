@@ -158,13 +158,11 @@ jobs:
 
             mkdir -p "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads"
 
+            chown -R www-data:www-data /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads
+            chmod -R 775 /var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads
+
             ln -sfn "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads" "$RELEASE_DIR/api/public/uploads"
             ln -sfn "/var/www/vhosts/byte-artist.de/kaderblick.byte-artist.de/public/uploads" "$RELEASE_DIR/frontend/public/uploads"
-
-            chmod -R 777 "$RELEASE_DIR/api/public/uploads"
-            chmod -R 777 "$RELEASE_DIR/frontend/public/uploads"
-            chown -R 33:33 "$RELEASE_DIR/api/public/uploads"
-            chown -R 33:33 "$RELEASE_DIR/frontend/public/uploads"
 
             # Production-Container aus getaggten Images starten
             cd $CURRENT_DIR
