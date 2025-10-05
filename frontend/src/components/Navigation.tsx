@@ -186,6 +186,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
     <>
       {/* Platzhalter für festen Header, damit der Seiteninhalt nicht überlappt */}
       <Box sx={{ height: { xs: 56, md: 64 } }} />
+      
       <AppBar
         position="fixed"
         sx={{
@@ -199,20 +200,20 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
         }}
       >
         <Toolbar sx={{ color: '#fff' }}>
-      <Typography
-        variant="h6"
-        component="div"
-        sx={{ flexGrow: 1, cursor: 'pointer', userSelect: 'none' }}
-        onClick={() => navigate('/')}
-        title="Zur Startseite"
-        style={{ fontFamily: 'Impact, \"Arial Black\", sans-serif', fontSize: '2rem' }}
-      >
-        {location.pathname !== '/' && (
-          <>
-            <span style={{ color: '#018606', textShadow: '0 1px 6px #fff, 0 0px 2px #fff' }}>K</span>ADERBLICK
-          </>
-        )}
-      </Typography>
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ flexGrow: 1, cursor: 'pointer', userSelect: 'none' }}
+            onClick={() => navigate('/')}
+            title="Zur Startseite"
+            style={{ fontFamily: 'ImpactWeb, Impact, \"Arial Black\", sans-serif', fontSize: '2rem' }}
+          >
+            {location.pathname !== '/' && (
+              <>
+                <span style={{ color: '#018606', textShadow: '0 1px 6px #fff, 0 0px 2px #fff' }}>K</span>ADERBLICK
+              </>
+            )}
+          </Typography>
 
           {isAuthenticated ? (
             <>
