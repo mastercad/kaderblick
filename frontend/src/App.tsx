@@ -44,6 +44,7 @@ import Leagues from './pages/Leagues';
 import Imprint from './pages/Imprint';
 import Privacy from './pages/Privacy';
 import Teams from './pages/Teams';
+import Footer from './components/Footer';
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -108,15 +109,15 @@ function App() {
                 <Route path="leagues" element={<ProtectedRoute><Leagues /></ProtectedRoute>} />
                 <Route path="teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
                 <Route path="coachLicenses" element={<ProtectedRoute><CoachLicenses /></ProtectedRoute>} />
-                <Route path="/imprint" element={<ProtectedRoute><Imprint /></ProtectedRoute>} />
-                <Route path="/privacy" element={<ProtectedRoute><Privacy /></ProtectedRoute>} />
                 <Route path="/survey/fill/:surveyId" element={<ProtectedRoute><SurveyFill /></ProtectedRoute>} />
+                <Route path="/imprint" element={<Imprint />} />
+                <Route path="/privacy" element={<Privacy />} />
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
             </Box>
             <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
             <ProfileModal open={showProfile} onClose={() => setShowProfile(false)} />
-            <FooterWithContact />
+            { user ? (<FooterWithContact />) : (<Footer />) }
           </Box>
         </FabStackRoot>
       </HomeScrollProvider>

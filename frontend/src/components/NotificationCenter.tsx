@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Badge,
   IconButton,
@@ -22,6 +23,7 @@ import EventIcon from '@mui/icons-material/Event';
 import SystemIcon from '@mui/icons-material/Info';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MarkAsReadIcon from '@mui/icons-material/DoneAll';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { useNotifications } from '../context/NotificationContext';
 import { AppNotification } from '../types/notifications';
 
@@ -39,6 +41,8 @@ export const NotificationCenter: React.FC = () => {
   const theme = useTheme();
   const { notifications, markAsRead, markAllAsRead, clearAll, unreadCount } = useNotifications();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const location = useLocation();
+  const isHome = location.pathname === '/' || location.pathname === '';
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -60,10 +64,12 @@ export const NotificationCenter: React.FC = () => {
   return (
     <>
       <IconButton
-        color="inherit"
         onClick={handleClick}
         sx={{ 
           mr: 1,
+          color: isHome
+            ? '#fff'
+            : 'primary.contrastText',
           '&:hover': {
             backgroundColor: alpha(theme.palette.common.white, 0.1)
           }
@@ -86,7 +92,7 @@ export const NotificationCenter: React.FC = () => {
           vertical: 'top',
           horizontal: 'right',
         }}
-        PaperProps={{
+        slotProps={{
           sx: {
             width: 400,
             maxHeight: 500,
@@ -97,7 +103,11 @@ export const NotificationCenter: React.FC = () => {
         }}
       >
         <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ 
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center' 
+          }}>
             <Typography variant="h6">
               Benachrichtigungen {unreadCount > 0 && `(${unreadCount})`}
             </Typography>
@@ -119,8 +129,8 @@ export const NotificationCenter: React.FC = () => {
         <Box sx={{ flex: 1, overflow: 'auto' }}>
           {notifications.length === 0 ? (
             <Box sx={{ p: 3, textAlign: 'center' }}>
-              <NotificationsNoneIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
-              <Typography variant="body2" color="text.secondary">
+              <NotificationsNoneIcon sx={{ fontSize: 48, color: 'text.primary', mb: 1 }} />
+              <Typography variant="body2" color="text.primary">
                 Keine Benachrichtigungen
               </Typography>
             </Box>
@@ -151,7 +161,7 @@ export const NotificationCenter: React.FC = () => {
                             component="span"
                             sx={{
                               display: '-webkit-box',
-                              color: 'text.secondary',
+                              color: 'text.primary',
                               fontSize: '0.875rem',
                               lineHeight: 1.43,
                               letterSpacing: '0.01071em',
@@ -168,7 +178,7 @@ export const NotificationCenter: React.FC = () => {
                             component="span"
                             sx={{
                               display: 'block',
-                              color: 'text.secondary',
+                              color: 'text.primary',
                               fontSize: '0.75rem',
                               lineHeight: 1.66,
                               letterSpacing: '0.03333em'

@@ -3,7 +3,7 @@ import { createTheme, ThemeOptions } from '@mui/material/styles';
 // Gemeinsame Theme-Basis
 const baseTheme: ThemeOptions = {
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Roboto flex", Inter, Montserrat, "Helvetica Neue", Arial, sans-serif',
     h1: {
       fontWeight: 600,
       fontSize: '2.5rem',
@@ -73,7 +73,7 @@ const baseTheme: ThemeOptions = {
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           '&:hover': {
             boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-            transform: 'translateY(-1px)',
+            transform: 'translateY(0px)',
           },
         },
       },
@@ -130,7 +130,7 @@ const baseTheme: ThemeOptions = {
         },
         colorDefault: {
           backgroundColor: '#018606',
-          color: '#ffffff',
+          color: 'primary.contrastText',
         },
       },
     },
@@ -236,16 +236,16 @@ export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#02b008', // Helles, lebendiges Grün für Dark Mode
+      main: '#018607', // Primäres Grün
       light: '#5efc82',
-      dark: '#018606',
-      contrastText: '#000000',
+      dark: '#02b008',
+      contrastText: '#131111ff',
     },
     secondary: {
       main: '#00e676', // Leuchtendes Grün als Akzent
       light: '#66ffa6',
       dark: '#00b248',
-      contrastText: '#000000',
+      contrastText: '#131111ff',
     },
     success: {
       main: '#00e676',
@@ -256,7 +256,7 @@ export const darkTheme = createTheme({
     },
     text: {
       primary: '#ffffff',
-      secondary: '#e0e0e0', // Helleres Grau für bessere Lesbarkeit
+      secondary: '#131111ff', // Helleres Grau für bessere Lesbarkeit
     },
   },
   components: {

@@ -126,7 +126,7 @@
 .btn-danger:hover:not(:disabled), 
 .btn-info:hover:not(:disabled) {
   background: var(--btn-hover-bg);
-  transform: translateY(-2px);
+  /*  transform: translateY(-2px); */
   box-shadow: var(--btn-hover-shadow);
   color: var(--text-inverse);
 }
