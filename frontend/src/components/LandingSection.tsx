@@ -12,7 +12,7 @@ interface LandingSectionProps {
   text: string;
   reverse?: boolean;
   onAuthClick?: () => void;
-  ctaText?: string; // CTA-Text wird von außen übergeben
+  ctaText?: string;
 }
 
 export default function LandingSection({ name, image, additionalImages = [], text, reverse = false, onAuthClick, ctaText = 'Jetzt starten' }: LandingSectionProps) {
@@ -22,12 +22,11 @@ export default function LandingSection({ name, image, additionalImages = [], tex
   const sectionRef = useRef<HTMLDivElement>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const thumbsPerPage = 3; // Immer 3 Bilder
+  const thumbsPerPage = 3;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // Setze isVisible basierend darauf, ob die Section sichtbar ist
         setIsVisible(entry.isIntersecting);
       },
       { threshold: 0.1 }
@@ -136,18 +135,22 @@ export default function LandingSection({ name, image, additionalImages = [], tex
             onAuthClick();
           }}
           sx={{
+            width: 'auto',
+            alignSelf: reverse ? 'flex-end' : 'flex-start',
             mt: 3,
             py: 1.5,
-            px: 4,
+            px: 2,
             fontSize: '1.1rem',
             fontWeight: 600,
             textTransform: 'none',
             borderRadius: 2,
             boxShadow: 3,
+            border: '1px solid white',
+            outline: `3px solid ${theme.palette.primary.main}`,
             transition: 'all 0.3s',
             '&:hover': {
-              transform: 'translateY(-2px)',
               boxShadow: 6,
+              border: '1px solid white'
             },
           }}
         >
@@ -178,7 +181,7 @@ export default function LandingSection({ name, image, additionalImages = [], tex
           boxShadow: 3,
           transition: 'all 0.3s',
           '&:hover': {
-            transform: 'translateY(-2px)',
+            transform: 'translateY(0px)',
             boxShadow: 6,
           },
         }}
@@ -223,7 +226,7 @@ export default function LandingSection({ name, image, additionalImages = [], tex
         </Box>
       </Box>
 
-      {/* Modal for full-screen image view */}
+      {/* Modal for full-screen image view with gallery navigation if additionalImages exist */}
       <Modal open={!!modalImage} onClose={() => setModalImage(null)}>
         <Box
           display="flex"
@@ -257,18 +260,97 @@ export default function LandingSection({ name, image, additionalImages = [], tex
           >
             <CloseIcon fontSize="large" sx={{ color: '#222', transition: 'color 0.2s' }} />
           </IconButton>
-          <img
-            src={modalImage || ''}
-            alt="Großansicht"
-            style={{
-              maxHeight: '90vh',
-              maxWidth: '90vw',
-              borderRadius: 12,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-              cursor: 'auto',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          />
+          {/* Gallery navigation only if additionalImages exist */}
+          {additionalImages.length > 0 ? (() => {
+            // Build unique image list: main image + additionalImages (no duplicates)
+            const galleryImages = [image, ...additionalImages.filter(img => img !== image)];
+            const currentIdx = galleryImages.indexOf(modalImage || '');
+            return (
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                width="100%"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Box display="flex" alignItems="center" justifyContent="center" width="100%">
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (currentIdx > 0) setModalImage(galleryImages[currentIdx - 1]);
+                    }}
+                    disabled={currentIdx === 0}
+                    sx={{ mx: 2, bgcolor: 'rgba(255,255,255,0.7)', '&:disabled': { opacity: 0.3 } }}
+                    size="large"
+                    aria-label="Vorheriges Bild"
+                  >
+                    <ArrowBackIosNewIcon fontSize="large" />
+                  </IconButton>
+                  <img
+                    src={modalImage || ''}
+                    alt="Großansicht"
+                    style={{
+                      maxHeight: '80vh',
+                      maxWidth: '80vw',
+                      borderRadius: 12,
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                      cursor: 'auto',
+                    }}
+                  />
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (currentIdx < galleryImages.length - 1) setModalImage(galleryImages[currentIdx + 1]);
+                    }}
+                    disabled={currentIdx === galleryImages.length - 1}
+                    sx={{ mx: 2, bgcolor: 'rgba(255,255,255,0.7)', '&:disabled': { opacity: 0.3 } }}
+                    size="large"
+                    aria-label="Nächstes Bild"
+                  >
+                    <ArrowForwardIosIcon fontSize="large" />
+                  </IconButton>
+                </Box>
+                {/* Thumbnails below main image */}
+                <Box display="flex" justifyContent="center" alignItems="center" mt={2}>
+                  {galleryImages.map((img, idx) => (
+                    <Box
+                      key={`${img}-${idx}`}
+                      sx={{
+                        border: img === modalImage ? '2px solid ' + theme.palette.primary.main : '2px solid transparent',
+                        borderRadius: 2,
+                        mx: 0.5,
+                        boxShadow: img === modalImage ? 4 : 1,
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        transition: 'border 0.2s, box-shadow 0.2s',
+                      }}
+                      onClick={() => setModalImage(img)}
+                    >
+                      <img
+                        src={img}
+                        alt={`Thumbnail ${idx + 1}`}
+                        style={{ width: 60, height: 60, objectFit: 'cover', display: 'block' }}
+                      />
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            );
+          })() : (
+            <img
+              src={modalImage || ''}
+              alt="Großansicht"
+              style={{
+                maxHeight: '90vh',
+                maxWidth: '90vw',
+                borderRadius: 12,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                cursor: 'auto',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
         </Box>
       </Modal>
     </>

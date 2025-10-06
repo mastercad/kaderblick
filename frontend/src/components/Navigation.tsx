@@ -46,8 +46,7 @@ import PublicIcon from '@mui/icons-material/Public';
 import SchoolIcon from '@mui/icons-material/School';
 import React, { useState } from 'react';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme as useMuiTheme } from '@mui/material/styles';
-
+import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
 import { useHomeScroll } from '../context/HomeScrollContext';
 import { NotificationCenter } from './NotificationCenter';
@@ -62,8 +61,8 @@ interface NavigationProps {
 export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const { isOnHeroSection } = useHomeScroll();
-  const muiTheme = useMuiTheme();
-  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [trainerDrawerOpen, setTrainerDrawerOpen] = useState(false);
@@ -86,48 +85,48 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
   ];
 
   const trainerMenuItems = [
-    { key: 'team-size-guide', label: 'Team Size Guide', icon: <CheckroomIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-    { key: 'formations', label: 'Aufstellungen', page: 'formations', icon: <GroupWorkIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+    { key: 'team-size-guide', label: 'Team Size Guide', icon: <CheckroomIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+    { key: 'formations', label: 'Aufstellungen', page: 'formations', icon: <GroupWorkIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
   ];
 
   const adminMenuSections = [
     {
       section: 'Stammdaten',
       items: [
-        { label: 'Altersgruppen', page: 'ageGroups', icon: <GroupsIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Ligen', page: 'leagues', icon: <EmojiEventsIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Positionen', page: 'positions', icon: <CenterFocusStrongIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Füße', page: 'strongFeets', icon: <DirectionsRunIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Beläge', page: 'surfaceTypes', icon: <LayersIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Ereignistypen', page: 'gameEventTypes', icon: <LocalOfferIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Nationalitäten', page: 'nationalities', icon: <PublicIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Trainer-Lizensen', page: 'coachLicenses', icon: <SchoolIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Altersgruppen', page: 'ageGroups', icon: <GroupsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Ligen', page: 'leagues', icon: <EmojiEventsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Positionen', page: 'positions', icon: <CenterFocusStrongIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Füße', page: 'strongFeets', icon: <DirectionsRunIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Beläge', page: 'surfaceTypes', icon: <LayersIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Ereignistypen', page: 'gameEventTypes', icon: <LocalOfferIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Nationalitäten', page: 'nationalities', icon: <PublicIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Trainer-Lizensen', page: 'coachLicenses', icon: <SchoolIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
       ],
     },
     {
       section: 'Verwaltung',
       items: [
-        { label: 'Vereine', page: 'clubs', icon: <ShieldIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Trainer', page: 'coaches', icon: <PersonBadgeIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Spieler', page: 'players', icon: <PersonIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Spielstätten', page: 'locations', icon: <RoomIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Teams', page: 'teams', icon: <GroupsIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Feedback', page: 'admin/feedback', icon: <FeedbackIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Neuigkeiten Management', page: 'news', icon: <NewspaperIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Datenkonsistenz', href: 'admin/consistency', icon: <SearchIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Aufstellungen', page: 'formations', icon: <GroupWorkIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
-        { label: 'Aufgaben', page: 'tasks', icon: <ManageAccountsIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Vereine', page: 'clubs', icon: <ShieldIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Trainer', page: 'coaches', icon: <PersonBadgeIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Spieler', page: 'players', icon: <PersonIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Spielstätten', page: 'locations', icon: <RoomIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Teams', page: 'teams', icon: <GroupsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Feedback', page: 'admin/feedback', icon: <FeedbackIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Neuigkeiten Management', page: 'news', icon: <NewspaperIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Datenkonsistenz', href: 'admin/consistency', icon: <SearchIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Aufstellungen', page: 'formations', icon: <GroupWorkIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Aufgaben', page: 'tasks', icon: <ManageAccountsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
       ],
     },
     {
       section: 'Zuweisungen',
       items: [
-        { label: 'Benutzer', page: 'admin/user-relations', icon: <ManageAccountsIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Benutzer', page: 'admin/user-relations', icon: <ManageAccountsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
 {/*        { label: 'Spieler zu Team', href: '/api/player_team_assignments', icon: <PersonAddIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
         { label: 'Spieler zu Verein', href: '/api/player_club_assignments', icon: <HandshakeIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
         { label: 'Coach zu Team', href: '/api/coach_team_assignments', icon: <SwapHorizIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
         { label: 'Coach zu Verein', href: '/api/coach_club_assignments', icon: <BusinessIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> }*/},
-        { label: 'Videos', href: '/videos/upload', icon: <VideoLibraryIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} /> },
+        { label: 'Videos', href: '/videos/upload', icon: <VideoLibraryIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
       ],
     },
   ];
@@ -192,14 +191,20 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
         sx={{
           background: isHome
             ? 'transparent'
-            : `linear-gradient(135deg, ${muiTheme.palette.primary.main} 0%, ${muiTheme.palette.secondary.main} 100%)`,
+            : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
           backgroundColor: 'transparent',
           boxShadow: 'none',
-          color: '#fff',
+          color: isHome
+            ? '#fff'
+            : 'primary.contrastText',
           transition: 'background 0.3s',
         }}
       >
-        <Toolbar sx={{ color: '#fff' }}>
+        <Toolbar sx={{ 
+          color: isHome
+            ? '#fff'
+            : 'primary.contrastText',
+          }}>
           <Typography
             variant="h6"
             component="div"
@@ -224,11 +229,13 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                     item.key === 'trainer' ? null : (
                       <Button
                         key={item.key}
-                        color="inherit"
                         disabled={item.disabled}
                         onClick={() => !item.disabled && navigate(`/${item.key}`)}
                         className="navigation-transparent-btn"
                         sx={{
+                          color: isHome
+                            ? '#fff'
+                            : theme.palette.primary.contrastText,
                           fontWeight: 500,
                           borderRadius: 2,
                           minWidth: 'auto',
@@ -244,10 +251,12 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                   {user?.isCoach && (
                     <>
                       <Button
-                        color="inherit"
                         onClick={handleTrainerMenuOpen}
                         className="navigation-transparent-btn"
                         sx={{
+                          color: isHome
+                            ? '#fff'
+                            : theme.palette.primary.contrastText,
                           fontWeight: 500,
                           borderRadius: 2,
                           minWidth: 'auto',
@@ -280,10 +289,12 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                   {isAdmin && (
                     <>
                       <Button
-                        color="inherit"
                         onClick={handleAdminMenuOpen}
                         className="navigation-transparent-btn"
                         sx={{
+                          color: isHome
+                            ? '#fff'
+                            : theme.palette.primary.contrastText,
                           fontWeight: 500,
                           borderRadius: 2,
                           minWidth: 'auto',
@@ -303,14 +314,24 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                         {adminMenuSections.map((section) => (
                           <Box key={section.section}>
                             <MenuItem disabled>
-                              <Typography variant="subtitle2" color="primary">
+                              <Typography variant="subtitle2"
+                                sx={{
+                                  color: isHome
+                                    ? '#fff'
+                                    : 'text.primary',
+                                }}
+                              >
                                 {section.section}
                               </Typography>
                             </MenuItem>
                             {section.items.map((item) => (
                               <MenuItem
                                 key={item.label}
-                                sx={{ pl: 3, display: 'flex', alignItems: 'center' }}
+                                sx={{
+                                  pl: 3,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                }}
                                 onClick={() => {
                                   handleAdminMenuClose();
                                   if (item.page) {
@@ -334,9 +355,13 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
               {/* Mobile Navigation Button */}
               {isMobile && (
                 <IconButton
-                  color="inherit"
                   onClick={handleMobileMenuToggle}
-                  sx={{ mr: 1 }}
+                  sx={{ 
+                    mr: 1,
+                    color: isHome
+                      ? '#fff'
+                      : theme.palette.primary.contrastText,
+                  }}
                 >
                   <MenuIcon />
                 </IconButton>
@@ -344,7 +369,6 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
 
               {/* Common Controls */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {/* Notification Center */}
                 <NotificationCenter />
                 
                 <IconButton
@@ -353,7 +377,11 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                   aria-controls="menu-appbar"
                   aria-haspopup="true"
                   onClick={handleMenu}
-                  color="inherit"
+                  sx={{ 
+                    color: isHome
+                      ? '#fff'
+                      : theme.palette.primary.contrastText,
+                  }}
                 >
                   <Avatar sx={{ width: 32, height: 32 }}>
                     {user?.avatarFile ? (
@@ -374,7 +402,6 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
               {!user && showLoginButton && (
                 <Button
                   variant="contained"
-                  color="primary"
                   onClick={onOpenAuth}
                   sx={{
                     fontWeight: 500,
@@ -382,10 +409,9 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                     minWidth: 'auto',
                     px: 2,
                     py: 1,
-                    color: '#fff',
+                    color: theme.palette.primary.contrastText,
                     '&:hover': {
                       backgroundColor: 'primary.dark',
-                      transform: 'translateY(-2px)',
                       boxShadow: 3,
                     },
                     transition: 'all 0.3s ease',
@@ -480,13 +506,25 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
         <MenuItem disabled>
           <Box>
             <Typography variant="subtitle2">{user?.name}</Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" 
+              sx={{
+                color: isHome
+                  ? '#fff'
+                  : 'text.primary',
+                }}
+            >
               {user?.email}
             </Typography>
           </Box>
         </MenuItem>
         <MenuItem onClick={() => { handleClose(); onOpenProfile(); }}>
-          <AccountCircleIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} />
+          <AccountCircleIcon fontSize="small" 
+            sx={{
+              color: isHome
+                ? '#fff'
+                : 'text.primary',
+              mr: 1
+            }} />
           Profil
         </MenuItem>
         <NavigationMessagesButton 
@@ -494,7 +532,12 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
           text="Nachrichten" 
         />
         <MenuItem onClick={handleLogout}>
-          <LogoutIcon fontSize="small" sx={{ color: 'text.secondary', mr: 1 }} />
+          <LogoutIcon fontSize="small" sx={{
+            color: isHome
+              ? '#fff'
+              : 'text.primary',
+            mr: 1 }}
+          />
           Logout
         </MenuItem>
       </Menu>

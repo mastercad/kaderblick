@@ -2,6 +2,7 @@
 import React from 'react';
 import { Box, Container, Link, Typography, useTheme } from '@mui/material';
 import { useLocation } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 const Footer: React.FC = () => {
   const theme = useTheme();
@@ -19,7 +20,7 @@ const Footer: React.FC = () => {
           : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
         color: isHome
           ? '#fff'
-          : theme.palette.getContrastText(theme.palette.primary.main),
+          : theme.palette.primary.contrastText,
       }}
     >
       <Container maxWidth="md" sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
@@ -29,10 +30,10 @@ const Footer: React.FC = () => {
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Link href="/imprint" color="inherit" underline="hover">
+          <Link component={RouterLink} to="/imprint" color="inherit" underline="hover">
             Impressum
           </Link>
-          <Link href="/privacy" color="inherit" underline="hover">
+          <Link component={RouterLink} to="/privacy" color="inherit" underline="hover">
             Datenschutz
           </Link>
           <Link href="#" color="inherit" underline="hover" onClick={e => {

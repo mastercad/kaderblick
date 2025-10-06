@@ -10,14 +10,14 @@
   box-sizing: border-box;
   background-color: #4e4e4e;
   position: relative;
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+  /* opacity: 0; */
+  /* transform: translateY(30px); */
+  /* transition: opacity 0.8s ease-out, transform 0.8s ease-out; */
 }
 
 .landing-section.visible {
-  opacity: 1;
-  transform: translateY(0);
+  /* opacity: 1; */
+  /* transform: translateY(0); */
 }
 
 .landing-section-content {
@@ -116,6 +116,7 @@
 /* CTA Button im Text-Bereich (Desktop) */
 .landing-section-cta-button {
   display: inline-flex;
+  border-radius: 4px !important;
 }
 
 /* Separater CTA Button für Mobile - standardmäßig versteckt */
