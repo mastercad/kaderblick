@@ -409,9 +409,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                     minWidth: 'auto',
                     px: 2,
                     py: 1,
-                    color: isHome
-                      ? '#fff'
-                      : theme.palette.primary.contrastText,
+                    color: theme.palette.primary.contrastText,
                     '&:hover': {
                       backgroundColor: 'primary.dark',
                       boxShadow: 3,
