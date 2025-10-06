@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use App\Entity\User;
+
 class XPService
 {
     public function retrieveXPForAction(string $action): int
@@ -15,24 +17,32 @@ class XPService
         };
     }
 
-    public function addXPToUser(int $userId, int $xp): void
+    public function addXPToUser(User $user, int $xp): void
     {
         // Logic to add XP to the user in the database
     }
 
-    public function calculateUserXP(int $userId): int
+    public function addXpForAction(User $user, string $action, ?int $referenceId = null): void
+    {
+        $xp = $this->retrieveXPForAction($action);
+        if ($xp > 0) {
+            $this->addXPToUser($user, $xp);
+        }
+    }
+
+    public function calculateUserXP(User $user): int
     {
         // Logic to retrieve the user's current XP from the database
         return 0; // Placeholder return value
     }
 
-    public function calculateUserLevel(int $userId): int
+    public function calculateUserLevel(User $user): int
     {
         // Logic to retrieve the user's current level from the database
         return 1; // Placeholder return value
     }
 
-    public function levelUpUser(int $userId): bool
+    public function levelUpUser(User $user): bool
     {
         // Logic to check if the user has enough XP to level up and perform the level-up
         return false; // Placeholder return value

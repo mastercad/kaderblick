@@ -16,8 +16,8 @@ class UserXpEvent
     /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
-    #[ORM\Column(type: "integer")]
-    private int $userId;
+    #[ORM\Column(type: "integer", nullable: false)]
+    private ?User $user;
 
     #[ORM\Column(type: "string", length: 50)]
     private string $actionType;
@@ -27,6 +27,9 @@ class UserXpEvent
 
     #[ORM\Column(type: "integer")]
     private int $xpValue;
+
+    #[ORM\Column(type: "boolean", nullable: false, options: ['default' => false])]
+    private bool $isProcessed = false;
 
     /**
      * @var array<string, mixed>|null
@@ -42,14 +45,14 @@ class UserXpEvent
         return $this->id;
     }
 
-    public function getUserId(): int
+    public function getUser(): ?User
     {
-        return $this->userId;
+        return $this->user;
     }
 
-    public function setUserId(int $userId): self
+    public function setUser(?User $user): self
     {
-        $this->userId = $userId;
+        $this->user = $user;
         return $this;
     }
 
@@ -111,6 +114,17 @@ class UserXpEvent
     public function setCreatedAt(\DateTimeImmutable $createdAt): self
     {
         $this->createdAt = $createdAt;
+        return $this;
+    }
+
+    public function isProcessed(): bool
+    {
+        return $this->isProcessed;
+    }
+
+    public function setIsProcessed(bool $isProcessed): self
+    {
+        $this->isProcessed = $isProcessed;
         return $this;
     }
 }
