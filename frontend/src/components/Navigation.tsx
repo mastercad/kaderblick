@@ -383,7 +383,13 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                       : theme.palette.primary.contrastText,
                   }}
                 >
-                  <Avatar sx={{ width: 32, height: 32 }}>
+                  <Avatar sx={{
+                    width: 32,
+                    height: 32,
+                    color: isHome
+                      ? '#fff'
+                      : theme.palette.primary.contrastText,
+                  }}>
                     {user?.avatarFile ? (
                       <img
                         src={`${BACKEND_URL}/uploads/avatar/${user.avatarFile}`}
