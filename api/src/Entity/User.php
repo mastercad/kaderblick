@@ -88,6 +88,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTime $emailVerificationTokenExpiresAt = null;
 
+    #[ORM\OneToOne(mappedBy: 'user', targetEntity: UserLevel::class, cascade: ['persist', 'remove'])]
+    private UserLevel $level;
+
+    /**
+     * @var Collection<int, UserXpEvent>
+     */
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: UserXpEvent::class, cascade: ['persist', 'remove'])]
+    private Collection $userXpEvents;
+
     /**
      * @var Collection<int, DashboardWidget>
      */
@@ -161,13 +170,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->camerasUpdated = new ArrayCollection();
         $this->videoSegments = new ArrayCollection();
         $this->videoSegments = new ArrayCollection();
+        $this->userXpEvents = new ArrayCollection();
     }
 
     public function getId(): ?int
     {
         return $this->id;
     }
-
+0
     public function getFirstName(): ?string
     {
         return $this->firstName;
@@ -675,6 +685,58 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setGoogleId(?string $googleId): self
     {
         $this->googleId = $googleId;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, UserXpEvent>
+     */
+    public function getUserXpEvents(): Collection
+    {
+        return $this->userXpEvents;
+    }
+
+    /**
+     * @param Collection<int, UserXpEvent> $userXpEvents
+     */
+    public function setUserXpEvents(Collection $userXpEvents): self
+    {
+        $this->userXpEvents = $userXpEvents;
+
+        return $this;
+    }
+
+    public function addUserXpEvent(UserXpEvent $userXpEvent): self
+    {
+        if (!$this->userXpEvents->contains($userXpEvent)) {
+            $this->userXpEvents->add($userXpEvent);
+            $userXpEvent->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUserXpEvent(UserXpEvent $userXpEvent): self
+    {
+        if ($this->userXpEvents->removeElement($userXpEvent)) {
+            // set the owning side to null (unless already changed)
+            if ($userXpEvent->getUser() === $this) {
+                $userXpEvent->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getUserLevel(): UserLevel
+    {
+        return $this->level;
+    }
+
+    public function setUserLevel(UserLevel $level): self
+    {
+        $this->level = $level;
 
         return $this;
     }
