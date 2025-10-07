@@ -1,8 +1,21 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
+
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
+import { execSync } from 'child_process';
+
+// Get git commit hash for build info
+let commitHash = '';
+try {
+  commitHash = execSync('git rev-parse --short HEAD').toString().trim();
+} catch {
+  commitHash = 'unknown';
+}
 
 export default defineConfig({
+  define: {
+    __BUILD_COMMIT__: JSON.stringify(commitHash),
+  },
   plugins: [
     react(),
     VitePWA({

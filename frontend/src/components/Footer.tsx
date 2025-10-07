@@ -9,6 +9,9 @@ const Footer: React.FC = () => {
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '';
 
+  // @ts-ignore
+  const buildCommit = typeof __BUILD_COMMIT__ !== 'undefined' ? __BUILD_COMMIT__ : '';
+
   return (
     <Box
       component="footer"
@@ -21,12 +24,18 @@ const Footer: React.FC = () => {
         color: isHome
           ? '#fff'
           : theme.palette.primary.contrastText,
+        fontSize: '0.95em',
       }}
     >
       <Container maxWidth="md" sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
         <Box>
           <Typography variant="body2" sx={{ fontWeight: 500 }}>
             &copy; {new Date().getFullYear()} Kaderblick
+            {buildCommit && (
+              <span style={{ opacity: 0.5, fontSize: '0.85em', marginLeft: 8 }} title={`Build: ${buildCommit}`}>
+                v{buildCommit}
+              </span>
+            )}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
