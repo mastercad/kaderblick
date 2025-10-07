@@ -694,8 +694,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function setUserXpEvents(Collection $userXpEvents): self
     {
+        // Remove old relations
+        foreach ($this->userXpEvents as $userXpEvent) {
+            $userXpEvent->setUser(null);
+        }
         $this->userXpEvents = $userXpEvents;
-
+        // Set new relations
+        foreach ($userXpEvents as $userXpEvent) {
+            $userXpEvent->setUser($this);
+        }
         return $this;
     }
 
@@ -705,19 +712,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             $this->userXpEvents->add($userXpEvent);
             $userXpEvent->setUser($this);
         }
-
         return $this;
     }
 
     public function removeUserXpEvent(UserXpEvent $userXpEvent): self
     {
         if ($this->userXpEvents->removeElement($userXpEvent)) {
-            // set the owning side to null (unless already changed)
             if ($userXpEvent->getUser() === $this) {
                 $userXpEvent->setUser(null);
             }
         }
-
         return $this;
     }
 

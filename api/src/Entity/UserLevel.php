@@ -11,7 +11,8 @@ use Doctrine\ORM\Mapping as ORM;
 class UserLevel
 {
     #[ORM\Id]
-    #[ORM\Column(type: "integer")]
+    #[ORM\OneToOne(inversedBy: 'userLevel', targetEntity: User::class)]
+    #[ORM\JoinColumn(name: "user_id", referencedColumnName: "id")]
     private User $user;
 
     #[ORM\Column(type: "integer")]

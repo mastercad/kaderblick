@@ -16,8 +16,9 @@ class UserXpEvent
     /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
-    #[ORM\Column(type: "integer", nullable: false)]
-    private ?User $user;
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: "user_id", referencedColumnName: "id", nullable: false)]
+    private ?User $user = null;
 
     #[ORM\Column(type: "string", length: 50)]
     private string $actionType;
