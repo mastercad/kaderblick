@@ -2,7 +2,9 @@ import React from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '@mui/material/styles';
 import '../styles/hero-section.css';
+import Footer from './Footer';
 
 interface HeroSectionProps {
   onStartClick?: () => void;
@@ -12,6 +14,7 @@ interface HeroSectionProps {
 
 export default function HeroSection({ onStartClick, heroRef, onScrollDown }: HeroSectionProps) {
   const { user } = useAuth();
+  const theme = useTheme();
   
   return (
     <Box
@@ -19,6 +22,8 @@ export default function HeroSection({ onStartClick, heroRef, onScrollDown }: Her
       className="hero-section"
       sx={{
         backgroundImage: 'url(/images/landing_page/background.jpg)',
+        minHeight: '100vh',
+        position: 'relative',
       }}
     >
       <Box className="hero-outer">
@@ -41,14 +46,11 @@ export default function HeroSection({ onStartClick, heroRef, onScrollDown }: Her
                   fontSize: '2rem',
                   border: '2px solid #FFF',
                   boxShadow: 3,
+                  outline: `3px solid ${theme.palette.primary.main}`,
                   transition: 'all 0.3s ease',
                   '&:hover': {
-                    transform: 'translateY(-2px)',
                     boxShadow: 6,
                     border: '2px solid #FFF',
-                  },
-                  '&:focus': {
-                    outline: 'none',
                   },
                   '@media (max-width: 600px)': {
                     p: 2,
@@ -78,6 +80,9 @@ export default function HeroSection({ onStartClick, heroRef, onScrollDown }: Her
           Mehr erfahren
         </Typography>
         <KeyboardArrowDownIcon className="hero-scroll-arrow" />
+      </Box>
+      <Box sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 20 }}>
+        <Footer />
       </Box>
     </Box>
   );

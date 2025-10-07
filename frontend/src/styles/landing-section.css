@@ -116,6 +116,7 @@
 /* CTA Button im Text-Bereich (Desktop) */
 .landing-section-cta-button {
   display: inline-flex;
+  border-radius: 4px !important;
 }
 
 /* Separater CTA Button für Mobile - standardmäßig versteckt */

@@ -27,7 +27,7 @@ import AddIcon from '@mui/icons-material/Add';
 import 'moment/locale/de';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
-moment.locale('de', {
+moment.updateLocale('de', {
   week: {
     dow: 1
   }

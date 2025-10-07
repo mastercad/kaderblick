@@ -188,7 +188,6 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
       apiJson(`/api/participation/event/${event.id}`).catch(() => []),
     ])
       .then(([statusesResponse, list]) => {
-        console.log('API participation/statuses response:', statusesResponse);
         if (!Array.isArray(statusesResponse.statuses)) {
           console.error('FEHLER: participation/statuses liefert kein Array!', statusesResponse);
         }
