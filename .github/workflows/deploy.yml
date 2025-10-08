@@ -44,7 +44,7 @@ jobs:
         run: |
           mkdir -p build
           sh ./frontend/scripts/set-publish-date.sh
-          sh ./frontend/write-buildinfo.sh
+          sh ./frontend/scripts/write-buildinfo.sh
           cp -r docker-compose.yml docker-compose.db.yml .docker api frontend build/
 
       # ------------------------------
