@@ -220,17 +220,10 @@ jobs:
             set -e
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
             cd "$RELEASE_DIR"
-
-            ###### WORKAROUND FÜR FIXTURES ######
-            #            sed -i 's/^APP_ENV=prod$/APP_ENV=dev/' api/.env
-            #            docker compose -p staging exec -T api env APP_ENV=dev composer install --dev
-            #            echo "Spiele Fixtures für stammdaten ein"
-            #            docker compose -p staging exec -T api bin/console doctrine:fixtures:load -n --group=master
-            ###### ENDE WORKAROUND FÜR FIXTURES ######
             
             docker compose -p staging exec -T api env APP_ENV=dev composer install
 
-            docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
+            docker compose -p staging exec -T api bin/console doctrine:fixtures:load --no-interaction --append --group=master
 
             docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
 
