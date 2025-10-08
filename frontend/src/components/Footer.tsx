@@ -9,8 +9,14 @@ const Footer: React.FC = () => {
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '';
 
-  // @ts-ignore
-  const buildCommit = typeof __BUILD_COMMIT__ !== 'undefined' ? __BUILD_COMMIT__ : '';
+
+  const [buildNumber, setBuildNumber] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    fetch('/buildinfo.json')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setBuildNumber(data?.build || null))
+      .catch(() => setBuildNumber(null));
+  }, []);
 
   return (
     <Box
@@ -31,9 +37,9 @@ const Footer: React.FC = () => {
         <Box>
           <Typography variant="body2" sx={{ fontWeight: 500 }}>
             &copy; {new Date().getFullYear()} Kaderblick
-            {buildCommit && (
-              <span style={{ opacity: 0.5, fontSize: '0.85em', marginLeft: 8 }} title={`Build: ${buildCommit}`}>
-                v{buildCommit}
+            {buildNumber && (
+              <span style={{ opacity: 0.5, fontSize: '0.85em', marginLeft: 8 }} title={`Build: ${buildNumber}`}>
+                v{buildNumber}
               </span>
             )}
           </Typography>
