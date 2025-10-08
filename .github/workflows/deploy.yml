@@ -137,6 +137,8 @@ jobs:
             cd "$RELEASE_DIR"
 
             cp api/.env.dist api/.env
+            sed -i 's/^APP_ENV=dev$/APP_ENV=prod/' api/.env
+
             echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> api/.env
             echo "VITE_BACKEND_URL=https://api.kaderblick.byte-artist.de" > frontend/.env
 
@@ -181,6 +183,56 @@ jobs:
             if [ ! -f api/config/jwt/private.pem ] || [ ! -f api/config/jwt/public.pem ]; then
               docker compose -p staging exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
             fi
+
+      # ------------------------------
+      # Tag Images
+      # ------------------------------
+      - name: Tag Images
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            RELEASE_DIR="${{ steps.release.outputs.dir }}"
+            cd "$RELEASE_DIR"
+
+            FRONTEND_IMAGE_ID=$(docker images staging-frontend:latest --format "{{.ID}}" | head -n 1)
+            if [ -n "$FRONTEND_IMAGE_ID" ]; then
+              docker tag $FRONTEND_IMAGE_ID production-frontend:latest
+            fi
+            API_IMAGE_ID=$(docker images staging-api:latest --format "{{.ID}}" | head -n 1)
+            if [ -n "$API_IMAGE_ID" ]; then
+              docker tag $API_IMAGE_ID production-api:latest
+            fi
+
+      # ------------------------------
+      # Run Fixtures
+      # ------------------------------
+      - name: Run Fixtures
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            RELEASE_DIR="${{ steps.release.outputs.dir }}"
+            cd "$RELEASE_DIR"
+
+            ###### WORKAROUND FÜR FIXTURES ######
+            #            sed -i 's/^APP_ENV=prod$/APP_ENV=dev/' api/.env
+            #            docker compose -p staging exec -T api env APP_ENV=dev composer install --dev
+            #            echo "Spiele Fixtures für stammdaten ein"
+            #            docker compose -p staging exec -T api bin/console doctrine:fixtures:load -n --group=master
+            ###### ENDE WORKAROUND FÜR FIXTURES ######
+            
+            docker compose -p staging exec -T api env APP_ENV=dev composer install
+
+            docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
+
+            docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
 
       # ------------------------------
       # Prepare shared uploads symlinks
