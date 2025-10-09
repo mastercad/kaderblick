@@ -44,13 +44,13 @@ export default function HeroSection({ onStartClick, heroRef, onScrollDown }: Her
                 sx={{ 
                   p: 3, 
                   fontSize: '2rem',
-                  border: '2px solid #FFF',
+                  border: '3px solid #FFF',
                   boxShadow: 3,
-                  outline: `3px solid ${theme.palette.primary.main}`,
+                  outline: `6px solid ${theme.palette.primary.main}`,
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     boxShadow: 6,
-                    border: '2px solid #FFF',
+                    border: '3px solid #FFF',
                   },
                   '@media (max-width: 600px)': {
                     p: 2,

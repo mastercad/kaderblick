@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { Box } from '@mui/material';
 import HeroSection from '../components/HeroSection';
 import LandingSection from '../components/LandingSection';
@@ -103,7 +104,8 @@ export default function Home() {
   const heroRef = useRef<HTMLDivElement>(null);
   const { setIsOnHeroSection } = useHomeScroll();
   const { user } = useAuth();
-  
+  const isMobile = useMediaQuery('(max-width: 960px)');
+
   // Shuffle CTA-Texte einmalig beim Mount
   const [shuffledCtaTexts] = useState(() => shuffleArray(callToActionTexts));
 
@@ -116,6 +118,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (isMobile) return; // Kein Scroll-Handling auf Mobile
     const container = containerRef.current;
     if (!container) return;
 
@@ -132,12 +135,10 @@ export default function Home() {
       if (isOnHero && e.deltaY > 0 && !isScrolling) {
         e.preventDefault();
         isScrolling = true;
-        
         const firstSection = container.children[1] as HTMLElement;
         if (firstSection) {
           firstSection.scrollIntoView({ behavior: 'smooth' });
         }
-
         scrollTimeout = setTimeout(() => {
           isScrolling = false;
         }, 1000);
@@ -150,7 +151,6 @@ export default function Home() {
 
       const heroRect = heroSection.getBoundingClientRect();
       const isOnHero = heroRect.top >= -heroRect.height / 2 && heroRect.top <= heroRect.height / 2;
-      
       setIsOnHeroSection(isOnHero);
     };
 
@@ -165,7 +165,7 @@ export default function Home() {
       container.removeEventListener('scroll', handleScroll);
       if (scrollTimeout) clearTimeout(scrollTimeout);
     };
-  }, [setIsOnHeroSection]);
+  }, [setIsOnHeroSection, isMobile]);
 
   const handleStartClick = () => {
     setAuthModalOpen(true);
