@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Box, Container, Link, Typography, useTheme } from '@mui/material';
 import { useLocation } from 'react-router-dom';
@@ -8,9 +7,8 @@ const Footer: React.FC = () => {
   const theme = useTheme();
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '';
-
-
   const [buildNumber, setBuildNumber] = React.useState<string | null>(null);
+
   React.useEffect(() => {
     fetch('/buildinfo.json')
       .then(res => res.ok ? res.json() : null)
@@ -33,14 +31,22 @@ const Footer: React.FC = () => {
         fontSize: '0.95em',
       }}
     >
-      <Container maxWidth="md" sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+      <Container maxWidth="md" 
+        sx={{ 
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 2
+        }}
+      >
         <Box>
           <Typography variant="body2" sx={{ fontWeight: 500 }}>
             &copy; {new Date().getFullYear()} Kaderblick
             {buildNumber && (
-              <span style={{ opacity: 0.5, fontSize: '0.85em', marginLeft: 8 }} title={`Build: ${buildNumber}`}>
+              <Box component="span" style={{ color: '#CCCCCC', fontSize: '0.85em', marginLeft: 8 }} title={`Build: ${buildNumber}`}>
                 v{buildNumber}
-              </span>
+              </Box>
             )}
           </Typography>
         </Box>
