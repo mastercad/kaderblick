@@ -179,6 +179,8 @@ export default function LandingSection({ name, image, additionalImages = [], tex
           textTransform: 'none',
           borderRadius: 2,
           boxShadow: 3,
+          border: '3px solid white',
+          outline: `6px solid ${theme.palette.primary.main}`,
           transition: 'all 0.3s',
           '&:hover': {
             transform: 'translateY(0px)',
