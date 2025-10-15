@@ -120,7 +120,7 @@ class TaskEventGeneratorService
                 if (isset($rule['byday'])) {
                     // byday als z.B. 'MO', 'TU', ...
                     $weekday = $rule['byday'];
-                    $date = $date->modify('next ' . $this->weekdayToString($weekday));
+                    $date = $date->modify('next ' . $this->weekdayToString($weekday[0]));
                 }
                 $dates[] = $date;
             } elseif ('MONTHLY' === $rule['freq']) {
