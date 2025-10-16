@@ -227,17 +227,20 @@ class VideosController extends AbstractController
             $eventSeconds = ($event->getTimestamp()->getTimestamp() - $startTimestamp);
 
             foreach ($videos as $cameraId => $currentVideos) {
-                foreach ($currentVideos as $videoStart => $video) {
+                $elapsedTime = 0;
+                foreach ($currentVideos as $startTime => $video) {
                     if (!$this->isGranted(VideoVoter::VIEW, $video)) {
                         continue;
                     }
-                    $gameStart = (int) $video->getGameStart();
-                    $length = (int) $video->getLength();
-                    // Prüfe, ob das Event im Zeitbereich des Videos liegt
-                    if ($gameStart <= $eventSeconds && $eventSeconds < $gameStart + $length) {
-                        $seconds = $eventSeconds - $gameStart + $this->youtubeLinkStartOffset;
-                        $youtubeLinks[(int) $event->getId()][(int) $cameraId][] = $video->getUrl() . '&t=' . $seconds . 's';
+                    if (
+                        $startTime <= ($eventSeconds + $video->getGameStart())
+                        && (int) ($startTime + $video->getLength()) >= (int) ($eventSeconds + $video->getGameStart())
+                    ) {
+                        $seconds = $eventSeconds - $elapsedTime + (int) $video->getGameStart() + $this->youtubeLinkStartOffset;
+                        $youtubeLinks[(int) $event->getId()][(int) $cameraId][] = $video->getUrl() .
+                            '&t=' . $seconds . 's';
                     }
+                    $elapsedTime += $video->getLength();
                 }
             }
         }
