@@ -92,8 +92,14 @@ class UserRepository extends ServiceEntityRepository implements OptimizedReposit
             ->addSelect('r', 'p', 'c', 'rt');
 
         foreach ($criteria as $field => $value) {
-            $qb->andWhere("u.$field = :$field")
-               ->setParameter($field, $value);
+            if (is_array($value)) {
+                // Use IN() for array criteria
+                $qb->andWhere("u.$field IN (:$field)")
+                   ->setParameter($field, $value);
+            } else {
+                $qb->andWhere("u.$field = :$field")
+                   ->setParameter($field, $value);
+            }
         }
 
         if ($orderBy) {

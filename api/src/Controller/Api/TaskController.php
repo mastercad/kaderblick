@@ -80,6 +80,7 @@ class TaskController extends AbstractController
 
         // rotationUsers (IDs zu Entities)
         if (!empty($data['rotationUsers']) && is_array($data['rotationUsers'])) {
+            dump($data['rotationUsers']);
             $users = $userRepository->findBy(['id' => $data['rotationUsers']]);
             $task->setRotationUsers(new ArrayCollection($users));
         }
@@ -126,8 +127,14 @@ class TaskController extends AbstractController
         }
         // rotationUsers (IDs zu Entities)
         if (array_key_exists('rotationUsers', $data) && is_array($data['rotationUsers'])) {
-            $users = $userRepository->findBy(['id' => $data['rotationUsers']]);
-            $task->setRotationUsers(new ArrayCollection($users));
+            // If an empty array is provided, clear the rotationUsers collection
+            if (count($data['rotationUsers']) === 0) {
+                $task->setRotationUsers(new ArrayCollection());
+            } else {
+                // Doctrine expects an array of ids for an IN query, don't implode them into a string
+                $users = $userRepository->findBy(['id' => $data['rotationUsers']]);
+                $task->setRotationUsers(new ArrayCollection($users));
+            }
         }
         $em->flush();
 
