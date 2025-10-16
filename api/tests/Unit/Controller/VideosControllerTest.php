@@ -95,7 +95,8 @@ class VideosControllerTest extends TestCase
             [
                 1 => [
                     1 => [
-                        'https://youtube.com/watch?v=vidA&t=10s'
+                        'https://youtube.com/watch?v=vidA&t=10s',
+                        'https://youtube.com/watch?v=vidB&t=10s'
                     ],
                     2 => [
                         'https://youtube.com/watch?v=vidC&t=10s'
@@ -103,10 +104,16 @@ class VideosControllerTest extends TestCase
                 ],
                 2 => [
                     1 => [
-                        'https://youtube.com/watch?v=vidB&t=0s'
+                        'https://youtube.com/watch?v=vidA&t=100s',
+                        'https://youtube.com/watch?v=vidB&t=100s'
                     ],
                     2 => [
                         'https://youtube.com/watch?v=vidC&t=100s'
+                    ]
+                ],
+                3 => [
+                    2 => [
+                        'https://youtube.com/watch?v=vidC&t=200s'
                     ]
                 ],
             ],
@@ -165,7 +172,7 @@ class VideosControllerTest extends TestCase
             [$event7],
             1000,
             0,
-            [7 => [1 => ['https://youtube.com/watch?v=vidD&t=10s']]], // 20s - 10s
+            [7 => [1 => ['https://youtube.com/watch?v=vidD&t=30s']]], // 20s - 10s
         ];
     }
 
