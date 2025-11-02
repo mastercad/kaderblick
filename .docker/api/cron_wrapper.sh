@@ -3,6 +3,8 @@ set -e
 
 # Symfony Projektpfad
 APP_DIR="/var/www/symfony"
+APP_ENV="prod"
+
 cd "$APP_DIR"
 
 # .env-Dateien in der richtigen Symfony-Reihenfolge laden
