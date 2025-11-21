@@ -11,7 +11,6 @@ use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
@@ -83,26 +82,35 @@ class RegisterController extends AbstractController
         return new JsonResponse(['message' => 'Registrierung erfolgreich. Bitte E-Mail bestätigen.'], 201);
     }
 
-    #[Route('/verify-email/{token}', name: 'verify_email')]
-    public function verifyEmail(string $token): Response
+    #[Route('/verify-email/{token}', name: 'verify_email', methods: ['GET'])]
+    public function verifyEmail(string $token): JsonResponse
     {
         $user = $this->em->getRepository(User::class)->findOneBy(['verificationToken' => $token]);
 
         if (!$user) {
-            throw $this->createNotFoundException('Der Verifizierungslink ist ungültig oder abgelaufen.');
+            return new JsonResponse(
+                ['error' => 'Der Verifizierungslink ist ungültig oder abgelaufen.'],
+                404
+            );
+        }
+
+        // Check if token is expired
+        if ($user->getVerificationExpires() && $user->getVerificationExpires() < new DateTime()) {
+            return new JsonResponse(
+                ['error' => 'Der Verifizierungslink ist abgelaufen.'],
+                410
+            );
         }
 
         $user->setIsVerified(true)
+             ->setIsEnabled(true)
              ->setVerificationToken(null)
              ->setVerificationExpires(null);
 
-        // Automatische Zuordnung prüfen wird jetzt über UserRelations gemacht
-        // Diese Legacy-Implementierung wird entfernt
-
         $this->em->flush();
 
-        $this->addFlash('success', 'Deine E-Mail-Adresse wurde erfolgreich verifiziert.');
-
-        return $this->redirectToRoute('app_login');
+        return new JsonResponse([
+            'message' => 'Deine E-Mail-Adresse wurde erfolgreich verifiziert. Du kannst dich jetzt anmelden.'
+        ], 200);
     }
 }
