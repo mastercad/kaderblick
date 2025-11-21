@@ -12,10 +12,10 @@ class NotificationService {
 
   async initialize(): Promise<void> {
     try {
-      // Service Worker registrieren
+      // Service Worker ist bereits in main.tsx registriert, hier nur die Registration holen
       if ('serviceWorker' in navigator) {
-        this.serviceWorkerRegistration = await navigator.serviceWorker.register('/sw.js');
-//        console.log('Service Worker registered');
+        this.serviceWorkerRegistration = await navigator.serviceWorker.ready;
+//        console.log('Service Worker ready for notifications');
       }
 
       // Push-Berechtigung anfragen (non-blocking)
@@ -28,6 +28,9 @@ class NotificationService {
     } catch (error) {
       console.error('Failed to initialize notification service:', error);
       // Fallback: Nur Polling
+      this.startPolling();
+    }
+  }
       this.startPolling();
     }
   }

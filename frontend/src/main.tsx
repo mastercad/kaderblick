@@ -12,6 +12,19 @@ import './index.css';
 import './styles/tour-tool-tip.css';
 import './styles/mobile-responsive.css';
 
+// Service Worker für PWA registrieren
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('Service Worker registered:', registration);
+      })
+      .catch(error => {
+        console.error('Service Worker registration failed:', error);
+      });
+  });
+}
+
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Root element not found');
 
@@ -30,3 +43,8 @@ createRoot(rootElement).render(
     </CustomThemeProvider>
   </StrictMode>
 );
+
+// App-Ready-Event dispatchen nach dem ersten Render
+setTimeout(() => {
+  window.dispatchEvent(new Event('app-ready'));
+}, 100);
