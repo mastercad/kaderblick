@@ -3,7 +3,7 @@ set -e
 
 # Symfony Projektpfad
 APP_DIR="/var/www/symfony"
-APP_ENV="prod"
+APP_ENV="${APP_ENV:-prod}"
 
 cd "$APP_DIR"
 
@@ -12,7 +12,10 @@ cd "$APP_DIR"
 load_env_file() {
   local file="$1"
   if [ -f "$file" ]; then
-    export $(grep -v '^#' "$file" | xargs)
+    # Variablen direkt in die aktuelle Shell exportieren (nicht in Subshell)
+    set -a  # Automatisch alle Variablen exportieren
+    source "$file"
+    set +a
   fi
 }
 
