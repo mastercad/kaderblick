@@ -31,9 +31,6 @@ class NotificationService {
       this.startPolling();
     }
   }
-      this.startPolling();
-    }
-  }
 
   private async requestPushPermission(): Promise<boolean> {
     if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
