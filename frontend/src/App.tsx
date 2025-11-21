@@ -45,6 +45,7 @@ import Imprint from './pages/Imprint';
 import Privacy from './pages/Privacy';
 import Teams from './pages/Teams';
 import Footer from './components/Footer';
+import VerifyEmail from './pages/VerifyEmail';
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -84,6 +85,7 @@ function App() {
             <Box component="main" sx={{ flex: 1, width: '100%', position: 'relative' }}>
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/verify-email/:token" element={<VerifyEmail />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/surveys" element={<ProtectedRoute><SurveyList /></ProtectedRoute>} />
                 <Route path="/team-size-guide" element={<ProtectedRoute><SizeGuide /></ProtectedRoute>} />

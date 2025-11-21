@@ -10,7 +10,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -23,21 +22,32 @@ class VerificationController extends AbstractController
     ) {
     }
 
-    #[Route('/verify/email', name: 'verify_email')]
+    #[Route('/verify/email', name: 'verify_email_legacy', methods: ['GET'])]
     public function verifyUserEmail(
         Request $request,
         UserRepository $userRepository,
         MailerInterface $mailer
-    ): Response {
+    ): JsonResponse {
         $token = $request->query->get('Token');
+
+        if (!$token) {
+            return new JsonResponse(
+                ['error' => 'Token fehlt.'],
+                400
+            );
+        }
 
         $user = $userRepository->findUserByValidationToken($token);
 
         if (!$user instanceof User) {
-            return new Response('error: Ungültiger Token', 400);
+            return new JsonResponse(
+                ['error' => 'Ungültiger Token.'],
+                404
+            );
         }
 
-        $user->setIsVerified(true);
+        $user->setIsVerified(true)
+             ->setIsEnabled(true);
 
         $this->em->persist($user);
         $this->em->flush();
@@ -56,12 +66,9 @@ class VerificationController extends AbstractController
 
         $mailer->send($email);
 
-        $this->addFlash(
-            'verification_success',
-            'Dein Account wurde erfolgreich aktiviert! Du kannst dich jetzt anmelden.'
-        );
-
-        return $this->redirectToRoute('app_dashboard_index');
+        return new JsonResponse([
+            'message' => 'Dein Account wurde erfolgreich aktiviert! Du kannst dich jetzt anmelden.'
+        ], 200);
     }
 
     #[Route('/verify/success', name: 'app_verify_success')]

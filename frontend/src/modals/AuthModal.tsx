@@ -35,6 +35,30 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
   const [tab, setTab] = useState<'login' | 'register'>('login');
   const [googleLoginError, setGoogleLoginError] = useState<string | null>(null);
   const [googleLoginSuccess, setGoogleLoginSuccess] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(open);
+
+  // Listen for custom event to open modal
+  useEffect(() => {
+    const handleOpenAuthModal = () => {
+      setIsOpen(true);
+      setTab('login');
+    };
+
+    window.addEventListener('open-auth-modal', handleOpenAuthModal);
+    return () => {
+      window.removeEventListener('open-auth-modal', handleOpenAuthModal);
+    };
+  }, []);
+
+  // Sync with prop changes
+  useEffect(() => {
+    setIsOpen(open);
+  }, [open]);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    onClose();
+  };
 
   useEffect(() => {
     const handler = (event: MessageEvent<GoogleAuthMessage>) => {
@@ -50,7 +74,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
             setGoogleLoginError(null);
             
             setTimeout(() => {
-              onClose();
+              handleClose();
               setGoogleLoginSuccess(null);
             }, 1500);
             
@@ -85,12 +109,12 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
     }
   }, [googleLoginError, googleLoginSuccess]);
 
-  if (!open) return null;
+  if (!isOpen) return null;
 
   return (
     <BaseModal 
-      open={open} 
-      onClose={onClose} 
+      open={isOpen} 
+      onClose={handleClose} 
       maxWidth="sm"
       title={
         <Tabs 
@@ -122,7 +146,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
           </Alert>
         )}
         
-        {tab === 'login' ? <LoginForm onSuccess={onClose} /> : <RegisterForm />}
+        {tab === 'login' ? <LoginForm onSuccess={handleClose} /> : <RegisterForm />}
       </Box>
     </BaseModal>
   );
