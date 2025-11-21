@@ -82,6 +82,7 @@ class CoachTeamPlayerService
         if (1 === count($teams)) {
             // Nur ein Team - direkt die Spieler zurückgeben
             $team = reset($teams);
+
             return [
                 'singleTeam' => true,
                 'teams' => array_map(fn (Team $team) => [
