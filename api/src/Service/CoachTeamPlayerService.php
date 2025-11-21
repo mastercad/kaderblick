@@ -3,7 +3,6 @@
 namespace App\Service;
 
 use App\Entity\Coach;
-use App\Entity\Player;
 use App\Entity\Team;
 use App\Entity\User;
 use DateTime;
@@ -82,13 +81,15 @@ class CoachTeamPlayerService
 
         if (1 === count($teams)) {
             // Nur ein Team - direkt die Spieler zurückgeben
+            $team = reset($teams);
+
             return [
                 'singleTeam' => true,
                 'teams' => array_map(fn (Team $team) => [
                     'id' => $team->getId(),
                     'name' => $team->getName()
                 ], $teams),
-                'players' => $this->collectTeamPlayers($teams[0])
+                'players' => $this->collectTeamPlayers($team)
             ];
         }
 
