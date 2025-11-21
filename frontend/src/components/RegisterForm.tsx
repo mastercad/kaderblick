@@ -2,10 +2,12 @@ import { useState } from 'react';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
+import { apiJson } from '../utils/api';
 
 
 export default function RegisterForm() {
-  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -13,12 +15,21 @@ export default function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    
     try {
-      // Hier API-Call zum Registrieren
-      // await register({ username, email, password });
-      setSuccess(true);
+      const response = await apiJson('/api/register', {
+        method: 'POST',
+        body: { fullName, email, password }
+      });
+      
+      if (response && 'error' in response) {
+        setError(response.error);
+      } else {
+        setSuccess(true);
+      }
     } catch (err) {
-      setError('Registrierung fehlgeschlagen');
+      setError('Registrierung fehlgeschlagen. Bitte versuche es später erneut.');
     }
   };
 
@@ -29,21 +40,26 @@ export default function RegisterForm() {
         sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}
         onSubmit={handleSubmit}
     >
+        {error && <Alert severity="error">{error}</Alert>}
+        
         <TextField
-            label="Benutzername"
+            label="Vollständiger Name"
             variant="standard"
             size="small"
             fullWidth
-            value={username}
-            onChange={e => setUsername(e.target.value)}
+            value={fullName}
+            onChange={e => setFullName(e.target.value)}
+            required
         />
         <TextField
             label="E-Mail"
+            type="email"
             variant="standard"
             size="small"
             fullWidth
             value={email}
             onChange={e => setEmail(e.target.value)}
+            required
         />
         <TextField
             label="Passwort"
@@ -53,6 +69,7 @@ export default function RegisterForm() {
             fullWidth
             value={password}
             onChange={e => setPassword(e.target.value)}
+            required
         />
         <Button type="submit" variant="contained" size="small" sx={{ mt: 2 }}>
             Registrieren
