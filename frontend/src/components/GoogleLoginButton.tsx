@@ -19,16 +19,80 @@ export default function GoogleLoginButton() {
         const width = 500, height = 600;
         const left = (screen.width/2)-(width/2);
         const top = (screen.height/2)-(height/2);
-        const popup = window.open(`${BACKEND_URL}/connect/google`, 'GoogleLogin', `width=${width},height=${height},top=${top},left=${left}`);
-        if (!popup) return;
-        const pollTimer = setInterval(function() {
-            if (popup.closed) {
+        const popup = window.open(
+            `${BACKEND_URL}/connect/google`, 
+            'GoogleLogin', 
+            `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes`
+        );
+        
+        if (!popup) {
+            console.error('Popup konnte nicht geöffnet werden');
+            return;
+        }
+
+        // Message Listener für die Auth-Response
+        const handleMessage = (event: MessageEvent) => {
+            // Sicherheitscheck: Nur Messages von unserem Backend akzeptieren
+            if (event.origin !== window.location.origin) {
+                return;
+            }
+
+            // Prüfe ob es eine Google Auth Message ist
+            if (event.data && typeof event.data === 'object' && event.data.source === 'google-auth') {
+                console.log('Google Auth Message empfangen:', event.data);
+                
+                // Cleanup
+                window.removeEventListener('message', handleMessage);
                 clearInterval(pollTimer);
-                apiJson('/api/about-me')
-                    .then(() => window.location.reload())
-                    .catch(() => {/* do nothing */});
+                
+                // Schließe Popup falls noch offen
+                try {
+                    if (popup && !popup.closed) {
+                        popup.close();
+                    }
+                } catch (e) {
+                    console.log('Popup bereits geschlossen');
+                }
+                
+                // Reload page um Auth-State zu aktualisieren
+                // Verwende setTimeout für bessere PWA-Kompatibilität
+                setTimeout(() => {
+                    window.location.reload();
+                }, 100);
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+        
+        // Fallback: Polling als Backup falls postMessage nicht funktioniert
+        const pollTimer = setInterval(() => {
+            try {
+                if (popup.closed) {
+                    clearInterval(pollTimer);
+                    window.removeEventListener('message', handleMessage);
+                    
+                    // Prüfe Auth-Status und reload wenn erfolgreich
+                    apiJson('/api/about-me')
+                        .then(() => {
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 100);
+                        })
+                        .catch(() => {
+                            console.log('Login wurde abgebrochen');
+                        });
+                }
+            } catch (e) {
+                // Popup-Zugriff fehlgeschlagen (kann in PWAs passieren)
+                console.log('Popup-Status konnte nicht geprüft werden');
             }
         }, 500);
+        
+        // Cleanup nach 5 Minuten (Timeout)
+        setTimeout(() => {
+            clearInterval(pollTimer);
+            window.removeEventListener('message', handleMessage);
+        }, 300000);
     };
 
     return (

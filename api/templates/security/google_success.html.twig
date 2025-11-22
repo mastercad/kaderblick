@@ -3,16 +3,90 @@
   <head>
       <meta charset="UTF-8">
       <title>Google Login</title>
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          margin: 0;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+        }
+        .message {
+          text-align: center;
+          padding: 2rem;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 1rem;
+          backdrop-filter: blur(10px);
+        }
+      </style>
   </head>
   <body>
+    <div class="message">
+      <h2>✓ Login erfolgreich!</h2>
+      <p>Dieses Fenster wird automatisch geschlossen...</p>
+    </div>
     <script>
-      // Informiere das Hauptfenster über den Login-Erfolg
-      if (window.opener) {
-        window.opener.postMessage('google-login-success', '*');
-        window.close();
-      } else {
-        document.write('Login erfolgreich. Du kannst dieses Fenster schließen.');
-      }
+      (function() {
+        const authData = {{ authData|raw }};
+        
+        // Füge source-Flag hinzu für AuthModal
+        const message = {
+          ...authData,
+          source: 'google-auth'
+        };
+        
+        // Versuche verschiedene Methoden, um das Parent-Fenster zu erreichen
+        const sendMessage = () => {
+          try {
+            // Methode 1: window.opener (Standard-Popup)
+            if (window.opener && !window.opener.closed) {
+              window.opener.postMessage(message, window.location.origin);
+              console.log('✓ Message sent via window.opener');
+            }
+            
+            // Methode 2: parent window (für iframes oder eingebettete Fenster)
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage(message, window.location.origin);
+              console.log('✓ Message sent via window.parent');
+            }
+            
+            // Methode 3: top window (für verschachtelte iframes)
+            if (window.top && window.top !== window) {
+              window.top.postMessage(message, window.location.origin);
+              console.log('✓ Message sent via window.top');
+            }
+          } catch (e) {
+            console.error('Error sending message:', e);
+          }
+        };
+        
+        // Sende Message sofort
+        sendMessage();
+        
+        // Versuche Fenster zu schließen nach kurzer Verzögerung
+        setTimeout(() => {
+          try {
+            // In PWAs und einigen Browsern funktioniert window.close() nur,
+            // wenn das Fenster per JavaScript geöffnet wurde
+            window.close();
+            
+            // Fallback: Wenn close() nicht funktioniert, leite zur Hauptseite
+            setTimeout(() => {
+              if (!window.closed) {
+                window.location.href = '/';
+              }
+            }, 1000);
+          } catch (e) {
+            console.log('Could not close window automatically');
+            // Zeige alternative Nachricht
+            document.querySelector('.message').innerHTML = 
+              '<h2>✓ Login erfolgreich!</h2><p>Du kannst dieses Fenster jetzt schließen.</p>';
+          }
+        }, 500);
+      })();
     </script>
   </body>
 </html>
