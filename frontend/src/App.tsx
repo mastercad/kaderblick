@@ -48,6 +48,8 @@ import Privacy from './pages/Privacy';
 import Teams from './pages/Teams';
 import Footer from './components/Footer';
 import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import { PullToRefresh } from './components/PullToRefresh';
 
 function App() {
@@ -98,6 +100,8 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/verify-email/:token" element={<VerifyEmail />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password/:token" element={<ResetPassword />} />
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/surveys" element={<ProtectedRoute><SurveyList /></ProtectedRoute>} />
                   <Route path="/team-size-guide" element={<ProtectedRoute><SizeGuide /></ProtectedRoute>} />

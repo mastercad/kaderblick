@@ -22,6 +22,7 @@ import { apiJson } from '../utils/api';
 import UserRelationEditModal from '../modals/UserRelationEditModal';
 import UserRelationDeleteModal from '../modals/UserRelationDeleteModal';
 import EditUserRolesModal from '../modals/EditUserRolesModal';
+import DeleteUserModal from '../modals/DeleteUserModal';
 
 const UserRelations: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -30,8 +31,28 @@ const UserRelations: React.FC = () => {
   const [editModal, setEditModal] = useState<{ open: boolean; user?: any } | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; user?: any; relation?: any } | null>(null);
   const [rolesModal, setRolesModal] = useState<{ open: boolean; user?: any } | null>(null);
+  const [deleteUserModal, setDeleteUserModal] = useState<{ open: boolean; user?: any } | null>(null);
 
   const toast = useToast();
+
+  const handleDeleteUser = async (user: any) => {
+    try {
+      const res = await apiJson(`/admin/users/${user.id}`, {
+        method: 'DELETE',
+      });
+      if (res && res.success) {
+        // User aus der Liste entfernen
+        setUsers((prev) => prev.filter(u => u.id !== user.id));
+        setDeleteUserModal(null);
+        toast.showToast(res.message || 'Benutzer wurde erfolgreich gelöscht', 'success');
+      } else {
+        toast.showToast(res?.message || 'Fehler beim Löschen des Benutzers', 'error');
+      }
+    } catch (e: any) {
+      toast.showToast(e?.message || 'Fehler beim Löschen des Benutzers', 'error');
+    }
+  };
+
   const handleToggleStatus = async (user: any) => {
     try {
       const res = await apiJson(`/admin/users/${user.id}/toggle-status`);
@@ -147,6 +168,15 @@ const UserRelations: React.FC = () => {
                     >
                       Rollen bearbeiten
                     </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => setDeleteUserModal({ open: true, user })}
+                      startIcon={<DeleteIcon />}
+                    >
+                      Löschen
+                    </Button>
                     {/* Edit User Roles Modal */}
                     <EditUserRolesModal
                       open={!!rolesModal?.open}
@@ -197,6 +227,18 @@ const UserRelations: React.FC = () => {
         onClose={() => setDeleteModal(null)}
         onConfirm={() => { setDeleteModal(null); }}
         userRelation={deleteModal?.relation}
+      />
+
+      {/* Delete User Modal */}
+      <DeleteUserModal
+        open={!!deleteUserModal?.open}
+        onClose={() => setDeleteUserModal(null)}
+        onConfirm={() => {
+          if (deleteUserModal?.user) {
+            handleDeleteUser(deleteUserModal.user);
+          }
+        }}
+        user={deleteUserModal?.user}
       />
     </Box>
   );

@@ -31,6 +31,15 @@ class RegisterController extends AbstractController
         MailerInterface $mailer
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
+
+        // Validate required fields
+        if (empty($data['email']) || empty($data['password']) || empty($data['fullName'])) {
+            return new JsonResponse(
+                ['error' => 'E-Mail, Passwort und vollständiger Name sind erforderlich.'],
+                400,
+            );
+        }
+
         $token = bin2hex(random_bytes(32));
 
         // Split fullname into firstName and lastName
@@ -63,7 +72,7 @@ class RegisterController extends AbstractController
 
         $url = $urlGenerator->generate(
             'api_verify_email',
-            ['Token' => $user->getVerificationToken()],
+            ['token' => $user->getVerificationToken()],
             UrlGeneratorInterface::ABS_URL
         );
 
