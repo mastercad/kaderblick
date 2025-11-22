@@ -9,6 +9,8 @@ import { NotificationProvider } from './context/NotificationContext';
 import { HomeScrollProvider, useHomeScroll } from './context/HomeScrollContext';
 import { useAuth } from './context/AuthContext';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme as useMuiTheme } from '@mui/material/styles';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Calendar from './pages/Calendar';
@@ -46,11 +48,14 @@ import Privacy from './pages/Privacy';
 import Teams from './pages/Teams';
 import Footer from './components/Footer';
 import VerifyEmail from './pages/VerifyEmail';
+import { PullToRefresh } from './components/PullToRefresh';
 
 function App() {
   const { user, isLoading } = useAuth();
   const { mode } = useTheme();
   const currentTheme = mode === 'dark' ? darkTheme : lightTheme;
+  const muiTheme = useMuiTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const location = useLocation();
@@ -58,6 +63,12 @@ function App() {
   
   const isHome = location.pathname === '/' || location.pathname === '';
   const showLoginButton = !isHome || (isHome && isOnHeroSection);
+
+  // Refresh-Funktion
+  const handleRefresh = async () => {
+    await new Promise(resolve => setTimeout(resolve, 500)); // Kurze Verzögerung für UX
+    window.location.reload();
+  };
 
   // Signal when app is ready (auth loaded)
   useEffect(() => {
@@ -77,52 +88,54 @@ function App() {
       <NotificationProvider>
         <HomeScrollProvider>
           <FabStackRoot>
-            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-              <Navigation
-                onOpenAuth={() => setShowAuth(true)}
-                onOpenProfile={() => setShowProfile(true)}
-              />
-            <Box component="main" sx={{ flex: 1, width: '100%', position: 'relative' }}>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/verify-email/:token" element={<VerifyEmail />} />
-                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/surveys" element={<ProtectedRoute><SurveyList /></ProtectedRoute>} />
-                <Route path="/team-size-guide" element={<ProtectedRoute><SizeGuide /></ProtectedRoute>} />
-                <Route path="/games" element={<ProtectedRoute><GamesContainer /></ProtectedRoute>} />
-                <Route path="/calendar" element={<ProtectedRoute><Calendar setCalendarFabHandler={() => {}} /></ProtectedRoute>} />
-                <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-                <Route path="/test" element={<ProtectedRoute><TestPage /></ProtectedRoute>} />
-                <Route path="/admin/feedback" element={<ProtectedRoute><FeedbackAdmin /></ProtectedRoute>} />
-                <Route path="/admin/user-relations" element={<ProtectedRoute><UserRelations /></ProtectedRoute>} />
-                <Route path="news" element={<ProtectedRoute><News /></ProtectedRoute>} />
-                <Route path="locations" element={<ProtectedRoute><Locations /></ProtectedRoute>} />
-                <Route path="formations" element={<ProtectedRoute><Formations /></ProtectedRoute>} />
-                <Route path="clubs" element={<ProtectedRoute><Clubs /></ProtectedRoute>} />
-                <Route path="coaches" element={<ProtectedRoute><Coaches /></ProtectedRoute>} />
-                <Route path="players" element={<ProtectedRoute><Players /></ProtectedRoute>} />
-                <Route path="ageGroups" element={<ProtectedRoute><AgeGroups /></ProtectedRoute>} />
-                <Route path="positions" element={<ProtectedRoute><Positions /></ProtectedRoute>} />
-                <Route path="strongFeets" element={<ProtectedRoute><StrongFeets /></ProtectedRoute>} />
-                <Route path="surfaceTypes" element={<ProtectedRoute><SurfaceTypes /></ProtectedRoute>} />
-                <Route path="gameEventTypes" element={<ProtectedRoute><GameEventTypes /></ProtectedRoute>} />
-                <Route path="tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
-                <Route path="nationalities" element={<ProtectedRoute><Nationalities /></ProtectedRoute>} />
-                <Route path="leagues" element={<ProtectedRoute><Leagues /></ProtectedRoute>} />
-                <Route path="teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
-                <Route path="coachLicenses" element={<ProtectedRoute><CoachLicenses /></ProtectedRoute>} />
-                <Route path="/survey/fill/:surveyId" element={<ProtectedRoute><SurveyFill /></ProtectedRoute>} />
-                <Route path="/imprint" element={<Imprint />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="*" element={<Navigate to="/" />} />
-              </Routes>
+            <PullToRefresh onRefresh={handleRefresh} isEnabled={isMobile}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+                <Navigation
+                  onOpenAuth={() => setShowAuth(true)}
+                  onOpenProfile={() => setShowProfile(true)}
+                />
+              <Box component="main" sx={{ flex: 1, width: '100%', position: 'relative' }}>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/verify-email/:token" element={<VerifyEmail />} />
+                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/surveys" element={<ProtectedRoute><SurveyList /></ProtectedRoute>} />
+                  <Route path="/team-size-guide" element={<ProtectedRoute><SizeGuide /></ProtectedRoute>} />
+                  <Route path="/games" element={<ProtectedRoute><GamesContainer /></ProtectedRoute>} />
+                  <Route path="/calendar" element={<ProtectedRoute><Calendar setCalendarFabHandler={() => {}} /></ProtectedRoute>} />
+                  <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                  <Route path="/test" element={<ProtectedRoute><TestPage /></ProtectedRoute>} />
+                  <Route path="/admin/feedback" element={<ProtectedRoute><FeedbackAdmin /></ProtectedRoute>} />
+                  <Route path="/admin/user-relations" element={<ProtectedRoute><UserRelations /></ProtectedRoute>} />
+                  <Route path="news" element={<ProtectedRoute><News /></ProtectedRoute>} />
+                  <Route path="locations" element={<ProtectedRoute><Locations /></ProtectedRoute>} />
+                  <Route path="formations" element={<ProtectedRoute><Formations /></ProtectedRoute>} />
+                  <Route path="clubs" element={<ProtectedRoute><Clubs /></ProtectedRoute>} />
+                  <Route path="coaches" element={<ProtectedRoute><Coaches /></ProtectedRoute>} />
+                  <Route path="players" element={<ProtectedRoute><Players /></ProtectedRoute>} />
+                  <Route path="ageGroups" element={<ProtectedRoute><AgeGroups /></ProtectedRoute>} />
+                  <Route path="positions" element={<ProtectedRoute><Positions /></ProtectedRoute>} />
+                  <Route path="strongFeets" element={<ProtectedRoute><StrongFeets /></ProtectedRoute>} />
+                  <Route path="surfaceTypes" element={<ProtectedRoute><SurfaceTypes /></ProtectedRoute>} />
+                  <Route path="gameEventTypes" element={<ProtectedRoute><GameEventTypes /></ProtectedRoute>} />
+                  <Route path="tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+                  <Route path="nationalities" element={<ProtectedRoute><Nationalities /></ProtectedRoute>} />
+                  <Route path="leagues" element={<ProtectedRoute><Leagues /></ProtectedRoute>} />
+                  <Route path="teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
+                  <Route path="coachLicenses" element={<ProtectedRoute><CoachLicenses /></ProtectedRoute>} />
+                  <Route path="/survey/fill/:surveyId" element={<ProtectedRoute><SurveyFill /></ProtectedRoute>} />
+                  <Route path="/imprint" element={<Imprint />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+              </Box>
+              <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
+              <ProfileModal open={showProfile} onClose={() => setShowProfile(false)} />
+              { user ? (<FooterWithContact />) : (<Footer />) }
             </Box>
-            <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
-            <ProfileModal open={showProfile} onClose={() => setShowProfile(false)} />
-            { user ? (<FooterWithContact />) : (<Footer />) }
-          </Box>
-        </FabStackRoot>
-      </HomeScrollProvider>
+            </PullToRefresh>
+          </FabStackRoot>
+        </HomeScrollProvider>
       </NotificationProvider>
     </MuiThemeProvider>
   );

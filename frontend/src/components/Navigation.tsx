@@ -66,6 +66,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [trainerDrawerOpen, setTrainerDrawerOpen] = useState(false);
+  const [adminDrawerOpen, setAdminDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '';
@@ -488,7 +489,50 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                 </Collapse>
               </>
             )}
-            {/* Admin Untermenü (Accordion) entfernt, da Admin-Dropdown jetzt über adminMenuSections läuft */}
+            {/* Admin Untermenü im Drawer (Accordion) */}
+            {isAdmin && (
+              <>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    onClick={() => setAdminDrawerOpen((prev: boolean) => !prev)}
+                  >
+                    <ListItemText primary="Administration" />
+                    {adminDrawerOpen ? <ExpandLess /> : <ExpandMore />}
+                  </ListItemButton>
+                </ListItem>
+                <Collapse in={adminDrawerOpen} timeout="auto" unmountOnExit>
+                  {adminMenuSections.map((section) => (
+                    <Box key={section.section}>
+                      <ListItem disablePadding sx={{ pl: 2 }}>
+                        <ListItemButton disabled>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                            {section.section}
+                          </Typography>
+                        </ListItemButton>
+                      </ListItem>
+                      {section.items.map((item) => (
+                        <ListItem key={item.label} disablePadding sx={{ pl: 4 }}>
+                          <ListItemButton
+                            selected={location.pathname === `/${item.page || item.href}`}
+                            onClick={() => {
+                              handleMobileMenuClose();
+                              if (item.page) {
+                                navigate(`/${item.page}`);
+                              } else if (item.href) {
+                                navigate(item.href);
+                              }
+                            }}
+                          >
+                            {item.icon}
+                            <ListItemText primary={item.label} sx={{ ml: 1 }} />
+                          </ListItemButton>
+                        </ListItem>
+                      ))}
+                    </Box>
+                  ))}
+                </Collapse>
+              </>
+            )}
           </List>
         </Box>
       </Drawer>
