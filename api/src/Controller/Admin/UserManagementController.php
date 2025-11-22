@@ -314,4 +314,17 @@ class UserManagementController extends AbstractController
 
         return $this->json(['results' => $formatted]);
     }
+
+    #[Route('/{id}', name: 'user_delete', methods: ['DELETE'])]
+    public function deleteUser(User $user): Response
+    {
+        try {
+            $this->em->remove($user);
+            $this->em->flush();
+
+            return $this->json(['success' => true, 'message' => 'Benutzer erfolgreich gelöscht.']);
+        } catch (Exception $e) {
+            return $this->json(['error' => 'Fehler beim Löschen des Benutzers: ' . $e->getMessage()], 400);
+        }
+    }
 }

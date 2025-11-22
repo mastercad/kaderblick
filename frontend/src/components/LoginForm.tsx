@@ -3,15 +3,19 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
+import Link from '@mui/material/Link';
 import { useAuth } from '../context/AuthContext';
 import GoogleLoginButton from './GoogleLoginButton';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginFormProps {
   onSuccess?: () => void;
+  onClose?: () => void;
 }
 
-export default function LoginForm({ onSuccess }: LoginFormProps) {
+export default function LoginForm({ onSuccess, onClose }: LoginFormProps) {
   const { login, user } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -68,11 +72,45 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         onChange={(e) => setPassword(e.target.value)}
       />
       {error && (
-        <Box sx={{ color: 'error.main', mt: 1, mb: 1 }}>{error}</Box>
+        <Box sx={{ color: 'error.main', mt: 1, mb: 1 }}>
+          {error}
+          {error.includes('Ungültige Zugangsdaten') && (
+            <Box sx={{ mt: 1 }}>
+              <Link
+                component="button"
+                type="button"
+                variant="body2"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (onClose) onClose();
+                  navigate('/forgot-password');
+                }}
+                sx={{ cursor: 'pointer' }}
+              >
+                Passwort vergessen?
+              </Link>
+            </Box>
+          )}
+        </Box>
       )}
       <Button type="submit" variant="contained" size="small" sx={{ mt: 2 }}>
         Login
       </Button>
+      <Box sx={{ textAlign: 'center', mt: 1 }}>
+        <Link
+          component="button"
+          type="button"
+          variant="body2"
+          onClick={(e) => {
+            e.preventDefault();
+            if (onClose) onClose();
+            navigate('/forgot-password');
+          }}
+          sx={{ cursor: 'pointer' }}
+        >
+          Passwort vergessen?
+        </Link>
+      </Box>
     </Box>
   );
 }

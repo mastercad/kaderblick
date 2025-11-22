@@ -6,6 +6,7 @@
 parameters:
 #    env(MAILER_DSN): 'smtp://%env(resolve:MAILER_USER)%:%env(resolve:MAILER_PASSWORD)%@%env(MAILER_SERVER)%:%env(MAILER_PORT)%'
     app.website_url: '%env(WEBSITE)%'
+    app.frontend_url: '%env(FRONTEND_URL)%'
     app.contact_email: '%env(EMAIL)%'
     app.phone_number: '%env(PHONE)%'
     github_token: '%env(GITHUB_TOKEN)%'
@@ -27,6 +28,8 @@ services:
             $githubRepoOwner: '%env(resolve:GITHUB_REPO_OWNER)%'
             $githubRepoName: '%env(resolve:GITHUB_REPO_NAME)%'
             $weatherApiUrl: '%env(resolve:WEATHER_API_URL)%'
+            $frontendUrl: '%env(resolve:FRONTEND_URL)%'
+            $mailerFrom: '%env(resolve:MAILER_FROM)%'
 #        bind:
 #            $mailerDsn: '%env(MAILER_DSN1)%'
 #            $mailerDsn: 'smtp://%env(MAILER_USER)%:%env(MAILER_PASSWORD)%@byte-artist.de:587'
