@@ -383,7 +383,14 @@ class GamesController extends ApiController
             $currentStart = 0;
             foreach ($currentVideos as $video) {
                 $videos[$camera][$currentStart] = $video;
-                $currentStart += $video->getLength();
+                
+                // Wenn gameStart gesetzt ist (erstes Video einer Halbzeit), nur die effektive Spielzeit addieren
+                // Sonst die volle Videolänge addieren
+                if ($video->getGameStart() !== null) {
+                    $currentStart += $video->getLength() - $video->getGameStart();
+                } else {
+                    $currentStart += $video->getLength();
+                }
             }
         }
 
