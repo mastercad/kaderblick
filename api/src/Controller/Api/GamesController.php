@@ -357,7 +357,13 @@ class GamesController extends ApiController
                         $youtubeLinks[(int) $event->getId()][(int) $cameraId][] = $video->getUrl() .
                             '&t=' . $seconds . 's';
                     }
-                    $elapsedTime += $video->getLength();
+
+                    // Verwende die gleiche Logik wie orderVideos für konsistente Zeitberechnung
+                    if (null !== $video->getGameStart()) {
+                        $elapsedTime += $video->getLength() - $video->getGameStart();
+                    } else {
+                        $elapsedTime += $video->getLength();
+                    }
                 }
             }
         }
@@ -383,10 +389,10 @@ class GamesController extends ApiController
             $currentStart = 0;
             foreach ($currentVideos as $video) {
                 $videos[$camera][$currentStart] = $video;
-                
+
                 // Wenn gameStart gesetzt ist (erstes Video einer Halbzeit), nur die effektive Spielzeit addieren
                 // Sonst die volle Videolänge addieren
-                if ($video->getGameStart() !== null) {
+                if (null !== $video->getGameStart()) {
                     $currentStart += $video->getLength() - $video->getGameStart();
                 } else {
                     $currentStart += $video->getLength();
