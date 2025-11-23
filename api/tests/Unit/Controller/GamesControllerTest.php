@@ -275,7 +275,7 @@ class GamesControllerTest extends TestCase
         // Game start: 2025-11-15 11:00:00
         $gameStartTimestamp = (new DateTimeImmutable('2025-11-15 11:00:00'))->getTimestamp();
 
-        // Events
+        // Events - EXAKTE Zeitstempel aus deinen Daten
         $event134 = new GameEvent();
         self::setPrivateProperty($event134, 'id', 134);
         $event134->setTimestamp(new DateTimeImmutable('2025-11-15 11:01:10')); // 70s nach Start
@@ -283,6 +283,26 @@ class GamesControllerTest extends TestCase
         $event128 = new GameEvent();
         self::setPrivateProperty($event128, 'id', 128);
         $event128->setTimestamp(new DateTimeImmutable('2025-11-15 11:29:00')); // 1740s nach Start
+
+        $event129 = new GameEvent();
+        self::setPrivateProperty($event129, 'id', 129);
+        $event129->setTimestamp(new DateTimeImmutable('2025-11-15 11:35:00')); // 2100s nach Start
+
+        $event130 = new GameEvent();
+        self::setPrivateProperty($event130, 'id', 130);
+        $event130->setTimestamp(new DateTimeImmutable('2025-11-15 11:45:00')); // 2700s nach Start
+
+        $event131 = new GameEvent();
+        self::setPrivateProperty($event131, 'id', 131);
+        $event131->setTimestamp(new DateTimeImmutable('2025-11-15 11:58:00')); // 3480s nach Start
+
+        $event132 = new GameEvent();
+        self::setPrivateProperty($event132, 'id', 132);
+        $event132->setTimestamp(new DateTimeImmutable('2025-11-15 12:11:00')); // 4260s nach Start
+
+        $event133 = new GameEvent();
+        self::setPrivateProperty($event133, 'id', 133);
+        $event133->setTimestamp(new DateTimeImmutable('2025-11-15 12:11:00')); // 4260s nach Start
 
         $event135 = new GameEvent();
         self::setPrivateProperty($event135, 'id', 135);
@@ -292,22 +312,51 @@ class GamesControllerTest extends TestCase
         self::setPrivateProperty($event136, 'id', 136);
         $event136->setTimestamp(new DateTimeImmutable('2025-11-15 12:20:00')); // 4800s nach Start
 
+        $event137 = new GameEvent();
+        self::setPrivateProperty($event137, 'id', 137);
+        $event137->setTimestamp(new DateTimeImmutable('2025-11-15 12:20:00')); // 4800s nach Start
+
+        $event138 = new GameEvent();
+        self::setPrivateProperty($event138, 'id', 138);
+        $event138->setTimestamp(new DateTimeImmutable('2025-11-15 12:20:00')); // 4800s nach Start
+
         yield 'real_world_scenario_with_late_events' => [
             [$video45, $video46, $video47, $video48, $video49, $video50],
-            [$event134, $event128, $event135, $event136],
+            [$event134, $event128, $event129, $event130, $event131, $event132, $event133, $event135, $event136, $event137, $event138],
             $gameStartTimestamp,
             [
                 134 => [
-                    1 => ['https://youtu.be/yE4GwJ3zTvE&t=369s'] // 70s - 60s offset + 359s gameStart
+                    1 => ['https://youtu.be/yE4GwJ3zTvE&t=369s'] // 70 + 359 - 60 = 369
                 ],
                 128 => [
-                    1 => ['https://youtu.be/-hY82oPu4eU&t=489s'] // (1740s - 1191s) - 60s offset
+                    1 => ['https://youtu.be/-hY82oPu4eU&t=489s'] // 1740 - 1191 - 60 = 489
+                ],
+                129 => [
+                    1 => ['https://youtu.be/-hY82oPu4eU&t=849s'] // 2100 - 1191 - 60 = 849
+                ],
+                130 => [
+                    1 => ['https://youtu.be/-hY82oPu4eU&t=1449s'] // 2700 - 1191 - 60 = 1449
+                ],
+                131 => [
+                    1 => ['https://youtu.be/OLnoG-Og6sI&t=620s'] // 3480 - 2933 + 133 - 60 = 620
+                ],
+                132 => [
+                    1 => ['https://youtu.be/OLnoG-Og6sI&t=1400s'] // 4260 - 2933 + 133 - 60 = 1400
+                ],
+                133 => [
+                    1 => ['https://youtu.be/OLnoG-Og6sI&t=1400s'] // 4260 - 2933 + 133 - 60 = 1400
                 ],
                 135 => [
-                    1 => ['https://youtu.be/lIhsIl7SDWw&t=380s'] // (4800s - 4360s) - 60s offset
+                    1 => ['https://youtu.be/lIhsIl7SDWw&t=380s'] // 4800 - 4360 - 60 = 380
                 ],
                 136 => [
-                    1 => ['https://youtu.be/lIhsIl7SDWw&t=380s'] // (4800s - 4360s) - 60s offset
+                    1 => ['https://youtu.be/lIhsIl7SDWw&t=380s'] // 4800 - 4360 - 60 = 380
+                ],
+                137 => [
+                    1 => ['https://youtu.be/lIhsIl7SDWw&t=380s'] // 4800 - 4360 - 60 = 380
+                ],
+                138 => [
+                    1 => ['https://youtu.be/lIhsIl7SDWw&t=380s'] // 4800 - 4360 - 60 = 380
                 ],
             ]
         ];
