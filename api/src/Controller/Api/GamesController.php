@@ -349,10 +349,13 @@ class GamesController extends ApiController
                     if (!$this->isGranted(VideoVoter::VIEW, $video)) {
                         continue;
                     }
-                    if (
-                        $startTime <= ($eventSeconds + $video->getGameStart())
-                        && (int) ($startTime + $video->getLength()) >= (int) ($eventSeconds + $video->getGameStart())
-                    ) {
+
+                    // Event liegt innerhalb der Video-Timeline?
+                    $videoEnd = $startTime + (null !== $video->getGameStart()
+                        ? $video->getLength() - $video->getGameStart()
+                        : $video->getLength());
+
+                    if ($startTime <= $eventSeconds && $videoEnd >= $eventSeconds) {
                         $seconds = $eventSeconds - $elapsedTime + (int) $video->getGameStart() + $this->youtubeLinkStartOffset;
                         $youtubeLinks[(int) $event->getId()][(int) $cameraId][] = $video->getUrl() .
                             '&t=' . $seconds . 's';

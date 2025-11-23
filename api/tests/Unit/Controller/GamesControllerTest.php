@@ -334,6 +334,104 @@ class GamesControllerTest extends TestCase
                 ]
             ]
         ];
+
+        // Testfall: Events am Ende des Videos (Edge-Case für 80. Minute)
+        $camera2 = new Camera();
+        self::setPrivateProperty($camera2, 'id', 1);
+
+        $lateVideo1 = new Video();
+        $lateVideo1->setCamera($camera2);
+        $lateVideo1->setGameStart(133);
+        $lateVideo1->setLength(1560);
+        $lateVideo1->setUrl('https://youtu.be/video1');
+        $lateVideo1->setSort(1);
+
+        $lateVideo2 = new Video();
+        $lateVideo2->setCamera($camera2);
+        $lateVideo2->setGameStart(null);
+        $lateVideo2->setLength(1551);
+        $lateVideo2->setUrl('https://youtu.be/video2');
+        $lateVideo2->setSort(2);
+
+        $lateVideo3 = new Video();
+        $lateVideo3->setCamera($camera2);
+        $lateVideo3->setGameStart(null);
+        $lateVideo3->setLength(346);
+        $lateVideo3->setUrl('https://youtu.be/video3');
+        $lateVideo3->setSort(3);
+
+        // Timeline: video1: 0-1427, video2: 1427-2978, video3: 2978-3324
+        $eventAt1500 = new GameEvent();
+        self::setPrivateProperty($eventAt1500, 'id', 101);
+        $eventAt1500->setTimestamp((new DateTimeImmutable('2025-11-15 11:00:00'))->modify('+1500 seconds'));
+
+        $eventAt2900 = new GameEvent();
+        self::setPrivateProperty($eventAt2900, 'id', 102);
+        $eventAt2900->setTimestamp((new DateTimeImmutable('2025-11-15 11:00:00'))->modify('+2900 seconds'));
+
+        $eventAt3300 = new GameEvent();
+        self::setPrivateProperty($eventAt3300, 'id', 103);
+        $eventAt3300->setTimestamp((new DateTimeImmutable('2025-11-15 11:00:00'))->modify('+3300 seconds'));
+
+        yield 'events_at_end_of_videos_late_game' => [
+            [$lateVideo1, $lateVideo2, $lateVideo3],
+            [$eventAt1500, $eventAt2900, $eventAt3300],
+            (new DateTimeImmutable('2025-11-15 11:00:00'))->getTimestamp(),
+            [
+                101 => [
+                    1 => ['https://youtu.be/video2&t=13s'] // (1500 - 1427) - 60 = 13s
+                ],
+                102 => [
+                    1 => ['https://youtu.be/video2&t=1413s'] // (2900 - 1427) - 60 = 1413s
+                ],
+                103 => [
+                    1 => ['https://youtu.be/video3&t=262s'] // (3300 - 2978) - 60 = 262s
+                ],
+            ]
+        ];
+
+        // Testfall: Event außerhalb aller Videos
+        $singleVideo = new Video();
+        $singleVideo->setCamera($camera1);
+        $singleVideo->setGameStart(0);
+        $singleVideo->setLength(1000);
+        $singleVideo->setUrl('https://youtu.be/single');
+        $singleVideo->setSort(1);
+
+        $eventOutsideVideo = new GameEvent();
+        self::setPrivateProperty($eventOutsideVideo, 'id', 200);
+        $eventOutsideVideo->setTimestamp((new DateTimeImmutable('2025-11-15 11:00:00'))->modify('+2000 seconds'));
+
+        yield 'event_outside_all_videos' => [
+            [$singleVideo],
+            [$eventOutsideVideo],
+            (new DateTimeImmutable('2025-11-15 11:00:00'))->getTimestamp(),
+            [], // Keine Links erwartet
+        ];
+
+        // Testfall: Grenzen - Event genau am Video-Ende
+        $boundaryVideo = new Video();
+        $boundaryVideo->setCamera($camera1);
+        $boundaryVideo->setGameStart(100);
+        $boundaryVideo->setLength(1000);
+        $boundaryVideo->setUrl('https://youtu.be/boundary');
+        $boundaryVideo->setSort(1);
+
+        // Event genau am Ende: 900s (1000 - 100)
+        $eventAtEnd = new GameEvent();
+        self::setPrivateProperty($eventAtEnd, 'id', 300);
+        $eventAtEnd->setTimestamp((new DateTimeImmutable('2025-11-15 11:00:00'))->modify('+900 seconds'));
+
+        yield 'event_at_exact_video_end' => [
+            [$boundaryVideo],
+            [$eventAtEnd],
+            (new DateTimeImmutable('2025-11-15 11:00:00'))->getTimestamp(),
+            [
+                300 => [
+                    1 => ['https://youtu.be/boundary&t=940s'] // 900 - 0 + 100 - 60 = 940s
+                ]
+            ]
+        ];
     }
 
     /**
