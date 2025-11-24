@@ -9,11 +9,6 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 abstract class ApiWebTestCase extends WebTestCase
 {
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-    }
-
     protected function authenticateUser(KernelBrowser $client, string $email): void
     {
         $user = static::getContainer()->get('doctrine')->getRepository(User::class)->findOneBy(['email' => $email]);
@@ -21,5 +16,15 @@ abstract class ApiWebTestCase extends WebTestCase
         $token = $jwtManager->create($user);
 
         $client->setServerParameter('HTTP_AUTHORIZATION', 'Bearer ' . $token);
+    }
+
+    protected function tearDown(): void
+    {
+        // Cleanup nach jedem Test
+        $em = self::$kernel->getContainer()->get('doctrine')->getManager();
+        $connection = $em->getConnection();
+        $connection->executeStatement('DELETE FROM video_segments');
+
+        parent::tearDown();
     }
 }

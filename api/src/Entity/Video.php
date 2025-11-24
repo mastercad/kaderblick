@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Repository\VideoRepository;
 use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
@@ -74,6 +76,17 @@ class Video
 
     #[ORM\Column]
     private ?int $length = null;
+
+    /**
+     * @var Collection<int, VideoSegment>
+     */
+    #[ORM\OneToMany(mappedBy: 'video', targetEntity: VideoSegment::class, orphanRemoval: true)]
+    private Collection $videoSegments;
+
+    public function __construct()
+    {
+        $this->videoSegments = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -251,6 +264,36 @@ class Video
     public function setLength(int $length): static
     {
         $this->length = $length;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, VideoSegment>
+     */
+    public function getVideoSegments(): Collection
+    {
+        return $this->videoSegments;
+    }
+
+    public function addVideoSegment(VideoSegment $videoSegment): static
+    {
+        if (!$this->videoSegments->contains($videoSegment)) {
+            $this->videoSegments->add($videoSegment);
+            $videoSegment->setVideo($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVideoSegment(VideoSegment $videoSegment): static
+    {
+        if ($this->videoSegments->removeElement($videoSegment)) {
+            // set the owning side to null (unless already changed)
+            if ($videoSegment->getVideo() === $this) {
+                $videoSegment->setVideo(null);
+            }
+        }
 
         return $this;
     }

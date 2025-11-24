@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -26,7 +27,8 @@ import {
   VideoLibrary as VideoIcon,
   CalendarToday as CalendarIcon,
   Sync as SyncIcon,
-  LocationOn as LocationIcon
+  LocationOn as LocationIcon,
+  ContentCut as ContentCutIcon
 } from '@mui/icons-material';
 import { 
   fetchGameDetails, 
@@ -36,6 +38,7 @@ import {
 } from '../services/games';
 import { fetchVideos, saveVideo, deleteVideo, Video, YoutubeLink, Camera } from '../services/videos';
 import VideoModal from '../modals/VideoModal';
+import { VideoSegmentModal } from '../modals/VideoSegmentModal';
 import { Game, GameEvent } from '../types/games';
 import { useAuth } from '../context/AuthContext';
 import { ToastProvider, useToast } from '../context/ToastContext';
@@ -50,13 +53,19 @@ import { formatEventTime, formatDateTime } from '../utils/formatter'
 import { User } from '../components/User';
 
 interface GameDetailsProps {
-  gameId: number;
+  gameId?: number;
   onBack?: () => void;
 }
 
-function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
+function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const params = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  
+  // Use URL param if available, otherwise fall back to prop
+  const gameId = params.id ? parseInt(params.id, 10) : propGameId;
+  
   const [game, setGame] = useState<Game | null>(null);
   const [gameStartDate, setGameStartDate] = useState<string | null>(null);
   const [gameEvents, setGameEvents] = useState<GameEvent[]>([]);
@@ -81,13 +90,20 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
   const [videoDeleteLoading, setVideoDeleteLoading] = useState(false);
   const [weatherModalOpen, setWeatherModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [videoSegmentModalOpen, setVideoSegmentModalOpen] = useState(false);
 
   useEffect(() => {
+    if (!gameId) {
+      setError('Keine Spiel-ID angegeben');
+      setLoading(false);
+      return;
+    }
     loadGameDetails();
     loadVideos();
   }, [gameId]);
 
   const loadVideos = async () => {
+    if (!gameId) return;
     try {
       const res = await fetchVideos(gameId);
       setVideos(res.videos);
@@ -139,6 +155,7 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
   };
 
   const handleSaveVideo = async (data: any) => {
+    if (!gameId) return;
     setVideoDialogLoading(true);
     try {
       await saveVideo(gameId, data);
@@ -168,6 +185,7 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
   };
 
   const loadGameDetails = async () => {
+    if (!gameId) return;
     try {
       setLoading(true);
       setError(null);
@@ -186,6 +204,7 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
 
   // Nur Events laden (für SPA-Feeling)
   const loadGameEvents = async () => {
+    if (!gameId) return;
     try {
       const events = await fetchGameEvents(gameId);
       setGameEvents(events);
@@ -195,7 +214,7 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
   };
 
   const handleDeleteEvent = async () => {
-    if (!eventToDelete) return;
+    if (!eventToDelete || !gameId) return;
     
     try {
       await deleteGameEvent(gameId, eventToDelete.id);
@@ -207,7 +226,7 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
   };
 
   const handleSyncFussballDe = async () => {
-    if (!game?.fussballDeUrl) return;
+    if (!game?.fussballDeUrl || !gameId) return;
     
     try {
       setSyncing(true);
@@ -280,11 +299,12 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
     <Box sx={{ p: 3 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        {onBack && (
-          <IconButton onClick={onBack} sx={{ mr: 2 }}>
-            <ArrowBackIcon />
-          </IconButton>
-        )}
+        <IconButton 
+          onClick={() => onBack ? onBack() : navigate('/games')} 
+          sx={{ mr: 2 }}
+        >
+          <ArrowBackIcon />
+        </IconButton>
         <Typography variant="h4" component="h1">
           Spieldetails
         </Typography>
@@ -324,7 +344,7 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
             {/* Rechte Box: Weather Icon */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 80, pr: 2, pt: 1 }}
               onClick={() => {
-                openWeatherModal(game.calendarEvent?.id);
+                openWeatherModal(game.calendarEvent?.id ?? null);
               }}>
               <span style={{ cursor: 'pointer' }} title="Wetterdetails anzeigen">
                 <WeatherDisplay 
@@ -522,16 +542,29 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
         <CardHeader
           title="Videos"
           action={
-            canCreateVideos() && (
-              <Button
-                variant="contained"
-                startIcon={<VideoIcon />}
-                size="small"
-                onClick={handleOpenAddVideo}
-              >
-                Video hinzufügen
-              </Button>
-            )
+            <Box>
+              {videos.length > 0 && (
+                <Button
+                  variant="outlined"
+                  startIcon={<ContentCutIcon />}
+                  size="small"
+                  onClick={() => setVideoSegmentModalOpen(true)}
+                  sx={{ mr: 1 }}
+                >
+                  Schnittliste
+                </Button>
+              )}
+              {canCreateVideos() && (
+                <Button
+                  variant="contained"
+                  startIcon={<VideoIcon />}
+                  size="small"
+                  onClick={handleOpenAddVideo}
+                >
+                  Video hinzufügen
+                </Button>
+              )}
+            </Box>
           }
         />
         <CardContent>
@@ -651,7 +684,7 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
           setEventToEdit(null);
         }}
         onSuccess={handleEventFormSuccess}
-        gameId={gameId}
+        gameId={gameId!}
         game={game}
         existingEvent={eventToEdit}
       />
@@ -660,6 +693,14 @@ function GameDetailsInner({ gameId, onBack }: GameDetailsProps) {
         open={weatherModalOpen}
         onClose={() => setWeatherModalOpen(false)}
         eventId={selectedEventId}
+      />
+
+      {/* Video Segment Modal */}
+      <VideoSegmentModal
+        open={videoSegmentModalOpen}
+        onClose={() => setVideoSegmentModalOpen(false)}
+        videos={videos}
+        gameId={gameId!}
       />
     </Box>
   );

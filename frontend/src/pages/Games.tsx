@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -28,12 +29,9 @@ import { WeatherDisplay } from '../components/WeatherIcons';
 import WeatherModal from '../modals/WeatherModal';
 import { formatDateTime, formatTime } from '../utils/formatter';
 
-interface GamesProps {
-  onGameSelect?: (gameId: number) => void;
-}
-
-export default function Games({ onGameSelect }: GamesProps) {
+export default function Games() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [data, setData] = useState<GamesOverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,9 +61,7 @@ export default function Games({ onGameSelect }: GamesProps) {
   };
 
   const handleGameClick = (gameId: number) => {
-    if (onGameSelect) {
-      onGameSelect(gameId);
-    }
+    navigate(`/games/${gameId}`);
   };
 
   if (loading) {
