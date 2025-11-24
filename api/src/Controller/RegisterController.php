@@ -2,16 +2,14 @@
 
 namespace App\Controller;
 
-use ApiPlatform\Metadata\UrlGeneratorInterface;
 use App\Entity\User;
+use App\Service\UserVerificationService;
 use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -19,16 +17,15 @@ use Symfony\Component\Routing\Annotation\Route;
 class RegisterController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $em
+        private EntityManagerInterface $em,
+        private UserVerificationService $verificationService
     ) {
     }
 
     #[Route('/register', name: 'register', methods: ['POST'])]
     public function register(
         Request $request,
-        UserPasswordHasherInterface $passwordHasher,
-        UrlGeneratorInterface $urlGenerator,
-        MailerInterface $mailer
+        UserPasswordHasherInterface $passwordHasher
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
 
@@ -39,8 +36,6 @@ class RegisterController extends AbstractController
                 400,
             );
         }
-
-        $token = bin2hex(random_bytes(32));
 
         // Split fullname into firstName and lastName
         $fullName = trim($data['fullName'] ?? '');
@@ -54,11 +49,9 @@ class RegisterController extends AbstractController
         $user->setEmail($data['email'])
             ->setPassword($passwordHasher->hashPassword($user, $data['password']))
             ->setFirstName($firstName)
-            ->setLastName($lastName)
-            ->setVerificationToken($token)
-            ->setIsVerified(false)
-            ->setIsEnabled(false)
-            ->setVerificationExpires((new DateTime())->modify('+1 month'));
+            ->setLastName($lastName);
+
+        $this->verificationService->createVerificationToken($user);
 
         try {
             $this->em->persist($user);
@@ -70,23 +63,7 @@ class RegisterController extends AbstractController
             );
         }
 
-        $url = $urlGenerator->generate(
-            'api_verify_email',
-            ['token' => $user->getVerificationToken()],
-            UrlGeneratorInterface::ABS_URL
-        );
-
-        $email = (new TemplatedEmail())
-            ->from('no-reply@byte-artist.de')
-            ->to($user->getEmail())
-            ->subject('Bitte bestätige deine E-Mail')
-            ->htmlTemplate('emails/verification.html.twig')
-            ->context([
-                'name' => $user->getEmail(),
-                'signedUrl' => $url
-            ]);
-
-        $mailer->send($email);
+        $this->verificationService->sendVerificationEmail($user);
 
         return new JsonResponse(['message' => 'Registrierung erfolgreich. Bitte E-Mail bestätigen.'], 201);
     }
@@ -124,11 +101,8 @@ class RegisterController extends AbstractController
     }
 
     #[Route('/resend-verification/{userId}', name: 'resend_verification', methods: ['POST'])]
-    public function resendVerification(
-        int $userId,
-        UrlGeneratorInterface $urlGenerator,
-        MailerInterface $mailer
-    ): JsonResponse {
+    public function resendVerification(int $userId): JsonResponse
+    {
         $user = $this->em->getRepository(User::class)->find($userId);
 
         if (!$user) {
@@ -138,32 +112,10 @@ class RegisterController extends AbstractController
             );
         }
 
-        // Generate new token and reset verification status
-        $token = bin2hex(random_bytes(32));
-        $user->setVerificationToken($token)
-             ->setVerificationExpires((new DateTime())->modify('+1 month'))
-             ->setIsVerified(false)
-             ->setIsEnabled(false);
-
+        $this->verificationService->createVerificationToken($user);
         $this->em->flush();
 
-        $url = $urlGenerator->generate(
-            'api_verify_email',
-            ['token' => $token],
-            UrlGeneratorInterface::ABS_URL
-        );
-
-        $email = (new TemplatedEmail())
-            ->from('no-reply@byte-artist.de')
-            ->to($user->getEmail())
-            ->subject('Bitte bestätige deine E-Mail')
-            ->htmlTemplate('emails/verification.html.twig')
-            ->context([
-                'name' => $user->getEmail(),
-                'signedUrl' => $url
-            ]);
-
-        $mailer->send($email);
+        $this->verificationService->sendVerificationEmail($user);
 
         return new JsonResponse([
             'success' => true,

@@ -43,6 +43,9 @@ class RegistrationTest extends WebTestCase
             'expired@example.com',
             'test-url@example.com',
             'test-hash@example.com',
+            'test-resend@example.com',
+            'test-new-token@example.com',
+            'test-reset@example.com',
         ];
 
         try {
@@ -358,6 +361,145 @@ class RegistrationTest extends WebTestCase
         $this->assertNotEquals($plainPassword, $user->getPassword());
         $this->assertStringStartsWith('$', $user->getPassword()); // Hashed passwords start with $
         $this->assertGreaterThan(50, strlen($user->getPassword())); // Hashed passwords are long
+
+        $this->cleanupTestUsers();
+    }
+
+    public function testResendVerificationWithValidUser(): void
+    {
+        $client = static::createClient();
+        $this->cleanupTestUsers();
+
+        // Create a user first
+        $client->request('POST', '/api/register', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode([
+            'email' => 'test-resend@example.com',
+            'password' => 'SecurePassword123!',
+            'fullName' => 'Test User',
+        ]));
+
+        $this->assertResponseStatusCodeSame(201);
+
+        $user = $this->getEntityManager()->getRepository(User::class)
+            ->findOneBy(['email' => 'test-resend@example.com']);
+
+        $oldToken = $user->getVerificationToken();
+        $this->assertNotNull($oldToken);
+
+        // Resend verification
+        $client->request('POST', '/api/resend-verification/' . $user->getId());
+
+        $this->assertResponseStatusCodeSame(200);
+
+        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->assertTrue($response['success']);
+        $this->assertStringContainsString('erneut gesendet', $response['message']);
+
+        // Verify that a new token was generated
+        $em = $this->getEntityManager();
+        $em->clear();
+        $updatedUser = $em->getRepository(User::class)->findOneBy(['email' => 'test-resend@example.com']);
+
+        $this->assertNotNull($updatedUser->getVerificationToken());
+        $this->assertNotEquals($oldToken, $updatedUser->getVerificationToken());
+        $this->assertFalse($updatedUser->isVerified());
+        $this->assertFalse($updatedUser->isEnabled());
+
+        $this->cleanupTestUsers();
+    }
+
+    public function testResendVerificationWithInvalidUser(): void
+    {
+        $client = static::createClient();
+
+        $client->request('POST', '/api/resend-verification/99999');
+
+        $this->assertResponseStatusCodeSame(404);
+
+        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('error', $response);
+        $this->assertStringContainsString('nicht gefunden', $response['error']);
+    }
+
+    public function testResendVerificationGeneratesNewToken(): void
+    {
+        $client = static::createClient();
+        $this->cleanupTestUsers();
+
+        // Create a user
+        $client->request('POST', '/api/register', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode([
+            'email' => 'test-new-token@example.com',
+            'password' => 'SecurePassword123!',
+            'fullName' => 'Test User',
+        ]));
+
+        $user = $this->getEntityManager()->getRepository(User::class)
+            ->findOneBy(['email' => 'test-new-token@example.com']);
+
+        $oldToken = $user->getVerificationToken();
+        $oldExpires = $user->getVerificationExpires();
+
+        // Wait a moment to ensure timestamp difference
+        sleep(1);
+
+        // Resend verification
+        $client->request('POST', '/api/resend-verification/' . $user->getId());
+
+        $this->assertResponseStatusCodeSame(200);
+
+        // Get updated user
+        $em = $this->getEntityManager();
+        $em->clear();
+        $updatedUser = $em->getRepository(User::class)->findOneBy(['email' => 'test-new-token@example.com']);
+
+        // Verify new token was generated
+        $this->assertNotEquals($oldToken, $updatedUser->getVerificationToken());
+        $this->assertEquals(64, strlen($updatedUser->getVerificationToken()));
+
+        // Verify expiration was updated
+        $this->assertNotEquals(
+            $oldExpires->getTimestamp(),
+            $updatedUser->getVerificationExpires()->getTimestamp()
+        );
+
+        $this->cleanupTestUsers();
+    }
+
+    public function testResendVerificationResetsVerificationStatus(): void
+    {
+        $client = static::createClient();
+        $this->cleanupTestUsers();
+
+        // Create a user and manually verify them
+        $user = new User();
+        $user->setEmail('test-reset@example.com')
+            ->setPassword('hashedpassword')
+            ->setFirstName('Test')
+            ->setLastName('User')
+            ->setVerificationToken('old-token')
+            ->setIsVerified(true)  // Already verified
+            ->setIsEnabled(true)   // Already enabled
+            ->setVerificationExpires(new DateTime('+1 month'));
+
+        $em = $this->getEntityManager();
+        $em->persist($user);
+        $em->flush();
+
+        // Resend verification
+        $client->request('POST', '/api/resend-verification/' . $user->getId());
+
+        $this->assertResponseStatusCodeSame(200);
+
+        // Get updated user
+        $em->clear();
+        $updatedUser = $em->getRepository(User::class)->findOneBy(['email' => 'test-reset@example.com']);
+
+        // Verify status was reset
+        $this->assertFalse($updatedUser->isVerified());
+        $this->assertFalse($updatedUser->isEnabled());
 
         $this->cleanupTestUsers();
     }

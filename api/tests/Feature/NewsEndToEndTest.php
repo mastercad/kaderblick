@@ -32,11 +32,17 @@ class NewsEndToEndTest extends ApiWebTestCase
         $client = static::createClient();
         $this->authenticateUser($client, 'user16@example.com');
 
+        $em = static::getContainer()->get('doctrine')->getManager();
+        $club = $em->getRepository(\App\Entity\Club::class)->findOneBy([]);
+        if (!$club) {
+            $this->fail('No club found in fixtures');
+        }
+
         $client->request('POST', '/news/create', [], [], [], json_encode([
             'title' => 'Vereins-News',
             'content' => 'Dies ist eine Vereins-News',
             'visibility' => 'club',
-            'club_id' => 1,
+            'club_id' => $club->getId(),
         ]));
 
         $this->assertResponseStatusCodeSame(Response::HTTP_OK);
@@ -53,11 +59,17 @@ class NewsEndToEndTest extends ApiWebTestCase
         $client = static::createClient();
         $this->authenticateUser($client, 'user16@example.com');
 
+        $em = static::getContainer()->get('doctrine')->getManager();
+        $team = $em->getRepository(\App\Entity\Team::class)->findOneBy(['name' => 'Team 1']);
+        if (!$team) {
+            $this->fail('Team 1 not found in fixtures');
+        }
+
         $client->request('POST', '/news/create', [], [], [], json_encode([
             'title' => 'Team-News',
             'content' => 'Dies ist eine Team-News',
             'visibility' => 'team',
-            'team_id' => 1,
+            'team_id' => $team->getId(),
         ]));
 
         $this->assertResponseStatusCodeSame(Response::HTTP_OK);
@@ -86,18 +98,27 @@ class NewsEndToEndTest extends ApiWebTestCase
         $client = static::createClient();
         $this->authenticateUser($client, 'user16@example.com');
 
+        // Get actual team IDs from database instead of hardcoding
+        $em = static::getContainer()->get('doctrine')->getManager();
+        $team1 = $em->getRepository(\App\Entity\Team::class)->findOneBy(['name' => 'Team 1']);
+        $team2 = $em->getRepository(\App\Entity\Team::class)->findOneBy(['name' => 'Team 2']);
+
+        if (!$team1 || !$team2) {
+            $this->fail('Teams not found in fixtures');
+        }
+
         $crawler = $client->request('POST', '/news/create', [], [], [], json_encode([
             'title' => 'Team 1 News',
             'content' => 'Nur für Team 1',
             'visibility' => 'team',
-            'team_id' => 1,
+            'team_id' => $team1->getId(),
         ]));
 
         $crawler = $client->request('POST', '/news/create', [], [], [], json_encode([
             'title' => 'Team 2 News',
             'content' => 'Nur für Team 2',
             'visibility' => 'team',
-            'team_id' => 2,
+            'team_id' => $team2->getId(),
         ]));
 
         if ($client->getResponse()->isRedirection()) {

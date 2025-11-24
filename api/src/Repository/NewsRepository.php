@@ -32,7 +32,7 @@ class NewsRepository extends ServiceEntityRepository implements NewsRepositoryIn
     /**
      * @return News[]
      */
-    public function findForUser(?User $user): array
+    public function findForUser(?User $user, int $limit = 5): array
     {
         $qb = $this->createQueryBuilder('n');
         $qb->where('n.visibility = :platform')
@@ -87,6 +87,7 @@ class NewsRepository extends ServiceEntityRepository implements NewsRepositoryIn
         }
 
         $qb->orderBy('n.createdAt', 'DESC');
+        $qb->setMaxResults($limit);
 
         return $qb->getQuery()->getResult();
     }
