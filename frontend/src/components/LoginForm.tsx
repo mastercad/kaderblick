@@ -31,7 +31,6 @@ export default function LoginForm({ onSuccess, onClose }: LoginFormProps) {
     setError('');
     try {
       await login({ email, password });
-      // Nach Login: user ist im Context aktualisiert
       if (!user) {
         setError('Ungültige Zugangsdaten');
         return;

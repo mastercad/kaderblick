@@ -13,6 +13,11 @@ use Symfony\Component\Mime\Email;
 
 class RegistrationTest extends WebTestCase
 {
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+    }
+
     private function getEntityManager(): EntityManagerInterface
     {
         $em = static::getContainer()->get(EntityManagerInterface::class);

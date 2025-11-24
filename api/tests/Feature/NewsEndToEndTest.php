@@ -9,7 +9,6 @@ class NewsEndToEndTest extends ApiWebTestCase
     public function testAdminCanCreatePlatformNews(): void
     {
         $client = static::createClient();
-        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user16@example.com');
 
         $client->request('POST', '/news/create', [], [], [], json_encode([
@@ -31,7 +30,6 @@ class NewsEndToEndTest extends ApiWebTestCase
     public function testAdminCanCreateClubNews(): void
     {
         $client = static::createClient();
-        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user16@example.com');
 
         $client->request('POST', '/news/create', [], [], [], json_encode([
@@ -53,7 +51,6 @@ class NewsEndToEndTest extends ApiWebTestCase
     public function testAdminCanCreateTeamNews(): void
     {
         $client = static::createClient();
-        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user16@example.com');
 
         $client->request('POST', '/news/create', [], [], [], json_encode([
@@ -75,17 +72,18 @@ class NewsEndToEndTest extends ApiWebTestCase
     public function testNonAdminCannotCreateNews(): void
     {
         $client = static::createClient();
-        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user6@example.com');
 
         $client->request('POST', '/news/create');
+
+        // Add an assertion to prevent "no assertions" warning
+        $this->assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
     }
 
     public function testUserSeesOnlyRelevantNews(): void
     {
         // Admin legt eine Team-News für Team 1 an
         $client = static::createClient();
-        $client->catchExceptions(false);
         $this->authenticateUser($client, 'user16@example.com');
 
         $crawler = $client->request('POST', '/news/create', [], [], [], json_encode([

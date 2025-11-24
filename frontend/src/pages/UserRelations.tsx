@@ -23,6 +23,7 @@ import UserRelationEditModal from '../modals/UserRelationEditModal';
 import UserRelationDeleteModal from '../modals/UserRelationDeleteModal';
 import EditUserRolesModal from '../modals/EditUserRolesModal';
 import DeleteUserModal from '../modals/DeleteUserModal';
+import ResendVerificationModal from '../modals/ResendVerificationModal';
 
 const UserRelations: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -32,6 +33,7 @@ const UserRelations: React.FC = () => {
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; user?: any; relation?: any } | null>(null);
   const [rolesModal, setRolesModal] = useState<{ open: boolean; user?: any } | null>(null);
   const [deleteUserModal, setDeleteUserModal] = useState<{ open: boolean; user?: any } | null>(null);
+  const [resendVerificationModal, setResendVerificationModal] = useState<{ open: boolean; user?: any } | null>(null);
 
   const toast = useToast();
 
@@ -64,6 +66,22 @@ const UserRelations: React.FC = () => {
       }
     } catch (e: any) {
       toast.showToast(e?.message || 'Fehler beim Ändern des Status', 'error');
+    }
+  };
+
+  const handleResendVerification = async (user: any) => {
+    try {
+      const res = await apiJson(`/api/resend-verification/${user.id}`, {
+        method: 'POST',
+      });
+      if (res && res.success) {
+        setResendVerificationModal(null);
+        toast.showToast(res.message || 'Verifizierungslink wurde erfolgreich gesendet', 'success');
+      } else {
+        toast.showToast(res?.message || 'Fehler beim Senden des Verifizierungslinks', 'error');
+      }
+    } catch (e: any) {
+      toast.showToast(e?.message || 'Fehler beim Senden des Verifizierungslinks', 'error');
     }
   };
 
@@ -107,7 +125,7 @@ const UserRelations: React.FC = () => {
                 <TableCell>{user.fullName}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
-                  {user.isVerified ? <Chip label="Verifiziert" color="success" size="small" sx={{ mr: 1 }} /> : <Chip label="Nicht verifiziert" color="warning" size="small" sx={{ mr: 1 }} />}
+                  {user.isVerified ? <Chip label="Verifiziert" color="success" size="small" sx={{ mr: 1, cursor: 'pointer' }} onClick={() => setResendVerificationModal({ open: true, user })} /> : <Chip label="Nicht verifiziert" color="warning" size="small" sx={{ mr: 1, cursor: 'pointer' }} onClick={() => setResendVerificationModal({ open: true, user })} />}
                   {user.isEnabled ? <Chip label="Aktiv" color="success" size="small" /> : <Chip label="Deaktiviert" color="error" size="small" />}
                 </TableCell>
                 <TableCell>
@@ -239,6 +257,18 @@ const UserRelations: React.FC = () => {
           }
         }}
         user={deleteUserModal?.user}
+      />
+
+      {/* Resend Verification Modal */}
+      <ResendVerificationModal
+        open={!!resendVerificationModal?.open}
+        onClose={() => setResendVerificationModal(null)}
+        onConfirm={() => {
+          if (resendVerificationModal?.user) {
+            handleResendVerification(resendVerificationModal.user);
+          }
+        }}
+        userName={resendVerificationModal?.user?.fullName}
       />
     </Box>
   );
