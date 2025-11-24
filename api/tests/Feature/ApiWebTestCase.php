@@ -9,6 +9,11 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 abstract class ApiWebTestCase extends WebTestCase
 {
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+    }
+
     protected function authenticateUser(KernelBrowser $client, string $email): void
     {
         $user = static::getContainer()->get('doctrine')->getRepository(User::class)->findOneBy(['email' => $email]);

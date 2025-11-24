@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Entity\Camera;
 use App\Entity\Game;
-use App\Entity\GameEvent;
 use App\Entity\User;
 use App\Entity\Video;
 use App\Entity\VideoType;
@@ -13,7 +12,7 @@ use App\Repository\GameEventRepository;
 use App\Repository\GameRepository;
 use App\Repository\VideoRepository;
 use App\Repository\VideoTypeRepository;
-use App\Security\Voter\VideoVoter;
+use App\Service\VideoTimelineService;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -24,7 +23,10 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 class VideosController extends AbstractController
 {
-    private int $youtubeLinkStartOffset = -60;
+    public function __construct(
+        private readonly VideoTimelineService $videoTimelineService
+    ) {
+    }
 
     #[Route('/videos/{gameId}', name: 'videos_list', methods: ['GET'])]
     public function details(
@@ -79,7 +81,7 @@ class VideosController extends AbstractController
 
         return new JsonResponse([
             'videos' => $data,
-            'youtubeLinks' => $this->prepareYoutubeLinks($game, $gameEvents),
+            'youtubeLinks' => $this->videoTimelineService->prepareYoutubeLinks($game, $gameEvents),
             'videoTypes' => array_map(fn (VideoType $videoType) => [
                 'id' => $videoType->getId(),
                 'name' => $videoType->getName(),
@@ -209,79 +211,5 @@ class VideosController extends AbstractController
         $em->flush();
 
         return new JsonResponse(['success' => true]);
-    }
-
-    /**
-     * @param array<int, GameEvent> $gameEvents
-     *
-     * @return array<int, array<int, list<string>>> $youtubeLinks
-     */
-    private function prepareYoutubeLinks(Game $game, array $gameEvents): array
-    {
-        $youtubeLinks = [];
-        $videos = $this->orderVideos($game);
-
-        $startTimestamp = $game->getCalendarEvent()?->getStartDate()?->getTimestamp();
-
-        foreach ($gameEvents as $event) {
-            $eventSeconds = ($event->getTimestamp()->getTimestamp() - $startTimestamp);
-
-            foreach ($videos as $cameraId => $currentVideos) {
-                $elapsedTime = 0;
-                foreach ($currentVideos as $startTime => $video) {
-                    if (!$this->isGranted(VideoVoter::VIEW, $video)) {
-                        continue;
-                    }
-                    if (
-                        $startTime <= ($eventSeconds + $video->getGameStart())
-                        && (int) ($startTime + $video->getLength()) >= (int) ($eventSeconds + $video->getGameStart())
-                    ) {
-                        $seconds = $eventSeconds - $elapsedTime + (int) $video->getGameStart() + $this->youtubeLinkStartOffset;
-                        $youtubeLinks[(int) $event->getId()][(int) $cameraId][] = $video->getUrl() .
-                            '&t=' . $seconds . 's';
-                    }
-                    $elapsedTime += $video->getLength();
-                }
-            }
-        }
-
-        return $youtubeLinks;
-    }
-
-    /**
-     * @return array<int, array<int, Video>> $videos
-     */
-    protected function orderVideos(Game $game): array
-    {
-        $videosEntries = $game->getVideos()->toArray();
-        $videos = [];
-        $cameras = [];
-
-        foreach ($videosEntries as $videoEntry) {
-            $cameras[(int) $videoEntry->getCamera()->getId()][(int) $videoEntry->getSort()] = $videoEntry;
-        }
-
-        foreach ($cameras as $cameraId => $currentVideos) {
-            ksort($currentVideos);
-            $cameras[$cameraId] = $currentVideos;
-        }
-
-        ksort($cameras);
-
-        /* TODO potenziell performancelastig, aber aktuell nicht so tragisch */
-        foreach ($cameras as $camera => $currentVideos) {
-            $currentStart = 0;
-            foreach ($currentVideos as $video) {
-                $videos[$camera][$currentStart] = $video;
-                $currentStart += $video->getLength();
-            }
-        }
-
-        return $videos;
-    }
-
-    public function setYoutubeLinkStartOffset(int $offset): void
-    {
-        $this->youtubeLinkStartOffset = $offset;
     }
 }

@@ -23,8 +23,8 @@ class PersonCreatedListenerTest extends KernelTestCase
 
     protected function tearDown(): void
     {
-        parent::tearDown();
         $this->entityManager->close();
+        parent::tearDown();
     }
 
     public function testPlayerCreationCreatesUserRelation(): void

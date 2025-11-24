@@ -122,4 +122,52 @@ class RegisterController extends AbstractController
             'message' => 'Deine E-Mail-Adresse wurde erfolgreich verifiziert. Du kannst dich jetzt anmelden.'
         ], 200);
     }
+
+    #[Route('/resend-verification/{userId}', name: 'resend_verification', methods: ['POST'])]
+    public function resendVerification(
+        int $userId,
+        UrlGeneratorInterface $urlGenerator,
+        MailerInterface $mailer
+    ): JsonResponse {
+        $user = $this->em->getRepository(User::class)->find($userId);
+
+        if (!$user) {
+            return new JsonResponse(
+                ['error' => 'Benutzer nicht gefunden.'],
+                404
+            );
+        }
+
+        // Generate new token and reset verification status
+        $token = bin2hex(random_bytes(32));
+        $user->setVerificationToken($token)
+             ->setVerificationExpires((new DateTime())->modify('+1 month'))
+             ->setIsVerified(false)
+             ->setIsEnabled(false);
+
+        $this->em->flush();
+
+        $url = $urlGenerator->generate(
+            'api_verify_email',
+            ['token' => $token],
+            UrlGeneratorInterface::ABS_URL
+        );
+
+        $email = (new TemplatedEmail())
+            ->from('no-reply@byte-artist.de')
+            ->to($user->getEmail())
+            ->subject('Bitte bestätige deine E-Mail')
+            ->htmlTemplate('emails/verification.html.twig')
+            ->context([
+                'name' => $user->getEmail(),
+                'signedUrl' => $url
+            ]);
+
+        $mailer->send($email);
+
+        return new JsonResponse([
+            'success' => true,
+            'message' => 'Verifizierungslink wurde erfolgreich erneut gesendet.'
+        ], 200);
+    }
 }

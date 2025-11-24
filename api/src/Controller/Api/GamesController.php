@@ -6,13 +6,13 @@ use App\Entity\Game;
 use App\Entity\GameEvent;
 use App\Entity\GameEventType;
 use App\Entity\Player;
-use App\Entity\Video;
 use App\Repository\CameraRepository;
 use App\Repository\GameEventRepository;
 use App\Repository\GameRepository;
 use App\Repository\VideoTypeRepository;
 use App\Security\Voter\GameEventVoter;
 use App\Security\Voter\VideoVoter;
+use App\Service\VideoTimelineService;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,8 +21,6 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route(path: '/api/games', name: 'api_games_')]
 class GamesController extends ApiController
 {
-    private int $youtubeLinkStartOffset = -60;
-
     private EntityManagerInterface $entityManager;
     protected string $entityName = 'Game';
     protected string $entityNamePlural = 'Games';
@@ -66,8 +64,10 @@ class GamesController extends ApiController
     protected string $urlPart = 'games';
     protected bool $createAndEditAllowed = false;
 
-    public function __construct(EntityManagerInterface $entityManager)
-    {
+    public function __construct(
+        EntityManagerInterface $entityManager,
+        private readonly VideoTimelineService $videoTimelineService
+    ) {
         $this->entityManager = $entityManager;
     }
 
@@ -161,7 +161,7 @@ class GamesController extends ApiController
             'gameEvents' => $gameEventsArr,
             'homeScore' => $scores['home'],
             'awayScore' => $scores['away'],
-            'videos' => $this->prepareYoutubeLinks($game, $gameEvents),
+            'videos' => $this->videoTimelineService->prepareYoutubeLinks($game, $gameEvents),
             //            'videoTypes' => $videoTypeRepository->findAll(),
             //            'cameras' => $cameras,
         ]);
@@ -326,83 +326,5 @@ class GamesController extends ApiController
             'home' => $homeScore,
             'away' => $awayScore
         ];
-    }
-
-    /**
-     * @param array<GameEvent> $gameEvents
-     *
-     * @return array<int, array<int, list<string>>> $youtubeLinks
-     */
-    private function prepareYoutubeLinks(Game $game, array $gameEvents): array
-    {
-        $youtubeLinks = [];
-        $videos = $this->orderVideos($game);
-
-        $startTimestamp = $game->getCalendarEvent()?->getStartDate()?->getTimestamp();
-
-        foreach ($gameEvents as $event) {
-            $eventSeconds = ($event->getTimestamp()->getTimestamp() - $startTimestamp);
-
-            foreach ($videos as $cameraId => $currentVideos) {
-                $elapsedTime = 0;
-                foreach ($currentVideos as $startTime => $video) {
-                    if (!$this->isGranted(VideoVoter::VIEW, $video)) {
-                        continue;
-                    }
-
-                    // Event liegt innerhalb der Video-Timeline?
-                    $videoEnd = $startTime + (null !== $video->getGameStart()
-                        ? $video->getLength() - $video->getGameStart()
-                        : $video->getLength());
-
-                    if ($startTime <= $eventSeconds && $videoEnd >= $eventSeconds) {
-                        $seconds = $eventSeconds - $elapsedTime + (int) $video->getGameStart() + $this->youtubeLinkStartOffset;
-                        $youtubeLinks[(int) $event->getId()][(int) $cameraId][] = $video->getUrl() .
-                            '&t=' . $seconds . 's';
-                    }
-
-                    // Verwende die gleiche Logik wie orderVideos für konsistente Zeitberechnung
-                    if (null !== $video->getGameStart()) {
-                        $elapsedTime += $video->getLength() - $video->getGameStart();
-                    } else {
-                        $elapsedTime += $video->getLength();
-                    }
-                }
-            }
-        }
-
-        return $youtubeLinks;
-    }
-
-    /**
-     * @return array<array<Video>> $videos
-     */
-    private function orderVideos(Game $game): array
-    {
-        $videosEntries = $game->getVideos()->toArray();
-        $videos = [];
-        $cameras = [];
-
-        foreach ($videosEntries as $videoEntry) {
-            $cameras[(int) $videoEntry->getCamera()->getId()][(int) $videoEntry->getSort()] = $videoEntry;
-        }
-
-        /* TODO potenziell performancelastig, aber aktuell nicht so tragisch */
-        foreach ($cameras as $camera => $currentVideos) {
-            $currentStart = 0;
-            foreach ($currentVideos as $video) {
-                $videos[$camera][$currentStart] = $video;
-
-                // Wenn gameStart gesetzt ist (erstes Video einer Halbzeit), nur die effektive Spielzeit addieren
-                // Sonst die volle Videolänge addieren
-                if (null !== $video->getGameStart()) {
-                    $currentStart += $video->getLength() - $video->getGameStart();
-                } else {
-                    $currentStart += $video->getLength();
-                }
-            }
-        }
-
-        return $videos;
     }
 }

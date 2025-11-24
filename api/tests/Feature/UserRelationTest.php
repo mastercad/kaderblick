@@ -10,6 +10,11 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class UserRelationTest extends KernelTestCase
 {
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+    }
+
     public function testUserWithMultiplePlayerRelationsSeesAllRelevantPlayersAndTeams(): void
     {
         $entityManager = self::getContainer()->get('doctrine')->getManager();
