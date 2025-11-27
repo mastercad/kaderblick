@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use DateTime;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -89,13 +90,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?DateTime $emailVerificationTokenExpiresAt = null;
 
     #[ORM\OneToOne(mappedBy: 'user', targetEntity: UserLevel::class, cascade: ['persist', 'remove'])]
-    private UserLevel $level;
+    private ?UserLevel $userLevel = null;
 
     /**
      * @var Collection<int, UserXpEvent>
      */
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: UserXpEvent::class, cascade: ['persist', 'remove'])]
     private Collection $userXpEvents;
+
+    /**
+     * @var Collection<int, UserTitle>
+     */
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: UserTitle::class, cascade: ['persist', 'remove'])]
+    private Collection $userTitles;
 
     /**
      * @var Collection<int, DashboardWidget>
@@ -171,6 +178,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->videoSegments = new ArrayCollection();
         $this->videoSegments = new ArrayCollection();
         $this->userXpEvents = new ArrayCollection();
+        $this->userTitles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -729,14 +737,43 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getUserLevel(): UserLevel
+    public function getUserLevel(): ?UserLevel
     {
-        return $this->level;
+        return $this->userLevel;
     }
 
-    public function setUserLevel(UserLevel $level): self
+    public function setUserLevel(UserLevel $userLevel): self
     {
-        $this->level = $level;
+        $this->userLevel = $userLevel;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, UserTitle>
+     */
+    public function getUserTitles(): Collection
+    {
+        return $this->userTitles;
+    }
+
+    public function addUserTitle(UserTitle $userTitle): static
+    {
+        if (!$this->userTitles->contains($userTitle)) {
+            $this->userTitles->add($userTitle);
+            $userTitle->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUserTitle(UserTitle $userTitle): static
+    {
+        if ($this->userTitles->removeElement($userTitle)) {
+            // set the owning side to null (unless already changed)
+            if ($userTitle->getUser() === $this) {
+                $userTitle->setUser(null);
+            }
+        }
 
         return $this;
     }

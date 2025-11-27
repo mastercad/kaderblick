@@ -501,7 +501,8 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                               name={playerDisplay || 'Unbekannt'}
                               avatarSize={26}
                               fontSize={12}
-                              svgFrameUrl="/images/avatar/platform_goal_king_filled.svg"
+                              svgFrameUrl={e.player?.title?.avatarFrame}
+                              level={e.player?.level?.level}
                             />
                             {e.description && (
                               <span style={{ color: '#888', marginLeft: 8 }}>{e.description}</span>

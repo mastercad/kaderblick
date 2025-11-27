@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Entity\UserRelation;
 use App\Service\EmailVerificationService;
+use App\Service\UserTitleService;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,7 +27,7 @@ class ProfileController extends AbstractController
     }
 
     #[Route('/about-me', name: 'api_about_me', methods: ['GET'])]
-    public function getProfile(): JsonResponse
+    public function getProfile(UserTitleService $userTitleService): JsonResponse
     {
         /** @var ?User $user */
         $user = $this->getUser();
@@ -49,6 +50,12 @@ class ProfileController extends AbstractController
             }
         }
 
+        $titleData = $userTitleService->retrieveTitleDataForUser($user);
+        $levelData = $user->getUserLevel() ? [
+            'level' => $user->getUserLevel()->getLevel(),
+            'xpTotal' => $user->getUserLevel()->getXpTotal()
+        ] : null;
+
         return $this->json([
             'id' => $user->getId(),
             'email' => $user->getEmail(),
@@ -63,6 +70,8 @@ class ProfileController extends AbstractController
             'isCoach' => $isCoach,
             'isPlayer' => $isPlayer,
             'avatarFile' => $user->getAvatarFilename(),
+            'title' => $titleData,
+            'level' => $levelData
         ]);
     }
 

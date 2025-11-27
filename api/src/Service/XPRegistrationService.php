@@ -37,6 +37,12 @@ class XPRegistrationService
             'calendar_event' => 10,
             'profile_update' => 5,
             'game_event' => 15,
+            'goal_scored' => 50,
+            'goal_assisted' => 30,
+            'profile_completion_25' => 25,
+            'profile_completion_50' => 50,
+            'profile_completion_75' => 75,
+            'profile_completion_100' => 100,
         ];
 
         if (!array_key_exists($actionType, $xpValues)) {

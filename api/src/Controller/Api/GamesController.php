@@ -6,12 +6,14 @@ use App\Entity\Game;
 use App\Entity\GameEvent;
 use App\Entity\GameEventType;
 use App\Entity\Player;
+use App\Entity\User;
 use App\Repository\CameraRepository;
 use App\Repository\GameEventRepository;
 use App\Repository\GameRepository;
 use App\Repository\VideoTypeRepository;
 use App\Security\Voter\GameEventVoter;
 use App\Security\Voter\VideoVoter;
+use App\Service\UserTitleService;
 use App\Service\VideoTimelineService;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -72,7 +74,7 @@ class GamesController extends ApiController
     }
 
     #[Route('/{id}/details', name: 'details', requirements: ['id' => '\d+'], methods: ['GET'])]
-    public function details(Game $game, GameEventRepository $gameEventRepository, VideoTypeRepository $videoTypeRepository, CameraRepository $cameraRepository): JsonResponse
+    public function details(Game $game, GameEventRepository $gameEventRepository, VideoTypeRepository $videoTypeRepository, CameraRepository $cameraRepository, UserTitleService $userTitleService): JsonResponse
     {
         $calendarEvent = $game->getCalendarEvent();
         $gameEvents = $gameEventRepository->findAllGameEvents($game);
@@ -124,7 +126,23 @@ class GamesController extends ApiController
         $scores = $this->collectScores($gameEvents, $game);
 
         // Events serialisieren (nur relevante Felder)
-        $serializeEvent = function ($event) {
+        $serializeEvent = function ($event) use ($userTitleService) {
+            $user = $this->retrieveUserForPlayer($event->getPlayer());
+            $relatedUser = null;
+            $relatedUserTitleData = [];
+            $titleData = [];
+
+            if (! $event->getRelatedPlayer() instanceof Player) {
+                $relatedUser = $this->retrieveUserForPlayer($event->getRelatedPlayer());
+                if ($relatedUser instanceof User) {
+                    $relatedUserTitleData = $userTitleService->retrieveTitleDataForUser($relatedUser);
+                }
+            }
+
+            if ($user instanceof User) {
+                $titleData = $userTitleService->retrieveTitleDataForUser($user);
+            }
+
             return [
                 'id' => $event->getId(),
                 'gameEventType' => $event->getGameEventType() ? [
@@ -139,12 +157,16 @@ class GamesController extends ApiController
                     'firstName' => $event->getPlayer()->getFirstName(),
                     'lastName' => $event->getPlayer()->getLastName(),
                     'playerAvatarUrl' => $this->retrievePlayerAvatarUrl($event->getPlayer()),
+                    'titleData' => $titleData,
+                    'level' => $user && $user->getUserLevel() ? $user->getUserLevel()->getLevel() : null,
                 ] : null,
                 'relatedPlayer' => $event->getRelatedPlayer() ? [
                     'id' => $event->getRelatedPlayer()->getId(),
                     'firstName' => $event->getRelatedPlayer()->getFirstName(),
                     'lastName' => $event->getRelatedPlayer()->getLastName(),
                     'playerAvatarUrl' => $this->retrievePlayerAvatarUrl($event->getRelatedPlayer()),
+                    'titleData' => $relatedUserTitleData,
+                    'level' => $relatedUser && $relatedUser->getUserLevel() ? $relatedUser->getUserLevel()->getLevel() : null,
                 ] : null,
                 'team' => $event->getTeam() ? [
                     'id' => $event->getTeam()->getId(),
@@ -182,6 +204,24 @@ class GamesController extends ApiController
                 if ($user->getAvatarFilename()) {
                     return $user->getAvatarFilename();
                 }
+            }
+        }
+
+        return null;
+    }
+
+    private function retrieveUserForPlayer(?Player $player): ?User
+    {
+        if (null === $player) {
+            return null;
+        }
+
+        foreach ($player->getUserRelations() as $userRelation) {
+            if (
+                'player' === $userRelation->getRelationType()->getCategory()
+                && 'self_player' === $userRelation->getRelationType()->getIdentifier()
+            ) {
+                return $userRelation->getUser();
             }
         }
 

@@ -89,16 +89,16 @@ export const UserAvatar: React.FC<UserProps> = ({ icon, name, avatarSize = 48, f
             bottom: -10,
             transform: 'translateX(-50%)',
             zIndex: 3,
-            background: 'primary.main',
+            /*background: 'primary.main',*/
             color: 'primary.text',
-            borderRadius: '12px',
+            /*borderRadius: '12px',*/
             px: 1.2,
             py: 0.2,
             fontWeight: 700,
             fontSize: Math.max(avatarSize * 0.32, 12),
             minWidth: avatarSize * 0.5,
             textAlign: 'center',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+            /*boxShadow: '0 2px 6px rgba(0,0,0,0.25)',*/
             userSelect: 'none',
           }}>
             {level}

@@ -6,6 +6,7 @@ use App\Entity\RefreshToken;
 use App\Entity\User;
 use App\Entity\UserRelation;
 use App\Service\RefreshTokenService;
+use App\Service\UserTitleService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTManager;
@@ -111,7 +112,7 @@ class AuthController extends AbstractController
     }
 
     #[Route('/about/me', name: 'about_me')]
-    public function me(): JsonResponse
+    public function me(UserTitleService $userTitleService): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
@@ -130,11 +131,14 @@ class AuthController extends AbstractController
             }
         }
 
+        $titleData = $userTitleService->retrieveTitleDataForUser($user);
+
         return $this->json([
             'id' => $user->getId(),
             'isCoach' => $isCoach,
             'isPlayer' => $isPlayer,
             'email' => $user->getUserIdentifier(),
+            'title' => $titleData,
         ]);
     }
 }

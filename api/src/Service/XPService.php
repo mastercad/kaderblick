@@ -3,9 +3,16 @@
 namespace App\Service;
 
 use App\Entity\User;
+use App\Entity\UserLevel;
+use DateTimeImmutable;
+use Doctrine\ORM\EntityManagerInterface;
 
 class XPService
 {
+    public function __construct(private EntityManagerInterface $entityManager)
+    {
+    }
+
     public function retrieveXPForAction(string $action): int
     {
         return match ($action) {
@@ -13,13 +20,44 @@ class XPService
             'comment' => 5,
             'like' => 2,
             'share' => 8,
+            'calendar_event' => 10,
+            'profile_update' => 5,
+            'game_event' => 15,
+            'goal_scored' => 50,
+            'goal_assisted' => 30,
+            'profile_completion_25' => 25,
+            'profile_completion_50' => 50,
+            'profile_completion_75' => 75,
+            'profile_completion_100' => 100,
             default => 0,
         };
     }
 
     public function addXPToUser(User $user, int $xp): void
     {
-        // Logic to add XP to the user in the database
+        $userLevel = $user->getUserLevel();
+        if ($userLevel === null) {
+            $userLevel = new UserLevel();
+            $userLevel->setUser($user);
+            $userLevel->setXpTotal(0);
+            $userLevel->setLevel(1);
+            $userLevel->setUpdatedAt(new DateTimeImmutable());
+            $user->setUserLevel($userLevel);
+            $this->entityManager->persist($userLevel);
+        }
+        $currentXP = $userLevel->getXpTotal();
+        $currentLevel = $userLevel->getLevel();
+        // Add XP
+        $newXP = $currentXP + $xp;
+        $userLevel->setXpTotal($newXP);
+        // Check for level up
+        $newLevel = $this->retrieveLevelForXP($newXP);
+        if ($newLevel > $currentLevel) {
+            $userLevel->setLevel($newLevel);
+        }
+        $userLevel->setUpdatedAt(new DateTimeImmutable());
+        $this->entityManager->persist($userLevel);
+        $this->entityManager->flush();
     }
 
     public function addXpForAction(User $user, string $action, ?int $referenceId = null): void
@@ -32,20 +70,38 @@ class XPService
 
     public function calculateUserXP(User $user): int
     {
-        // Logic to retrieve the user's current XP from the database
-        return 0; // Placeholder return value
+        $userLevel = $user->getUserLevel();
+        if ($userLevel === null) {
+            return 0;
+        }
+        return $userLevel->getXpTotal();
     }
 
     public function calculateUserLevel(User $user): int
     {
-        // Logic to retrieve the user's current level from the database
-        return 1; // Placeholder return value
+        $userLevel = $user->getUserLevel();
+        if ($userLevel === null) {
+            return 1;
+        }
+        return $userLevel->getLevel();
     }
 
     public function levelUpUser(User $user): bool
     {
-        // Logic to check if the user has enough XP to level up and perform the level-up
-        return false; // Placeholder return value
+        $currentXP = $this->calculateUserXP($user);
+        $currentLevel = $this->calculateUserLevel($user);
+        $requiredXP = $this->retrieveXpForLevel($currentLevel + 1);
+        
+        if ($currentXP >= $requiredXP) {
+            $user->getUserLevel()->setLevel($currentLevel + 1);
+            $user->getUserLevel()->setUpdatedAt(new DateTimeImmutable());
+            $this->entityManager->persist($user->getUserLevel());
+            $this->entityManager->flush();
+            
+            return true;
+        }
+        
+        return false;
     }
 
     public function retrieveXpForLevel(int $level, int $base = 50, float $exponent = 1.5): int

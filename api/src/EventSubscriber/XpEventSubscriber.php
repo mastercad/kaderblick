@@ -4,6 +4,9 @@ namespace App\EventSubscriber;
 
 use App\Event\CalendarEventParticipatedEvent;
 use App\Event\GameEventCreatedEvent;
+use App\Event\GoalAssistedEvent;
+use App\Event\GoalScoredEvent;
+use App\Event\ProfileCompletenessReachedEvent;
 use App\Event\ProfileUpdatedEvent;
 use App\Service\XPRegistrationService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -20,6 +23,9 @@ class XpEventSubscriber implements EventSubscriberInterface
             CalendarEventParticipatedEvent::class => 'onCalendarEventParticipated',
             GameEventCreatedEvent::class => 'onGameEventCreated',
             ProfileUpdatedEvent::class => 'onProfileUpdated',
+            GoalScoredEvent::class => 'onGoalScored',
+            GoalAssistedEvent::class => 'onGoalAssisted',
+            ProfileCompletenessReachedEvent::class => 'onProfileCompletenessReached',
         ];
     }
 
@@ -39,5 +45,25 @@ class XpEventSubscriber implements EventSubscriberInterface
     {
         $user = $event->getUser();
         $this->xpRegistrationService->registerXpEvent($user, 'profile_update', $user->getId());
+    }
+
+    public function onGoalScored(GoalScoredEvent $event): void
+    {
+        $user = $event->getUser();
+        $this->xpRegistrationService->registerXpEvent($user, 'goal_scored', $event->getGoal()->getId());
+    }
+
+    public function onGoalAssisted(GoalAssistedEvent $event): void
+    {
+        $user = $event->getUser();
+        $this->xpRegistrationService->registerXpEvent($user, 'goal_assisted', $event->getGoal()->getId());
+    }
+
+    public function onProfileCompletenessReached(ProfileCompletenessReachedEvent $event): void
+    {
+        $user = $event->getUser();
+        $milestone = $event->getMilestone();
+        $actionType = 'profile_completion_' . $milestone;
+        $this->xpRegistrationService->registerXpEvent($user, $actionType, $user->getId());
     }
 }

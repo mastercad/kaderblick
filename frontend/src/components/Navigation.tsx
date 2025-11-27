@@ -390,8 +390,9 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                     name=""
                     avatarSize={32}
                     fontSize={16}
-                    svgFrameUrl="/images/avatar/platform_goal_king_filled.svg"
-                    bottomNumber={5}
+                    svgFrameUrl={user.title?.avatarFrame}
+                    svgFrameOffsetY={0}
+                    level={user.level?.level}
                   />
                 </IconButton>
               </Box>
