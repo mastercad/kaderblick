@@ -10,7 +10,7 @@ final class CalendarEventParticipatedEvent
     public function __construct(private User $user, private CalendarEvent $calendarEvent)
     {
     }
-    
+
     public function getUser(): User
     {
         return $this->user;

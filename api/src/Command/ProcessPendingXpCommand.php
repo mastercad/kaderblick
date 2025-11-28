@@ -29,7 +29,7 @@ class ProcessPendingXpCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        
+
         $this->xpProcessingLogger->info('Starting XP event processing');
         $io->title('Processing Pending XP Events');
 
@@ -37,7 +37,7 @@ class ProcessPendingXpCommand extends Command
             $this->xpEventProcessor->processPendingXpEvents();
             $this->xpProcessingLogger->info('Successfully processed all pending XP events');
             $io->success('Successfully processed all pending XP events');
-            
+
             return Command::SUCCESS;
         } catch (Exception $e) {
             $this->xpProcessingLogger->error('Error processing pending XP events', [
@@ -45,6 +45,7 @@ class ProcessPendingXpCommand extends Command
                 'trace' => $e->getTraceAsString()
             ]);
             $io->error('Error processing pending XP events: ' . $e->getMessage());
+
             return Command::FAILURE;
         }
     }

@@ -51,8 +51,7 @@ class AwardTitlesCommand extends Command
         $counted = 0;
         /** @var Goal $goal */
         foreach ($goals as $goal) {
-            $scorer = $goal->getPlayer();
-            if (!$scorer) continue;
+            $scorer = $goal->getScorer();
             $relations = [];
             foreach ($scorer->getUserRelations() as $userRelation) {
                 $relations[] = $userRelation->getRelationType()->getIdentifier();
@@ -68,11 +67,11 @@ class AwardTitlesCommand extends Command
                 $game?->getId() ?? 0,
                 $team?->getName() ?? '-',
                 $calendarEvent?->getStartDate()?->format('Y-m-d H:i') ?? '-',
-                implode(", ", $relations)
+                implode(', ', $relations)
             ));
-            $counted++;
+            ++$counted;
         }
-        if ($counted === 0) {
+        if (0 === $counted) {
             $io->writeln('Keine Tore gefunden.');
         }
 

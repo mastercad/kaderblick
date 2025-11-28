@@ -177,8 +177,8 @@ class ProfileController extends AbstractController
         } catch (Exception $e) {
             return $this->json(['message' => 'Fehler bei der E-Mail-Verifizierung'], 400);
         }
-    }    
-    
+    }
+
     #[Route('/xp-breakdown', name: 'api_xp_breakdown', methods: ['GET'])]
     public function getXpBreakdown(UserTitleService $userTitleService): JsonResponse
     {
@@ -217,7 +217,7 @@ class ProfileController extends AbstractController
             $breakdown[] = [
                 'actionType' => $row['actionType'],
                 'label' => $labels[$row['actionType']] ?? $row['actionType'],
-                'xp' => (int)$row['xpSum'],
+                'xp' => (int) $row['xpSum'],
             ];
         }
 
@@ -235,8 +235,8 @@ class ProfileController extends AbstractController
             'level' => $levelData,
             'xpTotal' => $levelData['xpTotal'] ?? null,
         ]);
-    }   
-    
+    }
+
     #[Route('/admin/title-xp-overview', name: 'admin_title_xp_overview', methods: ['GET'])]
     public function adminTitleXpOverview(EntityManagerInterface $em, UserTitleService $userTitleService): JsonResponse
     {
@@ -246,7 +246,7 @@ class ProfileController extends AbstractController
         // XP-Übersicht: alle Benutzer mit XP, Titel und Level
         $users = $em->createQueryBuilder()
             ->select('u.id, u.firstName, u.lastName, u.email, l.xpTotal AS xp, l.level AS level')
-            ->from(\App\Entity\User::class, 'u')
+            ->from(User::class, 'u')
             ->leftJoin('u.userLevel', 'l')
             ->orderBy('xp', 'DESC')
             ->getQuery()->getArrayResult();
@@ -256,5 +256,4 @@ class ProfileController extends AbstractController
             'users' => $users,
         ]);
     }
-
 }

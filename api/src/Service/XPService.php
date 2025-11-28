@@ -36,7 +36,7 @@ class XPService
     public function addXPToUser(User $user, int $xp): void
     {
         $userLevel = $user->getUserLevel();
-        if ($userLevel === null) {
+        if (null === $userLevel) {
             $userLevel = new UserLevel();
             $userLevel->setUser($user);
             $userLevel->setXpTotal(0);
@@ -71,18 +71,20 @@ class XPService
     public function calculateUserXP(User $user): int
     {
         $userLevel = $user->getUserLevel();
-        if ($userLevel === null) {
+        if (null === $userLevel) {
             return 0;
         }
+
         return $userLevel->getXpTotal();
     }
 
     public function calculateUserLevel(User $user): int
     {
         $userLevel = $user->getUserLevel();
-        if ($userLevel === null) {
+        if (null === $userLevel) {
             return 1;
         }
+
         return $userLevel->getLevel();
     }
 
@@ -91,16 +93,16 @@ class XPService
         $currentXP = $this->calculateUserXP($user);
         $currentLevel = $this->calculateUserLevel($user);
         $requiredXP = $this->retrieveXpForLevel($currentLevel + 1);
-        
+
         if ($currentXP >= $requiredXP) {
             $user->getUserLevel()->setLevel($currentLevel + 1);
             $user->getUserLevel()->setUpdatedAt(new DateTimeImmutable());
             $this->entityManager->persist($user->getUserLevel());
             $this->entityManager->flush();
-            
+
             return true;
         }
-        
+
         return false;
     }
 

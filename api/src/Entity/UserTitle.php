@@ -26,11 +26,12 @@ class UserTitle
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
-    private User $user;
+    private ?User $user;
 
     #[ORM\Column(type: 'string', length: 50)]
     private string $titleCategory; // 'top_scorer', 'top_assist', etc.
@@ -65,14 +66,15 @@ class UserTitle
         return $this->id;
     }
 
-    public function getUser(): User
+    public function getUser(): ?User
     {
         return $this->user;
     }
 
-    public function setUser(User $user): self
+    public function setUser(?User $user): self
     {
         $this->user = $user;
+
         return $this;
     }
 
@@ -84,6 +86,7 @@ class UserTitle
     public function setTitleCategory(string $titleCategory): self
     {
         $this->titleCategory = $titleCategory;
+
         return $this;
     }
 
@@ -95,6 +98,7 @@ class UserTitle
     public function setTitleScope(string $titleScope): self
     {
         $this->titleScope = $titleScope;
+
         return $this;
     }
 
@@ -106,6 +110,7 @@ class UserTitle
     public function setTitleRank(string $titleRank): self
     {
         $this->titleRank = $titleRank;
+
         return $this;
     }
 
@@ -117,6 +122,7 @@ class UserTitle
     public function setTeam(?Team $team): self
     {
         $this->team = $team;
+
         return $this;
     }
 
@@ -128,6 +134,7 @@ class UserTitle
     public function setValue(int $value): self
     {
         $this->value = $value;
+
         return $this;
     }
 
@@ -139,6 +146,7 @@ class UserTitle
     public function setIsActive(bool $isActive): self
     {
         $this->isActive = $isActive;
+
         return $this;
     }
 
@@ -150,6 +158,7 @@ class UserTitle
     public function setAwardedAt(DateTimeImmutable $awardedAt): self
     {
         $this->awardedAt = $awardedAt;
+
         return $this;
     }
 
@@ -161,6 +170,7 @@ class UserTitle
     public function setRevokedAt(?DateTimeImmutable $revokedAt): self
     {
         $this->revokedAt = $revokedAt;
+
         return $this;
     }
 
@@ -172,11 +182,12 @@ class UserTitle
     public function setSeason(?string $season): self
     {
         $this->season = $season;
+
         return $this;
     }
 
     /**
-     * Get priority for sorting (lower = higher priority)
+     * Get priority for sorting (lower = higher priority).
      */
     public function getPriority(): int
     {

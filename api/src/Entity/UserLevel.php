@@ -7,21 +7,21 @@ use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: UserLevelRepository::class)]
-#[ORM\Table(name: "user_levels")]
+#[ORM\Table(name: 'user_levels')]
 class UserLevel
 {
     #[ORM\Id]
     #[ORM\OneToOne(inversedBy: 'userLevel', targetEntity: User::class)]
-    #[ORM\JoinColumn(name: "user_id", referencedColumnName: "id")]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')]
     private User $user;
 
-    #[ORM\Column(type: "integer")]
+    #[ORM\Column(type: 'integer')]
     private int $xpTotal;
 
-    #[ORM\Column(type: "integer")]
+    #[ORM\Column(type: 'integer')]
     private int $level;
 
-    #[ORM\Column(type: "datetime_immutable")]
+    #[ORM\Column(type: 'datetime_immutable')]
     private DateTimeImmutable $updatedAt;
 
     public function getUser(): User
@@ -32,6 +32,7 @@ class UserLevel
     public function setUser(User $user): self
     {
         $this->user = $user;
+
         return $this;
     }
 
@@ -43,6 +44,7 @@ class UserLevel
     public function setXpTotal(int $xpTotal): self
     {
         $this->xpTotal = $xpTotal;
+
         return $this;
     }
 
@@ -54,6 +56,7 @@ class UserLevel
     public function setLevel(int $level): self
     {
         $this->level = $level;
+
         return $this;
     }
 
@@ -65,6 +68,7 @@ class UserLevel
     public function setUpdatedAt(DateTimeImmutable $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
+
         return $this;
     }
 }

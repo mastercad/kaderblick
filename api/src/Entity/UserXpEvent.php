@@ -7,38 +7,38 @@ use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: UserXpEventRepository::class)]
-#[ORM\Table(name: "user_xp_events")]
+#[ORM\Table(name: 'user_xp_events')]
 class UserXpEvent
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: "integer")]
+    #[ORM\Column(type: 'integer')]
     /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(name: "user_id", referencedColumnName: "id", nullable: false)]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false)]
     private ?User $user = null;
 
-    #[ORM\Column(type: "string", length: 50)]
+    #[ORM\Column(type: 'string', length: 50)]
     private string $actionType;
 
-    #[ORM\Column(type: "integer", nullable: true)]
+    #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $actionId = null;
 
-    #[ORM\Column(type: "integer")]
+    #[ORM\Column(type: 'integer')]
     private int $xpValue;
 
-    #[ORM\Column(type: "boolean", nullable: false, options: ['default' => false])]
+    #[ORM\Column(type: 'boolean', nullable: false, options: ['default' => false])]
     private bool $isProcessed = false;
 
     /**
      * @var array<string, mixed>|null
      */
-    #[ORM\Column(type: "json", nullable: true)]
+    #[ORM\Column(type: 'json', nullable: true)]
     private ?array $meta = null;
 
-    #[ORM\Column(type: "datetime_immutable")]
+    #[ORM\Column(type: 'datetime_immutable')]
     private DateTimeImmutable $createdAt;
 
     public function getId(): ?int
@@ -54,6 +54,7 @@ class UserXpEvent
     public function setUser(?User $user): self
     {
         $this->user = $user;
+
         return $this;
     }
 
@@ -65,6 +66,7 @@ class UserXpEvent
     public function setActionType(string $actionType): self
     {
         $this->actionType = $actionType;
+
         return $this;
     }
 
@@ -76,6 +78,7 @@ class UserXpEvent
     public function setActionId(?int $actionId): self
     {
         $this->actionId = $actionId;
+
         return $this;
     }
 
@@ -87,6 +90,7 @@ class UserXpEvent
     public function setXpValue(int $xpValue): self
     {
         $this->xpValue = $xpValue;
+
         return $this;
     }
 
@@ -104,6 +108,7 @@ class UserXpEvent
     public function setMeta(?array $meta): self
     {
         $this->meta = $meta;
+
         return $this;
     }
 
@@ -112,9 +117,10 @@ class UserXpEvent
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $createdAt): self
+    public function setCreatedAt(DateTimeImmutable $createdAt): self
     {
         $this->createdAt = $createdAt;
+
         return $this;
     }
 
@@ -126,6 +132,7 @@ class UserXpEvent
     public function setIsProcessed(bool $isProcessed): self
     {
         $this->isProcessed = $isProcessed;
+
         return $this;
     }
 }

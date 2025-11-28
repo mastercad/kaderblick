@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 class XPServiceTest extends TestCase
 {
-    public function testAddXPToUserCreatesUserLevelAndAddsXP()
+    public function testAddXPToUserCreatesUserLevelAndAddsXP(): void
     {
         $user = $this->createMock(User::class);
         $userLevel = $this->createMock(UserLevel::class);
@@ -23,10 +23,9 @@ class XPServiceTest extends TestCase
 
         $service = new XPService($em);
         $service->addXPToUser($user, 100);
-        $this->assertTrue(true); // Wenn keine Exception, ist der Test bestanden
     }
 
-    public function testAddXPToUserAddsXPToExistingUserLevel()
+    public function testAddXPToUserAddsXPToExistingUserLevel(): void
     {
         $user = $this->createMock(User::class);
         $userLevel = $this->createMock(UserLevel::class);
@@ -43,6 +42,5 @@ class XPServiceTest extends TestCase
 
         $service = new XPService($em);
         $service->addXPToUser($user, 100);
-        $this->assertTrue(true);
     }
 }

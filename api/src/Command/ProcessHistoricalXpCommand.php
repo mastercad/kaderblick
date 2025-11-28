@@ -6,12 +6,14 @@ namespace App\Command;
 
 use App\Entity\GameEvent;
 use App\Entity\Goal;
+use App\Entity\Player;
 use App\Entity\User;
 use App\Entity\UserLevel;
 use App\Entity\UserXpEvent;
 use App\Service\XPService;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -69,28 +71,28 @@ HELP);
         $totalXpAwarded = 0;
 
         try {
-            if ($type === 'goals' || $type === 'all') {
+            if ('goals' === $type || 'all' === $type) {
                 [$processed, $xpAwarded] = $this->processGoals($io, $dryRun, $userId);
                 $totalProcessed += $processed;
                 $totalXpAwarded += $xpAwarded;
                 $io->success("Processed {$processed} goals, awarded {$xpAwarded} XP");
             }
 
-            if ($type === 'game_events' || $type === 'all') {
+            if ('game_events' === $type || 'all' === $type) {
                 [$processed, $xpAwarded] = $this->processGameEvents($io, $dryRun, $userId);
                 $totalProcessed += $processed;
                 $totalXpAwarded += $xpAwarded;
                 $io->success("Processed {$processed} game events, awarded {$xpAwarded} XP");
             }
 
-            if ($type === 'calendar_events' || $type === 'all') {
+            if ('calendar_events' === $type || 'all' === $type) {
                 [$processed, $xpAwarded] = $this->processCalendarEvents($io, $dryRun, $userId);
                 $totalProcessed += $processed;
                 $totalXpAwarded += $xpAwarded;
                 $io->success("Processed {$processed} calendar event participations, awarded {$xpAwarded} XP");
             }
 
-            if ($type === 'profiles' || $type === 'all') {
+            if ('profiles' === $type || 'all' === $type) {
                 [$processed, $xpAwarded] = $this->processProfiles($io, $dryRun, $userId);
                 $totalProcessed += $processed;
                 $totalXpAwarded += $xpAwarded;
@@ -100,12 +102,16 @@ HELP);
             $io->success("Total: {$totalProcessed} events processed, {$totalXpAwarded} XP awarded");
 
             return Command::SUCCESS;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $io->error('Error processing historical events: ' . $e->getMessage());
+
             return Command::FAILURE;
         }
     }
 
+    /**
+     * @return array<int, int>
+     */
     private function processGoals(SymfonyStyle $io, bool $dryRun, ?string $userId): array
     {
         $io->section('Processing Goals (50 XP per goal, 30 XP per assist)');
@@ -128,7 +134,7 @@ HELP);
 
         foreach ($goals as $goal) {
             $scorer = $goal->getScorer();
-            $users = $this->getUsersForPlayer($scorer);
+            $users = $this->retrieveUsersForPlayer($scorer);
 
             foreach ($users as $user) {
                 // Check if XP already awarded for this goal
@@ -141,20 +147,20 @@ HELP);
                     $this->xpService->addXPToUser($user, $xp);
                     $this->createXpEventRecord($user, 'goal_scored', $goal->getId(), $xp);
                     $totalXpAwarded += $xp;
-                    $processed++;
+                    ++$processed;
                     $io->writeln("  ✓ Goal #{$goal->getId()} → User #{$user->getId()} ({$user->getEmail()}) +{$xp} XP");
                 } else {
                     $xp = $this->xpService->retrieveXPForAction('goal_scored');
                     $io->writeln("  [DRY-RUN] Would award {$xp} XP for goal #{$goal->getId()} to user #{$user->getId()} ({$user->getEmail()})");
                     $totalXpAwarded += $xp;
-                    $processed++;
+                    ++$processed;
                 }
             }
 
             // Process assists
             $assistant = $goal->getAssistBy();
             if ($assistant) {
-                $assistUsers = $this->getUsersForPlayer($assistant);
+                $assistUsers = $this->retrieveUsersForPlayer($assistant);
                 foreach ($assistUsers as $user) {
                     // Check if XP already awarded for this assist
                     if ($this->hasXpEventForAction($user, 'goal_assisted', $goal->getId())) {
@@ -166,13 +172,13 @@ HELP);
                         $this->xpService->addXPToUser($user, $xp);
                         $this->createXpEventRecord($user, 'goal_assisted', $goal->getId(), $xp);
                         $totalXpAwarded += $xp;
-                        $processed++;
+                        ++$processed;
                         $io->writeln("  ✓ Assist #{$goal->getId()} → User #{$user->getId()} ({$user->getEmail()}) +{$xp} XP");
                     } else {
                         $xp = $this->xpService->retrieveXPForAction('goal_assisted');
                         $io->writeln("  [DRY-RUN] Would award {$xp} XP for assist #{$goal->getId()} to user #{$user->getId()} ({$user->getEmail()})");
                         $totalXpAwarded += $xp;
-                        $processed++;
+                        ++$processed;
                     }
                 }
             }
@@ -181,6 +187,9 @@ HELP);
         return [$processed, $totalXpAwarded];
     }
 
+    /**
+     * @return array<int, int>
+     */
     private function processGameEvents(SymfonyStyle $io, bool $dryRun, ?string $userId): array
     {
         $io->section('Processing Game Events (15 XP per event)');
@@ -207,7 +216,7 @@ HELP);
                 continue;
             }
 
-            $users = $this->getUsersForPlayer($player);
+            $users = $this->retrieveUsersForPlayer($player);
 
             foreach ($users as $user) {
                 if ($this->hasXpEventForAction($user, 'game_event', $gameEvent->getId())) {
@@ -219,13 +228,13 @@ HELP);
                     $this->xpService->addXPToUser($user, $xp);
                     $this->createXpEventRecord($user, 'game_event', $gameEvent->getId(), $xp);
                     $totalXpAwarded += $xp;
-                    $processed++;
+                    ++$processed;
                     $io->writeln("  ✓ Game Event #{$gameEvent->getId()} → User #{$user->getId()} ({$user->getEmail()}) +{$xp} XP");
                 } else {
                     $xp = $this->xpService->retrieveXPForAction('game_event');
                     $io->writeln("  [DRY-RUN] Would award {$xp} XP for game event #{$gameEvent->getId()} to user #{$user->getId()} ({$user->getEmail()})");
                     $totalXpAwarded += $xp;
-                    $processed++;
+                    ++$processed;
                 }
             }
         }
@@ -233,17 +242,26 @@ HELP);
         return [$processed, $totalXpAwarded];
     }
 
+    /**
+     * Process calendar event participations (e.g., attendance).
+     *
+     * @return array<int, int>
+     */
     private function processCalendarEvents(SymfonyStyle $io, bool $dryRun, ?string $userId): array
     {
         $io->section('Processing Calendar Event Participations');
         $io->note('Calendar event participation tracking needs to be implemented based on your data model');
+
         return [0, 0];
     }
 
+    /**
+     * @return array<int, int>
+     */
     private function processProfiles(SymfonyStyle $io, bool $dryRun, ?string $userId): array
     {
         $io->section('Processing Profile Completeness (one-time award for current state)');
-        
+
         $qb = $this->entityManager->getRepository(User::class)
             ->createQueryBuilder('u')
             ->where('u.isEnabled = true');
@@ -260,7 +278,7 @@ HELP);
         foreach ($users as $user) {
             // Sicherstellen, dass UserLevel existiert
             $userLevel = $user->getUserLevel();
-            if ($userLevel === null) {
+            if (null === $userLevel) {
                 $userLevel = new UserLevel();
                 $userLevel->setUser($user);
                 $userLevel->setXpTotal(0);
@@ -283,13 +301,13 @@ HELP);
                         $this->xpService->addXPToUser($user, $xp);
                         $this->createXpEventRecord($user, $actionType, $user->getId(), $xp);
                         $totalXpAwarded += $xp;
-                        $processed++;
+                        ++$processed;
                         $io->writeln("  ✓ Profile {$milestone}% → User #{$user->getId()} ({$user->getEmail()}) +{$xp} XP");
                     } else {
                         $xp = $this->xpService->retrieveXPForAction($actionType);
                         $io->writeln("  [DRY-RUN] Would award {$xp} XP for profile {$milestone}% to user #{$user->getId()} ({$user->getEmail()})");
                         $totalXpAwarded += $xp;
-                        $processed++;
+                        ++$processed;
                     }
                 }
             }
@@ -307,7 +325,7 @@ HELP);
                 'actionId' => $actionId,
             ]);
 
-        return $existingEvent !== null;
+        return null !== $existingEvent;
     }
 
     private function createXpEventRecord(User $user, string $actionType, int $actionId, int $xpValue): void
@@ -319,6 +337,7 @@ HELP);
         $xpEvent->setXpValue($xpValue);
         $xpEvent->setIsProcessed(true); // Already processed, just for record keeping
         $xpEvent->setCreatedAt(new DateTimeImmutable());
+
         $this->entityManager->persist($xpEvent);
         $this->entityManager->flush();
     }
@@ -326,28 +345,28 @@ HELP);
     private function calculateProfileCompleteness(User $user): int
     {
         $fields = [
-            'firstName' => $user->getFirstName() !== null && $user->getFirstName() !== '',
-            'lastName' => $user->getLastName() !== null && $user->getLastName() !== '',
-            'email' => $user->getEmail() !== null && $user->getEmail() !== '',
-            'avatar' => $user->getAvatarFilename() !== null,
-            'height' => $user->getHeight() !== null,
-            'weight' => $user->getWeight() !== null,
-            'shoeSize' => $user->getShoeSize() !== null,
-            'shirtSize' => $user->getShirtSize() !== null,
-            'pantsSize' => $user->getPantsSize() !== null,
+            'firstName' => null !== $user->getFirstName() && '' !== $user->getFirstName(),
+            'lastName' => null !== $user->getLastName() && '' !== $user->getLastName(),
+            'email' => null !== $user->getEmail() && '' !== $user->getEmail(),
+            'avatar' => null !== $user->getAvatarFilename(),
+            'height' => null !== $user->getHeight(),
+            'weight' => null !== $user->getWeight(),
+            'shoeSize' => null !== $user->getShoeSize(),
+            'shirtSize' => null !== $user->getShirtSize(),
+            'pantsSize' => null !== $user->getPantsSize(),
             'hasUserRelations' => $user->getUserRelations()->count() > 0,
         ];
 
         $completedFields = array_filter($fields);
         $totalFields = count($fields);
-        
+
         return (int) round((count($completedFields) / $totalFields) * 100);
     }
 
     /**
      * @return User[]
      */
-    private function getUsersForPlayer($player): array
+    private function retrieveUsersForPlayer(?Player $player): array
     {
         if (!$player) {
             return [];
@@ -356,13 +375,10 @@ HELP);
         $users = [];
         foreach ($player->getUserRelations() as $userRelation) {
             // Nur self_player-Relationen berücksichtigen
-            if (method_exists($userRelation, 'getRelationType') && $userRelation->getRelationType()->getIdentifier() !== 'self_player') {
+            if ('self_player' !== $userRelation->getRelationType()->getIdentifier()) {
                 continue;
             }
-            $user = $userRelation->getUser();
-            if ($user) {
-                $users[] = $user;
-            }
+            $users[] = $userRelation->getUser();
         }
 
         return $users;
