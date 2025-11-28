@@ -50,7 +50,6 @@ function DashboardContent() {
     setLoading(true);
     fetchDashboardWidgets()
       .then(widgets => {
-        console.log('Dashboard Widgets:', widgets);
         setWidgets(widgets);
       })
       .catch(() => setWidgets([]))

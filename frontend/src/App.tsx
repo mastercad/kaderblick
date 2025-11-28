@@ -30,6 +30,7 @@ import Navigation from './components/Navigation';
 import FooterWithContact from './components/FooterWithContact';
 import Formations from './pages/Formations';
 import FeedbackAdmin from './pages/Feedback';
+import AdminTitleXpOverview from './pages/admin/AdminTitleXpOverview';
 import FabStackRoot from './components/FabStackRoot';
 import Locations from './pages/Locations';
 import Clubs from './pages/Clubs';
@@ -113,6 +114,7 @@ function App() {
                   <Route path="/test" element={<ProtectedRoute><TestPage /></ProtectedRoute>} />
                   <Route path="/admin/feedback" element={<ProtectedRoute><FeedbackAdmin /></ProtectedRoute>} />
                   <Route path="/admin/user-relations" element={<ProtectedRoute><UserRelations /></ProtectedRoute>} />
+                  <Route path="/admin/title-xp-overview" element={<ProtectedRoute><AdminTitleXpOverview /></ProtectedRoute>} />
                   <Route path="news" element={<ProtectedRoute><News /></ProtectedRoute>} />
                   <Route path="locations" element={<ProtectedRoute><Locations /></ProtectedRoute>} />
                   <Route path="formations" element={<ProtectedRoute><Formations /></ProtectedRoute>} />

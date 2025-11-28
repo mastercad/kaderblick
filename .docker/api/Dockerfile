@@ -59,13 +59,16 @@ RUN chown -R www-data:www-data /var/www/symfony/var
 
 EXPOSE 80
 
-RUN echo "SHELL=/bin/bash" > /etc/cron.d/collect-weather-data-for-events \
-    && echo "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" >> /etc/cron.d/collect-weather-data-for-events \
-    && echo "0 3 * * * www-data cd /var/www/symfony && /usr/local/bin/cron_wrapper.sh app:collect-weather-data-for-events >> /var/log/cron.log 2>&1" >> /etc/cron.d/collect-weather-data-for-events \
-    && chmod 0644 /etc/cron.d/collect-weather-data-for-events
-
-RUN touch /var/log/cron.log \
-    && chown www-data:www-data /var/log/cron.log \
-    && chmod 664 /var/log/cron.log
+RUN echo "SHELL=/bin/bash" > /etc/cron.d/symfony-crons \
+    && echo "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" >> /etc/cron.d/symfony-crons \
+    && echo "# Collect weather data for events (daily at 3 AM)" >> /etc/cron.d/symfony-crons \
+    && echo "0 3 * * * www-data /usr/local/bin/cron_wrapper.sh app:collect-weather-data-for-events 2>&1" >> /etc/cron.d/symfony-crons \
+    && echo "" >> /etc/cron.d/symfony-crons \
+    && echo "# Process pending XP events (every 5 minutes)" >> /etc/cron.d/symfony-crons \
+    && echo "*/5 * * * * www-data /usr/local/bin/cron_wrapper.sh app:xp:process-pending 2>&1" >> /etc/cron.d/symfony-crons \
+    && echo "" >> /etc/cron.d/symfony-crons \
+    && echo "# Calculate and award titles (daily at 2 AM)" >> /etc/cron.d/symfony-crons \
+    && echo "0 2 * * * www-data /usr/local/bin/cron_wrapper.sh app:xp:award-titles 2>&1" >> /etc/cron.d/symfony-crons \
+    && chmod 0644 /etc/cron.d/symfony-crons
 
 CMD cron && apache2-foreground

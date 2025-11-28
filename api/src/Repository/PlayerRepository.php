@@ -59,7 +59,7 @@ class PlayerRepository extends ServiceEntityRepository implements OptimizedRepos
 
         $reachableRoles = $this->roleHierarchy->getReachableRoleNames($user->getRoles());
         if ($user && !in_array('ROLE_ADMIN', $reachableRoles)) {
-            // Über UserRelations die zugänglichen Player ermitteln
+            // Über UserRelations die zugänglichen Player ermitteln (unabhängig vom RelationType)
             $playerIds = [];
             foreach ($user->getUserRelations() as $relation) {
                 if ($relation->getPlayer()) {

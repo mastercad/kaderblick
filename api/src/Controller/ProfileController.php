@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Entity\UserRelation;
 use App\Service\EmailVerificationService;
+use App\Service\UserTitleService;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,7 +27,7 @@ class ProfileController extends AbstractController
     }
 
     #[Route('/about-me', name: 'api_about_me', methods: ['GET'])]
-    public function getProfile(): JsonResponse
+    public function getProfile(UserTitleService $userTitleService): JsonResponse
     {
         /** @var ?User $user */
         $user = $this->getUser();
@@ -49,6 +50,12 @@ class ProfileController extends AbstractController
             }
         }
 
+        $titleData = $userTitleService->retrieveTitleDataForUser($user);
+        $levelData = $user->getUserLevel() ? [
+            'level' => $user->getUserLevel()->getLevel(),
+            'xpTotal' => $user->getUserLevel()->getXpTotal()
+        ] : null;
+
         return $this->json([
             'id' => $user->getId(),
             'email' => $user->getEmail(),
@@ -63,6 +70,8 @@ class ProfileController extends AbstractController
             'isCoach' => $isCoach,
             'isPlayer' => $isPlayer,
             'avatarFile' => $user->getAvatarFilename(),
+            'title' => $titleData,
+            'level' => $levelData
         ]);
     }
 
@@ -168,5 +177,83 @@ class ProfileController extends AbstractController
         } catch (Exception $e) {
             return $this->json(['message' => 'Fehler bei der E-Mail-Verifizierung'], 400);
         }
+    }
+
+    #[Route('/xp-breakdown', name: 'api_xp_breakdown', methods: ['GET'])]
+    public function getXpBreakdown(UserTitleService $userTitleService): JsonResponse
+    {
+        /** @var ?User $user */
+        $user = $this->getUser();
+        if (!($user instanceof User)) {
+            return $this->json(['message' => 'Not logged in'], 401);
+        }
+
+        // XP Breakdown wie bisher
+        $xpEventRepo = $this->entityManager->getRepository(\App\Entity\UserXpEvent::class);
+        $xpRuleRepo = $this->entityManager->getRepository(\App\Entity\XpRule::class);
+
+        $qb = $xpEventRepo->createQueryBuilder('e')
+            ->select('e.actionType, SUM(e.xpValue) as xpSum')
+            ->where('e.user = :user')
+            ->groupBy('e.actionType')
+            ->setParameter('user', $user);
+        $xpSums = $qb->getQuery()->getResult();
+
+        $actionTypes = array_column($xpSums, 'actionType');
+        $labels = [];
+        if ($actionTypes) {
+            $rules = $xpRuleRepo->createQueryBuilder('r')
+                ->select('r.actionType, r.label')
+                ->where('r.actionType IN (:types)')
+                ->setParameter('types', $actionTypes)
+                ->getQuery()->getResult();
+            foreach ($rules as $rule) {
+                $labels[$rule['actionType']] = $rule['label'];
+            }
+        }
+
+        $breakdown = [];
+        foreach ($xpSums as $row) {
+            $breakdown[] = [
+                'actionType' => $row['actionType'],
+                'label' => $labels[$row['actionType']] ?? $row['actionType'],
+                'xp' => (int) $row['xpSum'],
+            ];
+        }
+
+        // Titel und Level
+        $titleData = $userTitleService->retrieveTitleDataForUser($user);
+        $levelData = $user->getUserLevel() ? [
+            'level' => $user->getUserLevel()->getLevel(),
+            'xpTotal' => $user->getUserLevel()->getXpTotal()
+        ] : null;
+
+        return $this->json([
+            'breakdown' => $breakdown,
+            'title' => $titleData['displayTitle'] ?? null,
+            'allTitles' => $titleData['allTitles'] ?? [],
+            'level' => $levelData,
+            'xpTotal' => $levelData['xpTotal'] ?? null,
+        ]);
+    }
+
+    #[Route('/admin/title-xp-overview', name: 'admin_title_xp_overview', methods: ['GET'])]
+    public function adminTitleXpOverview(EntityManagerInterface $em, UserTitleService $userTitleService): JsonResponse
+    {
+        // Titel-Übersicht: alle vergebenen Titel mit Nutzeranzahl (über Service)
+        $titles = $userTitleService->retrieveTitleStats();
+
+        // XP-Übersicht: alle Benutzer mit XP, Titel und Level
+        $users = $em->createQueryBuilder()
+            ->select('u.id, u.firstName, u.lastName, u.email, l.xpTotal AS xp, l.level AS level')
+            ->from(User::class, 'u')
+            ->leftJoin('u.userLevel', 'l')
+            ->orderBy('xp', 'DESC')
+            ->getQuery()->getArrayResult();
+
+        return $this->json([
+            'titles' => $titles,
+            'users' => $users,
+        ]);
     }
 }

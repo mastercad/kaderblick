@@ -16,6 +16,16 @@ interface User {
   isPlayer?: boolean;
   roles: { [key: string]: string };
   avatarFile?: string;
+  title?: {
+    hasTitle: boolean;
+    displayTitle: string;
+    avatarFrame: string;
+    allTitles: { [key: number]: string };
+  }
+  level?: {
+    level: number;
+    xpTotal: number;
+  };
 }
 
 interface AuthData {
