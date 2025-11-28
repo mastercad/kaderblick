@@ -68,7 +68,7 @@ RUN echo "SHELL=/bin/bash" > /etc/cron.d/symfony-crons \
     && echo "*/5 * * * * www-data /usr/local/bin/cron_wrapper.sh app:xp:process-pending 2>&1" >> /etc/cron.d/symfony-crons \
     && echo "" >> /etc/cron.d/symfony-crons \
     && echo "# Calculate and award titles (daily at 2 AM)" >> /etc/cron.d/symfony-crons \
-    && echo "0 2 * * * www-data /usr/local/bin/cron_wrapper.sh app:titles:calculate 2>&1" >> /etc/cron.d/symfony-crons \
+    && echo "0 2 * * * www-data /usr/local/bin/cron_wrapper.sh app:xp:award-titles 2>&1" >> /etc/cron.d/symfony-crons \
     && chmod 0644 /etc/cron.d/symfony-crons
 
 CMD cron && apache2-foreground

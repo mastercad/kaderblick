@@ -51,6 +51,7 @@ import WeatherModal from '../modals/WeatherModal';
 import { WeatherDisplay } from '../components/WeatherIcons';
 import { formatEventTime, formatDateTime } from '../utils/formatter'
 import { UserAvatar } from '../components/UserAvatar';
+import { getAvatarFrameUrl } from '../utils/avatarFrame';
 
 interface GameDetailsProps {
   gameId?: number;
@@ -497,11 +498,12 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                             }
                             </span>
                             <strong style={{ marginRight: 10 }}>{e.type ?? e?.gameEventType.name ?? 'Unbekannt'}</strong>
-                            <UserAvatar icon={e.player?.playerAvatarUrl }
+                            <UserAvatar
+                              icon={e.player?.playerAvatarUrl}
                               name={playerDisplay || 'Unbekannt'}
                               avatarSize={26}
                               fontSize={12}
-                              svgFrameUrl={e.player?.title?.avatarFrame}
+                              titleObj={e.player?.title && e.player?.title.hasTitle ? e.player.title : undefined}
                               level={e.player?.level?.level}
                             />
                             {e.description && (

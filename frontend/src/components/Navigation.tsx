@@ -53,6 +53,7 @@ import { NotificationCenter } from './NotificationCenter';
 import NavigationMessagesButton from './NavigationMessagesButton';
 import { BACKEND_URL } from '../../config';
 import UserAvatar from './UserAvatar';
+import { getAvatarFrameUrl } from '../utils/avatarFrame';
 
 interface NavigationProps {
   onOpenAuth: () => void;
@@ -118,6 +119,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
         { label: 'Datenkonsistenz', href: 'admin/consistency', icon: <SearchIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
         { label: 'Aufstellungen', page: 'formations', icon: <GroupWorkIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
         { label: 'Aufgaben', page: 'tasks', icon: <ManageAccountsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Titel & XP Übersicht', page: 'admin/title-xp-overview', icon: <EmojiEventsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
       ],
     },
     {
@@ -385,15 +387,15 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                       : theme.palette.primary.contrastText,
                   }}
                 >
-                  <UserAvatar
-                    icon={user?.avatarFile || undefined}
-                    name=""
-                    avatarSize={32}
-                    fontSize={16}
-                    svgFrameUrl={user.title?.avatarFrame}
-                    svgFrameOffsetY={0}
-                    level={user.level?.level}
-                  />
+                    <UserAvatar
+                      icon={user?.avatarFile || undefined}
+                      name=""
+                      avatarSize={32}
+                      fontSize={16}
+                      titleObj={user?.title && user?.title.hasTitle ? user.title : undefined}
+                      svgFrameOffsetY={0}
+                      level={user.level?.level}
+                    />
                 </IconButton>
               </Box>
             </>

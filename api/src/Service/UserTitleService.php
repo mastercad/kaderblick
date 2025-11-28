@@ -109,8 +109,9 @@ class UserTitleService
     private function retrieveAvatarFrameIdentifier(UserTitle $title): string
     {
         return sprintf(
-            '%s_%s',
+            '%s_%s_%s',
             $title->getTitleScope(),
+            $title->getTitleCategory(),
             $title->getTitleRank()
         );
     }
@@ -132,5 +133,19 @@ class UserTitleService
         }
         
         return false;
+    }   
+    
+    /**
+     * Returns grouped title stats for admin overview (category, scope, rank, count)
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function retrieveTitleStats(): array
+    {
+        $qb = $this->userTitleRepository->createQueryBuilder('t');
+        $qb->select('t.titleCategory, t.titleScope, t.titleRank, COUNT(t.id) AS userCount')
+            ->groupBy('t.titleCategory, t.titleScope, t.titleRank')
+            ->orderBy('userCount', 'DESC');
+        return $qb->getQuery()->getArrayResult();
     }
 }

@@ -5,22 +5,23 @@ import Typography from "@mui/material/Typography";
 import Badge from "@mui/material/Badge";
 import { FaUserAlt } from "react-icons/fa";
 import { BACKEND_URL } from "../../config";
+import { getAvatarFrameUrl } from '../utils/avatarFrame';
 // Alternativ: import { FaFutbol } from "react-icons/fa";
 
 interface UserProps {
   icon: React.ReactNode | string; // Avatar-URL oder Icon-Komponente
   name: string;
-  title?: string;
+  titleObj?: { hasTitle?: boolean; avatarFrame?: string };
   xp?: number;
   avatarSize?: number; // px
   fontSize?: number; // px
   svgFrame?: React.ReactNode; // Optionales SVG-Overlay (Rahmen, bleibt für Kompatibilität)
-  svgFrameUrl?: string; // Optionaler SVG-Dateipfad als Overlay
+  svgFrameUrl?: string; // Optionaler SVG-Dateipfad als Overlay (deprecated, use titleObj)
   svgFrameOffsetY?: number; // Optionaler vertikaler Offset für den Rahmen (in px)
   level?: number; // Optional: Level des Benutzers
 }
 
-export const UserAvatar: React.FC<UserProps> = ({ icon, name, avatarSize = 48, fontSize = 16, svgFrame, svgFrameUrl, svgFrameOffsetY = 0, level }) => {
+export const UserAvatar: React.FC<UserProps> = ({ icon, name, avatarSize = 48, fontSize = 16, svgFrame, svgFrameUrl, svgFrameOffsetY = 0, level, titleObj }) => {
   // Icon size for react-icon inside Avatar (slightly smaller than avatarSize)
   const iconInnerSize = Math.round(avatarSize * 0.6);
   let avatarContent: React.ReactNode;
@@ -36,6 +37,8 @@ export const UserAvatar: React.FC<UserProps> = ({ icon, name, avatarSize = 48, f
     avatarContent = <Avatar sx={{ width: avatarSize, height: avatarSize }}><FaUserAlt size={iconInnerSize} /></Avatar>;
   }
 
+  // svgFrameUrl: Priorität: titleObj → prop.svgFrameUrl → prop.svgFrame
+  const frameUrl = titleObj ? getAvatarFrameUrl(titleObj) : svgFrameUrl;
   return (
     <Box display="flex" alignItems="center" sx={{ display: 'inline-flex' }}>
       <Box sx={{ position: 'relative', width: avatarSize, height: avatarSize, minWidth: avatarSize, minHeight: avatarSize, mr: name && name.trim() !== '' ? 1 : 0, display: 'inline-block' }}>
@@ -58,7 +61,7 @@ export const UserAvatar: React.FC<UserProps> = ({ icon, name, avatarSize = 48, f
         >
           {avatarContent}
         </Badge>
-        {(svgFrameUrl || svgFrame) && (
+        {(frameUrl || svgFrame) && (
           <Box sx={{
             position: 'absolute',
             top: 0,
@@ -72,9 +75,9 @@ export const UserAvatar: React.FC<UserProps> = ({ icon, name, avatarSize = 48, f
             justifyContent: 'center',
             transform: svgFrameOffsetY !== 0 ? `translateY(${svgFrameOffsetY}px)` : `translateY(-7px)`,
           }}>
-            {svgFrameUrl ? (
+            {frameUrl ? (
               <img
-                src={svgFrameUrl}
+                src={frameUrl}
                 alt="Avatar Rahmen"
                 style={{ width: '140%', height: '160%', objectFit: 'contain', pointerEvents: 'none' }}
                 draggable={false}

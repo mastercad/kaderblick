@@ -1,4 +1,105 @@
 import React from 'react';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import CircularProgress from '@mui/material/CircularProgress';
+
+// XP Breakdown Modal (lädt echte Daten inkl. Titel/Level)
+const XpBreakdownModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, onClose }) => {
+  const [loading, setLoading] = React.useState(false);
+  const [breakdown, setBreakdown] = React.useState<Array<{ actionType: string; label: string; xp: number }>>([]);
+  const [error, setError] = React.useState<string | null>(null);
+  const [title, setTitle] = React.useState<any>(null);
+  const [allTitles, setAllTitles] = React.useState<any[]>([]);
+  const [level, setLevel] = React.useState<any>(null);
+  const [xpTotal, setXpTotal] = React.useState<number|null>(null);
+
+  React.useEffect(() => {
+    if (open) {
+      setLoading(true);
+      setError(null);
+      setBreakdown([]);
+      setTitle(null);
+      setAllTitles([]);
+      setLevel(null);
+      setXpTotal(null);
+      import('../utils/api').then(({ apiJson }) => {
+        apiJson('/api/xp-breakdown')
+          .then((data: any) => {
+            if (data && Array.isArray(data.breakdown)) {
+              setBreakdown(data.breakdown);
+              setTitle(data.title || null);
+              setAllTitles(Array.isArray(data.allTitles) ? data.allTitles : []);
+              setLevel(data.level || null);
+              setXpTotal(typeof data.xpTotal === 'number' ? data.xpTotal : null);
+            } else if (data && data.error) {
+              setError(data.error);
+            } else {
+              setError('Unbekannter Fehler beim Laden der XP-Daten');
+            }
+          })
+          .catch(() => setError('Fehler beim Laden der XP-Daten'))
+          .finally(() => setLoading(false));
+      });
+    }
+  }, [open]);
+
+  return (
+    <BaseModal
+      open={open}
+      onClose={onClose}
+      title="Erfahrungspunkte – Aufschlüsselung"
+      maxWidth="sm"
+      actions={<Button onClick={onClose} variant="contained">Schließen</Button>}
+    >
+      <Box sx={{ p: 2 }}>
+        <Typography variant="body1" gutterBottom>
+          Hier siehst du, wie sich deine Erfahrungspunkte (XP) auf der Plattform zusammensetzen.
+        </Typography>
+        <Box sx={{ mt: 2 }}>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box>
+          ) : error ? (
+            <Alert severity="error">{error}</Alert>
+          ) : (
+            <>
+              {title && (
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                  <b>Haupttitel:</b> {title.displayName}
+                </Typography>
+              )}
+              {allTitles.length > 1 && (
+                <Box sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2">Weitere Titel:</Typography>
+                  <ul style={{ margin: 0 }}>
+                    {allTitles.filter(t => !title || t.id !== title.id).map(t => (
+                      <li key={t.id}>{t.displayName}</li>
+                    ))}
+                  </ul>
+                </Box>
+              )}
+              {level && (
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  <b>Level:</b> {level.level} &nbsp; <b>XP:</b> {xpTotal ?? level.xpTotal}
+                </Typography>
+              )}
+              <Typography variant="subtitle1">Deine XP-Aufschlüsselung:</Typography>
+              {breakdown.length === 0 ? (
+                <Typography color="text.secondary">Keine XP-Daten gefunden.</Typography>
+              ) : (
+                <ul style={{ marginTop: 8, marginBottom: 0 }}>
+                  {breakdown.map((item) => (
+                    <li key={item.actionType}>
+                      {item.label}: <b>{item.xp} XP</b>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </Box>
+      </Box>
+    </BaseModal>
+  );
+};
 import getCroppedImg from '../utils/cropImage';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
@@ -79,6 +180,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
   const [message, setMessage] = React.useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [relations, setRelations] = React.useState<UserRelation[]>([]);
   const [relationsOpen, setRelationsOpen] = React.useState(false);
+  const [xpModalOpen, setXpModalOpen] = React.useState(false);
 
   // Profildaten laden beim Öffnen des Modals
   React.useEffect(() => {
@@ -98,6 +200,11 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
     }
   };
 
+  // Titel/Level für Profil-Header
+  const [profileTitle, setProfileTitle] = React.useState<string | null>(null);
+  const [profileLevel, setProfileLevel] = React.useState<number | null>(null);
+  const [profileXp, setProfileXp] = React.useState<number | null>(null);
+
   const loadUserProfile = async () => {
     try {
       const userData = await apiJson('/api/about-me');
@@ -114,8 +221,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
         confirmPassword: '',
         avatarUrl: userData.avatarFile || '',
       });
-      console.log(userData);
-      console.log(form);
+      // Titel/Level extrahieren
+      setProfileTitle(userData.title?.displayTitle?.displayName || null);
+      setProfileLevel(userData.level?.level ?? null);
+      setProfileXp(userData.level?.xpTotal ?? null);
     } catch (error) {
       console.error('Fehler beim Laden des Profils:', error);
       setMessage({ text: 'Fehler beim Laden des Profils', type: 'error' });
@@ -224,6 +333,19 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
           </IconButton>
         </span>
       </Tooltip>
+      {/* XP Breakdown IconButton */}
+      <Tooltip title="XP-Aufschlüsselung anzeigen">
+        <span>
+          <IconButton
+            size="small"
+            onClick={() => setXpModalOpen(true)}
+            sx={{ color: 'primary.main', ml: 0.5 }}
+            aria-label="XP-Aufschlüsselung anzeigen"
+          >
+            <InfoOutlinedIcon fontSize="small" />
+          </IconButton>
+        </span>
+      </Tooltip>
     </Box>
   );
 
@@ -307,6 +429,22 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
             </IconButton>
           </Box>
 
+          {/* Titel und Level unter dem Namen anzeigen */}
+          {(profileTitle || profileLevel !== null) && (
+            <Box sx={{ mb: 1 }}>
+              {profileTitle && (
+                <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                  {profileTitle}
+                </Typography>
+              )}
+              {profileLevel !== null && (
+                <Typography variant="body2" color="text.secondary">
+                  Level: {profileLevel}{profileXp !== null ? `  |  XP: ${profileXp}` : ''}
+                </Typography>
+              )}
+            </Box>
+          )}
+
         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
           <TextField
             label="Vorname"
@@ -323,7 +461,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
             required
           />
         </Box>
-          
         <TextField
           label="E-Mail"
           type="email"
@@ -332,7 +469,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
           fullWidth
           required
         />
-          
         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
           <TextField
             label="Körpergröße (cm)"
@@ -357,7 +493,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
             fullWidth
           />
         </Box>
-          
         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
           <TextField
             label="T-Shirt Größe"
@@ -384,9 +519,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
             ))}
           </TextField>
         </Box>
-          
         <Divider sx={{ my: 2 }} />
-          
         {/* Theme-Einstellung */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -404,10 +537,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
             label={mode === 'dark' ? 'Dark Mode' : 'Light Mode'}
           />
         </Box>
-          
         <Divider sx={{ my: 2 }} />
         <Typography variant="h6" gutterBottom>Passwort ändern</Typography>
-          
         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
           <TextField
             label="Neues Passwort"
@@ -424,7 +555,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
             fullWidth
           />
         </Box>
-          
         {message && (
           <Alert severity={message.type}>
             {message.text}
@@ -432,6 +562,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
         )}
       </Box>
     </BaseModal>
+    {/* XP Breakdown Modal */}
+    <XpBreakdownModal open={xpModalOpen} onClose={() => setXpModalOpen(false)} />
     
     {/* AvatarModal für Upload/URL */}
     <BaseModal
@@ -450,7 +582,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
                 if (cropped) {
                   // DataURL in File umwandeln
                   const arr = cropped.split(',');
-                  const mime = arr[0].match(/:(.*?);/)[1];
+                  const match = arr[0].match(/:(.*?);/);
+                  const mime = match ? match[1] : '';
                   const bstr = atob(arr[1]);
                   let n = bstr.length;
                   const u8arr = new Uint8Array(n);

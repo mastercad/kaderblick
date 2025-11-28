@@ -355,6 +355,10 @@ HELP);
 
         $users = [];
         foreach ($player->getUserRelations() as $userRelation) {
+            // Nur self_player-Relationen berücksichtigen
+            if (method_exists($userRelation, 'getRelationType') && $userRelation->getRelationType()->getIdentifier() !== 'self_player') {
+                continue;
+            }
             $user = $userRelation->getUser();
             if ($user) {
                 $users[] = $user;
