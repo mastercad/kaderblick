@@ -51,7 +51,7 @@ class AwardTitlesCommand extends Command
         $counted = 0;
         /** @var Goal $goal */
         foreach ($goals as $goal) {
-            $scorer = $goal->getScorer();
+            $scorer = $goal->getPlayer();
             $relations = [];
             foreach ($scorer->getUserRelations() as $userRelation) {
                 $relations[] = $userRelation->getRelationType()->getIdentifier();
