@@ -3,7 +3,6 @@
 namespace App\Command;
 
 use App\Entity\GameEvent;
-use App\Entity\Goal;
 use App\Service\TitleCalculationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -58,7 +57,7 @@ class AwardTitlesCommand extends Command
                 $relations[] = $userRelation->getRelationType()->getIdentifier();
             }
 
-            if ($gameEvent->getGameEventType()?->getCode() !== 'goal') {
+            if ('goal' !== $gameEvent->getGameEventType()?->getCode()) {
                 continue;
             }
 
