@@ -332,11 +332,10 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                     </>
                   )}
                   {game.location && (
-                    <Location
-                      name={game.location.name}
-                      latitude={game.location.latitude ?? 0}
-                      longitude={game.location.longitude ?? 0}
-                      address={game.location.address ?? ''}
+                    <Location 
+                      {...game.location}
+                      permissions={{ canCreate: false, canEdit: false, canView: true, canDelete: false }}
+                      surfaceTypeId={('surfaceTypeId' in game.location) ? (game.location as any).surfaceTypeId ?? 0 : 0}
                     />
                   )}
                 </Box>
@@ -349,7 +348,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
               }}>
               <span style={{ cursor: 'pointer' }} title="Wetterdetails anzeigen">
                 <WeatherDisplay 
-                  code={game.calendarEvent?.weatherData?.dailyWeatherData?.weathercode?.[0]} theme={'light'}
+                  code={game.weatherData?.dailyWeatherData?.weathercode?.[0]} theme={'light'}
                 />
               </span>
             </Box>
@@ -503,8 +502,8 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                               name={playerDisplay || 'Unbekannt'}
                               avatarSize={26}
                               fontSize={12}
-                              titleObj={e.player?.title && e.player?.title.hasTitle ? e.player.title : undefined}
-                              level={e.player?.level?.level}
+                              titleObj={e.player?.titleData && e.player?.titleData.hasTitle ? e.player.titleData : undefined}
+                              level={typeof e.player?.level === 'number' ? e.player.level : undefined}
                             />
                             {e.description && (
                               <span style={{ color: '#888', marginLeft: 8 }}>{e.description}</span>
@@ -520,7 +519,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                                     href={currentVideo[1]}
                                     target="_blank"
                                   >
-                                    { mappedCameras[currentVideo[0]] }
+                                    { mappedCameras[Number(currentVideo[0])] }
                                   </Link>
                                 </>
                               ))}
