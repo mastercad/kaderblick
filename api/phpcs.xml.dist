@@ -25,6 +25,10 @@
         </properties>
     </rule>
 
+    <rule ref="Generic.Files.OneClassPerFile">
+        <exclude-pattern>tests/Unit/Service/TitleCalculationServiceTest.php</exclude-pattern>
+    </rule>
+
     <file>bin/</file>
     <file>config/</file>
     <file>public/</file>
