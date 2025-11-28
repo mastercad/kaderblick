@@ -2,6 +2,7 @@
 
 namespace App\Command;
 
+use App\Entity\GameEvent;
 use App\Entity\Goal;
 use App\Service\TitleCalculationService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -46,25 +47,30 @@ class AwardTitlesCommand extends Command
 
         // Debug: Alle gezählten Tore für die Saison ausgeben
         $io->section('DEBUG: Alle gezählten Tore für diese Saison (inkl. Player-Relationen)');
-        $goals = $this->titleCalculationService->debugGoalsForSeason($season);
+        $gameEvents = $this->titleCalculationService->debugGoalsForSeason($season);
 
         $counted = 0;
-        /** @var Goal $goal */
-        foreach ($goals as $goal) {
-            $scorer = $goal->getPlayer();
+        /** @var GameEvent $gameEvent */
+        foreach ($gameEvents as $gameEvent) {
+            $scorer = $gameEvent->getPlayer();
             $relations = [];
             foreach ($scorer->getUserRelations() as $userRelation) {
                 $relations[] = $userRelation->getRelationType()->getIdentifier();
             }
-            $game = $goal->getGame();
-            $calendarEvent = $game ? $game->getCalendarEvent() : null;
-            $team = $game ? $game->getHomeTeam() : null;
+
+            if ($gameEvent->getGameEventType()?->getCode() !== 'goal') {
+                continue;
+            }
+
+            $game = $gameEvent->getGame();
+            $calendarEvent = $game->getCalendarEvent();
+            $team = $game->getHomeTeam();
             $io->writeln(sprintf(
                 'Tor-ID: %d | Spieler: %s %s | Spiel-ID: %d | Team: %s | Datum: %s | Player-RelationTypes: [%s]',
-                $goal->getId(),
+                $gameEvent->getId(),
                 $scorer->getFirstName(),
                 $scorer->getLastName(),
-                $game?->getId() ?? 0,
+                $game->getId(),
                 $team?->getName() ?? '-',
                 $calendarEvent?->getStartDate()?->format('Y-m-d H:i') ?? '-',
                 implode(', ', $relations)
