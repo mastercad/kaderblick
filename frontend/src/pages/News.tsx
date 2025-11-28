@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Button, Card, CardContent, Typography, Stack } from '@mui/material';
+import { Box, Button, Card, CardContent, Typography, Stack, IconButton } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import NewsCreateModal from '../modals/NewsCreateModal';
+import NewsEditModal from '../modals/NewsEditModal';
+import { DynamicConfirmationModal } from '../modals/DynamicConfirmationModal';
 import { apiJson } from '../utils/api';
 
 interface NewsItem {
@@ -33,6 +37,35 @@ const News: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [visibilityOptions, setVisibilityOptions] = useState<VisibilityOption[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editNews, setEditNews] = useState<NewsItem | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteNews, setDeleteNews] = useState<NewsItem | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+    const handleEdit = (item: NewsItem) => {
+      setEditNews(item);
+      setEditModalOpen(true);
+    };
+
+    const handleDelete = (item: NewsItem) => {
+      setDeleteNews(item);
+      setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+      if (!deleteNews) return;
+      setDeleteLoading(true);
+      try {
+        await apiJson(`/news/${deleteNews.id}/delete`, { method: 'POST' });
+        setDeleteDialogOpen(false);
+        setDeleteNews(null);
+        fetchNews();
+      } catch (e) {
+        // Fehlerbehandlung könnte hier ergänzt werden
+      } finally {
+        setDeleteLoading(false);
+      }
+    };
   const [loading, setLoading] = useState(true);
 
   const fetchNews = async () => {
@@ -76,18 +109,48 @@ const News: React.FC = () => {
           </Button>
         </Box>
       ) : (
-        news.map(item => (
-          <Card key={item.id} sx={{ mb: 2 }}>
-            <CardContent>
-              <Typography variant="h6">{item.title}</Typography>
-              <Typography variant="body1" sx={{ mb: 1 }}>{item.content}</Typography>
-              <Typography variant="caption" color="text.secondary">
-                {item.createdAt && new Date(item.createdAt).toLocaleString()} – {item.createdByUserName}
-              </Typography>
-            </CardContent>
-          </Card>
-        ))
+        <>
+          {news.map(item => (
+            <Card key={item.id} sx={{ mb: 2 }}>
+              <CardContent>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6">{item.title}</Typography>
+                    <Typography variant="body1" sx={{ mb: 1 }}>{item.content}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {item.createdAt && new Date(item.createdAt).toLocaleString()} – {item.createdByUserName}
+                    </Typography>
+                  </Box>
+                  <Stack direction="row" spacing={1}>
+                    <IconButton aria-label="Bearbeiten" onClick={() => handleEdit(item)} size="small">
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton aria-label="Löschen" onClick={() => handleDelete(item)} size="small" color="error">
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                </Stack>
+              </CardContent>
+            </Card>
+          ))}
+        </>
       )}
+      <NewsEditModal
+        open={editModalOpen}
+        onClose={() => { setEditModalOpen(false); setEditNews(null); }}
+        onSuccess={() => { setEditModalOpen(false); setEditNews(null); fetchNews(); }}
+        news={editNews || { id: 0, title: '', content: '' }}
+      />
+      <DynamicConfirmationModal
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={confirmDelete}
+        title="News löschen"
+        message={deleteNews ? `Möchten Sie die News \"${deleteNews.title}\" wirklich löschen?` : ''}
+        confirmText="Löschen"
+        confirmColor="error"
+        loading={deleteLoading}
+      />
       <NewsCreateModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
