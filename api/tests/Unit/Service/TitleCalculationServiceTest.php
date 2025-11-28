@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 // Dummy-Klassen für die benötigten Methoden (nach namespace, vor Testklasse)
+// @phpcs:disable Generic.Files.OneClassPerFile
 class DummyRelationType
 {
     public function getIdentifier(): string
@@ -20,6 +21,7 @@ class DummyRelationType
     }
 }
 
+// @phpcs:disable Generic.Files.OneClassPerFile
 class DummyUserRelation
 {
     private User $user;
@@ -40,6 +42,7 @@ class DummyUserRelation
     }
 }
 
+// @phpcs:disable Generic.Files.OneClassPerFile
 class DummyPlayer
 {
     private DummyUserRelation $userRelation;

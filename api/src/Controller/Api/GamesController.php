@@ -10,7 +10,6 @@ use App\Entity\User;
 use App\Repository\CameraRepository;
 use App\Repository\GameEventRepository;
 use App\Repository\GameRepository;
-use App\Repository\VideoTypeRepository;
 use App\Security\Voter\GameEventVoter;
 use App\Security\Voter\VideoVoter;
 use App\Service\UserTitleService;
@@ -74,8 +73,12 @@ class GamesController extends ApiController
     }
 
     #[Route('/{id}/details', name: 'details', requirements: ['id' => '\d+'], methods: ['GET'])]
-    public function details(Game $game, GameEventRepository $gameEventRepository, VideoTypeRepository $videoTypeRepository, CameraRepository $cameraRepository, UserTitleService $userTitleService): JsonResponse
-    {
+    public function details(
+        Game $game,
+        GameEventRepository $gameEventRepository,
+        CameraRepository $cameraRepository,
+        UserTitleService $userTitleService
+    ): JsonResponse {
         $calendarEvent = $game->getCalendarEvent();
         $gameEvents = $gameEventRepository->findAllGameEvents($game);
 
@@ -184,8 +187,6 @@ class GamesController extends ApiController
             'homeScore' => $scores['home'],
             'awayScore' => $scores['away'],
             'videos' => $this->videoTimelineService->prepareYoutubeLinks($game, $gameEvents),
-            //            'videoTypes' => $videoTypeRepository->findAll(),
-            //            'cameras' => $cameras,
         ]);
     }
 
