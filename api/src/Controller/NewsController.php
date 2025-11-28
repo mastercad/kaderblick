@@ -7,7 +7,7 @@ use App\Entity\News;
 use App\Entity\Team;
 use App\Entity\User;
 use App\Entity\UserRelation;
-use App\Repository\NewsRepositoryInterface;
+use App\Repository\NewsRepository;
 use App\Security\Voter\NewsVoter;
 use App\Service\NotificationService;
 use DateTimeImmutable;
@@ -21,7 +21,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class NewsController extends AbstractController
 {
     private EntityManagerInterface $em;
-    private NewsRepositoryInterface $newsRepository;
+    private NewsRepository $newsRepository;
 
     public function __construct(
         EntityManagerInterface $em,
@@ -29,7 +29,7 @@ class NewsController extends AbstractController
     ) {
         $this->em = $em;
         $repository = $em->getRepository(News::class);
-        assert($repository instanceof NewsRepositoryInterface);
+        assert($repository instanceof NewsRepository);
         $this->newsRepository = $repository;
     }
 
@@ -300,5 +300,58 @@ class NewsController extends AbstractController
         }
 
         return array_unique($users);
+    }
+
+    #[Route(path: '/{id}/edit', name: 'app_news_edit', methods: ['POST'])]
+    public function edit(int $id, Request $request): JsonResponse
+    {
+        /** @var ?User $user */
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
+
+        $news = $this->newsRepository->find($id);
+        if (!$news) {
+            return new JsonResponse(['error' => 'Not found'], 404);
+        }
+        if (!$this->isGranted(NewsVoter::EDIT, $news)) {
+            return new JsonResponse(['error' => 'Forbidden'], 403);
+        }
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return new JsonResponse(['error' => 'Invalid JSON'], 400);
+        }
+        $title = $data['title'] ?? null;
+        $content = $data['content'] ?? null;
+        if (!$title || !$content) {
+            return new JsonResponse(['error' => 'Missing required fields'], 400);
+        }
+        $news->setTitle($title);
+        $news->setContent($content);
+        $this->em->flush();
+
+        return new JsonResponse(['success' => true]);
+    }
+
+    #[Route(path: '/{id}/delete', name: 'app_news_delete', methods: ['POST'])]
+    public function delete(int $id): JsonResponse
+    {
+        /** @var ?User $user */
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
+        $news = $this->newsRepository->find($id);
+        if (!$news) {
+            return new JsonResponse(['error' => 'Not found'], 404);
+        }
+        if (!$this->isGranted(NewsVoter::DELETE, $news)) {
+            return new JsonResponse(['error' => 'Forbidden'], 403);
+        }
+        $this->em->remove($news);
+        $this->em->flush();
+
+        return new JsonResponse(['success' => true]);
     }
 }
