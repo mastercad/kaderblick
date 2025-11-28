@@ -2,26 +2,26 @@
 
 namespace App\Entity;
 
-use App\Repository\UserTitleRepository;
+use App\Repository\PlayerTitleRepository;
 use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: UserTitleRepository::class)]
+#[ORM\Entity(repositoryClass: PlayerTitleRepository::class)]
 #[ORM\Table(
-    name: 'user_titles',
+    name: 'player_titles',
     indexes: [
-        new ORM\Index(name: 'idx_user_titles_user_id', columns: ['user_id']),
-        new ORM\Index(name: 'idx_user_titles_team_id', columns: ['team_id']),
-        new ORM\Index(name: 'idx_user_titles_is_active', columns: ['is_active']),
+        new ORM\Index(name: 'idx_player_titles_player_id', columns: ['player_id']),
+        new ORM\Index(name: 'idx_player_titles_team_id', columns: ['team_id']),
+        new ORM\Index(name: 'idx_player_titles_is_active', columns: ['is_active']),
     ],
     uniqueConstraints: [
         new ORM\UniqueConstraint(
-            name: 'uniq_user_title_active',
-            columns: ['user_id', 'title_category', 'title_scope', 'team_id', 'is_active']
+            name: 'uniq_player_title_active',
+            columns: ['player_id', 'title_category', 'title_scope', 'team_id', 'is_active']
         )
     ]
 )]
-class UserTitle
+class PlayerTitle
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -29,9 +29,9 @@ class UserTitle
     /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
-    private ?User $user;
+    #[ORM\ManyToOne(targetEntity: Player::class)]
+    #[ORM\JoinColumn(name: 'player_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+    private ?Player $player;
 
     #[ORM\Column(type: 'string', length: 50)]
     private string $titleCategory; // 'top_scorer', 'top_assist', etc.
@@ -66,14 +66,14 @@ class UserTitle
         return $this->id;
     }
 
-    public function getUser(): ?User
+    public function getPlayer(): ?Player
     {
-        return $this->user;
+        return $this->player;
     }
 
-    public function setUser(?User $user): self
+    public function setPlayer(?Player $player): self
     {
-        $this->user = $user;
+        $this->player = $player;
 
         return $this;
     }

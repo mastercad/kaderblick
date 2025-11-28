@@ -160,6 +160,12 @@ class Player
     #[ORM\Column(type: 'string', length: 255, nullable: true, name: 'fussball_de_url')]
     private ?string $fussballDeUrl = null;
 
+    /**
+     * @var Collection<int, PlayerTitle>
+     */
+    #[ORM\OneToMany(mappedBy: 'player', targetEntity: PlayerTitle::class, cascade: ['persist', 'remove'])]
+    private Collection $playerTitles;
+
     public function __construct()
     {
         $this->goals = new ArrayCollection();
@@ -170,6 +176,7 @@ class Player
         $this->playerTeamAssignments = new ArrayCollection();
         $this->playerClubAssignments = new ArrayCollection();
         $this->playerNationalityAssignments = new ArrayCollection();
+        $this->playerTitles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -571,6 +578,36 @@ class Player
             // Set the owning side to null (unless already changed)
             if ($userRelation->getPlayer() === $this) {
                 $userRelation->setPlayer(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PlayerTitle>
+     */
+    public function getPlayerTitles(): Collection
+    {
+        return $this->playerTitles;
+    }
+
+    public function addPlayerTitle(PlayerTitle $playerTitle): static
+    {
+        if (!$this->playerTitles->contains($playerTitle)) {
+            $this->playerTitles->add($playerTitle);
+            $playerTitle->setPlayer($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlayerTitle(PlayerTitle $playerTitle): static
+    {
+        if ($this->playerTitles->removeElement($playerTitle)) {
+            // set the owning side to null (unless already changed)
+            if ($playerTitle->getPlayer() === $this) {
+                $playerTitle->setPlayer(null);
             }
         }
 

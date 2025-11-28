@@ -2,10 +2,10 @@
 
 namespace App\Tests\Unit\Service;
 
+use App\Entity\PlayerTitle;
 use App\Entity\Team;
 use App\Entity\User;
-use App\Entity\UserTitle;
-use App\Repository\UserTitleRepository;
+use App\Repository\PlayerTitleRepository;
 use App\Service\TitleCalculationService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
@@ -72,11 +72,11 @@ class TitleCalculationServiceTest extends TestCase
     {
         $user = $this->createMock(User::class);
         $team = $this->createMock(Team::class);
-        $repo = $this->createMock(UserTitleRepository::class);
+        $repo = $this->createMock(PlayerTitleRepository::class);
         $em = $this->createMock(EntityManagerInterface::class);
 
         // Repository gibt bereits existierenden Titel zurück
-        $repo->method('findOneBy')->willReturn(new UserTitle());
+        $repo->method('findOneBy')->willReturn(new PlayerTitle());
         $repo->method('deactivateTitles');
         $em->method('getRepository')->willReturn($repo);
 
@@ -99,7 +99,7 @@ class TitleCalculationServiceTest extends TestCase
     /**
      * @param array<int, array<string, mixed>> $playerGoals
      *
-     * @return UserTitle[]
+     * @return PlayerTitle[]
      */
     private function invokeAwardTitlesPerPlayerFromArray(TitleCalculationService $service, array $playerGoals, string $cat, string $scope, ?Team $team, ?string $season): array
     {

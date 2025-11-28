@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\GameEvent;
+use App\Entity\PlayerTitle;
 use App\Entity\Team;
-use App\Entity\UserTitle;
-use App\Repository\UserTitleRepository;
+use App\Repository\PlayerTitleRepository;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -16,7 +16,7 @@ class TitleCalculationService
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private UserTitleRepository $userTitleRepository
+        private PlayerTitleRepository $playerTitleRepository
     ) {
     }
 
@@ -32,17 +32,6 @@ class TitleCalculationService
         foreach ($goals as $goal) {
             $player = $goal->getPlayer();
             if (!$player) {
-                continue;
-            }
-            // Nur Player mit self_player-Relation berücksichtigen
-            $hasSelfPlayer = false;
-            foreach ($player->getUserRelations() as $userRelation) {
-                if ('self_player' === $userRelation->getRelationType()->getIdentifier()) {
-                    $hasSelfPlayer = true;
-                    break;
-                }
-            }
-            if (!$hasSelfPlayer) {
                 continue;
             }
             $pid = $player->getId();
@@ -63,6 +52,9 @@ class TitleCalculationService
             return $b['goal_count'] <=> $a['goal_count'];
         });
 
+        // Vor Vergabe: alle alten Titel für diese Saison/Kategorie/Scope deaktivieren
+        $this->playerTitleRepository->deactivateAllTitlesForCategoryAndScope('top_scorer', 'platform', null, $season);
+
         return $this->awardTitlesPerPlayerFromArray($playerGoals, 'top_scorer', 'platform', null, $season);
     }
 
@@ -78,17 +70,6 @@ class TitleCalculationService
         foreach ($goals as $goal) {
             $player = $goal->getPlayer();
             if (!$player) {
-                continue;
-            }
-            // Nur Player mit self_player-Relation berücksichtigen
-            $hasSelfPlayer = false;
-            foreach ($player->getUserRelations() as $userRelation) {
-                if ('self_player' === $userRelation->getRelationType()->getIdentifier()) {
-                    $hasSelfPlayer = true;
-                    break;
-                }
-            }
-            if (!$hasSelfPlayer) {
                 continue;
             }
             $pid = $player->getId();
@@ -108,6 +89,9 @@ class TitleCalculationService
             return $b['goal_count'] <=> $a['goal_count'];
         });
 
+        // Vor Vergabe: alle alten Titel für diese Saison/Kategorie/Scope/Team deaktivieren
+        $this->playerTitleRepository->deactivateAllTitlesForCategoryAndScope('top_scorer', 'team', $team->getId(), $season);
+
         return $this->awardTitlesPerPlayerFromArray($playerGoals, 'top_scorer', 'team', $team, $season);
     }
 
@@ -116,7 +100,7 @@ class TitleCalculationService
      *
      * @param array<int, array<string, mixed>> $playerGoals Array mit ['player' => Player, 'goal_count' => int]
      *
-     * @return UserTitle[]
+     * @return PlayerTitle[]
      */
     private function awardTitlesPerPlayerFromArray(
         array $playerGoals,
@@ -149,28 +133,9 @@ class TitleCalculationService
             $lastGoalCount = $value;
             ++$rankIndex;
 
-            // Nur EIN Titel pro Player, unabhängig von User-Relationen
-            $user = null;
-            foreach ($player->getUserRelations() as $userRelation) {
-                $user = $userRelation->getUser();
-                if ($user && $user->isEnabled()) {
-                    break;
-                }
-            }
-            if (!$user) {
-                continue;
-            }
-
-            $this->userTitleRepository->deactivateTitles(
-                $user,
-                $titleCategory,
-                $titleScope,
-                $team?->getId()
-            );
-
             // Prüfe, ob ein identischer aktiver Titel bereits existiert
-            $existing = $this->entityManager->getRepository(UserTitle::class)->findOneBy([
-                'user' => $user,
+            $existing = $this->entityManager->getRepository(PlayerTitle::class)->findOneBy([
+                'player' => $player,
                 'titleCategory' => $titleCategory,
                 'titleScope' => $titleScope,
                 'titleRank' => $rank,
@@ -183,8 +148,8 @@ class TitleCalculationService
                 continue;
             }
 
-            $title = new UserTitle();
-            $title->setUser($user);
+            $title = new PlayerTitle();
+            $title->setPlayer($player);
             $title->setTitleCategory($titleCategory);
             $title->setTitleScope($titleScope);
             $title->setTitleRank($rank);
