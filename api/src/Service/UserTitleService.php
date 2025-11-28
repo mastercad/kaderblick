@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\Player;
+use App\Entity\PlayerTitle;
 use App\Entity\User;
-use App\Entity\UserTitle;
-use App\Repository\UserTitleRepository;
+use App\Repository\PlayerTitleRepository;
 
 class UserTitleService
 {
     public function __construct(
-        private UserTitleRepository $userTitleRepository
+        private PlayerTitleRepository $playerTitleRepository
     ) {
     }
 
@@ -19,19 +20,38 @@ class UserTitleService
      * Get the highest priority title for a user
      * This is the title that should be displayed (e.g., for avatar frame).
      */
-    public function loadDisplayTitle(User $user): ?UserTitle
+    public function loadDisplayTitle(Player $player): ?PlayerTitle
     {
-        return $this->userTitleRepository->findHighestPriorityTitle($user);
+        return $this->playerTitleRepository->findHighestPriorityTitleForPlayer($player);
+    }
+
+    /**
+     * Get the highest priority title for a user
+     * This is the title that should be displayed (e.g., for avatar frame).
+     */
+    public function loadDisplayTitleForUser(User $user): ?PlayerTitle
+    {
+        return $this->playerTitleRepository->findHighestPriorityTitle($user);
     }
 
     /**
      * Get all active titles for a user.
      *
-     * @return UserTitle[]
+     * @return PlayerTitle[]
      */
-    public function loadAllTitles(User $user): array
+    public function loadAllTitles(Player $player): array
     {
-        return $this->userTitleRepository->findActiveByUser($user);
+        return $this->playerTitleRepository->findActiveByPlayer($player);
+    }
+
+    /**
+     * Get all active titles for a user.
+     *
+     * @return PlayerTitle[]
+     */
+    public function loadAllTitlesForUser(User $user): array
+    {
+        return $this->playerTitleRepository->findActiveByUser($user);
     }
 
     /**
@@ -41,7 +61,7 @@ class UserTitleService
      */
     public function retrieveTitleDataForUser(User $user): array
     {
-        $displayTitle = $this->loadDisplayTitle($user);
+        $displayTitle = $this->loadDisplayTitleForUser($user);
 
         if (!$displayTitle) {
             return [
@@ -57,8 +77,37 @@ class UserTitleService
             'displayTitle' => $this->formatTitle($displayTitle),
             'avatarFrame' => $this->retrieveAvatarFrameIdentifier($displayTitle),
             'allTitles' => array_map(
-                fn (UserTitle $title) => $this->formatTitle($title),
-                $this->loadAllTitles($user)
+                fn (PlayerTitle $title) => $this->formatTitle($title),
+                $this->loadAllTitlesForUser($user)
+            ),
+        ];
+    }
+
+    /**
+     * Get title data formatted for frontend.
+     *
+     * @return array<string, mixed>
+     */
+    public function retrieveTitleDataForPlayer(Player $player): array
+    {
+        $displayTitle = $this->loadDisplayTitle($player);
+
+        if (!$displayTitle) {
+            return [
+                'hasTitle' => false,
+                'displayTitle' => null,
+                'avatarFrame' => null,
+                'allTitles' => [],
+            ];
+        }
+
+        return [
+            'hasTitle' => true,
+            'displayTitle' => $this->formatTitle($displayTitle),
+            'avatarFrame' => $this->retrieveAvatarFrameIdentifier($displayTitle),
+            'allTitles' => array_map(
+                fn (PlayerTitle $title) => $this->formatTitle($title),
+                $this->loadAllTitles($player)
             ),
         ];
     }
@@ -68,7 +117,7 @@ class UserTitleService
      *
      * @return array<string, mixed>
      */
-    private function formatTitle(UserTitle $title): array
+    private function formatTitle(PlayerTitle $title): array
     {
         return [
             'id' => $title->getId(),
@@ -88,7 +137,7 @@ class UserTitleService
     /**
      * Get human-readable title name.
      */
-    private function retrieveTitleDisplayName(UserTitle $title): string
+    private function retrieveTitleDisplayName(PlayerTitle $title): string
     {
         $categoryNames = [
             'top_scorer' => 'Torschützenkönig',
@@ -106,7 +155,7 @@ class UserTitleService
      * Get avatar frame identifier for CSS/image selection
      * Format: {scope}_{rank} (e.g., "platform_gold", "team_silver").
      */
-    private function retrieveAvatarFrameIdentifier(UserTitle $title): string
+    private function retrieveAvatarFrameIdentifier(PlayerTitle $title): string
     {
         return sprintf(
             '%s_%s_%s',
@@ -119,9 +168,9 @@ class UserTitleService
     /**
      * Check if user has a specific title.
      */
-    public function hasTitle(User $user, string $category, string $scope, string $rank): bool
+    public function hasTitle(Player $player, string $category, string $scope, string $rank): bool
     {
-        $titles = $this->loadAllTitles($user);
+        $titles = $this->loadAllTitles($player);
 
         foreach ($titles as $title) {
             if (
@@ -143,7 +192,7 @@ class UserTitleService
      */
     public function retrieveTitleStats(): array
     {
-        $qb = $this->userTitleRepository->createQueryBuilder('t');
+        $qb = $this->playerTitleRepository->createQueryBuilder('t');
         $qb->select('t.titleCategory, t.titleScope, t.titleRank, COUNT(t.id) AS userCount')
             ->groupBy('t.titleCategory, t.titleScope, t.titleRank')
             ->orderBy('userCount', 'DESC');

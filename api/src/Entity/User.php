@@ -98,12 +98,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private Collection $userXpEvents;
 
     /**
-     * @var Collection<int, UserTitle>
-     */
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: UserTitle::class, cascade: ['persist', 'remove'])]
-    private Collection $userTitles;
-
-    /**
      * @var Collection<int, DashboardWidget>
      */
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: DashboardWidget::class)]
@@ -177,7 +171,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->videoSegments = new ArrayCollection();
         $this->videoSegments = new ArrayCollection();
         $this->userXpEvents = new ArrayCollection();
-        $this->userTitles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -744,36 +737,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUserLevel(UserLevel $userLevel): self
     {
         $this->userLevel = $userLevel;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, UserTitle>
-     */
-    public function getUserTitles(): Collection
-    {
-        return $this->userTitles;
-    }
-
-    public function addUserTitle(UserTitle $userTitle): static
-    {
-        if (!$this->userTitles->contains($userTitle)) {
-            $this->userTitles->add($userTitle);
-            $userTitle->setUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removeUserTitle(UserTitle $userTitle): static
-    {
-        if ($this->userTitles->removeElement($userTitle)) {
-            // set the owning side to null (unless already changed)
-            if ($userTitle->getUser() === $this) {
-                $userTitle->setUser(null);
-            }
-        }
 
         return $this;
     }

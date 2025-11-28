@@ -85,12 +85,11 @@ class AwardTitlesCommand extends Command
         $io->section('Platform-wide Top Scorers');
         foreach ($platformTitles as $title) {
             $io->writeln(sprintf(
-                '%s: %s %s (%d goals) [%s]',
+                '%s: %s %s (%d goals)',
                 ucfirst($title->getTitleRank()),
-                $title->getUser()->getFirstName(),
-                $title->getUser()->getLastName(),
-                $title->getValue(),
-                $title->getUser()->getEmail()
+                $title->getPlayer()->getFirstName(),
+                $title->getPlayer()->getLastName(),
+                $title->getValue()
             ));
         }
 
@@ -99,13 +98,12 @@ class AwardTitlesCommand extends Command
         $io->section('Team Top Scorers');
         foreach ($teamTitles as $title) {
             $io->writeln(sprintf(
-                '%s: %s %s (%d goals) [Team: %s] [%s]',
+                '%s: %s %s (%d goals) [Team: %s]',
                 ucfirst($title->getTitleRank()),
-                $title->getUser()->getFirstName(),
-                $title->getUser()->getLastName(),
+                $title->getPlayer()->getFirstName(),
+                $title->getPlayer()->getLastName(),
                 $title->getValue(),
-                $title->getTeam()?->getName() ?? '-',
-                $title->getUser()->getEmail()
+                $title->getTeam()?->getName()
             ));
         }
 
