@@ -2,7 +2,7 @@ name: ${COMPOSE_PROJECT_NAME:-kaderblick}
 
 services:
   api:
-    build: ./.docker/api
+    build: ./.docker/dev/api
     restart: unless-stopped
     ports:
       - "${API_PORT:-8081}:80"
@@ -10,8 +10,8 @@ services:
     volumes:
       - ./api:/var/www/symfony
       - ./public/uploads:/var/www/symfony/public/uploads
-      - ./.docker/certs/dev-local.crt:/etc/apache2/ssl/dev-local.crt:ro
-      - ./.docker/certs/dev-local.key:/etc/apache2/ssl/dev-local.key:ro
+      - ./.docker/dev/certs/dev-local.crt:/etc/apache2/ssl/dev-local.crt:ro
+      - ./.docker/dev/certs/dev-local.key:/etc/apache2/ssl/dev-local.key:ro
     environment:
       DATABASE_URL: mysql://kaderblick:kaderblick@db:3306/kaderblick
       XDEBUG_MODE: develop,debug
@@ -25,7 +25,7 @@ services:
   frontend:
     build:
       context: ./
-      dockerfile: .docker/frontend/Dockerfile
+      dockerfile: .docker/dev/frontend/Dockerfile
     restart: unless-stopped
     ports:
       - "${REACT_PORT:-8080}:80"

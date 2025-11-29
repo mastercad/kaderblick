@@ -14,9 +14,12 @@ fi
 CERT_DIR="$(dirname "$0")/../certs"
 CA_KEY="$CERT_DIR/dev-local-rootCA.key"
 CA_CERT="$CERT_DIR/dev-local-rootCA.pem"
-KEY="$CERT_DIR/$HOST.key"
-CERT="$CERT_DIR/$HOST.crt"
-CSR="$CERT_DIR/$HOST.csr"
+#KEY="$CERT_DIR/$HOST.key"
+#CERT="$CERT_DIR/$HOST.crt"
+#CSR="$CERT_DIR/$HOST.csr"
+KEY="$CERT_DIR/dev-local.key"
+CERT="$CERT_DIR/dev-local.crt"
+CSR="$CERT_DIR/dev-local.csr"
 
 mkdir -p "$CERT_DIR"
 
