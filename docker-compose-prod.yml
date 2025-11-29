@@ -1,0 +1,39 @@
+name: ${COMPOSE_PROJECT_NAME:-kaderblick}
+
+services:
+  api:
+    build: ./.docker/prod/api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8081}:80"
+    volumes:
+      - ./api:/var/www/symfony
+      - ./public/uploads:/var/www/symfony/public/uploads
+    environment:
+      DATABASE_URL: mysql://kaderblick:kaderblick@db:3306/kaderblick
+      XDEBUG_MODE: develop,debug
+      XDEBUG_CONFIG: "client_host=host.docker.internal client_port=9003"
+      XDEBUG_LOG: /tmp/xdebug.log
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - kaderblick-net
+
+  frontend:
+    build:
+      context: ./
+      dockerfile: ./.docker/prod/frontend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${REACT_PORT:-8080}:80"
+    volumes:
+      - ./frontend:/app
+      - ./public/uploads:/usr/share/nginx/html/uploads
+    depends_on:
+      - api
+    networks:
+      - kaderblick-net
+
+networks:
+  kaderblick-net:
+    external: true

@@ -54,10 +54,12 @@ export default defineConfig({
   server: {
     host: true, // oder '0.0.0.0' für explizite IP
     port: 5173,
+    /*
     https: {
       key: fs.readFileSync('./cert-key.pem'),
       cert: fs.readFileSync('./cert.pem'),
     },
+    */
     middlewareMode: false,
     setupMiddlewares(middlewares) {
       middlewares.use((req, res, next) => {

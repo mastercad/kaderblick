@@ -45,7 +45,7 @@ jobs:
           mkdir -p build
           sh ./frontend/scripts/set-publish-date.sh
           sh ./frontend/scripts/write-buildinfo.sh
-          cp -r docker-compose.yml docker-compose.db.yml .docker api frontend build/
+          cp -r docker-compose-prod.yml docker-compose.db.yml .docker/prod api frontend build/
 
       # ------------------------------
       # Create release directory for SCP
@@ -161,8 +161,8 @@ jobs:
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
             cd "$RELEASE_DIR"
 
-            docker compose -p staging down --remove-orphans api frontend
-            PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 docker compose -p staging up -d --build --force-recreate api frontend
+            docker compose -f docker-compose-prod.yml -p staging down --remove-orphans api frontend
+            PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 docker compose -f docker-compose-prod.yml -p staging up -d --build --force-recreate api frontend
 
       # ------------------------------
       # Staging migrations & Composer
@@ -178,12 +178,12 @@ jobs:
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
             cd "$RELEASE_DIR"
 
-            docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
-            docker compose -p staging exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
-            docker compose -p staging exec -T api bin/console secrets:decrypt-to-local --force --env=prod
+            docker compose -p staging -f docker-compose-prod.yml exec -T api composer install --no-dev --optimize-autoloader
+            docker compose -p staging -f docker-compose-prod.yml exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
+            docker compose -p staging -f docker-compose-prod.yml exec -T api bin/console secrets:decrypt-to-local --force --env=prod
 
             if [ ! -f api/config/jwt/private.pem ] || [ ! -f api/config/jwt/public.pem ]; then
-              docker compose -p staging exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
+              docker compose -p staging -f docker-compose-prod.yml exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
             fi
 
       # ------------------------------
@@ -223,12 +223,11 @@ jobs:
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
             cd "$RELEASE_DIR"
             
-            docker compose -p staging exec -T api env APP_ENV=dev composer install
+            docker compose -p staging -f docker-compose-prod.yml exec -T api env APP_ENV=dev composer install
 
-            docker compose -p staging exec -T api bin/console doctrine:fixtures:load --env=dev --no-interaction --append --group=master
+            docker compose -p staging -f docker-compose-prod.yml exec -T api bin/console doctrine:fixtures:load --env=dev --no-interaction --append --group=master
 
-            docker compose -p staging exec -T api composer install --no-dev --optimize-autoloader
-
+            docker compose -p staging -f docker-compose-prod.yml exec -T api composer install --no-dev --optimize-autoloader
       # ------------------------------
       # Prepare shared uploads symlinks
       # ------------------------------
@@ -288,14 +287,14 @@ jobs:
             RELEASE_DIR="${{ steps.release.outputs.dir }}"
             CURRENT_DIR="${{ secrets.MAIN_PROJECT_PATH }}/current"
 
-            docker compose -p production down --remove-orphans api frontend
+            docker compose -f docker-compose-prod.yml -p production down --remove-orphans api frontend
             ln -sfn "$RELEASE_DIR" "$CURRENT_DIR"
             chmod -R 777 "$CURRENT_DIR/api/var"
 
             cd "$CURRENT_DIR"
-            docker compose -p production up -d --force-recreate api frontend
-            docker compose -p staging down api frontend
-            docker compose -p staging rm api frontend
+            docker compose -f docker-compose-prod.yml -p production up -d --force-recreate api frontend
+            docker compose -f docker-compose-prod.yml -p staging down api frontend
+            docker compose -f docker-compose-prod.yml -p staging rm api frontend
 
             # Cleanup old releases
             cd ../releases && ls -1dt * | tail -n +4 | xargs -r rm -rf
