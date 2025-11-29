@@ -1,27 +1,34 @@
 import { Box, CircularProgress } from '@mui/material';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
-import { ReactNode } from 'react';
+import { ReactNode, useRef } from 'react';
 import RefreshIcon from '@mui/icons-material/Refresh';
 
 interface PullToRefreshProps {
   onRefresh: () => Promise<void>;
   children: ReactNode;
   isEnabled?: boolean;
+  isPullToRefreshEnabled?: boolean; // optional, um von außen zu steuern
 }
 
-export const PullToRefresh = ({ onRefresh, children, isEnabled = true }: PullToRefreshProps) => {
+export const PullToRefresh = ({ onRefresh, children, isEnabled = true, isPullToRefreshEnabled = true }: PullToRefreshProps) => {
   const { isPulling, pullDistance, isRefreshing } = usePullToRefresh({
     onRefresh,
     threshold: 80,
     maxPullDistance: 150,
-    isEnabled,
+    isEnabled: isEnabled && isPullToRefreshEnabled,
   });
 
   const rotation = (pullDistance / 150) * 360;
   const opacity = Math.min(pullDistance / 80, 1);
 
   return (
-    <Box sx={{ position: 'relative', width: '100%', minHeight: '100vh' }}>
+    <Box
+      sx={{
+        position: 'relative',
+        width: '100%',
+        minHeight: '100vh',
+      }}
+    >
       {/* Pull-to-Refresh Indikator */}
       <Box
         sx={{

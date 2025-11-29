@@ -35,7 +35,7 @@ jobs:
 
           docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
           
-          docker volume inspect kaderblick-data >/dev/null 2>&1 || docker volume create kaderblick-data
+          docker volume inspect kaderblick-db-data >/dev/null 2>&1 || docker volume create kaderblick-db-data
 
           if docker ps --filter "name=kaderblick-db" --filter "status=running" | grep -q kaderblick-db; then
             echo "DB Container läuft"
@@ -89,8 +89,17 @@ jobs:
             GRANT ALL PRIVILEGES ON kaderblick_test.* TO 'kaderblick'@'%';
             FLUSH PRIVILEGES;
           "
+
+          chmod +x ./.docker/scripts/gen-shared-cert.sh
+          ./.docker/scripts/gen-shared-cert.sh
           
-          docker compose up -d --build --force-recreate api frontend
+          ls -lisa ./.docker/
+          ls -lisa ./.docker/certs/
+
+          chmod +x ./frontend/scripts/copy-shared-cert.cjs
+          node ./frontend/scripts/copy-shared-cert.cjs
+
+          docker compose up -d --remove-orphans --build --force-recreate api frontend
 
           docker compose exec -T api composer install
 

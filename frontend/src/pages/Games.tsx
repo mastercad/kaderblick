@@ -24,7 +24,7 @@ import {
 import { fetchGamesOverview, GamesOverviewData } from '../services/games';
 import { Game, GameWithScore } from '../types/games';
 import { useAuth } from '../context/AuthContext';
-import Location from '../components/Location';
+import Location, { LocationDisplayProps } from '../components/Location';
 import { WeatherDisplay } from '../components/WeatherIcons';
 import WeatherModal from '../modals/WeatherModal';
 import { formatDateTime, formatTime } from '../utils/formatter';
@@ -93,82 +93,131 @@ export default function Games() {
     );
   }
 
-  const GameListItem = ({ game, isRunning = false, score }: { 
-    game: Game; 
-    isRunning?: boolean; 
-    score?: { homeScore: number | null; awayScore: number | null } 
+
+  const GameListItem = ({ game, isRunning = false, score }: {
+    game: Game;
+    isRunning?: boolean;
+    score?: { homeScore: number | null; awayScore: number | null }
   }) => (
-    <ListItem disablePadding sx={{ display: 'flex', alignItems: 'stretch' }}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pr: 2, pt: 1 }}
-        onClick={() => {
-          openWeatherModal(game.calendarEvent ? game.calendarEvent.id : null);
-        }}>
-          <span style={{ cursor: 'pointer', marginRight: 8 }} title="Wetterdetails anzeigen">
-            <WeatherDisplay 
-              code={game.calendarEvent?.weatherData?.weatherCode} theme={'light'}
-            />
-          </span>
-      </Box>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <ListItemButton onClick={() => handleGameClick(game.id)} sx={{ alignItems: 'flex-start' }}>
-          <ListItemText
-            primary={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body1" component="span">
-                  <strong>{game.homeTeam.name}</strong> vs <strong>{game.awayTeam.name}</strong>
-                </Typography>
-                {isRunning && (
-                  <Chip 
-                    icon={<LiveIcon />} 
-                    label="Live" 
-                    color="success" 
-                    size="small" 
-                  />
-                )}
-                {score && score.homeScore !== null && score.awayScore !== null && (
-                  <Chip 
-                    label={`${score.homeScore} : ${score.awayScore}`} 
-                    variant="outlined" 
-                    size="small" 
-                  />
-                )}
+    <ListItem disablePadding className="game-list-item-responsive">
+      <ListItemButton onClick={() => handleGameClick(game.id)} sx={{ width: '100%', alignItems: 'flex-start', p: { xs: 1, sm: 2 } }}>
+        <Box sx={{ width: '100%' }}>
+          {/* Titel (Teams) */}
+          <Box sx={{
+            width: '100%',
+            mb: 0.5,
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1,
+          }}>
+            <Typography
+              variant="body1"
+              component="div"
+              sx={{
+                fontWeight: 700,
+                width: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: { xs: 2, sm: 'unset' },
+                WebkitBoxOrient: 'vertical',
+                lineHeight: 1.2,
+                maxHeight: { xs: '2.6em', sm: 'unset' },
+                wordBreak: 'break-word',
+              }}
+            >
+              <strong>{game.homeTeam.name}</strong> vs <strong>{game.awayTeam.name}</strong>
+            </Typography>
+            {isRunning && (
+              <Chip
+                icon={<LiveIcon />}
+                label="Live"
+                color="success"
+                size="small"
+                sx={{ ml: 0, mt: 0.5 }}
+              />
+            )}
+            {score && score.homeScore !== null && score.awayScore !== null && (
+              <Chip
+                label={`${score.homeScore} : ${score.awayScore}`}
+                variant="outlined"
+                size="small"
+                sx={{ ml: 0, mt: 0.5 }}
+              />
+            )}
+          </Box>
+
+          {/* Datum/Uhrzeit & Location */}
+          <Box sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            mb: 0.5,
+            gap: 1,
+          }}>
+            <Typography variant="body2" color="text.secondary" sx={{ flex: 1, minWidth: 0 }}>
+              {game.calendarEvent?.startDate && formatDateTime(game.calendarEvent.startDate)}
+              {game.calendarEvent?.endDate && ` - ${formatTime(game.calendarEvent.endDate)}`}
+            </Typography>
+            {game.location && (
+              <Box sx={{ flexShrink: 0, ml: 1, maxWidth: { xs: '60%', sm: 'unset' }, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <Location
+                  id={game.location.id}
+                  name={game.location.name}
+                  address={game.location.address}
+                  longitude={game.location.longitude}
+                  latitude={game.location.latitude}
+                />
               </Box>
-            }
-            secondary={
-              <Typography variant="body2" color="text.secondary">
-                {game.calendarEvent?.startDate && formatDateTime(game.calendarEvent.startDate)}
-                {game.calendarEvent?.endDate && ` - ${formatTime(game.calendarEvent.endDate)}`}
-              </Typography>
-            }
-          />
+            )}
+          </Box>
+
+          {/* Wetter-Icon */}
+          <Box sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: { xs: 'flex-end', sm: 'flex-start' },
+            alignItems: 'center',
+            mb: 0.5,
+          }}>
+            <span
+              style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+              title="Wetterdetails anzeigen"
+              onClick={e => {
+                e.stopPropagation();
+                openWeatherModal(game.calendarEvent ? game.calendarEvent.id : null);
+              }}
+            >
+              <WeatherDisplay
+                code={Array.isArray(game.weatherData?.weatherCode) ? game.weatherData.weatherCode[0] : undefined}
+                theme={'light'}
+                size={32}
+              />
+            </span>
+          </Box>
+
+          {/* Button für laufende Spiele */}
           {isRunning && (
             <Button
               variant="contained"
               color="success"
               size="small"
               startIcon={<SoccerIcon />}
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
-                // Link zu Game Events Seite
                 window.open(`/game/${game.id}/events`, '_blank');
               }}
-              sx={{ ml: 2, alignSelf: 'center' }}
+              sx={{ mt: 1 }}
+              fullWidth
             >
               Spielereignis erfassen
             </Button>
           )}
-        </ListItemButton>
-      </Box>
-      <Box sx={{ display: 'block', minWidth: 120, pl: 2, pr: 1, alignSelf: 'center' }}>
-        {game.location && (
-          <Location
-            name={game.location.name}
-            latitude={game.location.latitude}
-            longitude={game.location.longitude}
-            address={game.location.address}
-          />
-        )}
-      </Box>
+        </Box>
+      </ListItemButton>
     </ListItem>
   );
 

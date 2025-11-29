@@ -1,9 +1,16 @@
 import React from "react";
 import RoomIcon from '@mui/icons-material/Room';
 import Link from '@mui/material/Link';
-import { Location as LocationTypes } from '../types/location';
 
-const Location: React.FC<LocationTypes> = ({ name, latitude, longitude, address }) => {
+export interface LocationDisplayProps {
+  id: number;
+  name: string;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+}
+
+const Location: React.FC<LocationDisplayProps> = ({ name, latitude, longitude, address }) => {
   // Erzeuge Google Maps Link
   let mapsUrl = '';
   if (latitude && longitude) {

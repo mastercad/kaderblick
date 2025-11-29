@@ -170,12 +170,27 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
   };
 
   const handleMobileMenuToggle = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
+    const newState = !mobileMenuOpen;
+    setMobileMenuOpen(newState);
+    if (newState) {
+      document.body.classList.add('menu-open');
+    } else {
+      document.body.classList.remove('menu-open');
+    }
   };
 
   const handleMobileMenuClose = () => {
     setMobileMenuOpen(false);
+    document.body.classList.remove('menu-open');
   };
+  // Drawer-Open-States überwachen
+  React.useEffect(() => {
+    if (mobileMenuOpen || trainerDrawerOpen || adminDrawerOpen) {
+      document.body.classList.add('menu-open');
+    } else {
+      document.body.classList.remove('menu-open');
+    }
+  }, [mobileMenuOpen, trainerDrawerOpen, adminDrawerOpen]);
 
   const handlePageChangeAndClose = (page: string) => {
     navigate(`/${page}`);

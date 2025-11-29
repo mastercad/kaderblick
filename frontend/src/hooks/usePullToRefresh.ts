@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
+
 interface UsePullToRefreshOptions {
   onRefresh: () => Promise<void>;
   threshold?: number;
@@ -23,8 +24,33 @@ export const usePullToRefresh = ({
   useEffect(() => {
     if (!isEnabled) return;
 
+    const isOverlayOrMenu = (el: EventTarget | null): boolean => {
+      if (!(el instanceof Element)) return false;
+      // Prüfe auf typische Overlay/Menu/Dialog/Dropdown-Klassen und Rollen
+      const overlaySelectors = [
+        '.MuiDrawer-root',
+        '.MuiModal-root',
+        '.MuiPopover-root',
+        '.MuiMenu-root',
+        '.dropdown-menu',
+        '[role="dialog"]',
+        '[role="menu"]',
+        '[role="listbox"]',
+        '[role="presentation"]',
+      ];
+      for (const selector of overlaySelectors) {
+        if (el.closest(selector)) return true;
+      }
+      return false;
+    };
+
     const handleTouchStart = (e: TouchEvent) => {
-      // Nur wenn am Seitenanfang
+      // PullToRefresh nur erlauben, wenn das Touch nicht auf einem Overlay/Menu/Dialog/Dropdown startet
+      if (isOverlayOrMenu(e.target)) {
+        scrollable.current = false;
+        return;
+      }
+      // Nur wenn am Seitenanfang (window.scrollY === 0)
       if (window.scrollY === 0) {
         startY.current = e.touches[0].clientY;
         scrollable.current = true;
@@ -41,15 +67,17 @@ export const usePullToRefresh = ({
 
       // Nur nach unten ziehen erlauben
       if (diff > 0 && window.scrollY === 0) {
-        e.preventDefault();
         setIsPulling(true);
-        
         // Easing-Effekt: Je weiter man zieht, desto langsamer wird die Bewegung
         const distance = Math.min(
           diff * 0.5, // Reduziere die Bewegung um 50%
           maxPullDistance
         );
         setPullDistance(distance);
+        // Nur preventDefault, wenn wirklich gepullt wird
+        if (distance > 0) {
+          e.preventDefault();
+        }
       }
     };
 
@@ -72,7 +100,6 @@ export const usePullToRefresh = ({
       scrollable.current = false;
     };
 
-    // Passive: false erlaubt preventDefault()
     document.addEventListener('touchstart', handleTouchStart, { passive: false });
     document.addEventListener('touchmove', handleTouchMove, { passive: false });
     document.addEventListener('touchend', handleTouchEnd);

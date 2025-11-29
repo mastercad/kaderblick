@@ -48,3 +48,4 @@ phpstan.neon
 /var/
 /vendor/
 /public/uploads/*
+/certs

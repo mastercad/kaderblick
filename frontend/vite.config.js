@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execSync } from 'child_process';
+import fs from 'fs';
 
 // Get git commit hash for build info
 let commitHash = '';
@@ -51,6 +52,12 @@ export default defineConfig({
   ],
   /* Wahrscheinlich sinnfrei, bleibt aber erstmal drin, der login modal für google sso jetzt erstmal so funktioniert */
   server: {
+    host: true, // oder '0.0.0.0' für explizite IP
+    port: 5173,
+    https: {
+      key: fs.readFileSync('./cert-key.pem'),
+      cert: fs.readFileSync('./cert.pem'),
+    },
     middlewareMode: false,
     setupMiddlewares(middlewares) {
       middlewares.use((req, res, next) => {
