@@ -54,6 +54,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import { PullToRefresh } from './components/PullToRefresh';
 
+
 function App() {
   const { user, isLoading } = useAuth();
   const { mode } = useTheme();
@@ -62,9 +63,12 @@ function App() {
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [trainerDrawerOpen, setTrainerDrawerOpen] = useState(false);
+  const [adminDrawerOpen, setAdminDrawerOpen] = useState(false);
   const location = useLocation();
   const { isOnHeroSection } = useHomeScroll();
-  
+
   const isHome = location.pathname === '/' || location.pathname === '';
   const showLoginButton = !isHome || (isHome && isOnHeroSection);
 
@@ -92,11 +96,23 @@ function App() {
       <NotificationProvider>
         <HomeScrollProvider>
           <FabStackRoot>
-            <PullToRefresh onRefresh={handleRefresh} isEnabled={isMobile}>
+            <PullToRefresh
+              onRefresh={handleRefresh}
+              isEnabled={isMobile}
+              isPullToRefreshEnabled={
+                !mobileMenuOpen && !trainerDrawerOpen && !adminDrawerOpen
+              }
+            >
               <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
                 <Navigation
                   onOpenAuth={() => setShowAuth(true)}
                   onOpenProfile={() => setShowProfile(true)}
+                  mobileMenuOpen={mobileMenuOpen}
+                  setMobileMenuOpen={setMobileMenuOpen}
+                  trainerDrawerOpen={trainerDrawerOpen}
+                  setTrainerDrawerOpen={setTrainerDrawerOpen}
+                  adminDrawerOpen={adminDrawerOpen}
+                  setAdminDrawerOpen={setAdminDrawerOpen}
                 />
               <Box component="main" sx={{ flex: 1, width: '100%', position: 'relative' }}>
                 <Routes>
