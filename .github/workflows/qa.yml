@@ -90,14 +90,14 @@ jobs:
             FLUSH PRIVILEGES;
           "
 
-          chmod +x ./.docker/scripts/gen-shared-cert.sh
-          ./.docker/scripts/gen-shared-cert.sh
+          #chmod +x ./.docker/scripts/gen-shared-cert.sh
+          #./.docker/scripts/gen-shared-cert.sh
           
-          ls -lisa ./.docker/
-          ls -lisa ./.docker/certs/
+          #ls -lisa ./.docker/
+          #ls -lisa ./.docker/certs/
 
-          chmod +x ./frontend/scripts/copy-shared-cert.cjs
-          node ./frontend/scripts/copy-shared-cert.cjs
+          #chmod +x ./frontend/scripts/copy-shared-cert.cjs
+          #node ./frontend/scripts/copy-shared-cert.cjs
 
           docker compose -f docker-compose-prod.yml up -d --remove-orphans --build --force-recreate api frontend
 
