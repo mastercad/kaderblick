@@ -513,7 +513,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                           {Object.keys(videosForEvent).length > 0 && (
                             <Box sx={{ ml: 2, display: 'flex', gap: 1 }}>
                               {Object.entries(videosForEvent).map((currentVideo) => (
-                                <>
+                                <React.Fragment key={currentVideo[0]}>
                                   <YouTubeIcon fontSize="small" />
                                   <Link
                                     href={currentVideo[1]}
@@ -521,7 +521,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                                   >
                                     { mappedCameras[Number(currentVideo[0])] }
                                   </Link>
-                                </>
+                                </React.Fragment>
                               ))}
                             </Box>
                           )}

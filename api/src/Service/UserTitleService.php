@@ -193,10 +193,35 @@ class UserTitleService
     public function retrieveTitleStats(): array
     {
         $qb = $this->playerTitleRepository->createQueryBuilder('t');
-        $qb->select('t.titleCategory, t.titleScope, t.titleRank, COUNT(t.id) AS userCount')
-            ->groupBy('t.titleCategory, t.titleScope, t.titleRank')
-            ->orderBy('userCount', 'DESC');
+        $qb->select('t.titleCategory, t.titleScope, t.titleRank, team.id as teamId, team.name as teamName')
+            ->leftJoin('t.team', 'team')
+            ->where('t.isActive = true')
+            ->orderBy('t.titleCategory, t.titleScope, t.titleRank, team.id');
 
-        return $qb->getQuery()->getArrayResult();
+        $raw = $qb->getQuery()->getArrayResult();
+
+        // Hole alle aktiven PlayerTitles für die Detailzählung
+        $allActive = $this->playerTitleRepository->createQueryBuilder('pt')
+            ->select('pt.titleCategory, pt.titleScope, pt.titleRank, team2.id as teamId, pt.id as playerTitleId')
+            ->leftJoin('pt.team', 'team2')
+            ->where('pt.isActive = true')
+            ->getQuery()->getArrayResult();
+
+        // Zähle pro Gruppe die PlayerTitle-Einträge
+        $countMap = [];
+        foreach ($allActive as $row) {
+            $key = $row['titleCategory'] . '|' . $row['titleScope'] . '|' . $row['titleRank'] . '|' . ($row['teamId'] ?? '');
+            $countMap[$key] = ($countMap[$key] ?? 0) + 1;
+        }
+
+        // Baue die finale Liste mit userCount
+        $result = [];
+        foreach ($raw as $row) {
+            $key = $row['titleCategory'] . '|' . $row['titleScope'] . '|' . $row['titleRank'] . '|' . ($row['teamId'] ?? '');
+            $row['userCount'] = $countMap[$key] ?? 0;
+            $result[] = $row;
+        }
+
+        return $result;
     }
 }

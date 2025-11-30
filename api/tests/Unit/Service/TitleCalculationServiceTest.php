@@ -68,6 +68,46 @@ class DummyPlayer
 
 class TitleCalculationServiceTest extends TestCase
 {
+    public function testAwardTitlesOlympicPrinciple(): void
+    {
+        $repo = $this->createMock(PlayerTitleRepository::class);
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('getRepository')->willReturn($repo);
+        $repo->method('findOneBy')->willReturn(null);
+        $repo->method('deactivateTitles');
+
+        $service = new TitleCalculationService($em, $repo);
+
+        $player1 = new \App\Entity\Player();
+        $reflection1 = new ReflectionClass($player1);
+        $idProp1 = $reflection1->getProperty('id');
+        $idProp1->setAccessible(true);
+        $idProp1->setValue($player1, 1);
+
+        $player2 = new \App\Entity\Player();
+        $reflection2 = new ReflectionClass($player2);
+        $idProp2 = $reflection2->getProperty('id');
+        $idProp2->setAccessible(true);
+        $idProp2->setValue($player2, 2);
+
+        $player3 = new \App\Entity\Player();
+        $reflection3 = new ReflectionClass($player3);
+        $idProp3 = $reflection3->getProperty('id');
+        $idProp3->setAccessible(true);
+        $idProp3->setValue($player3, 3);
+
+        $playerGoals = [
+            ['player' => $player1, 'goal_count' => 10],
+            ['player' => $player2, 'goal_count' => 10],
+            ['player' => $player3, 'goal_count' => 8],
+        ];
+
+        $result = $this->invokeAwardTitlesPerPlayerFromArray($service, $playerGoals, 'top_scorer', 'platform', null, '2025/2026');
+        $this->assertCount(3, $result, 'Alle drei Spieler sollten einen Titel erhalten.');
+        $ranks = array_map(fn ($t) => $t->getTitleRank(), $result);
+        $this->assertEqualsCanonicalizing(['bronze', 'gold', 'gold'], $ranks, 'Zwei Gold, dann Bronze (Silber entfällt, Logik wie im Service).');
+    }
+
     public function testAwardTitleDoesNotCreateDuplicates(): void
     {
         $user = $this->createMock(User::class);

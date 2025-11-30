@@ -243,6 +243,44 @@ class ProfileController extends AbstractController
         // Titel-Übersicht: alle vergebenen Titel mit Nutzeranzahl (über Service)
         $titles = $userTitleService->retrieveTitleStats();
 
+        // Hole alle aktiven PlayerTitles (ohne UserRelation-Join)
+        $playerTitleRepo = $em->getRepository(\App\Entity\PlayerTitle::class);
+        $activeTitles = $playerTitleRepo->createQueryBuilder('pt')
+            ->leftJoin('pt.team', 'team')
+            ->leftJoin('pt.player', 'player')
+            ->where('pt.isActive = true')
+            ->getQuery()->getResult();
+
+        // Gruppiere alle aktiven PlayerTitles nach Titelgruppe und sammle alle Spieler pro Gruppe
+        $titlePlayersMap = [];
+        foreach ($activeTitles as $pt) {
+            $cat = $pt->getTitleCategory();
+            $scope = $pt->getTitleScope();
+            $rank = $pt->getTitleRank();
+            $teamId = $pt->getTeam()?->getId();
+            $key = $cat . '|' . $scope . '|' . $rank . '|' . ($teamId ?? '');
+
+            $player = $pt->getPlayer();
+            if ($player) {
+                // Verhindere doppelte Spieler pro Gruppe (z.B. falls mehrere PlayerTitles pro Spieler/Titelgruppe existieren)
+                $playerArr = [
+                    'id' => $player->getId(),
+                    'firstName' => $player->getFirstName(),
+                    'lastName' => $player->getLastName(),
+                    'email' => $player->getEmail(),
+                ];
+                $titlePlayersMap[$key][$player->getId()] = $playerArr;
+            }
+        }
+
+        // Füge Spieler-Liste zu jedem Titel hinzu
+        $titlesWithPlayers = array_map(function ($t) use ($titlePlayersMap) {
+            $key = $t['titleCategory'] . '|' . $t['titleScope'] . '|' . $t['titleRank'] . '|' . ($t['teamId'] ?? '');
+            $players = array_values($titlePlayersMap[$key] ?? []);
+
+            return array_merge($t, ['players' => $players]);
+        }, $titles);
+
         // XP-Übersicht: alle Benutzer mit XP, Titel und Level
         $users = $em->createQueryBuilder()
             ->select('u.id, u.firstName, u.lastName, u.email, l.xpTotal AS xp, l.level AS level')
@@ -252,7 +290,7 @@ class ProfileController extends AbstractController
             ->getQuery()->getArrayResult();
 
         return $this->json([
-            'titles' => $titles,
+            'titles' => $titlesWithPlayers,
             'users' => $users,
         ]);
     }
