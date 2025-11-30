@@ -168,7 +168,7 @@ class GameEventTypeFixtures extends Fixture implements FixtureGroupInterface
 
         foreach ($eventTypes as $type) {
             $existing = $manager->getRepository(GameEventType::class)
-                ->findOneBy(['name' => $type['name'], 'code' => $type['code']]);
+                ->findOneBy(['name' => $type['name']]);
             if (!$existing) {
                 $eventType = new GameEventType();
                 $eventType->setName($type['name']);
