@@ -102,3 +102,306 @@ ich habe startDate auf nullable gesetzt und der read gruppe des aufrufers zugewi
 
 Doctrine\Migrations\Provider\OrmSchemaProvider
 Doctrine\ORM\Tools\SchemaTool
+
+# Spielereignisse
+✅ VOLLSTÄNDIGE LISTE VON SPIELEREIGNISSEN IM FUßBALL
+⚽ 1. Grundlegende Ballaktionen
+Pässe (alle Passarten)
+
+Normaler Pass
+
+Steilpass
+
+Flanke
+
+Rückpass
+
+Querpass
+
+Chipball / Lupfer
+
+Schnittstellenpass
+
+Langer Ball
+
+Verlagerung
+
+Kopfballpass
+
+Einwurf (als Pass)
+
+Ballkontrollen
+
+Ballannahme
+
+Misslungene Ballkontrolle
+
+Erster Kontakt / First Touch
+
+Ballverluste & -gewinne
+
+Ballverlust (unforced)
+
+Ballverlust (forced)
+
+Ballgewinn
+
+Dribbling
+
+Erfolgreiches Dribbling
+
+Misslungenes Dribbling
+
+Pressing-Aktion
+
+Gegenpressing-Aktion
+
+🎯 2. Torschüsse
+
+Schuss aufs Tor
+
+Schuss neben das Tor
+
+Geblockter Schuss
+
+Kopfball aufs Tor
+
+Kopfball daneben
+
+Distanzschuss
+
+Volley / Halbvolley
+
+Fallrückzieher / Seitfallzieher
+
+Schuss an Pfosten
+
+Schuss an Latte
+
+Eigentor-Versuch
+
+Eigentor
+
+🥅 3. Tore
+
+Tor
+
+Abseitstor
+
+Eigentor
+
+Strafstoßtor
+
+Freistoßtor
+
+Kopfballtor
+
+Tor nach Ecke
+
+Tor nach Flanke
+
+Tor nach Konter
+
+Tor nach Pressinggewinn
+
+VAR-bestätigtes Tor
+
+VAR-abgelehntes Tor
+
+🧤 4. Torhüteraktionen
+
+Parade (save)
+
+Herauslaufen
+
+Abfangen einer Flanke
+
+Abpraller verursacht
+
+Abstoß
+
+Abschlag
+
+Fausten
+
+Halten (Hold)
+
+Torwartdribbling
+
+Torwartpass
+
+Elfmeter gehalten
+
+🟨🟥 5. Fouls & Disziplinarmaßnahmen
+Fouls
+
+Foulspiel allgemein
+
+Halten
+
+Schubsen
+
+Stoßen
+
+Rempeln
+
+Bein stellen
+
+Tritt
+
+Schlag / Ellbogen
+
+Gefährliches Spiel
+
+Vorteil gegeben
+
+Karten
+
+Gelbe Karte
+
+Gelb-Rote Karte
+
+Rote Karte
+
+Verwarnung ohne Karte (nur verbal)
+
+VAR: Karte bestätigt
+
+VAR: Karte aufgehoben / geändert
+
+🚫 6. Regelverstöße
+
+Abseits
+
+Handspiel
+
+Unsportlichkeit
+
+Behinderung Torhüter
+
+Simulation („Schwalbe“)
+
+Zeitspiel
+
+Falscher Einwurf
+
+Gefährliches Spiel
+
+Spielverzögerung
+
+Technisches Vergehen (z.B. zu frühes Einlaufen beim Elfmeter)
+
+📦 7. Standardsituationen
+Ecken
+
+Eckball
+
+Kurz ausgeführte Ecke
+
+Direkte Ecke aufs Tor
+
+Ecke abgewehrt
+
+Freistöße
+
+Direkter Freistoß
+
+Indirekter Freistoß
+
+Schnell ausgeführter Freistoß
+
+Freistoß-Flanke
+
+Freistoß-Schuss
+
+Einwürfe
+
+Einwurf
+
+Falscher Einwurf
+
+Langer Einwurf
+
+Abstöße & andere Starts
+
+Anstoß
+
+Abstoß
+
+Schiedsrichterball
+
+Zurückspiel zum Torwart
+
+🎯 8. Elfmeter & Strafstöße
+
+Foul führt zum Elfmeter
+
+Vergebener Elfmeter
+
+Gehaltener Elfmeter
+
+Pfostenschuss beim Elfmeter
+
+VAR-Elfmeterentscheidung
+
+Zurückgenommener Elfmeter
+
+🧱 9. Defensivaktionen
+
+Tackling erfolgreich
+
+Tackling erfolglos
+
+Block (Schussblock)
+
+Passblock
+
+Klärung / Befreiungsschlag
+
+Interception (Pass abgefangen)
+
+Abfangen einer Flanke
+
+Pressing-Aktion
+
+Gegenpressing-Aktion
+
+Stellungsspiel-Aktion
+
+🚀 10. Spielverlauf-Aktionen
+
+Spielerwechsel
+
+Auswechslung verletzungsbedingt
+
+Einwechselspieler trifft
+
+Unterbrechung wegen Verletzung
+
+Unterbrechung wegen VAR
+
+Trinkpause
+
+Halbzeitbeginn
+
+Halbzeitende
+
+Verlängerung Beginn/Ende
+
+Elfmeterschießen
+
+Spielabbruch
+
+Wiederaufnahme nach Abbruch
+
+📊 11. Sonstige Ereignisse
+
+Vorteil angezeigt
+
+Ball im Aus
+
+Ball an Schiedsrichter (droht Unterbrechung)
+
+Technische Probleme (Flutlicht, Tor-Netz etc.)
+
+Unsportliches Verhalten von außen (z.B. Zuschauer)

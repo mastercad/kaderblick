@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, IconButton, List, ListItem, ListItemText } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { apiJson } from '../../utils/api';
 
 const AdminTitleXpOverview: React.FC = () => {
@@ -7,6 +8,9 @@ const AdminTitleXpOverview: React.FC = () => {
   const [error, setError] = React.useState<string | null>(null);
   const [titles, setTitles] = React.useState<any[]>([]);
   const [users, setUsers] = React.useState<any[]>([]);
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [modalTitle, setModalTitle] = React.useState<any | null>(null);
+  const [modalUsers, setModalUsers] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     setLoading(true);
@@ -19,6 +23,20 @@ const AdminTitleXpOverview: React.FC = () => {
       .catch(() => setError('Fehler beim Laden der Übersicht'))
       .finally(() => setLoading(false));
   }, []);
+
+
+  // Zeige Spieler aus title.players im Modal an
+  const handleUserCountClick = (title: any) => {
+    setModalTitle(title);
+    setModalUsers(title.players || []);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setModalTitle(null);
+    setModalUsers([]);
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -46,12 +64,50 @@ const AdminTitleXpOverview: React.FC = () => {
                     <TableCell>{t.titleCategory}</TableCell>
                     <TableCell>{t.titleScope}</TableCell>
                     <TableCell>{t.titleRank}</TableCell>
-                    <TableCell>{t.userCount}</TableCell>
+                    <TableCell>
+                      <span
+                        style={{ color: '#1976d2', cursor: 'pointer', textDecoration: 'underline' }}
+                        onClick={() => handleUserCountClick(t)}
+                        title="Nutzer anzeigen"
+                      >
+                        {t.userCount}
+                      </span>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
+
+          <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="xs" fullWidth>
+            <DialogTitle>
+              Nutzer mit Titel
+              <IconButton
+                aria-label="close"
+                onClick={handleCloseModal}
+                sx={{ position: 'absolute', right: 8, top: 8 }}
+                size="large"
+              >
+                <CloseIcon />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent>
+              {modalUsers.length === 0 ? (
+                <Typography variant="body2">Keine Nutzer mit diesem Titel gefunden.</Typography>
+              ) : (
+                <List>
+                  {modalUsers.map((u) => (
+                    <ListItem key={u.id}>
+                      <ListItemText
+                        primary={`${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email}
+                        secondary={u.email}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </DialogContent>
+          </Dialog>
 
           <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>Benutzer – Level & XP</Typography>
           <TableContainer component={Paper}>
