@@ -3,3 +3,8 @@ public/uploads
 api/var/cache/
 api/var/logs/
 nginx.conf.example
+frontend/cert*
+frontend/.env
+.docker/dev/certs/*
+.docker/prod/certs/*
+frontend/node_modules
