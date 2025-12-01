@@ -62,7 +62,6 @@ const AdminTitleXpOverview: React.FC = () => {
               <TableBody>
                 {[...titles]
                   .sort((a, b) => {
-                    // Scope-Sortierung: platform < league < team
                     type Scope = 'platform' | 'league' | 'team';
                     type Rank = 'gold' | 'silver' | 'bronze';
                     const scopeOrder: Record<Scope, number> = { platform: 0, league: 1, team: 2 };
@@ -70,16 +69,27 @@ const AdminTitleXpOverview: React.FC = () => {
                     const scopeA = scopeOrder[(a.titleScope as Scope)] ?? 99;
                     const scopeB = scopeOrder[(b.titleScope as Scope)] ?? 99;
                     if (scopeA !== scopeB) return scopeA - scopeB;
-                    // Innerhalb Scope nach Rank
-                    const rankA = rankOrder[(a.titleRank as Rank)] ?? 99;
-                    const rankB = rankOrder[(b.titleRank as Rank)] ?? 99;
-                    if (rankA !== rankB) return rankA - rankB;
-                    // Innerhalb league/team nach Name
-                    if (a.titleScope === 'league') {
-                      return (a.leagueName || '').localeCompare(b.leagueName || '');
+                    // Platform: nur nach Rank
+                    if (a.titleScope === 'platform') {
+                      const rankA = rankOrder[(a.titleRank as Rank)] ?? 99;
+                      const rankB = rankOrder[(b.titleRank as Rank)] ?? 99;
+                      return rankA - rankB;
                     }
+                    // League: erst Name, dann Rank
+                    if (a.titleScope === 'league') {
+                      const nameA = (a.leagueName || '').localeCompare(b.leagueName || '');
+                      if (nameA !== 0) return nameA;
+                      const rankA = rankOrder[(a.titleRank as Rank)] ?? 99;
+                      const rankB = rankOrder[(b.titleRank as Rank)] ?? 99;
+                      return rankA - rankB;
+                    }
+                    // Team: erst Name, dann Rank
                     if (a.titleScope === 'team') {
-                      return (a.teamName || '').localeCompare(b.teamName || '');
+                      const nameA = (a.teamName || '').localeCompare(b.teamName || '');
+                      if (nameA !== 0) return nameA;
+                      const rankA = rankOrder[(a.titleRank as Rank)] ?? 99;
+                      const rankB = rankOrder[(b.titleRank as Rank)] ?? 99;
+                      return rankA - rankB;
                     }
                     return 0;
                   })
