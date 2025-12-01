@@ -2,12 +2,12 @@
 
 namespace App\Event;
 
-use App\Entity\Goal;
+use App\Entity\GameEvent;
 use App\Entity\User;
 
 final class GoalScoredEvent
 {
-    public function __construct(private User $user, private Goal $goal)
+    public function __construct(private User $user, private GameEvent $gameEvent)
     {
     }
 
@@ -16,8 +16,8 @@ final class GoalScoredEvent
         return $this->user;
     }
 
-    public function getGoal(): Goal
+    public function getGameEvent(): GameEvent
     {
-        return $this->goal;
+        return $this->gameEvent;
     }
 }

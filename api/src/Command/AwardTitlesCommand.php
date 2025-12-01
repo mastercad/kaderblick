@@ -3,6 +3,7 @@
 namespace App\Command;
 
 use App\Entity\GameEvent;
+use App\Entity\PlayerTitle;
 use App\Service\TitleCalculationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -83,6 +84,7 @@ class AwardTitlesCommand extends Command
         // Platform-wide
         $platformTitles = $this->titleCalculationService->calculatePlatformTopScorers($season);
         $io->section('Platform-wide Top Scorers');
+        /** @var PlayerTitle $title */
         foreach ($platformTitles as $title) {
             $io->writeln(sprintf(
                 '%s: %s %s (%d goals)',
@@ -104,6 +106,20 @@ class AwardTitlesCommand extends Command
                 $title->getPlayer()->getLastName(),
                 $title->getValue(),
                 $title->getTeam()?->getName()
+            ));
+        }
+
+        // Team-wise
+        $leagueTitles = $this->titleCalculationService->calculateLeagueTopScorers($season);
+        $io->section('League Top Scorers');
+        foreach ($leagueTitles as $title) {
+            $io->writeln(sprintf(
+                '%s: %s %s (%d goals) [League: %s]',
+                ucfirst($title->getTitleRank()),
+                $title->getPlayer()->getFirstName(),
+                $title->getPlayer()->getLastName(),
+                $title->getValue(),
+                $title->getLeague()?->getName()
             ));
         }
 

@@ -12,15 +12,17 @@ use Doctrine\ORM\Mapping as ORM;
     indexes: [
         new ORM\Index(name: 'idx_player_titles_player_id', columns: ['player_id']),
         new ORM\Index(name: 'idx_player_titles_team_id', columns: ['team_id']),
+        new ORM\Index(name: 'idx_player_titles_league_id', columns: ['league_id']),
         new ORM\Index(name: 'idx_player_titles_is_active', columns: ['is_active']),
     ],
     uniqueConstraints: [
         new ORM\UniqueConstraint(
             name: 'uniq_player_title_active',
-            columns: ['player_id', 'title_category', 'title_scope', 'team_id', 'is_active']
+            columns: ['player_id', 'title_category', 'title_scope', 'team_id', 'league_id', 'is_active']
         )
     ]
 )]
+
 class PlayerTitle
 {
     #[ORM\Id]
@@ -45,6 +47,10 @@ class PlayerTitle
     #[ORM\ManyToOne(targetEntity: Team::class)]
     #[ORM\JoinColumn(name: 'team_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
     private ?Team $team = null;
+
+    #[ORM\ManyToOne(targetEntity: League::class)]
+    #[ORM\JoinColumn(name: 'league_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
+    private ?League $league = null;
 
     #[ORM\Column(type: 'integer')]
     private int $value; // Number of goals, assists, etc.
@@ -126,6 +132,17 @@ class PlayerTitle
         return $this;
     }
 
+    public function getLeague(): ?League
+    {
+        return $this->league;
+    }
+
+    public function setLeague(?League $league): self
+    {
+        $this->league = $league;
+        return $this;
+    }
+
     public function getValue(): int
     {
         return $this->value;
@@ -193,6 +210,7 @@ class PlayerTitle
     {
         $scopePriority = match ($this->titleScope) {
             'platform' => 0,
+            'league' => 50,
             'team' => 100,
             default => 200,
         };

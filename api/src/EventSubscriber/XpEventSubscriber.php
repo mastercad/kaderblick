@@ -50,13 +50,13 @@ class XpEventSubscriber implements EventSubscriberInterface
     public function onGoalScored(GoalScoredEvent $event): void
     {
         $user = $event->getUser();
-        $this->xpRegistrationService->registerXpEvent($user, 'goal_scored', $event->getGoal()->getId());
+        $this->xpRegistrationService->registerXpEvent($user, 'goal_scored', $event->getGameEvent()->getId());
     }
 
     public function onGoalAssisted(GoalAssistedEvent $event): void
     {
         $user = $event->getUser();
-        $this->xpRegistrationService->registerXpEvent($user, 'goal_assisted', $event->getGoal()->getId());
+        $this->xpRegistrationService->registerXpEvent($user, 'goal_assisted', $event->getGameEvent()->getId());
     }
 
     public function onProfileCompletenessReached(ProfileCompletenessReachedEvent $event): void

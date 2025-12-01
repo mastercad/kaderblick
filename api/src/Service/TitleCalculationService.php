@@ -162,10 +162,11 @@ class TitleCalculationService
             $title->setTitleScope($titleScope);
             $title->setTitleRank($rank);
             if ('league' === $titleScope && $gameType) {
-                $title->setTeam(null); // team bleibt null, Liga-ID wird separat gespeichert
-            // Optional: falls PlayerTitle angepasst wird, hier Liga setzen
+                $title->setTeam(null); // team bleibt null
+                $title->setLeague($gameType->getLeague()); // league korrekt setzen
             } else {
                 $title->setTeam($team);
+                $title->setLeague(null);
             }
             $title->setValue($value);
             $title->setIsActive(true);
@@ -228,10 +229,11 @@ class TitleCalculationService
 
         foreach ($gameTypes as $gameType) {
             // Alle Tore für diese Liga und Saison holen
-            $goals = $this->debugGoalsForSeason($season, null, $gameType);
+            $gameEvents = $this->debugGoalsForSeason($season, null, $gameType);
             $playerGoals = [];
-            foreach ($goals as $goal) {
-                $player = $goal->getPlayer();
+            /** @var GameEvent $gameEvent */
+            foreach ($gameEvents as $gameEvent) {
+                $player = $gameEvent->getPlayer();
                 if (!$player) {
                     continue;
                 }
@@ -244,7 +246,7 @@ class TitleCalculationService
                 }
                 ++$playerGoals[$pid]['goal_count'];
             }
-            // Sortierung wie gehabt
+            
             usort($playerGoals, function ($a, $b) {
                 if ($b['goal_count'] === $a['goal_count']) {
                     return strcmp($a['player']->getLastName(), $b['player']->getLastName());
@@ -279,9 +281,12 @@ class TitleCalculationService
             ->leftJoin('ge.team', 'team')
             ->leftJoin('ge.gameEventType', 'getype')
             ->leftJoin('game.gameType', 'gt')
-            ->where('getype.code = :goalCode')
+            ->where('(getype.code = :goalCode OR getype.code LIKE :likeGoal)')
+            ->andWhere('getype.code != :ownGoal')
             ->andWhere('cet.name = :eventTypeName')
             ->setParameter('goalCode', 'goal')
+            ->setParameter('likeGoal', '%_goal')
+            ->setParameter('ownGoal', 'own_goal')
             ->setParameter('eventTypeName', 'Spiel');
 
         if ($season) {
