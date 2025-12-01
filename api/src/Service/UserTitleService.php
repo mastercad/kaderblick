@@ -157,7 +157,17 @@ class UserTitleService
 
         $categoryName = $categoryNames[$title->getTitleCategory()] ?? $title->getTitleCategory();
         $rank = ucfirst($title->getTitleRank());
-        $scope = 'platform' === $title->getTitleScope() ? 'Platform' : 'Team';
+        $scope = '';
+
+        if ('team' === $title->getTitleScope() && $title->getTeam()) {
+            $categoryName .= " ({$title->getTeam()->getName()})";
+            $scope = 'Team';
+        } elseif ('league' === $title->getTitleScope() && $title->getLeague()) {
+            $categoryName .= " ({$title->getLeague()->getName()})";
+            $scope = $title->getLeague()->getName();
+        } elseif ('platform' === $title->getTitleScope()) {
+            $scope = 'Platform';
+        }
 
         return "{$scope} {$categoryName} - {$rank}";
     }
