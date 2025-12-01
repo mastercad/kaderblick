@@ -26,6 +26,7 @@ import moment from 'moment';
 import AddIcon from '@mui/icons-material/Add';
 import 'moment/locale/de';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { League } from '../types/league';
 
 moment.updateLocale('de', {
   week: {
@@ -125,6 +126,7 @@ type EventFormData = {
   endTime?: string;
   eventType?: string;
   locationId?: string;
+  leagueId?: string;
   description?: string;
   homeTeam?: string;
   awayTeam?: string;
@@ -192,7 +194,8 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     time: '',
     eventType: '',
     locationId: '',
-    description: ''
+    description: '',
+    leagueId: ''
   });
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [eventSaving, setEventSaving] = useState(false);
@@ -202,6 +205,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   const [teams, setTeams] = useState<Team[]>([]);
   const [gameTypes, setGameTypes] = useState<{ createAndEditAllowed: boolean; entries: GameType[] }>({ createAndEditAllowed: false, entries: [] });
   const [locations, setLocations] = useState<Location[]>([]);
+  const [leagues, setLeagues] = useState<League[]>([]);
 
   // Filter State - Set mit aktiven Event-Type-IDs (standardmäßig alle aktiv)
   const [activeEventTypeIds, setActiveEventTypeIds] = useState<Set<number>>(new Set());
@@ -260,10 +264,34 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       apiJson<{ createAndEditAllowed: boolean; entries: GameType[] }>('/api/game-types').catch(() => ({ createAndEditAllowed: false, entries: [] })),
       apiJson<LocationsApiResponse>('/api/locations').catch(() => ({ locations: [], permissions: { canCreate: false, canEdit: false, canView: false, canDelete: false } }))
     ]).then(([eventTypesData, teamsData, gameTypesData, locationsData]) => {
-      setEventTypes(eventTypesData);
-      setTeams(teamsData.teams || []);
-      setGameTypes(gameTypesData);
-      setLocations(locationsData.locations || []);
+      // Defensive: handle possible error objects
+      if ('error' in eventTypesData) {
+        setEventTypes({ createAndEditAllowed: false, entries: [] });
+      } else {
+        setEventTypes(eventTypesData);
+      }
+      if (Array.isArray(teamsData)) {
+        // Defensive: teamsData might be an array of teams or an array with a single object containing teams
+        if (teamsData.length > 0 && 'teams' in teamsData[0]) {
+          setTeams((teamsData[0] as any).teams || []);
+        } else {
+          setTeams([]);
+        }
+      } else if (teamsData && typeof teamsData === 'object' && 'teams' in teamsData) {
+        setTeams((teamsData as any).teams || []);
+      } else {
+        setTeams([]);
+      }
+      if ('error' in gameTypesData) {
+        setGameTypes({ createAndEditAllowed: false, entries: [] });
+      } else {
+        setGameTypes(gameTypesData);
+      }
+      if ('error' in locationsData) {
+        setLocations([]);
+      } else {
+        setLocations(locationsData.locations || []);
+      }
     }).catch(console.error);
   }, []);
 
@@ -337,7 +365,8 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       awayTeam: event.game?.awayTeam?.id?.toString() || '',
       gameType: (event.game && 'gameType' in event.game && (event.game as any).gameType?.id?.toString())
         || event.gameType?.id?.toString()
-        || ''
+        || '',
+      leagueId: event.game && (event.game as any).league?.id ? (event.game as any).league.id.toString() : ''
     });
     setEditingEventId(event.id);
     setSelectedEvent(null);
@@ -424,6 +453,8 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         if (eventFormData.gameType) {
           payload.gameTypeId = parseInt(eventFormData.gameType);
         }
+
+        payload.leagueId = eventFormData.leagueId ? parseInt(eventFormData.leagueId): undefined;
       }
 
       const url = editingEventId ? `/api/calendar/event/${editingEventId}` : '/api/calendar/event';
@@ -512,19 +543,20 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     const start = moment(date).startOf(viewType as any).toISOString();
     const end = moment(date).endOf(viewType as any).toISOString();
     
-    const updatedEvents = await apiJson<CalendarEvent[]>(`/api/calendar/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
-    
-    const mappedEvents = (updatedEvents || []).map((ev: any) => ({
-      id: ev.id || 0,
-      title: ev.title || 'Unbenannter Termin',
-      start: ev.start,
-      end: ev.end,
-      description: ev.description || '',
-      eventType: ev.type || {},  // Backend sendet 'type', wir mappen es zu 'eventType'
-      location: ev.location || {},
-      game: ev.game || undefined
-    }));
-    
+    const updatedEvents = await apiJson<CalendarEvent[] | { error: string }>(`/api/calendar/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+    let mappedEvents: CalendarEvent[] = [];
+    if (Array.isArray(updatedEvents)) {
+      mappedEvents = updatedEvents.map((ev: any) => ({
+        id: ev.id || 0,
+        title: ev.title || 'Unbenannter Termin',
+        start: ev.start,
+        end: ev.end,
+        description: ev.description || '',
+        eventType: ev.type || {},  // Backend sendet 'type', wir mappen es zu 'eventType'
+        location: ev.location || {},
+        game: ev.game || undefined
+      }));
+    }
     setEvents(mappedEvents);
   };
 

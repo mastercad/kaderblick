@@ -193,31 +193,39 @@ class UserTitleService
     public function retrieveTitleStats(): array
     {
         $qb = $this->playerTitleRepository->createQueryBuilder('t');
-        $qb->select('t.titleCategory, t.titleScope, t.titleRank, team.id as teamId, team.name as teamName')
+        $qb->select('t.titleCategory, t.titleScope, t.titleRank, team.id as teamId, team.name as teamName, league.id as leagueId, league.name as leagueName')
             ->leftJoin('t.team', 'team')
-            ->where('t.isActive = true')
-            ->orderBy('t.titleCategory, t.titleScope, t.titleRank, team.id');
+            ->leftJoin('t.league', 'league')
+            ->where('t.isActive = true');
+
+        // Filter: Für Liga-Titel nur solche mit gesetzter Liga
+        $qb->andWhere('(t.titleScope != :leagueScope OR league.id IS NOT NULL)')
+            ->setParameter('leagueScope', 'league');
+
+        $qb->groupBy('t.titleCategory, t.titleScope, t.titleRank, team.id, team.name, league.id, league.name');
+        $qb->orderBy('t.titleCategory, t.titleScope, t.titleRank, team.id, league.id');
 
         $raw = $qb->getQuery()->getArrayResult();
 
         // Hole alle aktiven PlayerTitles für die Detailzählung
         $allActive = $this->playerTitleRepository->createQueryBuilder('pt')
-            ->select('pt.titleCategory, pt.titleScope, pt.titleRank, team2.id as teamId, pt.id as playerTitleId')
+            ->select('pt.titleCategory, pt.titleScope, pt.titleRank, team2.id as teamId, league2.id as leagueId, pt.id as playerTitleId')
             ->leftJoin('pt.team', 'team2')
+            ->leftJoin('pt.league', 'league2')
             ->where('pt.isActive = true')
             ->getQuery()->getArrayResult();
 
         // Zähle pro Gruppe die PlayerTitle-Einträge
         $countMap = [];
         foreach ($allActive as $row) {
-            $key = $row['titleCategory'] . '|' . $row['titleScope'] . '|' . $row['titleRank'] . '|' . ($row['teamId'] ?? '');
+            $key = $row['titleCategory'] . '|' . $row['titleScope'] . '|' . $row['titleRank'] . '|' . ($row['teamId'] ?? '') . '|' . ($row['leagueId'] ?? '');
             $countMap[$key] = ($countMap[$key] ?? 0) + 1;
         }
 
         // Baue die finale Liste mit userCount
         $result = [];
         foreach ($raw as $row) {
-            $key = $row['titleCategory'] . '|' . $row['titleScope'] . '|' . $row['titleRank'] . '|' . ($row['teamId'] ?? '');
+            $key = $row['titleCategory'] . '|' . $row['titleScope'] . '|' . $row['titleRank'] . '|' . ($row['teamId'] ?? '') . '|' . ($row['leagueId'] ?? '');
             $row['userCount'] = $countMap[$key] ?? 0;
             $result[] = $row;
         }

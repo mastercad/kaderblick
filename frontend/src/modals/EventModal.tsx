@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Select from '@mui/material/Select';
@@ -7,6 +7,8 @@ import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
 import BaseModal from './BaseModal';
+import { fetchLeagues } from '../services/leagues';
+import { League } from '../types/league';
 
 interface EventData {
   title?: string;
@@ -20,6 +22,7 @@ interface EventData {
   homeTeam?: string;
   awayTeam?: string;
   gameType?: string;
+  leagueId?: string;
 }
 
 interface EventModalProps {
@@ -36,9 +39,7 @@ interface EventModalProps {
   onChange: (field: string, value: string) => void;
   loading?: boolean;
 }
-
-export const EventModal: React.FC<EventModalProps> = ({
-  open,
+export const EventModal: React.FC<EventModalProps> = ({  open,
   onClose,
   onSave,
   onDelete,
@@ -51,6 +52,14 @@ export const EventModal: React.FC<EventModalProps> = ({
   onChange,
   loading = false,
 }) => {
+  const [leagues, setLeagues] = useState<{ value: string; label: string }[]>([]);
+  useEffect(() => {
+    if (open) {
+      fetchLeagues().then(ls => {
+        setLeagues(ls.map(l => ({ value: String(l.id), label: l.name })));
+      });
+    }
+  }, [open]);
   // Prüfen ob es sich um ein Spiel-Event handelt
   const selectedEventType = eventTypes.find(et => et.value === event.eventType);
   const isGameEvent = selectedEventType?.label?.toLowerCase().includes('spiel') 
@@ -206,6 +215,22 @@ export const EventModal: React.FC<EventModalProps> = ({
                   >
                     <MenuItem value=""><em>Bitte wählen...</em></MenuItem>
                     {gameTypes.map(opt => (
+                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+              {leagues.length > 0 && (
+                <FormControl fullWidth margin="normal">
+                  <InputLabel id="league-label">Liga</InputLabel>
+                  <Select
+                    labelId="league-label"
+                    value={event.leagueId || ''}
+                    label="Liga"
+                    onChange={e => onChange('leagueId', e.target.value as string)}
+                  >
+                    <MenuItem value=""><em>Bitte wählen...</em></MenuItem>
+                    {leagues.map(opt => (
                       <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                     ))}
                   </Select>

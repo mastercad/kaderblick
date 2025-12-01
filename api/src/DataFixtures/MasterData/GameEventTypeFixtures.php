@@ -58,6 +58,8 @@ class GameEventTypeFixtures extends Fixture implements FixtureGroupInterface
             ['name' => 'Strafstoßtor', 'code' => 'penalty_goal', 'color' => '#28a745', 'icon' => 'fas fa-dot-circle', 'isSystem' => true],
             ['name' => 'Freistoßtor', 'code' => 'freekick_goal', 'color' => '#28a745', 'icon' => 'fas fa-dot-circle', 'isSystem' => true],
             ['name' => 'Kopfballtor', 'code' => 'header_goal', 'color' => '#28a745', 'icon' => 'fas fa-arrow-circle-up', 'isSystem' => true],
+            // Torvorlage/Assist
+            ['name' => 'Torvorlage', 'code' => 'assist', 'color' => '#20c997', 'icon' => 'fas fa-hands-helping', 'isSystem' => true],
             ['name' => 'Tor nach Ecke', 'code' => 'corner_goal', 'color' => '#28a745', 'icon' => 'fas fa-dot-circle', 'isSystem' => true],
             ['name' => 'Tor nach Flanke', 'code' => 'cross_goal', 'color' => '#28a745', 'icon' => 'fas fa-dot-circle', 'isSystem' => true],
             ['name' => 'Tor nach Konter', 'code' => 'counter_goal', 'color' => '#28a745', 'icon' => 'fas fa-dot-circle', 'isSystem' => true],

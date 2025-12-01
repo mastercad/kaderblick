@@ -55,26 +55,61 @@ const AdminTitleXpOverview: React.FC = () => {
                   <TableCell>Kategorie</TableCell>
                   <TableCell>Scope</TableCell>
                   <TableCell>Rang</TableCell>
+                  <TableCell>Name</TableCell>
                   <TableCell>Anzahl Nutzer</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {titles.map((t, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell>{t.titleCategory}</TableCell>
-                    <TableCell>{t.titleScope}</TableCell>
-                    <TableCell>{t.titleRank}</TableCell>
-                    <TableCell>
-                      <span
-                        style={{ color: '#1976d2', cursor: 'pointer', textDecoration: 'underline' }}
-                        onClick={() => handleUserCountClick(t)}
-                        title="Nutzer anzeigen"
-                      >
-                        {t.userCount}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {[...titles]
+                  .sort((a, b) => {
+                    // Scope-Sortierung: platform < league < team
+                    type Scope = 'platform' | 'league' | 'team';
+                    type Rank = 'gold' | 'silver' | 'bronze';
+                    const scopeOrder: Record<Scope, number> = { platform: 0, league: 1, team: 2 };
+                    const rankOrder: Record<Rank, number> = { gold: 0, silver: 1, bronze: 2 };
+                    const scopeA = scopeOrder[(a.titleScope as Scope)] ?? 99;
+                    const scopeB = scopeOrder[(b.titleScope as Scope)] ?? 99;
+                    if (scopeA !== scopeB) return scopeA - scopeB;
+                    // Innerhalb Scope nach Rank
+                    const rankA = rankOrder[(a.titleRank as Rank)] ?? 99;
+                    const rankB = rankOrder[(b.titleRank as Rank)] ?? 99;
+                    if (rankA !== rankB) return rankA - rankB;
+                    // Innerhalb league/team nach Name
+                    if (a.titleScope === 'league') {
+                      return (a.leagueName || '').localeCompare(b.leagueName || '');
+                    }
+                    if (a.titleScope === 'team') {
+                      return (a.teamName || '').localeCompare(b.teamName || '');
+                    }
+                    return 0;
+                  })
+                  .map((t, idx) => {
+                    let name = '-';
+                    if (t.titleScope === 'team') {
+                      name = t.teamName || '-';
+                    } else if (t.titleScope === 'league') {
+                      name = t.leagueName || '-';
+                    } else if (t.titleScope === 'platform') {
+                      name = 'Plattform';
+                    }
+                    return (
+                      <TableRow key={idx}>
+                        <TableCell>{t.titleCategory}</TableCell>
+                        <TableCell>{t.titleScope}</TableCell>
+                        <TableCell>{t.titleRank}</TableCell>
+                        <TableCell>{name}</TableCell>
+                        <TableCell>
+                          <span
+                            style={{ color: '#1976d2', cursor: 'pointer', textDecoration: 'underline' }}
+                            onClick={() => handleUserCountClick(t)}
+                            title="Nutzer anzeigen"
+                          >
+                            {t.userCount}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
               </TableBody>
             </Table>
           </TableContainer>

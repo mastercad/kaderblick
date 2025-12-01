@@ -6,6 +6,7 @@ use App\Entity\CalendarEvent;
 use App\Entity\CalendarEventType;
 use App\Entity\Game;
 use App\Entity\GameType;
+use App\Entity\League;
 use App\Entity\Location;
 use App\Entity\Team;
 use App\Entity\User;
@@ -112,6 +113,10 @@ class CalendarController extends AbstractController
                     'gameType' => [
                         'id' => $calendarEvent->getGame()->getGameType()->getId(),
                         'name' => $calendarEvent->getGame()->getGameType()->getName()
+                    ],
+                    'league' => [
+                        'id' => $calendarEvent->getGame()->getLeague()?->getId(),
+                        'name' => $calendarEvent->getGame()->getLeague()?->getName()
                     ]
                 ] : null,
                 'type' => $calendarEvent->getCalendarEventType() ? [
@@ -304,6 +309,11 @@ class CalendarController extends AbstractController
 
         if (isset($data['fussballDeId']) && $data['fussballDeId']) {
             $calendarEvent->getGame()?->setFussballDeId($data['fussballDeId']);
+        }
+
+        if ($data['leagueId']) {
+            $league = $this->entityManager->getReference(League::class, (int) $data['leagueId']);
+            $calendarEvent->getGame()?->setLeague($league);
         }
 
         $this->entityManager->persist($calendarEvent);

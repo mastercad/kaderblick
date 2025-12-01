@@ -27,9 +27,14 @@ class League
     #[ORM\OneToMany(mappedBy: 'league', targetEntity: Team::class)]
     private Collection $teams;
 
+    /** @var Collection<int, PlayerTitle> */
+    #[ORM\OneToMany(mappedBy: 'league', targetEntity: PlayerTitle::class)]
+    private Collection $playerTitles;
+
     public function __construct()
     {
         $this->teams = new ArrayCollection();
+        $this->playerTitles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -79,5 +84,34 @@ class League
     public function __toString(): string
     {
         return $this->name ?? 'UNKNOWN LEAGUE';
+    }
+
+    /**
+     * @return Collection<int, PlayerTitle>
+     */
+    public function getPlayerTitles(): Collection
+    {
+        return $this->playerTitles;
+    }
+
+    public function addPlayerTitle(PlayerTitle $playerTitle): self
+    {
+        if (!$this->playerTitles->contains($playerTitle)) {
+            $this->playerTitles->add($playerTitle);
+            $playerTitle->setLeague($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlayerTitle(PlayerTitle $playerTitle): self
+    {
+        if ($this->playerTitles->removeElement($playerTitle)) {
+            if ($playerTitle->getLeague() === $this) {
+                $playerTitle->setLeague(null);
+            }
+        }
+
+        return $this;
     }
 }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Entity\GameEvent;
-use App\Entity\Goal;
 use App\Entity\Player;
 use App\Entity\User;
 use App\Entity\UserLevel;
@@ -40,6 +39,7 @@ class ProcessHistoricalXpCommand extends Command
             ->addOption('type', 't', InputOption::VALUE_OPTIONAL, 'Type of events to process (goals, game_events, calendar_events, profiles, all)', 'all')
             ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Run without actually awarding XP')
             ->addOption('user-id', 'u', InputOption::VALUE_OPTIONAL, 'Process events only for specific user ID')
+            ->addOption('--force', 'f', InputOption::VALUE_NONE, 'Force processing even if XP events already exist')
             ->setHelp(<<<'HELP'
 This command processes historical events that were created before the XP system was implemented
 and awards XP retroactively. It directly adds XP to users instead of creating XP events.
@@ -49,6 +49,7 @@ Examples:
   php bin/console app:xp:process-historical --type=goals
   php bin/console app:xp:process-historical --type=goals --user-id=5
   php bin/console app:xp:process-historical --dry-run
+  php bin/console app:xp:process-historical --force
 
 HELP);
     }
@@ -59,6 +60,7 @@ HELP);
         $type = $input->getOption('type');
         $dryRun = $input->getOption('dry-run');
         $userId = $input->getOption('user-id');
+        $force = $input->getOption('force');
 
         if ($dryRun) {
             $io->warning('Running in DRY-RUN mode - no XP will be awarded');
@@ -70,12 +72,35 @@ HELP);
         $totalProcessed = 0;
         $totalXpAwarded = 0;
 
+        if (!$force) {
+            $io->note('By default, events that already have associated XP events will be skipped. Use --force to override this behavior.');
+        } else {
+            $io->warning('Force mode enabled - existing XP events will be ignored, and XP may be awarded multiple times for the same event.');
+            $this->entityManager->getRepository(UserXpEvent::class)
+                ->createQueryBuilder('ue')
+                ->delete()
+                ->getQuery()
+                ->execute();
+
+            $this->entityManager->getRepository(UserLevel::class)
+                ->createQueryBuilder('ul')
+                ->update()
+                ->set('ul.xpTotal', '0')
+                ->set('ul.level', '1')
+                ->getQuery()
+                ->execute();
+        }
+
         try {
             if ('goals' === $type || 'all' === $type) {
                 [$processed, $xpAwarded] = $this->processGoals($io, $dryRun, $userId);
                 $totalProcessed += $processed;
                 $totalXpAwarded += $xpAwarded;
                 $io->success("Processed {$processed} goals, awarded {$xpAwarded} XP");
+                [$processed, $xpAwarded] = $this->processAssists($io, $dryRun, $userId);
+                $totalProcessed += $processed;
+                $totalXpAwarded += $xpAwarded;
+                $io->success("Processed {$processed} assists, awarded {$xpAwarded} XP");
             }
 
             if ('game_events' === $type || 'all' === $type) {
@@ -114,72 +139,110 @@ HELP);
      */
     private function processGoals(SymfonyStyle $io, bool $dryRun, ?string $userId): array
     {
-        $io->section('Processing Goals (50 XP per goal, 30 XP per assist)');
+        $io->section('Processing Goals (50 XP per goal)');
 
-        $qb = $this->entityManager->getRepository(Goal::class)
-            ->createQueryBuilder('g')
-            ->innerJoin('g.scorer', 's')
-            ->leftJoin('s.userRelations', 'ur')
+        $qb = $this->entityManager->getRepository(GameEvent::class)
+            ->createQueryBuilder('ge')
+            ->innerJoin('ge.player', 'p')
+            ->innerJoin('ge.gameEventType', 'get')
+            ->leftJoin('p.userRelations', 'ur')
             ->leftJoin('ur.user', 'u')
-            ->where('u.id IS NOT NULL');
+            ->where('u.id IS NOT NULL')
+            ->andWhere('(get.code IN (:goalEventTypes) OR get.code LIKE :likeGoal)')
+            ->andWhere('get.code != :ownGoal')
+            ->setParameter('goalEventTypes', ['goal'])
+            ->setParameter('likeGoal', '%_goal')
+            ->setParameter('ownGoal', 'own_goal');
 
         if ($userId) {
             $qb->andWhere('u.id = :userId')
                ->setParameter('userId', $userId);
         }
 
-        $goals = $qb->getQuery()->getResult();
+        $gameEvents = $qb->getQuery()->getResult();
+
         $processed = 0;
         $totalXpAwarded = 0;
 
-        foreach ($goals as $goal) {
-            $scorer = $goal->getScorer();
-            $users = $this->retrieveUsersForPlayer($scorer);
+        foreach ($gameEvents as $gameEvent) {
+            $player = $gameEvent->getPlayer();
+            $users = $this->retrieveUsersForPlayer($player);
 
             foreach ($users as $user) {
                 // Check if XP already awarded for this goal
-                if ($this->hasXpEventForAction($user, 'goal_scored', $goal->getId())) {
+                if ($this->hasXpEventForAction($user, 'goal_scored', $gameEvent->getId())) {
                     continue;
                 }
 
                 if (!$dryRun) {
                     $xp = $this->xpService->retrieveXPForAction('goal_scored');
                     $this->xpService->addXPToUser($user, $xp);
-                    $this->createXpEventRecord($user, 'goal_scored', $goal->getId(), $xp);
+                    $this->createXpEventRecord($user, 'goal_scored', $gameEvent->getId(), $xp);
                     $totalXpAwarded += $xp;
                     ++$processed;
-                    $io->writeln("  ✓ Goal #{$goal->getId()} → User #{$user->getId()} ({$user->getEmail()}) +{$xp} XP");
+                    $io->writeln("  ✓ GameEvent #{$gameEvent->getId()} → User #{$user->getId()} ({$user->getEmail()}) +{$xp} XP");
                 } else {
                     $xp = $this->xpService->retrieveXPForAction('goal_scored');
-                    $io->writeln("  [DRY-RUN] Would award {$xp} XP for goal #{$goal->getId()} to user #{$user->getId()} ({$user->getEmail()})");
+                    $io->writeln("  [DRY-RUN] Would award {$xp} XP for goal #{$gameEvent->getId()} to user #{$user->getId()} ({$user->getEmail()})");
                     $totalXpAwarded += $xp;
                     ++$processed;
                 }
             }
+        }
 
-            // Process assists
-            $assistant = $goal->getAssistBy();
-            if ($assistant) {
-                $assistUsers = $this->retrieveUsersForPlayer($assistant);
-                foreach ($assistUsers as $user) {
-                    // Check if XP already awarded for this assist
-                    if ($this->hasXpEventForAction($user, 'goal_assisted', $goal->getId())) {
-                        continue;
-                    }
+        return [$processed, $totalXpAwarded];
+    }
 
-                    if (!$dryRun) {
-                        $xp = $this->xpService->retrieveXPForAction('goal_assisted');
-                        $this->xpService->addXPToUser($user, $xp);
-                        $this->createXpEventRecord($user, 'goal_assisted', $goal->getId(), $xp);
-                        $totalXpAwarded += $xp;
-                        ++$processed;
-                        $io->writeln("  ✓ Assist #{$goal->getId()} → User #{$user->getId()} ({$user->getEmail()}) +{$xp} XP");
-                    } else {
-                        $xp = $this->xpService->retrieveXPForAction('goal_assisted');
-                        $io->writeln("  [DRY-RUN] Would award {$xp} XP for assist #{$goal->getId()} to user #{$user->getId()} ({$user->getEmail()})");
-                        $totalXpAwarded += $xp;
-                        ++$processed;
-                    }
+    /**
+     * @return array<int, int>
+     */
+    private function processAssists(SymfonyStyle $io, bool $dryRun, ?string $userId): array
+    {
+        $io->section('Processing Assists (30 XP per assist)');
+
+        $qb = $this->entityManager->getRepository(GameEvent::class)
+            ->createQueryBuilder('ge')
+            ->innerJoin('ge.player', 'p')
+            ->innerJoin('ge.gameEventType', 'get')
+            ->leftJoin('p.userRelations', 'ur')
+            ->leftJoin('ur.user', 'u')
+            ->where('u.id IS NOT NULL')
+            ->andWhere('(get.code IN (:assistEventTypes) OR get.code LIKE :likeAssist)')
+            ->setParameter('assistEventTypes', ['assist'])
+            ->setParameter('likeAssist', '%_assist');
+
+        if ($userId) {
+            $qb->andWhere('u.id = :userId')
+               ->setParameter('userId', $userId);
+        }
+
+        $gameEvents = $qb->getQuery()->getResult();
+
+        $processed = 0;
+        $totalXpAwarded = 0;
+
+        foreach ($gameEvents as $gameEvent) {
+            $player = $gameEvent->getPlayer();
+            $users = $this->retrieveUsersForPlayer($player);
+
+            foreach ($users as $user) {
+                // Check if XP already awarded for this goal
+                if ($this->hasXpEventForAction($user, 'goal_assisted', $gameEvent->getId())) {
+                    continue;
+                }
+
+                if (!$dryRun) {
+                    $xp = $this->xpService->retrieveXPForAction('goal_assisted');
+                    $this->xpService->addXPToUser($user, $xp);
+                    $this->createXpEventRecord($user, 'goal_assisted', $gameEvent->getId(), $xp);
+                    $totalXpAwarded += $xp;
+                    ++$processed;
+                    $io->writeln("  ✓ GameEvent #{$gameEvent->getId()} → User #{$user->getId()} ({$user->getEmail()}) +{$xp} XP");
+                } else {
+                    $xp = $this->xpService->retrieveXPForAction('goal_assisted');
+                    $io->writeln("  [DRY-RUN] Would award {$xp} XP for goal #{$gameEvent->getId()} to user #{$user->getId()} ({$user->getEmail()})");
+                    $totalXpAwarded += $xp;
+                    ++$processed;
                 }
             }
         }
