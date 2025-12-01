@@ -123,33 +123,6 @@ class GamesController extends AbstractController
         ]);
     }
 
-    #[Route(path: '/{id}/details', name: 'api_details', requirements: ['id' => '\\d+'], methods: ['GET'])]
-    public function apiDetails(Game $game, GameEventRepository $gameEventRepository, VideoTypeRepository $videoTypeRepository, CameraRepository $cameraRepository): Response
-    {
-        $gameEvents = $gameEventRepository->findAllGameEvents($game);
-        $calendarEvent = $game->getCalendarEvent();
-        $gameEvents = $gameEventRepository->findAllGameEvents($game);
-
-        $cameras = [];
-        foreach ($cameraRepository->findAll() as $camera) {
-            $cameras[$camera->getId()] = $camera;
-        }
-        ksort($cameras);
-
-        $scores = $this->collectScores($gameEvents, $game);
-
-        return $this->json([
-            'game' => $game,
-            'location' => $game->getCalendarEvent()->getLocation(),
-            'gameEvents' => $gameEvents,
-            'homeScore' => $scores['home'],
-            'awayScore' => $scores['away'],
-            'videoTypes' => $videoTypeRepository->findAll(),
-            'cameras' => $cameras,
-            'videos' => $this->prepareYoutubeLinks($game, $gameEvents),
-        ]);
-    }
-
     /**
      * @param array<int, GameEvent> $gameEvents
      *

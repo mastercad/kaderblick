@@ -119,7 +119,7 @@ class UserTitleService
      */
     private function formatTitle(PlayerTitle $title): array
     {
-        return [
+        $data = [
             'id' => $title->getId(),
             'category' => $title->getTitleCategory(),
             'scope' => $title->getTitleScope(),
@@ -132,6 +132,17 @@ class UserTitleService
             'displayName' => $this->retrieveTitleDisplayName($title),
             'priority' => $title->getPriority(),
         ];
+
+        // League-Infos ergänzen, falls vorhanden
+        if ($title->getLeague()) {
+            $data['leagueId'] = $title->getLeague()->getId();
+            $data['leagueName'] = $title->getLeague()->getName();
+        } else {
+            $data['leagueId'] = null;
+            $data['leagueName'] = null;
+        }
+
+        return $data;
     }
 
     /**

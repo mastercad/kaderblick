@@ -187,7 +187,7 @@ class TitleCalculationService
             $lastGoalCount = $value;
             ++$playersThisRank;
 
-            // Liga-Topscorer: gameType als "team"-Ersatz speichern
+            // Eindeutigkeitsprüfung: league immer als Kriterium, wenn scope=league
             $criteria = [
                 'player' => $player,
                 'titleCategory' => $titleCategory,
@@ -197,8 +197,8 @@ class TitleCalculationService
                 'season' => $season,
                 'isActive' => true,
             ];
-            if ('league' === $titleScope && $league) {
-                $criteria['league'] = $league->getId();
+            if ('league' === $titleScope) {
+                $criteria['league'] = $league?->getId(); // auch wenn $league null ist, wird league explizit gesetzt
             }
             $existing = $this->entityManager->getRepository(PlayerTitle::class)->findOneBy($criteria);
             if ($existing) {
@@ -212,9 +212,9 @@ class TitleCalculationService
             $title->setTitleScope($titleScope);
             $title->setTitleRank($rank);
 
-            if ('league' === $titleScope && $league) {
+            if ('league' === $titleScope) {
                 $title->setTeam(null); // team bleibt null
-                $title->setLeague($league); // league korrekt setzen
+                $title->setLeague($league); // league korrekt setzen (auch null möglich)
             } else {
                 $title->setTeam($team);
                 $title->setLeague(null);
