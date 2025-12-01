@@ -104,6 +104,10 @@ class Game
     )]
     private ?Location $location = null;
 
+    #[ORM\ManyToOne(targetEntity: League::class)]
+    #[ORM\JoinColumn(name: 'league_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    private ?League $league = null;
+
     #[Groups(['game:read', 'game:write'])]
     #[ORM\OneToOne(targetEntity: CalendarEvent::class, inversedBy: 'game', cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(
@@ -346,11 +350,6 @@ class Game
         return $this;
     }
 
-    public function __toString()
-    {
-        return $this->getHomeTeam()?->getName() . ' : ' . $this->getAwayTeam()?->getName();
-    }
-
     /**
      * @return Collection<int, Video>
      */
@@ -379,5 +378,22 @@ class Game
         }
 
         return $this;
+    }
+
+    public function getLeague(): ?League
+    {
+        return $this->league;
+    }
+
+    public function setLeague(?League $league): self
+    {
+        $this->league = $league;
+
+        return $this;
+    }
+
+    public function __toString()
+    {
+        return $this->getHomeTeam()?->getName() . ' : ' . $this->getAwayTeam()?->getName();
     }
 }

@@ -22,7 +22,6 @@ use Doctrine\ORM\Mapping as ORM;
         )
     ]
 )]
-
 class PlayerTitle
 {
     #[ORM\Id]
@@ -140,6 +139,7 @@ class PlayerTitle
     public function setLeague(?League $league): self
     {
         $this->league = $league;
+
         return $this;
     }
 

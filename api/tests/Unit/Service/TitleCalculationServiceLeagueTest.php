@@ -2,10 +2,10 @@
 
 namespace App\Tests\Unit\Service;
 
-use App\Entity\GameType;
 use App\Repository\PlayerTitleRepository;
 use App\Service\TitleCalculationService;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -20,7 +20,9 @@ class TitleCalculationServiceLeagueTest extends TestCase
         $repo->method('deactivateTitles');
 
         $service = new TitleCalculationService($em, $repo);
-        $gameType = $this->createConfiguredMock(GameType::class, ['getId' => 1]);
+        $league = $this->getMockBuilder(\App\Entity\League::class)->onlyMethods(['getId', 'getName'])->getMock();
+        $league->method('getId')->willReturn(1);
+        $league->method('getName')->willReturn('Testliga');
 
         $player1 = $this->getMockBuilder(\App\Entity\Player::class)->onlyMethods(['getId', 'getLastName'])->getMock();
         $player1->method('getId')->willReturn(1);
@@ -41,7 +43,7 @@ class TitleCalculationServiceLeagueTest extends TestCase
         $ref = new ReflectionClass($service);
         $method = $ref->getMethod('awardTitlesPerPlayerFromArray');
         $method->setAccessible(true);
-        $result = $method->invoke($service, $playerGoals, 'top_scorer', 'league', null, '2025/2026', $gameType);
+        $result = $method->invoke($service, $playerGoals, 'top_scorer', 'league', null, '2025/2026', $league);
         $this->assertCount(3, $result, 'Alle drei Spieler sollten einen Titel erhalten.');
         $ranks = array_map(fn ($t) => $t->getTitleRank(), $result);
         $this->assertEqualsCanonicalizing(['bronze', 'gold', 'gold'], $ranks, 'Zwei Gold, dann Bronze (Silber entfällt, Logik wie im Service).');
@@ -49,19 +51,34 @@ class TitleCalculationServiceLeagueTest extends TestCase
 
     public function testCalculateLeagueTopScorersAwardsTitlesPerLeague(): void
     {
-        $gameType1 = $this->createConfiguredMock(GameType::class, ['getId' => 1, 'getName' => 'Kreisliga']);
-        $gameType2 = $this->createConfiguredMock(GameType::class, ['getId' => 2, 'getName' => 'Bezirksliga']);
-        $gameTypes = [$gameType1, $gameType2];
+        $league1 = $this->getMockBuilder(\App\Entity\League::class)->onlyMethods(['getId', 'getName'])->getMock();
+        $league1->method('getId')->willReturn(1);
+        $league1->method('getName')->willReturn('Kreisliga');
+        $league2 = $this->getMockBuilder(\App\Entity\League::class)->onlyMethods(['getId', 'getName'])->getMock();
+        $league2->method('getId')->willReturn(2);
+        $league2->method('getName')->willReturn('Bezirksliga');
+        $leagues = [$league1, $league2];
 
         $repo = $this->createMock(PlayerTitleRepository::class);
         $em = $this->createMock(EntityManagerInterface::class);
-        $entityRepoClass = class_exists('Doctrine\\ORM\\EntityRepository') ? 'Doctrine\\ORM\\EntityRepository' : 'Doctrine\\Persistence\\ObjectRepository';
-        $gameTypeRepo = $this->createMock($entityRepoClass);
-        $gameTypeRepo->method('findAll')->willReturn($gameTypes);
-        $em->method('getRepository')->willReturnMap([
-            ['App\\Entity\\GameType', $gameTypeRepo],
-            ['App\\Entity\\PlayerTitle', $repo],
-        ]);
+        $entityManagerDummy = $this->createMock(EntityManagerInterface::class);
+        $classMetadata = new ClassMetadata(\App\Entity\League::class);
+        $leagueRepo = $this->getMockBuilder(\Doctrine\ORM\EntityRepository::class)
+            ->setConstructorArgs([$entityManagerDummy, $classMetadata])
+            ->onlyMethods(['findAll'])
+            ->getMock();
+        $leagueRepo->method('findAll')->willReturn($leagues);
+        $em->method('getRepository')->willReturnCallback(function ($class) use ($leagueRepo, $repo) {
+            if ('App\\Entity\\League' == $class || \App\Entity\League::class == $class) {
+                return $leagueRepo;
+            }
+            if ('App\\Entity\\PlayerTitle' == $class || \App\Entity\PlayerTitle::class == $class) {
+                return $repo;
+            }
+            $entityRepoClass = class_exists('Doctrine\\ORM\\EntityRepository') ? 'Doctrine\\ORM\\EntityRepository' : 'Doctrine\\Persistence\\ObjectRepository';
+
+            return $this->createMock($entityRepoClass);
+        });
 
         $service = $this->getMockBuilder(TitleCalculationService::class)
             ->setConstructorArgs([$em, $repo])

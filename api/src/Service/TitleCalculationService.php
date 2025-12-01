@@ -6,6 +6,7 @@ namespace App\Service;
 
 use App\Entity\GameEvent;
 use App\Entity\GameType;
+use App\Entity\League;
 use App\Entity\PlayerTitle;
 use App\Entity\Team;
 use App\Repository\PlayerTitleRepository;
@@ -97,6 +98,55 @@ class TitleCalculationService
     }
 
     /**
+     * Calculate and award top scorer titles per league (GameType).
+     *
+     * @return array<string, mixed>
+     */
+    public function calculateLeagueTopScorers(?string $season = null): array
+    {
+        // Alle relevanten Ligen (Leagues) holen
+        $leagues = $this->entityManager->getRepository(League::class)->findAll();
+        $awarded = [];
+
+        foreach ($leagues as $league) {
+            // Alle Tore für diese Liga und Saison holen
+            $gameEvents = $this->debugGoalsForSeason($season, null, $league);
+            $playerGoals = [];
+            /** @var GameEvent $gameEvent */
+            foreach ($gameEvents as $gameEvent) {
+                $player = $gameEvent->getPlayer();
+                if (!$player) {
+                    continue;
+                }
+                $pid = $player->getId();
+                if (!isset($playerGoals[$pid])) {
+                    $playerGoals[$pid] = [
+                        'player' => $player,
+                        'goal_count' => 0
+                    ];
+                }
+                ++$playerGoals[$pid]['goal_count'];
+            }
+
+            usort($playerGoals, function ($a, $b) {
+                if ($b['goal_count'] === $a['goal_count']) {
+                    return strcmp($a['player']->getLastName(), $b['player']->getLastName());
+                }
+
+                return $b['goal_count'] <=> $a['goal_count'];
+            });
+
+            // Vor Vergabe: alle alten Titel für diese Saison/Kategorie/Scope/Liga deaktivieren
+            $this->playerTitleRepository->deactivateAllTitlesForCategoryAndScope('top_scorer', 'league', $league->getId(), $season);
+
+            // Titel vergeben
+            $awarded = array_merge($awarded, $this->awardTitlesPerPlayerFromArray($playerGoals, 'top_scorer', 'league', null, $season, $league));
+        }
+
+        return $awarded;
+    }
+
+    /**
      * Vergibt Titel pro Player (nicht pro User) und behandelt Gleichstände korrekt, aus Array mit Player-Objekten.
      *
      * @param array<int, array<string, mixed>> $playerGoals Array mit ['player' => Player, 'goal_count' => int]
@@ -109,7 +159,7 @@ class TitleCalculationService
         string $titleScope,
         ?Team $team = null,
         ?string $season = null,
-        ?GameType $gameType = null
+        ?League $league = null
     ): array {
         $ranks = ['gold', 'silver', 'bronze'];
         $awarded = [];
@@ -147,8 +197,8 @@ class TitleCalculationService
                 'season' => $season,
                 'isActive' => true,
             ];
-            if ('league' === $titleScope && $gameType) {
-                $criteria['team'] = $gameType->getId(); // team-Feld als Liga-ID verwenden
+            if ('league' === $titleScope && $league) {
+                $criteria['league'] = $league->getId();
             }
             $existing = $this->entityManager->getRepository(PlayerTitle::class)->findOneBy($criteria);
             if ($existing) {
@@ -161,13 +211,15 @@ class TitleCalculationService
             $title->setTitleCategory($titleCategory);
             $title->setTitleScope($titleScope);
             $title->setTitleRank($rank);
-            if ('league' === $titleScope && $gameType) {
+
+            if ('league' === $titleScope && $league) {
                 $title->setTeam(null); // team bleibt null
-                $title->setLeague($gameType->getLeague()); // league korrekt setzen
+                $title->setLeague($league); // league korrekt setzen
             } else {
                 $title->setTeam($team);
                 $title->setLeague(null);
             }
+
             $title->setValue($value);
             $title->setIsActive(true);
             $title->setAwardedAt(new DateTimeImmutable());
@@ -217,72 +269,23 @@ class TitleCalculationService
     }
 
     /**
-     * Calculate and award top scorer titles per league (GameType).
-     *
-     * @return array<string, mixed>
-     */
-    public function calculateLeagueTopScorers(?string $season = null): array
-    {
-        // Alle relevanten Ligen (GameTypes) holen
-        $gameTypes = $this->entityManager->getRepository(GameType::class)->findAll();
-        $awarded = [];
-
-        foreach ($gameTypes as $gameType) {
-            // Alle Tore für diese Liga und Saison holen
-            $gameEvents = $this->debugGoalsForSeason($season, null, $gameType);
-            $playerGoals = [];
-            /** @var GameEvent $gameEvent */
-            foreach ($gameEvents as $gameEvent) {
-                $player = $gameEvent->getPlayer();
-                if (!$player) {
-                    continue;
-                }
-                $pid = $player->getId();
-                if (!isset($playerGoals[$pid])) {
-                    $playerGoals[$pid] = [
-                        'player' => $player,
-                        'goal_count' => 0
-                    ];
-                }
-                ++$playerGoals[$pid]['goal_count'];
-            }
-            
-            usort($playerGoals, function ($a, $b) {
-                if ($b['goal_count'] === $a['goal_count']) {
-                    return strcmp($a['player']->getLastName(), $b['player']->getLastName());
-                }
-
-                return $b['goal_count'] <=> $a['goal_count'];
-            });
-
-            // Vor Vergabe: alle alten Titel für diese Saison/Kategorie/Scope/Liga deaktivieren
-            $this->playerTitleRepository->deactivateAllTitlesForCategoryAndScope('top_scorer', 'league', $gameType->getId(), $season);
-
-            // Titel vergeben
-            $awarded = array_merge($awarded, $this->awardTitlesPerPlayerFromArray($playerGoals, 'top_scorer', 'league', null, $season, $gameType));
-        }
-
-        return $awarded;
-    }
-
-    /**
      * Debug-Ausgabe: Zeigt alle gezählten Tore (GameEvents mit code 'goal') für Spiele (CalendarEvents mit Typ 'Spiel') in der Saison, optional für Team und Liga (GameType).
      *
      * @return GameEvent[]
      */
-    public function debugGoalsForSeason(?string $season = null, ?Team $team = null, ?GameType $gameType = null): array
+    public function debugGoalsForSeason(?string $season = null, ?Team $team = null, ?League $league = null): array
     {
         $qb = $this->entityManager->getRepository('App\\Entity\\GameEvent')->createQueryBuilder('ge')
-            ->select('ge', 'player', 'game', 'ce', 'cet', 'team', 'gt')
+            ->select('ge', 'player', 'game', 'ce', 'cet', 'team', 'gt', 'l')
             ->leftJoin('ge.player', 'player')
             ->leftJoin('ge.game', 'game')
             ->leftJoin('game.calendarEvent', 'ce')
             ->leftJoin('ce.calendarEventType', 'cet')
             ->leftJoin('ge.team', 'team')
-            ->leftJoin('ge.gameEventType', 'getype')
-            ->leftJoin('game.gameType', 'gt')
-            ->where('(getype.code = :goalCode OR getype.code LIKE :likeGoal)')
-            ->andWhere('getype.code != :ownGoal')
+            ->leftJoin('ge.gameEventType', 'gt')
+            ->leftJoin('game.league', 'l')
+            ->where('(gt.code = :goalCode OR gt.code LIKE :likeGoal)')
+            ->andWhere('gt.code != :ownGoal')
             ->andWhere('cet.name = :eventTypeName')
             ->setParameter('goalCode', 'goal')
             ->setParameter('likeGoal', '%_goal')
@@ -300,8 +303,8 @@ class TitleCalculationService
         if ($team) {
             $qb->andWhere('team.id = :teamId')->setParameter('teamId', $team->getId());
         }
-        if ($gameType) {
-            $qb->andWhere('gt.id = :gameTypeId')->setParameter('gameTypeId', $gameType->getId());
+        if ($league) {
+            $qb->andWhere('l.id = :leagueId')->setParameter('leagueId', $league->getId());
         }
 
         $qb->orderBy('ce.startDate', 'ASC');

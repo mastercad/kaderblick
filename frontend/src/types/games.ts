@@ -28,12 +28,15 @@ export interface CalendarEvent {
   calendarEventType: CalendarEventType;
 }
 
+import type { League } from './league';
+
 export interface Game {
   id: number;
   homeTeam: Team;
   awayTeam: Team;
   location?: Location;
   gameType?: GameType;
+  league?: League;
   calendarEvent?: CalendarEvent;
   weatherData?: {
     weatherCode?: number[];

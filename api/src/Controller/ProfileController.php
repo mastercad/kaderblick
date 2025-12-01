@@ -258,7 +258,8 @@ class ProfileController extends AbstractController
             $scope = $pt->getTitleScope();
             $rank = $pt->getTitleRank();
             $teamId = $pt->getTeam()?->getId();
-            $key = $cat . '|' . $scope . '|' . $rank . '|' . ($teamId ?? '');
+            $leagueId = $pt->getLeague()?->getId();
+            $key = $cat . '|' . $scope . '|' . $rank . '|' . ($teamId ?? '') . '|' . ($leagueId ?? '');
 
             $player = $pt->getPlayer();
             if ($player) {
@@ -275,7 +276,7 @@ class ProfileController extends AbstractController
 
         // Füge Spieler-Liste zu jedem Titel hinzu
         $titlesWithPlayers = array_map(function ($t) use ($titlePlayersMap) {
-            $key = $t['titleCategory'] . '|' . $t['titleScope'] . '|' . $t['titleRank'] . '|' . ($t['teamId'] ?? '');
+            $key = $t['titleCategory'] . '|' . $t['titleScope'] . '|' . $t['titleRank'] . '|' . ($t['teamId'] ?? '') . '|' . ($t['leagueId'] ?? '');
             $players = array_values($titlePlayersMap[$key] ?? []);
 
             return array_merge($t, ['players' => $players]);

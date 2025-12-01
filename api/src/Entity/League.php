@@ -8,8 +8,6 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-use App\Entity\PlayerTitle;
-
 #[ORM\Table(name: 'leagues')]
 #[ORM\Entity(repositoryClass: LeagueRepository::class)]
 class League
@@ -102,6 +100,7 @@ class League
             $this->playerTitles->add($playerTitle);
             $playerTitle->setLeague($this);
         }
+
         return $this;
     }
 
@@ -112,6 +111,7 @@ class League
                 $playerTitle->setLeague(null);
             }
         }
+
         return $this;
     }
 }
