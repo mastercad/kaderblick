@@ -53,6 +53,7 @@ import { WeatherDisplay } from '../components/WeatherIcons';
 import { formatEventTime, formatDateTime } from '../utils/formatter'
 import { UserAvatar } from '../components/UserAvatar';
 import { getAvatarFrameUrl } from '../utils/avatarFrame';
+import { calculateCumulativeOffset } from '../utils/videoTimeline';
 
 interface GameDetailsProps {
   gameId?: number;
@@ -73,9 +74,14 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       const sec = await videoPlayerRef.current.getCurrentTime();
       videoPlayerRef.current.pauseVideo?.();
       if (typeof sec === 'number' && !isNaN(sec)) {
-        // Videozeit minus Offset = Zeit seit Spielbeginn
-        const offset = videoToPlay?.gameStart ?? 0;
-        seconds = Math.round(sec - offset);
+        // Videozeit minus gameStart (Offset im Video) + kumulativer Offset = Spielzeit
+        const gameStartOffset = videoToPlay?.gameStart ?? 0;
+        const cumulativeOffset = videoToPlay ? calculateCumulativeOffset(
+          videoToPlay as any,
+          videos as any
+        ) : 0;
+        // sec ist absolute Video-Position, ziehe gameStart ab und addiere kumulative Zeit
+        seconds = Math.round(sec - gameStartOffset + cumulativeOffset);
       }
     }
     setVideoEventInitialMinute(seconds);
@@ -266,8 +272,15 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
     
     try {
       await deleteGameEvent(gameId, eventToDelete.id);
-      await loadGameDetails(); // Reload data
       setEventToDelete(null);
+      // Reload data without showing loading spinner
+      const result = await fetchGameDetails(gameId);
+      setGame(result.game);
+      setGameEvents(result.gameEvents);
+      setHomeScore(result.homeScore);
+      setAwayScore(result.awayScore);
+      setGameStartDate(result.game?.calendarEvent?.startDate ?? null);
+      await loadVideos(); // Reload videos to update event mappings
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Löschen des Ereignisses');
     }
@@ -290,7 +303,24 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
   const handleEventFormSuccess = async () => {
     setEventFormOpen(false);
     setEventToEdit(null);
-    await loadGameEvents(); // Nur Events neu laden, game bleibt erhalten
+    // Reload data without showing loading spinner
+    if (!gameId) return;
+    try {
+      const result = await fetchGameDetails(gameId);
+      setGame(result.game);
+      setGameEvents(result.gameEvents);
+      setHomeScore(result.homeScore);
+      setAwayScore(result.awayScore);
+      setGameStartDate(result.game?.calendarEvent?.startDate ?? null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Spieldetails');
+    }
+    await loadVideos(); // Reload videos to update event mappings
+  };
+
+  // Nur für Event-Updates (z.B. Drag&Drop auf Timeline) - weniger störend
+  const handleEventUpdated = async () => {
+    await loadGameEvents(); // Nur Events neu laden für schnelles Update
   };
 
   const openWeatherModal = (eventId: number | null) => {
@@ -710,7 +740,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
         gameEvents={gameEvents}
         gameStartDate={gameStartDate || ''}
         gameId={gameId}
-        onEventUpdated={loadGameEvents}
+        onEventUpdated={handleEventUpdated}
         allVideos={videos}
         youtubeLinks={youtubeLinks}
       >
@@ -787,7 +817,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
         onClose={() => setEventToDelete(null)}
         onConfirm={handleDeleteEvent}
         title="Ereignis löschen"
-        message={`Soll das Ereignis "${eventToDelete?.gameEventType.name}" wirklich gelöscht werden?`}
+        message={`Soll das Ereignis "${eventToDelete?.gameEventType?.name || eventToDelete?.type || 'Unbekannt'}" wirklich gelöscht werden?`}
         confirmText="Löschen"
         confirmColor="error"
       />

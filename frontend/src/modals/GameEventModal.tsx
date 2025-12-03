@@ -86,7 +86,7 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
         eventType: '',
         player: '',
         relatedPlayer: '',
-        minute: initialMinute !== undefined ? initialMinute.toString() : '',
+        minute: initialMinute !== undefined ? secondsToMMSS(initialMinute) : '',
         description: '',
         reason: 0,
         playerId: 0,

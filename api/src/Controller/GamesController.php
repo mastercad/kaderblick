@@ -185,7 +185,7 @@ class GamesController extends AbstractController
                     ) {
                         $seconds = $eventSeconds - $elapsedTime + (int) $video->getGameStart() + $this->youtubeLinkStartOffset;
                         $youtubeLinks[(int) $event->getId()][(int) $cameraId][] = $video->getUrl() .
-                            '&t=' . $seconds . 's';
+                            (str_contains($video->getUrl(), '?') ? '&' : '?') . 't=' . $seconds . 's';
                     }
                     $elapsedTime += $video->getLength();
                 }

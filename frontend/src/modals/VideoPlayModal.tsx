@@ -61,6 +61,7 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
     // Reset markers when closing or video changes
     if (!open) {
       setCutMarkers([]);
+      setMovedEvents(null); // Reset moved events when modal closes
       return;
     }
     
