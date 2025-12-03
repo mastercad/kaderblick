@@ -27,6 +27,7 @@ interface VideoTimelineProps {
   onEventMove?: (eventId: number, newSeconds: number) => void;
   onSeekToGameStart?: () => void;
   gameStart?: number;
+  cumulativeOffset?: number; // Kumulativer Offset für absolute Spielzeit
   // Schnittmarken Props
   cutMarkers?: CutMarker[];
   onCutMarkerAdd?: (startSeconds: number, endSeconds: number) => void;
@@ -55,6 +56,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
   onEventMove, 
   onSeekToGameStart, 
   gameStart = 0,
+  cumulativeOffset = 0,
   cutMarkers = [],
   onCutMarkerAdd,
   onCutMarkerMove,
@@ -489,12 +491,30 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
         );
       })}
       {/* Drag-Overlay-Icon */}
-      {dragState && containerRef.current && (
+      {dragState && containerRef.current && (() => {
+        const box = containerRef.current!.getBoundingClientRect();
+        const currentX = dragState.mouseX - dragState.offsetX - box.left;
+        const videoSeconds = Math.max(0, Math.min(duration, (currentX / getTimelineWidth()) * duration));
+        const eventSeconds = videoSeconds - gameStart;
+        const absoluteGameSeconds = eventSeconds + cumulativeOffset;
+        
+        return (
+        <Tooltip 
+          title={
+            <Box sx={{ textAlign: 'center' }}>
+              <Box><strong>Video:</strong> {formatSeconds(videoSeconds)}</Box>
+              <Box><strong>Spiel:</strong> {formatSeconds(absoluteGameSeconds)}</Box>
+            </Box>
+          }
+          open={true}
+          placement="top"
+          arrow
+        >
         <Box
           sx={{
             position: 'absolute',
             top: 16 + dragState.row * rowHeight,
-            left: `${((dragState.mouseX - dragState.offsetX - containerRef.current.getBoundingClientRect().left) / getTimelineWidth()) * 100}%`,
+            left: `${(currentX / getTimelineWidth()) * 100}%`,
             transform: 'translate(-50%, -50%)',
             pointerEvents: 'none',
             zIndex: 10,
@@ -513,7 +533,9 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
             events.find(ev => ev.id === dragState.eventId)?.icon || ''
           ) || '•'}
         </Box>
-      )}
+        </Tooltip>
+        );
+      })()}
       </Box>
     )}
     
