@@ -87,8 +87,6 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
           setGoogleLoginError('Fehler bei der Verarbeitung der Google-Authentifizierung');
           setGoogleLoginSuccess(null);
         }
-      } else {
-//        console.log("❌ Ignoring message (wrong source):", event.data.source);
       }
     };
 

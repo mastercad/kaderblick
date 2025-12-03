@@ -25,8 +25,6 @@ class ModalManager {
         
         // Register existing modals
         this.registerExistingModals();
-        
-        console.log('Modal Manager initialized successfully');
     }
 
     /**
@@ -79,8 +77,6 @@ class ModalManager {
             originalParent: null,
             isActive: false
         });
-
-        console.log(`Modal ${modalId} registered successfully`);
     }
 
     /**
@@ -111,8 +107,6 @@ class ModalManager {
                 });
             }
         });
-
-        console.log(`Registered ${existingModals.length} existing modals`);
     }
 
     /**
@@ -204,7 +198,6 @@ class ModalManager {
      * @param {string} modalId 
      */
     showModal(modalId) {
-        console.log("SHOW MODAL ", modalId);
         const modal = this.registeredModals.get(modalId);
         if (modal && modal.element) {
             const bootstrapModal = new bootstrap.Modal(modal.element);
@@ -266,8 +259,6 @@ class ModalManager {
             // Clean up references
             this.registeredModals.delete(modalId);
             this.activeModals.delete(modalId);
-            
-            console.log(`Modal ${modalId} unregistered successfully`);
         }
     }
 }

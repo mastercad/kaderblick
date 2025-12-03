@@ -3,20 +3,16 @@ const CACHE_NAME = 'kaderblick-v1';
 
 // Installation
 self.addEventListener('install', (event) => {
-  // console.log('Service Worker installed');
   self.skipWaiting();
 });
 
 // Aktivierung
 self.addEventListener('activate', (event) => {
-  // console.log('Service Worker activated');
   event.waitUntil(self.clients.claim());
 });
 
 // Push Notification empfangen
 self.addEventListener('push', (event) => {
-//  console.log('Push notification received:', event);
-  
   let notificationData = {
     title: 'Kaderblick',
     body: 'Neue Benachrichtigung',
@@ -59,7 +55,6 @@ self.addEventListener('push', (event) => {
 
 // Notification Click Handler
 self.addEventListener('notificationclick', (event) => {
-  // console.log('Notification clicked:', event);
   event.notification.close();
 
   // App öffnen oder fokussieren
@@ -92,7 +87,6 @@ self.addEventListener('notificationclick', (event) => {
 // Background Sync (optional für später)
 self.addEventListener('sync', (event) => {
   if (event.tag === 'background-sync') {
-    console.log('Background sync triggered');
     // Hier könnten wir später Background-Updates implementieren
   }
 });

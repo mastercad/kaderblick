@@ -159,10 +159,6 @@ export function mapGameEventsToTimelineEvents({
                 }
               }
               
-              if (typeof window !== 'undefined') {
-                console.log('[VideoTimeline] Event', event.id, '- URL:', url, '- Extracted ID:', urlVideoId, '- Current Video ID:', video.youtubeId, '- Match:', urlVideoId === video.youtubeId);
-              }
-              
               if (urlVideoId && urlVideoId === video.youtubeId) {
                 belongsToThisVideo = true;
                 break;
@@ -173,19 +169,12 @@ export function mapGameEventsToTimelineEvents({
         }
         
         if (!belongsToThisVideo) {
-          if (typeof window !== 'undefined') {
-            console.log('[VideoTimeline] Event', event.id, 'filtered out - does not belong to video', video.youtubeId);
-          }
           return null; // Event gehört nicht zu diesem Video
         }
       }
       
       // 3. Berechne die Position des Events IN DIESEM VIDEO
       const secondsSinceGameStart = (eventTime.getTime() - gameStart.getTime()) / 1000;
-      
-      if (typeof window !== 'undefined' && video.youtubeId === 'OLnoG-Og6sI') {
-        console.log('[VideoTimeline] Event', event.id, '- secondsSinceGameStart:', secondsSinceGameStart, '- videoStartInGame:', videoStartInGame, '- videoEndInGame:', videoEndInGame, '- inRange:', secondsSinceGameStart >= videoStartInGame && secondsSinceGameStart <= videoEndInGame);
-      }
       
       // KRITISCH: Der Event muss innerhalb des Video-Zeitfensters liegen!
       if (secondsSinceGameStart < videoStartInGame || secondsSinceGameStart > videoEndInGame) {

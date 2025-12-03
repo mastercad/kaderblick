@@ -70,8 +70,6 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
           // Filter segments for this video only
           const videoSegments = segments.filter(s => s.videoId === safeVideoObj.id);
           
-          console.log(`[VideoPlayModal] Lade Schnittmarken für Video ${safeVideoObj.id}:`, videoSegments.length);
-          
           setCutMarkers(videoSegments.map(s => {
             // s.startMinute enthält Video-Zeit in Sekunden
             const startSeconds = s.startMinute;

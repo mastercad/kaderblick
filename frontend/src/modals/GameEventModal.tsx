@@ -179,8 +179,6 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
         fetchSubstitutionReasons()
       ]);
 
-      console.log(eventTypesRaw);
-
       // Support both array and {entries: []} API response for event types
       const eventTypesData = Array.isArray(eventTypesRaw)
         ? eventTypesRaw

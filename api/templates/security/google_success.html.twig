@@ -44,19 +44,16 @@
             // Methode 1: window.opener (Standard-Popup)
             if (window.opener && !window.opener.closed) {
               window.opener.postMessage(message, window.location.origin);
-              console.log('✓ Message sent via window.opener');
             }
             
             // Methode 2: parent window (für iframes oder eingebettete Fenster)
             if (window.parent && window.parent !== window) {
               window.parent.postMessage(message, window.location.origin);
-              console.log('✓ Message sent via window.parent');
             }
             
             // Methode 3: top window (für verschachtelte iframes)
             if (window.top && window.top !== window) {
               window.top.postMessage(message, window.location.origin);
-              console.log('✓ Message sent via window.top');
             }
           } catch (e) {
             console.error('Error sending message:', e);
@@ -80,7 +77,6 @@
               }
             }, 1000);
           } catch (e) {
-            console.log('Could not close window automatically');
             // Zeige alternative Nachricht
             document.querySelector('.message').innerHTML = 
               '<h2>✓ Login erfolgreich!</h2><p>Du kannst dieses Fenster jetzt schließen.</p>';

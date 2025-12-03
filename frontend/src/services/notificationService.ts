@@ -15,7 +15,6 @@ class NotificationService {
       // Service Worker ist bereits in main.tsx registriert, hier nur die Registration holen
       if ('serviceWorker' in navigator) {
         this.serviceWorkerRegistration = await navigator.serviceWorker.ready;
-//        console.log('Service Worker ready for notifications');
       }
 
       // Push-Berechtigung anfragen (non-blocking)
@@ -41,7 +40,6 @@ class NotificationService {
     try {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-//        console.warn('Push notification permission denied');
         return false;
       }
 
@@ -63,7 +61,6 @@ class NotificationService {
           break;
         } catch (error) {
           retryCount++;
-//          console.warn(`Push subscription attempt ${retryCount} failed:`, error);
           
           if (retryCount < maxRetries) {
             // Warte kurz vor dem nächsten Versuch
@@ -88,7 +85,6 @@ class NotificationService {
           }
         });
         
-//        console.log('Push subscription response:', response);
       } catch (error: any) {
         // "Already subscribed" ist kein Fehler
         if (error.message && error.message.includes('Already subscribed')) {

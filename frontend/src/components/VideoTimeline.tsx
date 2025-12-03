@@ -349,23 +349,11 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
 
     const startDrag = () => {
       isDragging = true;
-      if (typeof window !== 'undefined') {
-        // eslint-disable-next-line no-console
-        console.log('[VideoTimeline] Drag started', { eventId, origSeconds, row });
-      }
       if (!onEventMove) {
-        if (typeof window !== 'undefined') {
-          // eslint-disable-next-line no-console
-          console.log('[VideoTimeline] onEventMove fehlt!');
-        }
         return;
       }
       const box = containerRef.current?.getBoundingClientRect();
       if (!box) {
-        if (typeof window !== 'undefined') {
-          // eslint-disable-next-line no-console
-          console.log('[VideoTimeline] containerRef leer!');
-        }
         return;
       }
       // origSeconds ist bereits die Video-Position (timestamp + gameStart)
@@ -395,8 +383,6 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       // Wenn noch nicht dragging, war es ein Click -> seek
       if (!isDragging) {
         if (typeof window !== 'undefined') {
-          // eslint-disable-next-line no-console
-          console.log('[VideoTimeline] Click detected, seeking to', origSeconds);
         }
         // origSeconds ist bereits die Video-Position (timestamp + gameStart)
         onSeek(origSeconds);
