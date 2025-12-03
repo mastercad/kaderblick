@@ -1,11 +1,13 @@
-import React, { useRef, useImperativeHandle, forwardRef, useState } from 'react';
+import React, { useRef, useImperativeHandle, forwardRef, useState, useEffect } from 'react';
 import { GameEvent } from '../types/games';
 import YouTube, { YouTubePlayer, YouTubeEvent } from 'react-youtube';
 import BaseModal from './BaseModal';
-import { Box } from '@mui/material';
+import { Box, Button, IconButton, Tooltip, List, ListItem, ListItemText, Typography } from '@mui/material';
+import { ContentCut as ContentCutIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import VideoTimeline from '../components/VideoTimeline';
 import { mapGameEventsToTimelineEvents, calculateCumulativeOffset } from '../utils/videoTimeline';
 import { updateGameEvent } from '../services/games';
+import { fetchVideoSegments, saveVideoSegment, updateVideoSegment, deleteVideoSegment, VideoSegment } from '../services/videoSegments';
 
 interface VideoPlayModalProps {
   open: boolean;
@@ -40,11 +42,52 @@ function secondsToMinuteFormat(seconds: number): string {
 
 const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, videoId, videoName, videoObj, gameEvents, gameStartDate, gameId, onEventUpdated, allVideos, youtubeLinks, children }, ref) => {
   const playerRef = useRef<YouTubePlayer | null>(null);
-  // Fallback für videoObj, falls nicht gesetzt
   const safeVideoObj = videoObj || { id: 0, gameStart: null, length: 0, camera: undefined };
   const [videoDuration, setVideoDuration] = useState<number>(safeVideoObj.length || 0);
   const [movedEvents, setMovedEvents] = useState<ReturnType<typeof mapGameEventsToTimelineEvents> | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  
+  // Schnittmarken State
+  const [cutModeActive, setCutModeActive] = useState(false);
+  const [cutMarkers, setCutMarkers] = useState<Array<{
+    id: string;
+    startSeconds: number;
+    endSeconds: number;
+    title?: string;
+  }>>([]);
+  
+  // Lade Schnittmarken beim Öffnen oder Videowechsel
+  useEffect(() => {
+    // Reset markers when closing or video changes
+    if (!open) {
+      setCutMarkers([]);
+      return;
+    }
+    
+    if (safeVideoObj.id && gameId) {
+      fetchVideoSegments(gameId)
+        .then(segments => {
+          // Filter segments for this video only
+          const videoSegments = segments.filter(s => s.videoId === safeVideoObj.id);
+          
+          console.log(`[VideoPlayModal] Lade Schnittmarken für Video ${safeVideoObj.id}:`, videoSegments.length);
+          
+          setCutMarkers(videoSegments.map(s => {
+            // s.startMinute enthält Video-Zeit in Sekunden
+            const startSeconds = s.startMinute;
+            const endSeconds = startSeconds + s.lengthSeconds;
+            
+            return {
+              id: s.id.toString(),
+              startSeconds,
+              endSeconds,
+              title: s.title || undefined,
+            };
+          }));
+        })
+        .catch(err => console.error('Fehler beim Laden der Schnittmarken:', err));
+    }
+  }, [open, safeVideoObj.id, gameId]);
   
   // Berechne den kumulativen Offset für Videos mit gameStart=null
   const cumulativeOffset = allVideos ? calculateCumulativeOffset(
@@ -135,6 +178,66 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
     }
   };
 
+  const handleCutMarkerAdd = (startSeconds: number, endSeconds: number) => {
+    if (!gameId || !safeVideoObj.id) return;
+    
+    // startSeconds und endSeconds sind absolute Video-Positionen
+    const startSecondsRounded = Math.round(startSeconds);
+    const lengthSeconds = Math.round(endSeconds - startSeconds);
+    
+    saveVideoSegment({
+      videoId: safeVideoObj.id,
+      startMinute: startSecondsRounded,
+      lengthSeconds,
+      includeAudio: true,
+      sortOrder: cutMarkers.length,
+    })
+      .then((segment) => {
+        // Add to local state
+        setCutMarkers(prev => [...prev, {
+          id: segment.id.toString(),
+          startSeconds,
+          endSeconds,
+          title: segment.title || undefined,
+        }]);
+      })
+      .catch(err => console.error('Fehler beim Speichern der Schnittmarke:', err));
+  };
+
+  const handleCutMarkerMove = (id: string, startSeconds: number, endSeconds: number) => {
+    if (!gameId) return;
+    
+    const numId = parseInt(id);
+    if (isNaN(numId)) return;
+    
+    const startSecondsRounded = Math.round(startSeconds);
+    const lengthSeconds = Math.round(endSeconds - startSeconds);
+    
+    updateVideoSegment(numId, {
+      startMinute: startSecondsRounded,
+      lengthSeconds,
+    })
+      .then(() => {
+        // Update local state
+        setCutMarkers(prev => prev.map(m => 
+          m.id === id ? { ...m, startSeconds, endSeconds } : m
+        ));
+      })
+      .catch(err => console.error('Fehler beim Verschieben der Schnittmarke:', err));
+  };
+
+  const handleDeleteCutMarker = (id: string) => {
+    const numId = parseInt(id);
+    if (isNaN(numId)) return;
+    
+    deleteVideoSegment(numId)
+      .then(() => {
+        setCutMarkers(prev => prev.filter(m => m.id !== id));
+      })
+      .catch(err => console.error('Fehler beim Löschen der Schnittmarke:', err));
+  };
+
+
   useImperativeHandle(ref, () => ({
     getCurrentTime: () => playerRef.current?.getCurrentTime() ?? 0,
     pauseVideo: () => playerRef.current?.pauseVideo(),
@@ -188,6 +291,23 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
           <Box>Kein Video gefunden.</Box>
         )}
       </Box>
+      
+      {/* Schnittmarken Toggle Button */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+        <Tooltip title={cutModeActive ? "Schnittmarken-Modus deaktivieren" : "Schnittmarken-Modus aktivieren"}>
+          <IconButton
+            onClick={() => setCutModeActive(!cutModeActive)}
+            color={cutModeActive ? "primary" : "default"}
+            sx={{
+              border: cutModeActive ? '2px solid' : '1px solid #ccc',
+              bgcolor: cutModeActive ? 'rgba(25, 118, 210, 0.1)' : 'transparent',
+            }}
+          >
+            <ContentCutIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
+      
       {/* Timeline unter dem Video */}
       {videoDuration > 0 && (
         <VideoTimeline
@@ -197,8 +317,54 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
           onSeekToGameStart={handleSeekToGameStart}
           onEventMove={handleEventMove}
           gameStart={safeVideoObj.gameStart || 0}
+          cutMarkers={cutMarkers}
+          onCutMarkerAdd={handleCutMarkerAdd}
+          onCutMarkerMove={handleCutMarkerMove}
+          cutModeActive={cutModeActive}
+          onToggleCutMode={() => setCutModeActive(!cutModeActive)}
+          showCutMarkers={cutModeActive}
         />
       )}
+      
+      {/* Schnittmarken Liste - nur im Cut-Modus */}
+      {cutModeActive && cutMarkers.length > 0 && (
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Schnittmarken ({cutMarkers.length}) - Gesamt: {secondsToMinuteFormat(
+              Math.round(cutMarkers.reduce((sum, m) => sum + (m.endSeconds - m.startSeconds), 0))
+            )}
+          </Typography>
+          <List dense>
+            {cutMarkers.map((marker, index) => {
+              // Zeige direkte Video-Positionen
+              const startSeconds = marker.startSeconds;
+              const endSeconds = marker.endSeconds;
+              const length = endSeconds - startSeconds;
+              
+              return (
+                <ListItem
+                  key={marker.id}
+                  secondaryAction={
+                    <IconButton
+                      edge="end"
+                      onClick={() => handleDeleteCutMarker(marker.id)}
+                      size="small"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  }
+                >
+                  <ListItemText
+                    primary={marker.title || `Schnittmarke ${index + 1}`}
+                    secondary={`${secondsToMinuteFormat(Math.round(startSeconds))} - ${secondsToMinuteFormat(Math.round(endSeconds))} (Länge: ${secondsToMinuteFormat(Math.round(length))})`}
+                  />
+                </ListItem>
+              );
+            })}
+          </List>
+        </Box>
+      )}
+      
       {children}
     </BaseModal>
   );
