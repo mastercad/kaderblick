@@ -42,6 +42,8 @@ function secondsToMinuteFormat(seconds: number): string {
 
 const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, videoId, videoName, videoObj, gameEvents, gameStartDate, gameId, onEventUpdated, allVideos, youtubeLinks, children }, ref) => {
   const playerRef = useRef<YouTubePlayer | null>(null);
+  const playerReadyRef = useRef<boolean>(false);
+  const lastSeekTimeRef = useRef<number>(0);
   const safeVideoObj = videoObj || { id: 0, gameStart: null, length: 0, camera: undefined };
   const [videoDuration, setVideoDuration] = useState<number>(safeVideoObj.length || 0);
   const [movedEvents, setMovedEvents] = useState<ReturnType<typeof mapGameEventsToTimelineEvents> | null>(null);
@@ -62,6 +64,8 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
     if (!open) {
       setCutMarkers([]);
       setMovedEvents(null); // Reset moved events when modal closes
+      playerReadyRef.current = false; // Reset player ready state
+      lastSeekTimeRef.current = 0; // Reset seek throttle
       return;
     }
     
@@ -90,14 +94,14 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
   
   // Berechne den kumulativen Offset für Videos mit gameStart=null
   const cumulativeOffset = allVideos ? calculateCumulativeOffset(
-    { ...safeVideoObj, length: videoDuration },
+    { ...safeVideoObj, length: videoDuration, camera: safeVideoObj.camera ? { id: safeVideoObj.camera.id } : undefined } as any,
     allVideos
   ) : (typeof safeVideoObj.gameStart === 'number' ? -safeVideoObj.gameStart : 0);
   
   // Timeline-Events berechnen (nutze aktuelle Videolänge, falls YouTube-API sie liefert)
   const timelineEvents = movedEvents || mapGameEventsToTimelineEvents({
     gameEvents: gameEvents,
-    video: { ...safeVideoObj, length: videoDuration },
+    video: { ...safeVideoObj, length: videoDuration, camera: safeVideoObj.camera ? { id: safeVideoObj.camera.id } : undefined } as any,
     gameStartDate,
     cumulativeOffset,
     youtubeLinks,
@@ -109,7 +113,7 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
     setMovedEvents(prev => {
       const mapped = mapGameEventsToTimelineEvents({
         gameEvents: gameEvents,
-        video: { ...safeVideoObj, length: videoDuration },
+        video: { ...safeVideoObj, length: videoDuration, camera: safeVideoObj.camera ? { id: safeVideoObj.camera.id } : undefined } as any,
         gameStartDate,
         cumulativeOffset,
         youtubeLinks,
@@ -139,7 +143,7 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
     setMovedEvents(prev => {
       const base = prev || mapGameEventsToTimelineEvents({
         gameEvents: gameEvents,
-        video: { ...safeVideoObj, length: videoDuration },
+        video: { ...safeVideoObj, length: videoDuration, camera: safeVideoObj.camera ? { id: safeVideoObj.camera.id } : undefined } as any,
         gameStartDate,
         cumulativeOffset,
         youtubeLinks,
@@ -151,7 +155,10 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
     });
 
     if (gameId) {
-      const minuteFormat = secondsToMinuteFormat(newSeconds);
+      // newSeconds ist relative Zeit im Video (videoPosition - gameStart)
+      // Spielzeit = relative Zeit im Video + kumulativer Offset
+      const gameTimeSeconds = newSeconds + cumulativeOffset;
+      const minuteFormat = secondsToMinuteFormat(gameTimeSeconds);
       updateGameEvent(gameId, eventId, { minute: minuteFormat })
         .then(async () => {
           setUpdateError(null);
@@ -166,14 +173,65 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
   };
 
   const handleSeekToGameStart = () => {
-    if (playerRef.current && typeof safeVideoObj.gameStart === 'number') {
-      playerRef.current.seekTo(safeVideoObj.gameStart, true);
+    if (playerRef.current && playerReadyRef.current && typeof safeVideoObj.gameStart === 'number') {
+      safeSeekTo(safeVideoObj.gameStart);
     }
   };
 
   const handleSeek = (seconds: number) => {
-    if (playerRef.current) {
-      playerRef.current.seekTo(seconds, true);
+    if (playerRef.current && playerReadyRef.current) {
+      safeSeekTo(seconds);
+    }
+  };
+
+  // Sichere seekTo Funktion mit Error Handling, State-Check und Throttling
+  const safeSeekTo = (seconds: number) => {
+    const player = playerRef.current;
+    if (!player || !playerReadyRef.current) {
+      console.warn('Player not ready for seek');
+      return;
+    }
+
+    // Throttle: Erlaube seekTo nur alle 150ms (außer wenn es ein expliziter Klick ist)
+    const now = Date.now();
+    const timeSinceLastSeek = now - lastSeekTimeRef.current;
+    if (timeSinceLastSeek < 150) {
+      // Zu schnell - ignoriere diesen Aufruf
+      return;
+    }
+    lastSeekTimeRef.current = now;
+
+    try {
+      // Check player state - nur seekTo wenn Player in einem stabilen State ist
+      const playerState = player.getPlayerState?.();
+      
+      // YouTube Player States:
+      // -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
+      // Wir erlauben seekTo in allen States außer wenn Player nicht initialisiert ist
+      if (playerState === undefined) {
+        console.warn('Player state undefined, delaying seek');
+        // Versuche es nach kurzer Verzögerung nochmal
+        setTimeout(() => {
+          if (playerRef.current && playerReadyRef.current) {
+            lastSeekTimeRef.current = Date.now();
+            playerRef.current.seekTo(seconds, true);
+          }
+        }, 300);
+        return;
+      }
+
+      // Führe seekTo aus
+      player.seekTo(seconds, true);
+      
+      // Wenn Video pausiert war, starte es nach dem Seek
+      if (playerState === 2) { // paused
+        setTimeout(() => {
+          player.playVideo?.();
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Error during seekTo:', error);
+      playerReadyRef.current = false; // Mark as not ready after error
     }
   };
 
@@ -267,13 +325,43 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
               }}
               onReady={(e: YouTubeEvent) => {
                 playerRef.current = e.target;
-                setVideoDuration(e.target.getDuration?.() || 0);
+                // Warte bis Player vollständig geladen ist
+                const checkReady = () => {
+                  try {
+                    const duration = e.target.getDuration?.();
+                    if (duration && duration > 0) {
+                      setVideoDuration(duration);
+                      playerReadyRef.current = true;
+                      console.log('Player ready, duration:', duration);
+                    } else {
+                      // Versuche es nochmal nach kurzer Zeit
+                      setTimeout(checkReady, 100);
+                    }
+                  } catch (err) {
+                    console.warn('Error checking player ready:', err);
+                    setTimeout(checkReady, 100);
+                  }
+                };
+                checkReady();
               }}
               onStateChange={(e: YouTubeEvent) => {
                 // Falls Dauer erst nach Play verfügbar ist
                 if (!videoDuration && e.target.getDuration) {
-                  setVideoDuration(e.target.getDuration());
+                  const dur = e.target.getDuration();
+                  if (dur > 0) {
+                    setVideoDuration(dur);
+                    playerReadyRef.current = true;
+                  }
                 }
+              }}
+              onError={(e: { target: YouTubePlayer; data: number }) => {
+                console.error('YouTube Player Error:', e.data);
+                // YouTube Error Codes:
+                // 2 – Invalid parameter
+                // 5 – HTML5 player error
+                // 100 – Video not found
+                // 101/150 – Video not available (embedding disabled)
+                playerReadyRef.current = false;
               }}
               style={{
                 position: 'absolute',
@@ -316,6 +404,7 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
           onSeekToGameStart={handleSeekToGameStart}
           onEventMove={handleEventMove}
           gameStart={safeVideoObj.gameStart || 0}
+          cumulativeOffset={cumulativeOffset}
           cutMarkers={cutMarkers}
           onCutMarkerAdd={handleCutMarkerAdd}
           onCutMarkerMove={handleCutMarkerMove}
