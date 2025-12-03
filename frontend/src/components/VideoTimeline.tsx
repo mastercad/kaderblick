@@ -83,6 +83,17 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     initialMouseX?: number; // für Range-Drag: Start-Position der Maus
   }>(null);
   const [pendingCut, setPendingCut] = useState<null | { startSeconds: number }>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Mobile Detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Dynamische Timeline-Breite basierend auf Container
   const getTimelineWidth = () => {
@@ -92,10 +103,11 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
   // Globales Mousemove/Up-Handling für Event-Dragging
   useEffect(() => {
     if (!dragState) return;
-    const handleMove = (e: MouseEvent) => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
       setDragState(ds => {
         if (!ds) return null;
-        const mouseX = e.clientX;
+        const mouseX = clientX;
         // Video-Position während Dragging setzen
         const box = containerRef.current?.getBoundingClientRect();
         if (box && typeof onSeek === 'function') {
@@ -107,15 +119,16 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
         return { ...ds, mouseX };
       });
     };
-    const handleUp = (e: MouseEvent) => {
+    const handleUp = (e: MouseEvent | TouchEvent) => {
       if (!dragState) return;
       const box = containerRef.current?.getBoundingClientRect();
       if (!box) {
         setDragState(null);
         return;
       }
+      const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
       // Offset berücksichtigen
-      const x = e.clientX - dragState.offsetX - box.left;
+      const x = clientX - dragState.offsetX - box.left;
       let videoPosition = (x / getTimelineWidth()) * duration;
       videoPosition = Math.max(0, Math.min(duration, videoPosition));
       // Video-Position zurück in Event-Zeit konvertieren (minus gameStart)
@@ -137,28 +150,31 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     
     const getTimelineWidth = () => containerRef.current?.getBoundingClientRect().width || 800;
     
-    const handleMove = (e: MouseEvent) => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
       const box = containerRef.current?.getBoundingClientRect();
       if (!box) return;
       
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      
       if (cutDragState.type === 'range') {
         // Bei Range-Drag: Delta berechnen und Video entsprechend bewegen
-        const currentX = e.clientX - box.left;
+        const currentX = clientX - box.left;
         const currentSeconds = (currentX / getTimelineWidth()) * duration;
         onSeek(Math.max(0, Math.min(duration, currentSeconds)));
       } else {
         // Bei Start/End-Marker: normale Berechnung mit Offset
-        const x = e.clientX - cutDragState.offsetX - box.left;
+        const x = clientX - cutDragState.offsetX - box.left;
         let newSeconds = (x / getTimelineWidth()) * duration;
         newSeconds = Math.max(0, Math.min(duration, newSeconds));
         onSeek(newSeconds);
       }
       
       // Update mouse position for overlay
-      setCutDragState(prev => prev ? { ...prev, currentMouseX: e.clientX } : null);
+      setCutDragState(prev => prev ? { ...prev, currentMouseX: clientX } : null);
     };
     
-    const handleUp = (e: MouseEvent) => {
+    const handleUp = (e: MouseEvent | TouchEvent) => {
+      const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
       if (!cutDragState) return;
       const box = containerRef.current?.getBoundingClientRect();
       if (!box) {
@@ -173,7 +189,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       }
       
       if (cutDragState.type === 'start' || cutDragState.type === 'end') {
-        const x = e.clientX - cutDragState.offsetX - box.left;
+        const x = clientX - cutDragState.offsetX - box.left;
         let newSeconds = (x / getTimelineWidth()) * duration;
         newSeconds = Math.max(0, Math.min(duration, newSeconds));
         
@@ -184,7 +200,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
         }
       } else if (cutDragState.type === 'range' && cutDragState.origEndSeconds !== undefined && cutDragState.initialMouseX !== undefined) {
         // Bei Range-Drag: Delta zwischen ursprünglicher und aktueller Mausposition
-        const deltaX = e.clientX - cutDragState.initialMouseX;
+        const deltaX = clientX - cutDragState.initialMouseX;
         const deltaSeconds = (deltaX / getTimelineWidth()) * duration;
         
         const rangeDuration = cutDragState.origEndSeconds - cutDragState.origSeconds;
@@ -208,9 +224,13 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleUp);
+    window.addEventListener('touchmove', handleMove as any, { passive: false });
+    window.addEventListener('touchend', handleUp as any);
     return () => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
+      window.removeEventListener('touchmove', handleMove as any);
+      window.removeEventListener('touchend', handleUp as any);
     };
   }, [cutDragState, duration, onSeek, cutMarkers, onCutMarkerMove]);
 
@@ -264,7 +284,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
 
   // Handler für Cut-Marker Drag
   const handleCutMarkerMouseDown = (
-    e: React.MouseEvent,
+    e: React.MouseEvent | React.TouchEvent,
     markerId: string,
     type: 'start' | 'end',
     seconds: number
@@ -275,22 +295,23 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     const box = containerRef.current?.getBoundingClientRect();
     if (!box) return;
     
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     // Berechne die Position des Markers auf der Timeline
     const markerX = box.left + (seconds / duration) * getTimelineWidth();
-    const offsetX = e.clientX - markerX;
+    const offsetX = clientX - markerX;
     
     setCutDragState({
       type,
       markerId,
       origSeconds: seconds,
       offsetX: offsetX,
-      currentMouseX: e.clientX,
+      currentMouseX: clientX,
     });
   };
 
   // Handler für Range-Drag (gesamte Schnittmarke verschieben)
   const handleRangeMouseDown = (
-    e: React.MouseEvent,
+    e: React.MouseEvent | React.TouchEvent,
     markerId: string,
     startSeconds: number,
     endSeconds: number
@@ -301,6 +322,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     const box = containerRef.current?.getBoundingClientRect();
     if (!box) return;
     
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     // Speichere initiale Mausposition für Delta-Berechnung
     setCutDragState({
       type: 'range',
@@ -308,13 +330,13 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       origSeconds: startSeconds,
       origEndSeconds: endSeconds,
       offsetX: 0,
-      currentMouseX: e.clientX,
-      initialMouseX: e.clientX,
+      currentMouseX: clientX,
+      initialMouseX: clientX,
     });
   };
 
   // Mouse-Event-Handler für Click oder Drag
-  const handleMouseDown = (e: React.MouseEvent, eventId: number, origSeconds: number, row: number) => {
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent, eventId: number, origSeconds: number, row: number) => {
     // Clear any existing timeout
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
@@ -347,13 +369,14 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
         return;
       }
       // origSeconds ist bereits die Video-Position (timestamp + gameStart)
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
       const markerX = box.left + (origSeconds / duration) * getTimelineWidth();
       setDragState({
         eventId,
         origSeconds,
         row,
-        offsetX: e.clientX - markerX,
-        mouseX: e.clientX,
+        offsetX: clientX - markerX,
+        mouseX: clientX,
       });
     };
 
@@ -463,13 +486,16 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 bgcolor: 'white',
                 borderRadius: '50%',
                 boxShadow: 1,
-                p: 0.2,
-                fontSize: 18,
+                p: { xs: 0.5, sm: 0.2 },
+                fontSize: { xs: 24, sm: 18 },
+                minWidth: { xs: 44, sm: 'auto' },
+                minHeight: { xs: 44, sm: 'auto' },
                 transition: 'box-shadow 0.2s',
                 '&:hover': { boxShadow: 4, bgcolor: '#f5f5f5' },
                 userSelect: 'none',
               }}
               onMouseDown={(e) => handleMouseDown(e, event.id, event.timestamp + gameStart, row)}
+              onTouchStart={(e) => handleMouseDown(e as unknown as React.MouseEvent, event.id, event.timestamp + gameStart, row)}
             >
               {getGameEventIconByCode(event.icon) || '•'}
             </Box>
@@ -542,7 +568,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 top: 30,
                 left: `${startPx}%`,
                 width: `${widthPx}%`,
-                height: 14,
+                height: { xs: 24, sm: 14 },
                 bgcolor: 'rgba(255, 152, 0, 0.3)',
                 border: '2px solid #ff9800',
                 borderRadius: 1,
@@ -558,6 +584,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 },
               }}
               onMouseDown={(e) => handleRangeMouseDown(e, marker.id, marker.startSeconds, marker.endSeconds)}
+              onTouchStart={(e) => handleRangeMouseDown(e as unknown as React.MouseEvent, marker.id, marker.startSeconds, marker.endSeconds)}
             >
               <Tooltip title={`${formatSeconds(marker.startSeconds)} - ${formatSeconds(marker.endSeconds)} (${formatSeconds(marker.endSeconds - marker.startSeconds)})`}>
                 <Box sx={{ width: '100%', height: '100%' }} />
@@ -591,16 +618,17 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                     bgcolor: '#ff9800',
                     color: 'white',
                     borderRadius: '50%',
-                    width: 22,
-                    height: 22,
+                    width: { xs: 44, sm: 22 },
+                    height: { xs: 44, sm: 22 },
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 14,
+                    fontSize: { xs: 20, sm: 14 },
                     boxShadow: 2,
                     '&:hover': { boxShadow: 4, bgcolor: '#f57c00' },
                   }}
                   onMouseDown={(e) => handleCutMarkerMouseDown(e, marker.id, 'start', marker.startSeconds)}
+                  onTouchStart={(e) => handleCutMarkerMouseDown(e as unknown as React.MouseEvent, marker.id, 'start', marker.startSeconds)}
                 >
                   ◀
                 </Box>
@@ -621,16 +649,17 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                     bgcolor: '#ff9800',
                     color: 'white',
                     borderRadius: '50%',
-                    width: 22,
-                    height: 22,
+                    width: { xs: 44, sm: 22 },
+                    height: { xs: 44, sm: 22 },
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 14,
+                    fontSize: { xs: 20, sm: 14 },
                     boxShadow: 2,
                     '&:hover': { boxShadow: 4, bgcolor: '#f57c00' },
                   }}
                   onMouseDown={(e) => handleCutMarkerMouseDown(e, marker.id, 'end', marker.endSeconds)}
+                  onTouchStart={(e) => handleCutMarkerMouseDown(e as unknown as React.MouseEvent, marker.id, 'end', marker.endSeconds)}
                 >
                   ▶
                 </Box>
@@ -653,12 +682,12 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 bgcolor: '#ff9800',
                 color: 'white',
                 borderRadius: '50%',
-                width: 22,
-                height: 22,
+                width: { xs: 44, sm: 22 },
+                height: { xs: 44, sm: 22 },
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 16,
+                fontSize: { xs: 22, sm: 16 },
                 boxShadow: 2,
                 animation: 'pulse 1s ease-in-out infinite',
                 '@keyframes pulse': {
