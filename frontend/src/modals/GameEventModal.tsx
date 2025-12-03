@@ -1,3 +1,19 @@
+// Hilfsfunktion: Sekunden zu MM:SS
+const secondsToMMSS = (seconds) => {
+  if (!seconds || isNaN(seconds)) return '0:00';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+};
+// Hilfsfunktion: MM:SS oder Sekunden-String zu Sekunden
+const parseMinuteInput = (input) => {
+  if (!input) return 0;
+  if (/^\d+$/.test(input)) return parseInt(input, 10);
+  const parts = input.split(':').map(Number);
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return 0;
+};
 import React, { useState, useEffect, useRef } from 'react';
 import { apiJson } from '../utils/api';
 import {
@@ -27,6 +43,7 @@ interface GameEventModalProps {
   gameId: number;
   game: Game;
   existingEvent?: GameEvent | null;
+  initialMinute?: number;
 }
 
 export const GameEventModal: React.FC<GameEventModalProps> = ({
@@ -35,63 +52,71 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
   onSuccess,
   gameId,
   game,
-  existingEvent = null
+  existingEvent = null,
+  initialMinute
 }) => {
+  // Helper: InitialformData abhängig von Props
+  const getInitialFormData = () => {
+    if (existingEvent) {
+      let minuteStr = '0:00';
+      if (existingEvent.timestamp && game.calendarEvent?.startDate) {
+        // Zeitdifferenz in Sekunden zu MM:SS
+        const eventTime = new Date(existingEvent.timestamp);
+        const gameStart = new Date(game.calendarEvent.startDate);
+        const diffSec = Math.floor((eventTime.getTime() - gameStart.getTime()) / 1000);
+        minuteStr = secondsToMMSS(diffSec);
+      } else if (existingEvent.minute && !isNaN(Number(existingEvent.minute))) {
+        // Spielminute als MM:00 anzeigen
+        minuteStr = `${existingEvent.minute}:00`;
+      }
+      return {
+        team: existingEvent.team?.id?.toString() || existingEvent.teamId?.toString() || '',
+        eventType: existingEvent.gameEventType?.id?.toString() || existingEvent.typeId?.toString() || '',
+        player: existingEvent.player?.id?.toString() || existingEvent.playerId?.toString() || '',
+        relatedPlayer: existingEvent.relatedPlayer?.id?.toString() || existingEvent.relatedPlayerId?.toString() || '',
+        minute: minuteStr,
+        description: existingEvent.description || '',
+        reason: (existingEvent as any).reason?.id || 0,
+        playerId: existingEvent.playerId || 0,
+        teamId: existingEvent.teamId || 0
+      };
+    } else {
+      return {
+        team: '',
+        eventType: '',
+        player: '',
+        relatedPlayer: '',
+        minute: initialMinute !== undefined ? initialMinute.toString() : '',
+        description: '',
+        reason: 0,
+        playerId: 0,
+        teamId: 0,
+      };
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [eventTypes, setEventTypes] = useState<GameEventType[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [substitutionReasons, setSubstitutionReasons] = useState<SubstitutionReason[]>([]);
   const [teamPlayers, setTeamPlayers] = useState<Player[]>([]);
+  const [formData, setFormData] = useState(getInitialFormData);
+  const prevOpen = useRef(false);
 
-  // Form state
-  const [formData, setFormData] = useState({
-    team: '',
-    eventType: '',
-    player: '',
-    relatedPlayer: '',
-    minute: 0,
-    description: '',
-    reason: 0,
-    playerId: 0,
-    teamId: 0,
-  });
-
-  // Füllt formData beim Öffnen/Wechsel von existingEvent korrekt
   useEffect(() => {
-    if (open && existingEvent) {
-      setFormData({
-        team: existingEvent.team?.id?.toString() || existingEvent.teamId?.toString() || '',
-        eventType: existingEvent.gameEventType?.id?.toString() || existingEvent.typeId?.toString() || '',
-        player: existingEvent.player?.id?.toString() || existingEvent.playerId?.toString() || '',
-        relatedPlayer: existingEvent.relatedPlayer?.id?.toString() || existingEvent.relatedPlayerId?.toString() || '',
-        minute: (() => {
-          if (existingEvent.timestamp && game.calendarEvent?.startDate) {
-            const eventTime = new Date(existingEvent.timestamp);
-            const gameStart = new Date(game.calendarEvent.startDate);
-            const diffMs = eventTime.getTime() - gameStart.getTime();
-            return Math.floor(diffMs / (1000 * 60));
-          }
-          return existingEvent.minute || 0;
-        })(),
-        description: existingEvent.description || '',
-        reason: existingEvent.reason?.id || 0,
-        playerId: existingEvent.playerId || 0,
-        teamId: existingEvent.teamId || 0
-      });
-    } else if (open && !existingEvent) {
-      setFormData({
-        team: '',
-        eventType: '',
-        player: '',
-        relatedPlayer: '',
-        minute: 0,
-        description: '',
-        reason: 0,
-        playerId: 0,
-        teamId: 0,
-      });
+    if (open && !prevOpen.current) {
+      setFormData(getInitialFormData());
     }
-  }, [open, existingEvent, game.calendarEvent?.startDate]);
+    prevOpen.current = open;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, existingEvent, initialMinute]);
+
+  // Wenn initialMinute sich ändert und wir KEIN bestehendes Event bearbeiten, minute übernehmen
+  useEffect(() => {
+    if (open && !existingEvent && typeof initialMinute === 'number') {
+      setFormData(prev => ({ ...prev, minute: secondsToMMSS(initialMinute) }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMinute, open, existingEvent]);
 
   // Spieler für Team laden, wenn Team gewechselt wird
   useEffect(() => {
@@ -129,18 +154,18 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
   useEffect(() => {
     if (open) {
       loadInitialData();
-      
-      // Calculate minute from existing event if editing
-      if (existingEvent && game.calendarEvent?.startDate) {
-        if (existingEvent.timestamp) {
+      // Wenn ein bestehendes Event bearbeitet wird, minute als MM:SS oder MM:00 anzeigen
+      if (existingEvent) {
+        let minuteStr = '0:00';
+        if (existingEvent.timestamp && game.calendarEvent?.startDate) {
           const eventTime = new Date(existingEvent.timestamp);
           const gameStart = new Date(game.calendarEvent.startDate);
-          const diffMs = eventTime.getTime() - gameStart.getTime();
-          const diffMinutes = Math.floor(diffMs / (1000 * 60));
-          setFormData(prev => ({ ...prev, minute: diffMinutes.toString() }));
-        } else {
-          setFormData(prev => ({ ...prev, minute: existingEvent.minute }));
+          const diffSec = Math.floor((eventTime.getTime() - gameStart.getTime()) / 1000);
+          minuteStr = secondsToMMSS(diffSec);
+        } else if (existingEvent.minute && !isNaN(Number(existingEvent.minute))) {
+          minuteStr = `${existingEvent.minute}:00`;
         }
+        setFormData(prev => ({ ...prev, minute: minuteStr }));
       }
     }
   }, [open, existingEvent, game]);
@@ -169,7 +194,28 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
     }
   };
 
+  // Hilfsfunktion: Sekunden zu MM:SS
+  const secondsToMMSS = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+  // Hilfsfunktion: MM:SS oder Sekunden-String zu Sekunden
+  const parseMinuteInput = (input: string) => {
+    if (!input) return 0;
+    if (/^\d+$/.test(input)) return parseInt(input, 10);
+    const parts = input.split(':').map(Number);
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    return 0;
+  };
   const handleInputChange = (field: string, value: string | number) => {
+    if (field === 'minute') {
+      // Nur erlaubte Zeichen (Zahlen, :)
+      let val = String(value).replace(/[^\d:]/g, '');
+      setFormData(prev => ({ ...prev, minute: val }));
+      return;
+    }
     // Wenn Team gewechselt wird, Spielerfelder zurücksetzen
     if (field === 'team') {
       setFormData(prev => ({
@@ -197,22 +243,21 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      
+      // Minute als Sekunden speichern, aber als string übergeben
+      const minuteSec = parseMinuteInput(formData.minute);
       const submitData = {
         eventType: Number(formData.eventType),
         player: formData.player ? Number(formData.player) : undefined,
         relatedPlayer: formData.relatedPlayer ? Number(formData.relatedPlayer) : undefined,
-        minute: formData.minute || '1',
+        minute: `${minuteSec}`,
         description: formData.description,
         reason: formData.reason ? Number(formData.reason) : undefined
       };
-
       if (existingEvent) {
         await updateGameEvent(gameId, existingEvent.id, submitData);
       } else {
         await createGameEvent(gameId, submitData);
       }
-      
       onSuccess();
     } catch (error) {
       console.error('Error saving game event:', error);
@@ -227,12 +272,11 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
       eventType: '',
       player: '',
       relatedPlayer: '',
-      minute: 0,
+      minute: '',
       description: '',
       reason: 0,
       teamId: 0,
       playerId: 0,
-      relatedPlayerId: 0,
     });
     onClose();
   };
@@ -362,7 +406,7 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
               variant="outlined"
               color="primary"
               sx={{ fontSize: '1.5rem', mt: 1, mb: 2 }}
-              onClick={() => setFormData(prev => ({ ...prev, minute: elapsedSeconds }))}
+              onClick={() => setFormData(prev => ({ ...prev, minute: elapsedSeconds.toString() }))}
             >
               {elapsedSeconds} <span style={{ marginLeft: 8 }}><i className="fas fa-clock" /></span>
             </Button>
@@ -371,13 +415,14 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
         {/* Neue Zeile: Zeit und Beschreibung */}
         <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
           <TextField
-            label="Sekunden | MM:SS | HH:MM:SS"
-            value={formData.minute}
+            label="Zeit (MM:SS oder Sekunden)"
+            value={formData.minute ?? ''}
             onChange={e => handleInputChange('minute', e.target.value)}
             fullWidth
             required
             inputProps={{ style: { textAlign: 'right' } }}
             sx={{ maxWidth: 180 }}
+            placeholder="z.B. 5:08"
           />
           <TextField
             label="Beschreibung (optional)"

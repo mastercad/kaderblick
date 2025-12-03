@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -38,6 +38,7 @@ import {
 } from '../services/games';
 import { fetchVideos, saveVideo, deleteVideo, Video, YoutubeLink, Camera } from '../services/videos';
 import VideoModal from '../modals/VideoModal';
+import VideoPlayModal from '../modals/VideoPlayModal';
 import { VideoSegmentModal } from '../modals/VideoSegmentModal';
 import { Game, GameEvent } from '../types/games';
 import { useAuth } from '../context/AuthContext';
@@ -59,6 +60,41 @@ interface GameDetailsProps {
 }
 
 function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
+  // Ref für Video-Player-API
+  const videoPlayerRef = useRef<any>(null);
+  // State für Video-Event-Modal (im VideoPlayModal!)
+  const [videoEventFormOpen, setVideoEventFormOpen] = useState(false);
+  const [videoEventInitialMinute, setVideoEventInitialMinute] = useState<number | undefined>(undefined);
+
+  // Handler für Event-Button: Zeit holen, Video pausieren, Event-Form öffnen (im VideoPlayModal)
+  const handleCreateEventFromVideo = async () => {
+    let seconds: number = 0;
+    if (videoPlayerRef.current && typeof videoPlayerRef.current.getCurrentTime === 'function') {
+      const sec = await videoPlayerRef.current.getCurrentTime();
+      videoPlayerRef.current.pauseVideo?.();
+      if (typeof sec === 'number' && !isNaN(sec)) {
+        // Videozeit minus Offset = Zeit seit Spielbeginn
+        const offset = videoToPlay?.gameStart ?? 0;
+        seconds = Math.round(sec - offset);
+      }
+    }
+    setVideoEventInitialMinute(seconds);
+    setVideoEventFormOpen(true);
+  };
+    // State für Play-Modal
+    const [playVideoModalOpen, setPlayVideoModalOpen] = useState(false);
+    const [videoToPlay, setVideoToPlay] = useState<Video | null>(null);
+
+    // Handler für Play-Button
+    const handleOpenPlayVideo = (video: Video) => {
+      setVideoToPlay(video);
+      setPlayVideoModalOpen(true);
+    };
+
+    const handleClosePlayVideo = () => {
+      setPlayVideoModalOpen(false);
+      setVideoToPlay(null);
+    };
   const { user } = useAuth();
   const { showToast } = useToast();
   const params = useParams<{ id: string }>();
@@ -163,6 +199,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       setVideoDialogOpen(false);
       setVideoToEdit(null);
       await loadVideos();
+      await loadGameEvents(); // Reload events so timeline has current data
       showToast('Das Video wurde erfolgreich gespeichert.', 'success');
     } catch (e: any) {
       setError(e.message || 'Fehler beim Speichern des Videos');
@@ -178,6 +215,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       await deleteVideo(videoToDelete.id);
       setVideoToDelete(null);
       await loadVideos();
+      await loadGameEvents(); // Reload events for consistency
     } catch (e: any) {
       setError(e.message || 'Fehler beim Löschen des Videos');
     } finally {
@@ -208,7 +246,16 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
     if (!gameId) return;
     try {
       const events = await fetchGameEvents(gameId);
-      setGameEvents(events);
+      // Repariere Events: Falls timestamp fehlt, berechne ihn aus minute + gameStartDate
+      const repairedEvents = events.map(event => {
+        if (!event.timestamp && game?.calendarEvent?.startDate && typeof event.minute === 'number') {
+          const gameStart = new Date(game.calendarEvent.startDate);
+          const eventTime = new Date(gameStart.getTime() + event.minute * 1000);
+          return { ...event, timestamp: eventTime.toISOString() };
+        }
+        return event;
+      });
+      setGameEvents(repairedEvents);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Laden der Ereignisse');
     }
@@ -382,7 +429,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       </Card>
 
       {/* Game Events Card */}
-      <Card sx={{ mb: 3 }}>
+      <Card className="gameevents-mobile-card" sx={{ mb: 3 }}>
         <CardHeader
           title="Spielereignisse"
           action={
@@ -422,7 +469,10 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                 }
                 if (e.minute) {
                   // minutes are the old name, for better video marker we get seconds
-                  minute = e.minute / 60;
+                  const totalSeconds = Math.round(e.minute);
+                  const mins = Math.floor(totalSeconds / 60);
+                  const secs = totalSeconds % 60;
+                  minute = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}` as unknown as number;
                 } else if (e.timestamp) {
                   minute = formatEventTime(e.timestamp, gameStartDate ?? '') as unknown as number;
                 }
@@ -541,7 +591,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       </Card>
 
       {/* Videos Card */}
-      <Card sx={{ mb: 3 }}>
+      <Card className="gamevideos-mobile-card" sx={{ mb: 3 }}>
         <CardHeader
           title="Videos"
           action={
@@ -579,6 +629,15 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                   secondaryAction={
                     user && (
                       <>
+                        <IconButton
+                          edge="end"
+                          color="primary"
+                          aria-label="Abspielen"
+                          onClick={() => handleOpenPlayVideo(video)}
+                          sx={{ mr: 1 }}
+                        >
+                          <YouTubeIcon />
+                        </IconButton>
                         <IconButton edge="end" onClick={() => handleOpenEditVideo(video)} sx={{ mr: 1 }}>
                           <EditIcon />
                         </IconButton>
@@ -634,7 +693,61 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
         </CardContent>
       </Card>
 
-      {/* Video Modal */}
+      {/* Video Play Modal */}
+      <VideoPlayModal
+        ref={videoPlayerRef}
+        open={playVideoModalOpen}
+        onClose={handleClosePlayVideo}
+        videoId={videoToPlay?.youtubeId || undefined}
+        videoName={videoToPlay?.name}
+        videoObj={videoToPlay ? { 
+          id: videoToPlay.id,
+          youtubeId: videoToPlay.youtubeId || undefined,
+          gameStart: videoToPlay.gameStart ?? null, 
+          length: videoToPlay.length ?? 0,
+          camera: videoToPlay.camera || undefined
+        } : { id: 0, youtubeId: undefined, gameStart: null, length: 0 }}
+        gameEvents={gameEvents}
+        gameStartDate={gameStartDate || ''}
+        gameId={gameId}
+        onEventUpdated={loadGameEvents}
+        allVideos={videos}
+        youtubeLinks={youtubeLinks}
+      >
+        {canCreateEvents() && (
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreateEventFromVideo}
+              color="primary"
+            >
+              Spielereignis anlegen
+            </Button>
+          </Box>
+        )}
+        {/* Das Event-Formular wird als Overlay im VideoPlayModal eingeblendet */}
+        <GameEventModal
+          open={videoEventFormOpen}
+          onClose={() => {
+            setVideoEventFormOpen(false);
+            setVideoEventInitialMinute(undefined);
+            setEventToEdit(null);
+          }}
+          onSuccess={() => {
+            setVideoEventFormOpen(false);
+            setVideoEventInitialMinute(undefined);
+            setEventToEdit(null);
+            handleEventFormSuccess();
+          }}
+          gameId={gameId!}
+          game={game}
+          existingEvent={eventToEdit}
+          initialMinute={videoEventInitialMinute}
+        />
+      </VideoPlayModal>
+
+      {/* Video Modal (Bearbeiten/Hinzufügen) */}
       <VideoModal
         open={videoDialogOpen}
         onClose={handleCloseVideoDialog}
@@ -679,7 +792,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
         confirmColor="error"
       />
 
-      {/* Game Event Modal */}
+      {/* Game Event Modal außerhalb für andere Fälle (z.B. FAB) */}
       <GameEventModal
         open={eventFormOpen}
         onClose={() => {

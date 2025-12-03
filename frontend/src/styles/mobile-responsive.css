@@ -1,3 +1,42 @@
+/* Mobile Optimierung für GameDetails-Events/Videos */
+@media (max-width: 768px) {
+  .gameevents-mobile-card,
+  .gamevideos-mobile-card {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box;
+    /* Abstand zwischen den Cards */
+    margin-bottom: 18px !important;
+  }
+  .gameevents-mobile-card .MuiCardContent-root,
+  .gamevideos-mobile-card .MuiCardContent-root {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  /* Listen-Items umbrechen und Abstand */
+  .gameevents-mobile-card .MuiListItem-root,
+  .gamevideos-mobile-card .MuiListItem-root {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  /* Video-Thumbnail kleiner */
+  .gamevideos-mobile-card img {
+    width: 90vw !important;
+    max-width: 320px;
+    height: auto;
+    margin-bottom: 6px;
+  }
+  /* Flexbox für Event-Header */
+  .gameevents-mobile-card .MuiListItemText-root > .MuiBox-root {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px;
+  }
+}
 
 @media (max-width: 768px) {
   .rbc-calendar {

@@ -1,0 +1,25 @@
+@media (max-width: 768px) {
+  .game-details-mobile-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .game-details-mobile-stack .game-events-section,
+  .game-details-mobile-stack .game-videos-section {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .game-events-section {
+    order: 1;
+  }
+  .game-videos-section {
+    order: 2;
+  }
+  /* Optional: make cards full width and reduce margin */
+  .game-details-mobile-stack .MuiCard-root {
+    width: 100%;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}

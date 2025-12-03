@@ -51,7 +51,32 @@ export default function VideoModal({ open, onClose, onSave, videoTypes, cameras,
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(form);
+    // Länge in Sekunden konvertieren (verschiedene Formate unterstützen)
+    let newForm = { ...form };
+    if (form.length) {
+      const input = form.length.toString().trim();
+      let totalSeconds = 0;
+      
+      // Format prüfen: xx:yy:zz (Stunden:Minuten:Sekunden) oder xx:yy (Minuten:Sekunden) oder nur Sekunden
+      if (input.includes(':')) {
+        const parts = input.split(':').map(p => parseInt(p, 10));
+        if (parts.length === 2) {
+          // Format mm:ss
+          const [minutes, seconds] = parts;
+          totalSeconds = (minutes * 60) + seconds;
+        } else if (parts.length === 3) {
+          // Format hh:mm:ss
+          const [hours, minutes, seconds] = parts;
+          totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+        }
+      } else {
+        // Nur Sekunden
+        totalSeconds = parseInt(input, 10);
+      }
+      
+      newForm.length = isNaN(totalSeconds) ? '' : totalSeconds.toString();
+    }
+    onSave(newForm);
   };
 
   return (
@@ -143,12 +168,12 @@ export default function VideoModal({ open, onClose, onSave, videoTypes, cameras,
           </TextField>
         </Box>
         <TextField
-          label="Länge (Sek.)"
+          label="Länge (Sek. oder mm:ss oder hh:mm:ss)"
           name="length"
           value={form.length}
           onChange={handleChange}
-          type="number"
           fullWidth
+          helperText="Eingabe: Sekunden (z.B. 1559) oder mm:ss (z.B. 25:59) oder hh:mm:ss (z.B. 1:30:45)"
         />
       </Box>
     </BaseModal>
