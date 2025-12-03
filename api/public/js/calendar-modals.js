@@ -248,8 +248,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         window.handleDateRangeSelect = function(info) {
-            // Handling für Datum-Bereich-Auswahl
-            console.log('Date range selected:', info);
             window.handleDateClick({ dateStr: info.startStr.split('T')[0] });
         };
 
@@ -365,8 +363,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
-
-        console.log('Calendar modals initialized successfully');
     }
 
     // Start initialization

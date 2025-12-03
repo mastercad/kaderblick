@@ -73,7 +73,6 @@ const News: React.FC = () => {
     try {
       const res = await apiJson('/news');
       const data = res as NewsApiResponse;
-      console.log(data.news);
       setNews(data.news || []);
       setClubs(data.clubs || []);
       setTeams(data.teams || []);

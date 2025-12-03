@@ -76,8 +76,6 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({ openLocationEditM
 
   useEffect(() => {
     if (openLocationEditModal) {
-      console.log('LocationEditModal initialValues:', initialValues);
-      console.log('LocationEditModal initialValues.surfaceTypeId:', initialValues?.surfaceTypeId);
       setValues({ ...defaultValues, ...initialValues });
       setError(null);
       setSurfaceTypesLoading(true);

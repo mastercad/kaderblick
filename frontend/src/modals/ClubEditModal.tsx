@@ -275,7 +275,6 @@ const ClubEditModal: React.FC<ClubEditModalProps> = ({ openClubEditModal, clubId
                 onLocationEditModalClose={() => setLocationEditModalOpen(false)}
                 isEdit={false}
                 onLocationSaved={(newLocation: Location) => {
-                    console.log("NewLocation: ", newLocation);
                     setLocationEditModalOpen(false);
                     if (newLocation && newLocation.id) {
                         loadLocations();
@@ -290,8 +289,6 @@ const ClubEditModal: React.FC<ClubEditModalProps> = ({ openClubEditModal, clubId
                             if (!prev) return prev;
                             return { ...prev, location: newLocation };
                         });
-
-                        console.log("CLUB: ", club);
                     }
                 }}
             />

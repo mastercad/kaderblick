@@ -51,8 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
         window.ModalManager.registerModal(modalId, dashboardModalTemplates[modalId]);
       });
       
-      console.log('Dashboard modals registered successfully');
-      
       // Initialize dashboard modal functionality
       initializeDashboardModalFunctionality();
     }

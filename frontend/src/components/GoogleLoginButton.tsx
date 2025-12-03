@@ -39,8 +39,6 @@ export default function GoogleLoginButton() {
 
             // Prüfe ob es eine Google Auth Message ist
             if (event.data && typeof event.data === 'object' && event.data.source === 'google-auth') {
-                console.log('Google Auth Message empfangen:', event.data);
-                
                 // Cleanup
                 window.removeEventListener('message', handleMessage);
                 clearInterval(pollTimer);
@@ -51,7 +49,6 @@ export default function GoogleLoginButton() {
                         popup.close();
                     }
                 } catch (e) {
-                    console.log('Popup bereits geschlossen');
                 }
                 
                 // Reload page um Auth-State zu aktualisieren
@@ -79,12 +76,10 @@ export default function GoogleLoginButton() {
                             }, 100);
                         })
                         .catch(() => {
-                            console.log('Login wurde abgebrochen');
                         });
                 }
             } catch (e) {
                 // Popup-Zugriff fehlgeschlagen (kann in PWAs passieren)
-                console.log('Popup-Status konnte nicht geprüft werden');
             }
         }, 500);
         
