@@ -97,6 +97,38 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // ESC-Taste zum Abbrechen von pendingCut
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && pendingCut) {
+        setPendingCut(null);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [pendingCut]);
+
+  // Klick außerhalb der Timeline bricht pendingCut ab
+  useEffect(() => {
+    if (!pendingCut) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setPendingCut(null);
+      }
+    };
+    
+    // Delay hinzufügen, damit der initiale Klick nicht sofort abbricht
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 100);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [pendingCut]);
+
   // Dynamische Timeline-Breite basierend auf Container
   const getTimelineWidth = () => {
     return containerRef.current?.getBoundingClientRect().width || 800;
@@ -224,14 +256,19 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       setCutDragState(null);
     };
     
+    const handleMoveWithPrevent = (e: MouseEvent | TouchEvent) => {
+      e.preventDefault();
+      handleMove(e);
+    };
+    
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleUp);
-    window.addEventListener('touchmove', handleMove as any, { passive: false });
+    window.addEventListener('touchmove', handleMoveWithPrevent as any, { passive: false });
     window.addEventListener('touchend', handleUp as any);
     return () => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
-      window.removeEventListener('touchmove', handleMove as any);
+      window.removeEventListener('touchmove', handleMoveWithPrevent as any);
       window.removeEventListener('touchend', handleUp as any);
     };
   }, [cutDragState, duration, onSeek, cutMarkers, onCutMarkerMove]);
@@ -264,11 +301,22 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
   const maxRow = markerRows.reduce((max, m) => Math.max(max, m.row), 0);
 
   // Handler für Timeline-Klick im Cut-Modus
-  const handleTimelineClick = (e: React.MouseEvent) => {
+  const handleTimelineClick = (e: React.MouseEvent | React.TouchEvent) => {
     if (!cutModeActive || !containerRef.current) return;
     
+    // Bei Touch: prüfe ob es auf einem Marker war (dann ignorieren)
+    if ('touches' in e || 'changedTouches' in e) {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-marker-button]') || target.closest('[data-marker-range]')) {
+        return; // Ignoriere Klicks auf Marker-Elementen
+      }
+    }
+    
     const box = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - box.left;
+    const clientX = 'touches' in e ? e.touches[0]?.clientX : 'changedTouches' in e ? e.changedTouches[0]?.clientX : e.clientX;
+    if (!clientX) return;
+    
+    const x = clientX - box.left;
     const clickedSeconds = (x / getTimelineWidth()) * duration;
     
     if (pendingCut) {
@@ -432,6 +480,11 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <ContentCutIcon sx={{ fontSize: 16, color: '#ff9800', mr: 0.5 }} />
                 <strong>Schnittmarken-Timeline</strong>
+                {pendingCut && (
+                  <Box component="span" sx={{ ml: 1, color: '#ff9800', fontSize: '0.75rem', fontStyle: 'italic' }}>
+                    (ESC oder außerhalb klicken zum Abbrechen)
+                  </Box>
+                )}
             </Box>
             <Box>
                 <strong>Länge:</strong> {formatSeconds(duration)}
@@ -542,20 +595,29 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     {/* Schnittmarken Timeline - separate Timeline */}
     {showCutMarkers && (
       <Box
-        sx={{ position: 'relative', width: '100%', height: 60 }}
+        sx={{ 
+          position: 'relative', 
+          width: '100%', 
+          height: { xs: 100, sm: 60 },
+          touchAction: 'none',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
+        }}
         onClick={handleTimelineClick}
       >
         {/* Timeline Bar */}
         <Box sx={{ 
           position: 'absolute', 
-          top: 30, 
+          top: { xs: 50, sm: 30 }, 
           left: 0, 
           right: 0, 
-          height: 6, 
+          height: { xs: 10, sm: 6 }, 
           bgcolor: '#e0e0e0', 
           borderRadius: 2, 
           transform: 'translateY(-50%)',
-          cursor: cutModeActive ? 'crosshair' : 'default'
+          cursor: cutModeActive ? 'crosshair' : 'default',
+          touchAction: 'none',
         }} />
         
         {/* Cut Markers - Bereiche */}
@@ -571,28 +633,63 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
           return (
             <Box
               key={marker.id}
+              data-marker-range="true"
               sx={{
                 position: 'absolute',
-                top: 30,
+                top: { xs: 50, sm: 30 },
                 left: `${startPx}%`,
                 width: `${widthPx}%`,
-                height: { xs: 24, sm: 14 },
+                height: { xs: 40, sm: 14 },
                 bgcolor: 'rgba(255, 152, 0, 0.3)',
                 border: '2px solid #ff9800',
                 borderRadius: 1,
                 transform: 'translateY(-50%)',
                 zIndex: 1,
                 cursor: 'grab',
+                touchAction: 'none',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                WebkitTouchCallout: 'none',
                 '&:hover': {
                   bgcolor: 'rgba(255, 152, 0, 0.5)',
                   boxShadow: 2,
                 },
                 '&:active': {
                   cursor: 'grabbing',
+                  bgcolor: 'rgba(255, 152, 0, 0.6)',
                 },
               }}
-              onMouseDown={(e) => handleRangeMouseDown(e, marker.id, marker.startSeconds, marker.endSeconds)}
-              onTouchStart={(e) => handleRangeMouseDown(e as unknown as React.MouseEvent, marker.id, marker.startSeconds, marker.endSeconds)}
+              onMouseDown={(e) => {
+                // Nur Range-Drag wenn nicht auf Start/End-Button geklickt wurde
+                const box = containerRef.current?.getBoundingClientRect();
+                if (!box) return;
+                const clickX = e.clientX - box.left;
+                const startX = (marker.startSeconds / duration) * getTimelineWidth();
+                const endX = (marker.endSeconds / duration) * getTimelineWidth();
+                // Größerer Puffer für mobile (36px statt 24px) um Start/End-Buttons besser erreichbar zu machen
+                const buttonRadius = isMobile ? 36 : 11;
+                if (Math.abs(clickX - startX) < buttonRadius || Math.abs(clickX - endX) < buttonRadius) {
+                  return; // Nicht Range-Drag starten wenn zu nah an Button
+                }
+                handleRangeMouseDown(e, marker.id, marker.startSeconds, marker.endSeconds);
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const touch = e.touches[0];
+                const box = containerRef.current?.getBoundingClientRect();
+                if (!box) return;
+                const clickX = touch.clientX - box.left;
+                const startX = (marker.startSeconds / duration) * getTimelineWidth();
+                const endX = (marker.endSeconds / duration) * getTimelineWidth();
+                // Noch größerer Puffer für Touch (48px) - volle Button-Breite
+                const buttonRadius = 48;
+                if (Math.abs(clickX - startX) < buttonRadius || Math.abs(clickX - endX) < buttonRadius) {
+                  return; // Bei Touch: Start/End-Buttons haben absolute Priorität
+                }
+                // Range-Drag nur wenn wirklich mittig geklickt (mindestens 48px von beiden Buttons entfernt)
+                handleRangeMouseDown(e as unknown as React.MouseEvent, marker.id, marker.startSeconds, marker.endSeconds);
+              }}
             >
               <Tooltip title={`${formatSeconds(marker.startSeconds)} - ${formatSeconds(marker.endSeconds)} (${formatSeconds(marker.endSeconds - marker.startSeconds)})`}>
                 <Box sx={{ width: '100%', height: '100%' }} />
@@ -616,9 +713,10 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
               {!isDraggingStart && (
               <Tooltip title={`Start: ${formatSeconds(marker.startSeconds)}`}>
                 <Box
+                  data-marker-button="start"
                   sx={{
                     position: 'absolute',
-                    top: 30,
+                    top: { xs: 50, sm: 30 },
                     left: `${startPx}%`,
                     transform: 'translate(-50%, -50%)',
                     cursor: 'ew-resize',
@@ -626,17 +724,26 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                     bgcolor: '#ff9800',
                     color: 'white',
                     borderRadius: '50%',
-                    width: { xs: 44, sm: 22 },
-                    height: { xs: 44, sm: 22 },
+                    width: { xs: 48, sm: 22 },
+                    height: { xs: 48, sm: 22 },
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: { xs: 20, sm: 14 },
+                    fontSize: { xs: 24, sm: 14 },
                     boxShadow: 2,
+                    touchAction: 'none',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    WebkitTouchCallout: 'none',
                     '&:hover': { boxShadow: 4, bgcolor: '#f57c00' },
+                    '&:active': { bgcolor: '#e65100', boxShadow: 6 },
                   }}
                   onMouseDown={(e) => handleCutMarkerMouseDown(e, marker.id, 'start', marker.startSeconds)}
-                  onTouchStart={(e) => handleCutMarkerMouseDown(e as unknown as React.MouseEvent, marker.id, 'start', marker.startSeconds)}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleCutMarkerMouseDown(e as unknown as React.MouseEvent, marker.id, 'start', marker.startSeconds);
+                  }}
                 >
                   ◀
                 </Box>
@@ -647,9 +754,10 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
               {!isDraggingEnd && (
               <Tooltip title={`Ende: ${formatSeconds(marker.endSeconds)}`}>
                 <Box
+                  data-marker-button="end"
                   sx={{
                     position: 'absolute',
-                    top: 30,
+                    top: { xs: 50, sm: 30 },
                     left: `${endPx}%`,
                     transform: 'translate(-50%, -50%)',
                     cursor: 'ew-resize',
@@ -657,17 +765,26 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                     bgcolor: '#ff9800',
                     color: 'white',
                     borderRadius: '50%',
-                    width: { xs: 44, sm: 22 },
-                    height: { xs: 44, sm: 22 },
+                    width: { xs: 48, sm: 22 },
+                    height: { xs: 48, sm: 22 },
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: { xs: 20, sm: 14 },
+                    fontSize: { xs: 24, sm: 14 },
                     boxShadow: 2,
+                    touchAction: 'none',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    WebkitTouchCallout: 'none',
                     '&:hover': { boxShadow: 4, bgcolor: '#f57c00' },
+                    '&:active': { bgcolor: '#e65100', boxShadow: 6 },
                   }}
                   onMouseDown={(e) => handleCutMarkerMouseDown(e, marker.id, 'end', marker.endSeconds)}
-                  onTouchStart={(e) => handleCutMarkerMouseDown(e as unknown as React.MouseEvent, marker.id, 'end', marker.endSeconds)}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleCutMarkerMouseDown(e as unknown as React.MouseEvent, marker.id, 'end', marker.endSeconds);
+                  }}
                 >
                   ▶
                 </Box>
@@ -683,20 +800,22 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
             <Box
               sx={{
                 position: 'absolute',
-                top: 30,
+                top: { xs: 50, sm: 30 },
                 left: `${(pendingCut.startSeconds / duration) * 100}%`,
                 transform: 'translate(-50%, -50%)',
                 zIndex: 3,
                 bgcolor: '#ff9800',
                 color: 'white',
                 borderRadius: '50%',
-                width: { xs: 44, sm: 22 },
-                height: { xs: 44, sm: 22 },
+                width: { xs: 48, sm: 22 },
+                height: { xs: 48, sm: 22 },
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: { xs: 22, sm: 16 },
                 boxShadow: 2,
+                touchAction: 'none',
+                userSelect: 'none',
                 animation: 'pulse 1s ease-in-out infinite',
                 '@keyframes pulse': {
                   '0%, 100%': { opacity: 1 },
@@ -704,7 +823,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 },
               }}
             >
-              <ContentCutIcon sx={{ fontSize: 14 }} />
+              <ContentCutIcon sx={{ fontSize: { xs: 20, sm: 14 } }} />
             </Box>
           </Tooltip>
         )}
@@ -735,25 +854,25 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
             <Box
               sx={{
                 position: 'absolute',
-                top: 30,
+                top: { xs: 50, sm: 30 },
                 left: `${leftPercent}%`,
                 transform: cutDragState.type === 'range' ? 'translateY(-50%)' : 'translate(-50%, -50%)',
                 pointerEvents: 'none',
                 zIndex: 10,
                 bgcolor: '#ff9800',
                 color: 'white',
-                border: '2px solid #f57c00',
+                border: { xs: '3px solid #f57c00', sm: '2px solid #f57c00' },
                 borderRadius: cutDragState.type === 'range' ? 1 : '50%',
                 width: cutDragState.type === 'range' 
                   ? `${((cutDragState.origEndSeconds! - cutDragState.origSeconds) / duration) * 100}%`
-                  : 22,
-                height: cutDragState.type === 'range' ? 14 : 22,
+                  : { xs: 48, sm: 22 },
+                height: cutDragState.type === 'range' ? { xs: 40, sm: 14 } : { xs: 48, sm: 22 },
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 14,
-                boxShadow: 4,
-                opacity: 0.9,
+                fontSize: { xs: 24, sm: 14 },
+                boxShadow: { xs: 6, sm: 4 },
+                opacity: 0.95,
               }}
             >
               {cutDragState.type === 'start' && '◀'}
