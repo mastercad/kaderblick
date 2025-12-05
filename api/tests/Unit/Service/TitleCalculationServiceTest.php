@@ -102,7 +102,7 @@ class TitleCalculationServiceTest extends TestCase
             ['player' => $player3, 'goal_count' => 8],
         ];
 
-        $result = $this->invokeAwardTitlesPerPlayerFromArray($service, $playerGoals, 'top_scorer', 'platform', null, '2025/2026');
+        $result = $this->invokeAwardTitlesPerPlayerFromArray($service, $playerGoals, 'top_scorer', 'platform', null, '2025/2026', true);
         $this->assertCount(3, $result, 'Alle drei Spieler sollten einen Titel erhalten.');
         $ranks = array_map(fn ($t) => $t->getTitleRank(), $result);
         $this->assertEqualsCanonicalizing(['bronze', 'gold', 'gold'], $ranks, 'Zwei Gold, dann Bronze (Silber entfällt, Logik wie im Service).');
@@ -132,7 +132,7 @@ class TitleCalculationServiceTest extends TestCase
             ]
         ];
 
-        $result = $this->invokeAwardTitlesPerPlayerFromArray($service, $playerGoals, 'top_scorer', 'platform', null, '2025/2026');
+        $result = $this->invokeAwardTitlesPerPlayerFromArray($service, $playerGoals, 'top_scorer', 'platform', null, '2025/2026', false);
         $this->assertCount(1, $result, 'Es sollte nur ein Titel vergeben werden, auch bei erneutem Aufruf.');
     }
 
@@ -141,12 +141,46 @@ class TitleCalculationServiceTest extends TestCase
      *
      * @return PlayerTitle[]
      */
-    private function invokeAwardTitlesPerPlayerFromArray(TitleCalculationService $service, array $playerGoals, string $cat, string $scope, ?Team $team, ?string $season): array
+    private function invokeAwardTitlesPerPlayerFromArray(TitleCalculationService $service, array $playerGoals, string $cat, string $scope, ?Team $team, ?string $season, bool $useOlympicRanking = false): array
     {
         $ref = new ReflectionClass($service);
         $method = $ref->getMethod('awardTitlesPerPlayerFromArray');
         $method->setAccessible(true);
 
-        return $method->invoke($service, $playerGoals, $cat, $scope, $team, $season);
+        // Pass explicit null for $league to ensure the $useOlympicRanking
+        // parameter is bound correctly as the last argument.
+        return $method->invoke($service, $playerGoals, $cat, $scope, $team, $season, null, $useOlympicRanking);
+    }
+
+    public function testThreePlayersSameGoalsReceiveSameRank(): void
+    {
+        $repo = $this->createMock(PlayerTitleRepository::class);
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('getRepository')->willReturn($repo);
+        $repo->method('findOneBy')->willReturn(null);
+        $repo->method('deactivateTitles');
+
+        $service = new TitleCalculationService($em, $repo);
+
+        $player1 = $this->getMockBuilder(\App\Entity\Player::class)->onlyMethods(['getId', 'getLastName'])->getMock();
+        $player1->method('getId')->willReturn(1);
+        $player1->method('getLastName')->willReturn('A');
+        $player2 = $this->getMockBuilder(\App\Entity\Player::class)->onlyMethods(['getId', 'getLastName'])->getMock();
+        $player2->method('getId')->willReturn(2);
+        $player2->method('getLastName')->willReturn('B');
+        $player3 = $this->getMockBuilder(\App\Entity\Player::class)->onlyMethods(['getId', 'getLastName'])->getMock();
+        $player3->method('getId')->willReturn(3);
+        $player3->method('getLastName')->willReturn('C');
+
+        $playerGoals = [
+            ['player' => $player1, 'goal_count' => 5],
+            ['player' => $player2, 'goal_count' => 5],
+            ['player' => $player3, 'goal_count' => 5],
+        ];
+
+        $result = $this->invokeAwardTitlesPerPlayerFromArray($service, $playerGoals, 'top_scorer', 'platform', null, '2025/2026');
+        $this->assertCount(3, $result, 'Alle drei Spieler sollten einen Titel erhalten.');
+        $ranks = array_map(fn ($t) => $t->getTitleRank(), $result);
+        $this->assertEqualsCanonicalizing(['gold', 'gold', 'gold'], $ranks, 'Drei Spieler mit gleicher Toranzahl sollten alle Gold erhalten.');
     }
 }
