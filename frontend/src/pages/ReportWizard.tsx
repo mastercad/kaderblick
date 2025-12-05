@@ -5,6 +5,7 @@ import { Bar, Line, Pie } from 'react-chartjs-2';
 const REPORT_TYPES = [
   { value: 'bar', label: 'Balkendiagramm' },
   { value: 'line', label: 'Liniendiagramm' },
+  { value: 'area', label: 'Flächendiagramm' },
   { value: 'pie', label: 'Kuchendiagramm' },
 ];
 
@@ -18,6 +19,7 @@ const ReportWizard = () => {
   const [step, setStep] = useState(1);
   const [type, setType] = useState('bar');
   const [params, setParams] = useState(DEFAULT_PARAMS['bar']);
+  // no area/surface UI here; 'area' is a chart type
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -26,8 +28,9 @@ const ReportWizard = () => {
     <div>
       <h2>1. Report-Typ wählen</h2>
       <select value={type} onChange={e => {
-        setType(e.target.value);
-        setParams(DEFAULT_PARAMS[e.target.value]);
+        const val = e.target.value as 'bar' | 'line' | 'pie';
+        setType(val);
+        setParams(DEFAULT_PARAMS[val]);
       }}>
         {REPORT_TYPES.map(rt => (
           <option key={rt.value} value={rt.value}>{rt.label}</option>
@@ -55,6 +58,8 @@ const ReportWizard = () => {
         />
       </label>
       <br />
+      {/* no area-specific form here; 'area' is a chart type rendered as filled line */}
+      <br />
       <button onClick={() => setStep(1)}>Zurück</button>
       <button onClick={() => setStep(3)}>Vorschau</button>
     </div>
@@ -62,19 +67,21 @@ const ReportWizard = () => {
 
   // Schritt 3: Vorschau
   const StepPreview = () => {
+    const baseDataset = {
+      label: 'Beispiel-Daten',
+      data: params.data,
+      backgroundColor: ['#36a2eb', '#ff6384', '#ffce56'],
+    };
     const chartData = {
       labels: params.labels,
-      datasets: [{
-        label: 'Beispiel-Daten',
-        data: params.data,
-        backgroundColor: ['#36a2eb', '#ff6384', '#ffce56'],
-      }],
+      datasets: [baseDataset],
     };
     return (
       <div>
         <h2>3. Vorschau</h2>
         {type === 'bar' && <Bar data={chartData} />}
         {type === 'line' && <Line data={chartData} />}
+        {type === 'area' && <Line data={{ ...chartData, datasets: chartData.datasets.map((ds, i) => ({ ...ds, fill: true, backgroundColor: `rgba(54,162,235,0.35)` })) }} />}
         {type === 'pie' && <Pie data={chartData} />}
         <br />
         <button onClick={() => setStep(2)}>Zurück</button>

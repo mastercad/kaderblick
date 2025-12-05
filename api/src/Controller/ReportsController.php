@@ -22,7 +22,7 @@ class ReportsController extends AbstractController
     {
         /** @var User $user */
         $user = $this->getUser();
-        $fieldAliases = ReportFieldAliasService::fieldAliases();
+        $fieldAliases = ReportFieldAliasService::fieldAliases($em);
         $data = $request->request->all();
         $report = new ReportDefinition();
         $report->setName($data['name'] ?? '');
@@ -39,6 +39,7 @@ class ReportsController extends AbstractController
             'xField' => $data['config']['xField'] ?? 'player',
             'yField' => $data['config']['yField'] ?? 'goals',
             'groupBy' => $data['config']['groupBy'] ?? [],
+            'metrics' => $data['config']['metrics'] ?? [],
             'filters' => $filters,
         ];
         if (!isset($fieldAliases[$config['xField']])) {
@@ -50,6 +51,27 @@ class ReportsController extends AbstractController
         if (!is_array($config['groupBy'])) {
             $config['groupBy'] = $config['groupBy'] ? [$config['groupBy']] : [];
         }
+        // Validate metrics: allow alias keys or eventType:id tokens or eventCode:code tokens
+        $validatedMetrics = [];
+        $rawMetrics = $data['config']['metrics'] ?? null;
+        if (!is_array($rawMetrics) && null !== $rawMetrics) {
+            $rawMetrics = [$rawMetrics];
+        }
+        foreach ($rawMetrics as $m) {
+            if (isset($fieldAliases[$m])) {
+                $validatedMetrics[] = $m;
+                continue;
+            }
+            if (is_string($m) && preg_match('/^eventType:\d+$/', $m)) {
+                $validatedMetrics[] = $m;
+                continue;
+            }
+            if (is_string($m) && preg_match('/^eventCode:.+$/', $m)) {
+                $validatedMetrics[] = $m;
+                continue;
+            }
+        }
+        $config['metrics'] = $validatedMetrics;
         $report->setConfig($config);
         $report->setIsTemplate(false);
         $report->setUser($user);
@@ -89,7 +111,7 @@ class ReportsController extends AbstractController
         $repo = $em->getRepository(ReportDefinition::class);
         $isEdit = null !== $id;
         $report = $isEdit ? $repo->find($id) : new ReportDefinition();
-        $fieldAliases = ReportFieldAliasService::fieldAliases();
+        $fieldAliases = ReportFieldAliasService::fieldAliases($em);
         if ($isEdit && (!$report || ($report->getUser() && $report->getUser() !== $user && !$this->isGranted('ROLE_ADMIN')))) {
             throw $this->createAccessDeniedException();
         }
@@ -104,6 +126,7 @@ class ReportsController extends AbstractController
                 'yField' => $data['config']['yField'] ?? 'goals',
                 'filters' => $data['config']['filters'] ?? [],
                 'groupBy' => $data['config']['groupBy'] ?? [],
+                'metrics' => $data['config']['metrics'] ?? [],
             ];
 
             // Nur erlaubte Aliase speichern
@@ -113,6 +136,27 @@ class ReportsController extends AbstractController
             if (!isset($fieldAliases[$config['yField']])) {
                 $config['yField'] = array_key_first($fieldAliases);
             }
+            // Validate metrics for server-side builder POST
+            $validatedMetrics = [];
+            $rawMetrics = $data['config']['metrics'] ?? null;
+            if (!is_array($rawMetrics) && null !== $rawMetrics) {
+                $rawMetrics = [$rawMetrics];
+            }
+            foreach ($rawMetrics as $m) {
+                if (isset($fieldAliases[$m])) {
+                    $validatedMetrics[] = $m;
+                    continue;
+                }
+                if (is_string($m) && preg_match('/^eventType:\d+$/', $m)) {
+                    $validatedMetrics[] = $m;
+                    continue;
+                }
+                if (is_string($m) && preg_match('/^eventCode:.+$/', $m)) {
+                    $validatedMetrics[] = $m;
+                    continue;
+                }
+            }
+            $config['metrics'] = $validatedMetrics;
             $report->setConfig($config);
             if ($this->isGranted('ROLE_ADMIN') && isset($data['isTemplate'])) {
                 $report->setIsTemplate(true);

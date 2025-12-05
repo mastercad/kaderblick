@@ -21,7 +21,7 @@ class ReportController extends AbstractController
     #[Route('/builder-data', name: 'api_report_builder_data', methods: ['GET'])]
     public function builderData(EntityManagerInterface $em): JsonResponse
     {
-        $fieldAliases = ReportFieldAliasService::fieldAliases();
+        $fieldAliases = ReportFieldAliasService::fieldAliases($em);
 
         // Teams, Spieler, Ereignistypen für Filter
         $teamRepo = $em->getRepository(\App\Entity\Team::class);
@@ -51,6 +51,14 @@ class ReportController extends AbstractController
             'name' => $eventType->getName()
         ], $eventTypes);
 
+        // Surface types for filter + metrics
+        $surfaceTypeRepo = $em->getRepository(\App\Entity\SurfaceType::class);
+        $surfaceTypes = $surfaceTypeRepo->findAll();
+        $surfaceTypesData = array_map(fn ($s) => [
+            'id' => $s->getId(),
+            'name' => $s->getName()
+        ], $surfaceTypes);
+
         $dateRows = $gameEventRepo->createQueryBuilder('e')
             ->select('e.timestamp')
             ->orderBy('e.timestamp', 'ASC')
@@ -71,11 +79,43 @@ class ReportController extends AbstractController
             ];
         }
 
+        // Expose metrics (alias-based aggregates) to the frontend as selectable metrics
+        $metrics = [];
+        foreach ($fieldAliases as $key => $data) {
+            if (isset($data['aggregate']) && is_callable($data['aggregate'])) {
+                $metrics[] = [
+                    'key' => $key,
+                    'label' => $data['label'],
+                ];
+            }
+        }
+        // Also expose event types as metric tokens (eventType:{id})
+        foreach ($eventTypes as $et) {
+            $metrics[] = [
+                'key' => 'eventType:' . $et->getId(),
+                'label' => 'Ereignis: ' . $et->getName(),
+            ];
+        }
+        // Expose surface types as metric tokens (surfaceType:{id})
+        foreach ($surfaceTypes as $st) {
+            $metrics[] = [
+                'key' => 'surfaceType:' . $st->getId(),
+                'label' => 'Platztyp: ' . $st->getName(),
+            ];
+        }
+        // Weather-based metrics (simple tokens)
+        $metrics[] = [
+            'key' => 'weather:precipitation',
+            'label' => 'Regen / Niederschlag (Spieltag)'
+        ];
+
         return $this->json([
             'fields' => $fields,
             'teams' => $teamsData,
             'players' => $playersData,
             'eventTypes' => $eventTypesData,
+            'surfaceTypes' => $surfaceTypesData,
+            'metrics' => $metrics,
             'availableDates' => $availableDates,
             'minDate' => $minDate,
             'maxDate' => $maxDate,
@@ -216,6 +256,31 @@ class ReportController extends AbstractController
         if (!isset($data['name'], $data['config'])) {
             return $this->json(['error' => 'Missing name or config'], 400);
         }
+        // validate metrics tokens in config
+        $allowed = [];
+        $aliases = ReportFieldAliasService::fieldAliases($em);
+        foreach ($aliases as $k => $v) {
+            if (isset($v['aggregate']) && is_callable($v['aggregate'])) {
+                $allowed[] = $k;
+            }
+        }
+        $eventTypes = $em->getRepository(\App\Entity\GameEventType::class)->findAll();
+        foreach ($eventTypes as $et) {
+            $allowed[] = 'eventType:' . $et->getId();
+        }
+        $surfaceTypes = $em->getRepository(\App\Entity\SurfaceType::class)->findAll();
+        foreach ($surfaceTypes as $st) {
+            $allowed[] = 'surfaceType:' . $st->getId();
+        }
+        $allowed[] = 'weather:precipitation';
+
+        if (isset($data['config']['metrics']) && is_array($data['config']['metrics'])) {
+            foreach ($data['config']['metrics'] as $m) {
+                if (!in_array($m, $allowed, true)) {
+                    return $this->json(['error' => 'Invalid metric token: ' . $m], 400);
+                }
+            }
+        }
         /** @var User $user */
         $user = $this->getUser();
         $report = new ReportDefinition();
@@ -240,6 +305,31 @@ class ReportController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true);
+        // validate metrics tokens in config if provided
+        if (isset($data['config']) && is_array($data['config']) && isset($data['config']['metrics']) && is_array($data['config']['metrics'])) {
+            $allowed = [];
+            $aliases = ReportFieldAliasService::fieldAliases($em);
+            foreach ($aliases as $k => $v) {
+                if (isset($v['aggregate']) && is_callable($v['aggregate'])) {
+                    $allowed[] = $k;
+                }
+            }
+            $eventTypes = $em->getRepository(\App\Entity\GameEventType::class)->findAll();
+            foreach ($eventTypes as $et) {
+                $allowed[] = 'eventType:' . $et->getId();
+            }
+            $surfaceTypes = $em->getRepository(\App\Entity\SurfaceType::class)->findAll();
+            foreach ($surfaceTypes as $st) {
+                $allowed[] = 'surfaceType:' . $st->getId();
+            }
+            $allowed[] = 'weather:precipitation';
+
+            foreach ($data['config']['metrics'] as $m) {
+                if (!in_array($m, $allowed, true)) {
+                    return $this->json(['error' => 'Invalid metric token: ' . $m], 400);
+                }
+            }
+        }
         if (isset($data['name'])) {
             $report->setName($data['name']);
         }

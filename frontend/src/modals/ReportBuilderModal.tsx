@@ -14,7 +14,18 @@ import {
   Slider,
   Checkbox,
   FormControlLabel,
+  OutlinedInput,
+  IconButton,
+  Tooltip,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
+import Autocomplete from '@mui/material/Autocomplete';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { ReportWidget } from '../widgets/ReportWidget';
 import { WidgetRefreshProvider } from '../context/WidgetRefreshContext';
@@ -37,10 +48,16 @@ export interface Report {
     xField: string;
     yField: string;
     groupBy?: string;
+    metrics?: string[];
+      movingAverage?: { enabled: boolean; window: number };
+      heatmapStyle?: string;
+      heatmapSpatial?: boolean;
     filters?: {
       team?: string;
       player?: string;
       eventType?: string;
+        surfaceType?: string;
+        precipitation?: string; // 'yes' | 'no'
       dateFrom?: string;
       dateTo?: string;
     };
@@ -61,9 +78,12 @@ interface BuilderData {
   teams: Array<{ id: number; name: string }>;
   players: Array<{ id: number; fullName: string; firstName: string; lastName: string }>;
   eventTypes: Array<{ id: number; name: string }>;
+  metrics?: Array<{ key: string; label: string }>;
+  surfaceTypes?: Array<{ id: number; name: string }>;
   availableDates: string[];
   minDate: string;
   maxDate: string;
+  // no surfaceTypes by default
 }
 
 export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
@@ -80,6 +100,9 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
       diagramType: 'bar',
       xField: '',
       yField: '',
+      groupBy: undefined,
+      metrics: [],
+      movingAverage: { enabled: false, window: 3 },
       filters: {},
       showLegend: true,
       showLabels: false,
@@ -90,6 +113,8 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
   const [previewData, setPreviewData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [builderData, setBuilderData] = useState<BuilderData | null>(null);
+  const [prevGroupBy, setPrevGroupBy] = useState<string | undefined>(undefined);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // Initialize currentReport when report prop changes
   useEffect(() => {
@@ -149,7 +174,8 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
           config: currentReport.config,
         },
       });
-      setPreviewData(data);
+      // Attach current report config so widget can apply client-side transforms (e.g. moving average)
+      setPreviewData({ ...data, config: currentReport.config });
     } catch (error) {
       console.error('Error loading preview:', error);
       setPreviewData(null);
@@ -170,7 +196,7 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
 
   const handleFilterChange = (filterKey: string, value: any) => {
     setCurrentReport(prev => {
-      const newFilters = { ...prev.config.filters };
+      const newFilters = { ...(prev.config.filters || {}) } as any;
       if (value === null) {
         delete newFilters[filterKey];
       } else {
@@ -253,6 +279,52 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
       ...prev,
       config: newConfig,
     }));
+  };
+
+  // Preview validation/warnings (computed from previewData + current config)
+  const computePreviewWarnings = () => {
+    const warnings: { movingAverageWindowTooLarge?: boolean; boxplotFormatInvalid?: boolean; scatterNonNumeric?: boolean } = {};
+    try {
+      const labelsLen = (previewData && Array.isArray(previewData.labels)) ? previewData.labels.length : 0;
+      const maCfg = currentReport.config.movingAverage;
+      if (maCfg && maCfg.enabled && Number.isInteger(maCfg.window)) {
+        if (labelsLen > 0 && maCfg.window > labelsLen) {
+          warnings.movingAverageWindowTooLarge = true;
+        }
+      }
+
+      const diag = (previewData?.diagramType || currentReport.config.diagramType || '').toLowerCase();
+      const dsets = previewData?.datasets || [];
+      if (diag === 'boxplot') {
+        // Expect each dataset.data to be an array where each entry is an array of numbers
+        let invalid = false;
+        if (!Array.isArray(dsets) || dsets.length === 0) invalid = true;
+        for (const ds of dsets) {
+          if (!Array.isArray(ds.data)) { invalid = true; break; }
+          for (const entry of ds.data) {
+            if (!Array.isArray(entry)) { invalid = true; break; }
+          }
+          if (invalid) break;
+        }
+        if (invalid) warnings.boxplotFormatInvalid = true;
+      }
+
+      if (diag === 'scatter') {
+        let nonNumeric = false;
+        for (const ds of dsets) {
+          if (!Array.isArray(ds.data)) continue;
+          for (const v of ds.data) {
+            const n = Number(v);
+            if (isNaN(n)) { nonNumeric = true; break; }
+          }
+          if (nonNumeric) break;
+        }
+        if (nonNumeric) warnings.scatterNonNumeric = true;
+      }
+    } catch (e) {
+      // ignore
+    }
+    return warnings;
   };
 
   return (
@@ -473,14 +545,136 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                 >
                   <MenuItem value="bar">Balkendiagramm</MenuItem>
                   <MenuItem value="line">Liniendiagramm</MenuItem>
+                  <MenuItem value="area">Flächendiagramm</MenuItem>
+                  <MenuItem value="stackedarea">Gestapeltes Flächendiagramm</MenuItem>
+                  <MenuItem value="scatter">Scatter (Punkte)</MenuItem>
+                  <MenuItem value="pitchheatmap">Pitch Heatmap</MenuItem>
+                  <MenuItem value="boxplot">Boxplot</MenuItem>
                   <MenuItem value="pie">Kreisdiagramm</MenuItem>
                   <MenuItem value="doughnut">Donut-Diagramm</MenuItem>
+                  <MenuItem value="radar">Radar</MenuItem>
+                  <MenuItem value="radaroverlay">Radar (Overlay)</MenuItem>
                 </Select>
               </FormControl>
 
+              {/* Advanced chart options */}
+              <Box sx={{ mt: 1, display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <FormControlLabel
+                    control={<Checkbox checked={currentReport.config.movingAverage?.enabled || false} onChange={(e) => setCurrentReport(prev => ({ ...prev, config: { ...prev.config, movingAverage: { ...(prev.config.movingAverage || { enabled: false, window: 3 }), enabled: e.target.checked } } }))} />}
+                    label="Gleitender Durchschnitt"
+                  />
+                  <Tooltip enterDelay={300} title="Glättet die Serie über ein wählbares Fenster. Tipp: Wenn das Fenster größer ist als die Anzahl Datenpunkte, verkleinern oder Zeitraum erweitern.">
+                    <IconButton size="small" aria-label="Info Gleitender Durchschnitt" sx={{ color: 'text.secondary' }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+                {currentReport.config.movingAverage?.enabled && (
+                  <Box sx={{ width: 220, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2">Fenster</Typography>
+                    <Slider
+                      value={currentReport.config.movingAverage?.window || 3}
+                      min={1}
+                      max={21}
+                      step={1}
+                      onChange={(_, val) => setCurrentReport(prev => ({ ...prev, config: { ...prev.config, movingAverage: { ...(prev.config.movingAverage || { enabled: true, window: 3 }), window: val as number } } }))}
+                      valueLabelDisplay="auto"
+                    />
+                  </Box>
+                )}
+              </Box>
+
+              {/* Heatmap style selector when pitchheatmap is chosen */}
+              {currentReport.config.diagramType === 'pitchheatmap' && (
+                <>
+                  <FormControl fullWidth margin="normal">
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <InputLabel>Heatmap-Darstellung</InputLabel>
+                      <Tooltip enterDelay={300} title="Wähle Darstellung: 'Geglättet' für performante Overlay-Heatmap, 'Klassisch' für exakte Zellenwerte (Grid). 'Beides' zeigt beide Ansichten.">
+                        <IconButton size="small" aria-label="Info Heatmap-Stil" sx={{ color: 'text.secondary' }}>
+                          <InfoOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                    <Select
+                      value={(currentReport.config as any).heatmapStyle || 'smoothed'}
+                      onChange={(e) => handleConfigChange('heatmapStyle', e.target.value)}
+                      label="Heatmap-Darstellung"
+                    >
+                      <MenuItem value="smoothed">Geglättete Heatmap (Standard)</MenuItem>
+                      <MenuItem value="classic">Klassische Heatmap (Grid)</MenuItem>
+                      <MenuItem value="both">Beides (Grid + Glättung)</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  <FormControl fullWidth margin="normal">
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={!!(currentReport.config as any).heatmapSpatial}
+                            onChange={(e) => setCurrentReport(prev => ({ ...prev, config: { ...prev.config, heatmapSpatial: e.target.checked } }))}
+                          />
+                        }
+                        label="Räumliche Heatmap (x/y)"
+                      />
+                      <Tooltip enterDelay={300} title="Versucht Server-seitige X/Y-Koordinaten (0–100%) für Events zu verwenden. Fehlen Positionen, fällt der Server auf Matrix (Zellen) zurück — die Vorschau zeigt dann einen Hinweis.">
+                        <IconButton size="small" aria-label="Info Räumliche Heatmap" sx={{ color: 'text.secondary' }}>
+                          <InfoOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </FormControl>
+                </>
+              )}
+
+              {/* Radar overlay normalization option */}
+              {(currentReport.config.diagramType === 'radar' || currentReport.config.diagramType === 'radaroverlay') && (
+                <Box display="flex" alignItems="center" gap={1}>
+                  <FormControlLabel
+                    control={<Checkbox checked={(currentReport.config as any).radarNormalize === true} onChange={(e) => setCurrentReport(prev => ({ ...prev, config: { ...prev.config, radarNormalize: e.target.checked } }))} />}
+                    label="Pro Dataset normalisieren"
+                  />
+                  <Tooltip enterDelay={300} title="Normiert jedes Dataset auf 0..1, hilfreich wenn Datasets stark unterschiedliche Summen haben — zeigt Form anstelle von absoluten Werten.">
+                    <IconButton size="small" aria-label="Info Radar Normalisierung" sx={{ color: 'text.secondary' }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              )}
+
+              {/* Metrics selector for Radar charts (searchable) */}
+              {currentReport.config.diagramType === 'radar' && (
+                <Box sx={{ mt: 2 }}>
+                  <Autocomplete
+                    multiple
+                    options={builderData?.metrics ?? []}
+                    getOptionLabel={(opt) => typeof opt === 'string' ? opt : opt.label}
+                    value={(builderData?.metrics ?? []).filter((m) => (currentReport.config.metrics || []).includes(m.key))}
+                    onChange={(_, newValue) => handleConfigChange('metrics', newValue.map((v: any) => v.key))}
+                    renderTags={(value: any[], getTagProps) =>
+                      value.map((option: any, index: number) => (
+                        <Chip label={option.label} {...getTagProps({ index })} key={option.key} size="small" />
+                      ))
+                    }
+                    renderInput={(params) => (
+                      <TextField {...params} label="Metriken" placeholder="Metriken auswählen" />
+                    )}
+                  />
+                </Box>
+              )}
+
               {/* Gruppierung */}
               <FormControl fullWidth margin="normal">
-                <InputLabel>Gruppierung (optional)</InputLabel>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <InputLabel>Gruppierung (optional)</InputLabel>
+                  <Tooltip enterDelay={300} title="Gruppiert die Daten in separate Layer (z. B. nach Spieler oder Team). Nützlich zum Vergleich über Kategorien hinweg.">
+                    <IconButton size="small" aria-label="Info Gruppierung" sx={{ color: 'text.secondary' }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
                 <Select
                   value={currentReport.config.groupBy || ''}
                   onChange={(e) => handleConfigChange('groupBy', e.target.value)}
@@ -494,6 +688,8 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                   ))}
                 </Select>
               </FormControl>
+
+              {/* no area-specific UI here; 'area' is a chart type rendered as filled line chart */}
 
               <Divider sx={{ my: 2 }} />
 
@@ -627,6 +823,58 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                       ))}
                     </Select>
                   </FormControl>
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel>Platztyp</InputLabel>
+                    <Select
+                      value={currentReport.config.filters?.surfaceType || ''}
+                      onChange={(e) => handleFilterChange('surfaceType', e.target.value)}
+                      label="Platztyp"
+                    >
+                      <MenuItem value="">Alle Platztypen</MenuItem>
+                      {builderData?.surfaceTypes?.map((st) => (
+                        <MenuItem key={st.id} value={st.id.toString()}>
+                          {st.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                    <FormControl fullWidth margin="normal">
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <InputLabel>Wetter (Niederschlag)</InputLabel>
+                        <Tooltip enterDelay={300} title="Filtert Spiele nach vorhandenem Niederschlag (aus Wetterdaten).">
+                          <IconButton size="small" aria-label="Info Niederschlag" sx={{ color: 'text.secondary' }}>
+                            <InfoOutlinedIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                      <Select
+                        value={currentReport.config.filters?.precipitation || ''}
+                        onChange={(e) => handleFilterChange('precipitation', e.target.value)}
+                        label="Wetter (Niederschlag)"
+                      >
+                        <MenuItem value="">Beliebig</MenuItem>
+                        <MenuItem value="yes">Mit Niederschlag</MenuItem>
+                        <MenuItem value="no">Ohne Niederschlag</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <FormControlLabel
+                        control={<Checkbox checked={currentReport.config.groupBy === 'surfaceType'} onChange={(e) => {
+                          if (e.target.checked) {
+                            setPrevGroupBy(currentReport.config.groupBy);
+                            handleConfigChange('groupBy', 'surfaceType');
+                          } else {
+                            handleConfigChange('groupBy', prevGroupBy);
+                          }
+                        }} />}
+                        label="Vergleich nach Platztyp"
+                      />
+                      <Tooltip enterDelay={300} title="Setzt die Gruppierung auf 'Platztyp', um Metriken nach Platzoberfläche zu vergleichen.">
+                        <IconButton size="small" aria-label="Info Vergleich nach Platztyp" sx={{ color: 'text.secondary' }}>
+                          <InfoOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                 </>
               )}
             </Box>
@@ -638,9 +886,16 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
               flexDirection="column" 
               minHeight={{ xs: 300, lg: 'auto' }}
             >
-              <Typography variant="h6" gutterBottom>
-                Vorschau
-              </Typography>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Typography variant="h6" gutterBottom>
+                  Vorschau
+                </Typography>
+                <Tooltip title="Hilfe zur räumlichen Heatmap und Fallbacks">
+                  <IconButton size="small" onClick={() => setHelpOpen(true)} aria-label="Hilfe anzeigen">
+                    <InfoOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
               
               <Box 
                 flex={1} 
@@ -665,11 +920,37 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                     </Typography>
                   </Box>
                 ) : previewData ? (
-                  <WidgetRefreshProvider>
-                    <ReportWidget 
-                      config={previewData}
-                    />
-                  </WidgetRefreshProvider>
+                  <Box sx={{ width: '100%', px: 1 }}>
+                    {/* Preview meta warnings */}
+                    {previewData.meta && (
+                      <Box sx={{ mb: 1 }}>
+                        {previewData.meta.eventsCount === 0 && (
+                          <Alert severity="warning">Keine Spielereignisse für die gewählten Filter / Zeitraum gefunden.</Alert>
+                        )}
+                        {previewData.meta.spatialRequested && previewData.meta.spatialProvided === false && (
+                          <Alert severity="info">Es wurden keine räumlichen Koordinaten für die Ereignisse gefunden. Die Heatmap wird als Matrix/Fallback gerendert.</Alert>
+                        )}
+                        {typeof previewData.meta.radarHasData !== 'undefined' && previewData.meta.radarHasData === false && (
+                          <Alert severity="warning">Die ausgewählten Radar-Metriken liefern keine Werte; prüfe deine Metriken oder Filter.</Alert>
+                        )}
+                        {/* Additional computed preview warnings */}
+                        {computePreviewWarnings().movingAverageWindowTooLarge && (
+                          <Alert severity="warning">Gleitschnitt-Fenster ist größer als die Anzahl an Datenpunkten — Ergebnis könnte leer aussehen. Vorschlag: Fenster verkleinern oder Zeitraum erweitern.</Alert>
+                        )}
+                        {computePreviewWarnings().boxplotFormatInvalid && (
+                          <Alert severity="warning">Boxplot erwartet pro Label Arrays mit numerischen Werten. Vorschlag: Prüfe, ob die gewählte Metrik für jedes Label Arrays mit Zahlen zurückgibt (z. B. mehrere Messwerte pro Label).</Alert>
+                        )}
+                        {computePreviewWarnings().scatterNonNumeric && (
+                          <Alert severity="warning">Scatter-Diagramm enthält nicht-numerische Werte. Vorschlag: Wähle ein numerisches Y-Feld oder konvertiere die Werte in der Datenquelle.</Alert>
+                        )}
+                      </Box>
+                    )}
+                    <WidgetRefreshProvider>
+                      <ReportWidget 
+                        config={previewData}
+                      />
+                    </WidgetRefreshProvider>
+                  </Box>
                 ) : (
                   <Typography color="text.secondary">Preview wird geladen...</Typography>
                 )}
@@ -677,6 +958,36 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
             </Box>
           </Box>
         </DragDropContext>
+        {/* Help dialog explaining spatial heatmap behavior and fallbacks */}
+        <Dialog open={helpOpen} onClose={() => setHelpOpen(false)} aria-labelledby="report-help-dialog">
+          <DialogTitle id="report-help-dialog">Hilfe: Räumliche Heatmap & Fallbacks</DialogTitle>
+          <DialogContent>
+            <DialogContentText component="div">
+              <Typography paragraph>
+                Wenn die Option "Räumliche Heatmap (x/y)" aktiviert ist, versucht der Server für jedes Ereignis Koordinaten
+                im Spielfeldmaß (als Prozentwerte 0–100) bereitzustellen. Mit diesen Koordinaten kann die Heatmap genau
+                auf dem Spielfeld positioniert und als echte, geglättete Überlagerung dargestellt werden.
+              </Typography>
+              <Typography paragraph>
+                Falls die Datenbank oder die Ereignis-Daten keine Positionswerte enthalten, liefert der Server stattdessen
+                eine Matrix-basierte Ausgabe (Zellen/Counts). In diesem Fall wird die Heatmap im Builder als Matrix/Fallback
+                gerendert. Die Vorschau zeigt eine Info-Meldung an, wenn dieser Fallback verwendet wird.
+              </Typography>
+              <Typography paragraph>
+                Hinweise zur Aktivierung von Positionsdaten: Füge den Ereignissen X/Y-Werte (z. B. `posX`, `posY` als Prozent)
+                hinzu oder importiere Koordinaten beim Datenimport. Alternativ kann ein Migrationsskript die Positionen aus
+                externen Quellen ergänzen. Diese Änderungen sind in der Regel administrativ und erfordern DB-/Import-Anpassungen.
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Tipp für Admins: Wenn du Unterstützung beim Hinzufügen von Positionsdaten brauchst, kann ich kurz skizzieren,
+                welche Felder und Migrationen sinnvoll wären.
+              </Typography>
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setHelpOpen(false)} autoFocus>Schließen</Button>
+          </DialogActions>
+        </Dialog>
     </BaseModal>
   );
 };
