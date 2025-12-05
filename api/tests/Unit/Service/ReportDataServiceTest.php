@@ -1,12 +1,11 @@
 <?php
 
-namespace App\Tests\Service;
+namespace App\Tests\Unit\Service;
 
 use App\Service\ReportDataService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
-use ReflectionObject;
 
 class ReportDataServiceTest extends TestCase
 {
@@ -92,45 +91,26 @@ class ReportDataServiceTest extends TestCase
             }
         };
 
-        // Event stub returning the above type
-        $ev1 = new class ($typeGoal) {
-            private mixed $t;
-
-            public function __construct(mixed $t)
-            {
-                $this->t = $t;
-            }
+        // Event stubs returning the above type (use public property to avoid constructor arg formatting issues)
+        $ev1 = new class {
+            public mixed $t;
 
             public function getGameEventType(): mixed
             {
                 return $this->t;
             }
         };
+        $ev1->t = $typeGoal;
 
-        $ev2 = new class ($typeGoal) {
-            private mixed $t;
-
-            public function __construct(mixed $t)
-            {
-                $this->t = $t;
-            }
+        $ev2 = new class {
+            public mixed $t;
 
             public function getGameEventType(): mixed
             {
                 return $this->t;
             }
         };
-
-        // Manually set the private property via reflection for simplicity
-        $refEv1 = new ReflectionObject($ev1);
-        $prop1 = $refEv1->getProperty('t');
-        $prop1->setAccessible(true);
-        $prop1->setValue($ev1, $typeGoal);
-
-        $refEv2 = new ReflectionObject($ev2);
-        $prop2 = $refEv2->getProperty('t');
-        $prop2->setAccessible(true);
-        $prop2->setValue($ev2, $typeGoal);
+        $ev2->t = $typeGoal;
 
         $ref = new ReflectionClass(ReportDataService::class);
         $m = $ref->getMethod('generateReportDataForRadar');

@@ -23,6 +23,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -93,6 +95,8 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
   report,
 }) => {
   const { isSuperAdmin } = useAuth();
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const [currentReport, setCurrentReport] = useState<Report>({
     name: '',
     description: '',
@@ -332,10 +336,11 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
       open={open}
       onClose={onClose}
       maxWidth="lg"
+      fullScreen={fullScreen}
       title={report ? 'Report bearbeiten' : 'Neuer Report'}
       actions={
         <>
-          <Button onClick={onClose} variant="outlined" color="secondary">
+          <Button onClick={onClose} variant="outlined" color="secondary" size={fullScreen ? 'large' : 'medium'}>
             Abbrechen
           </Button>
           <Button
@@ -343,6 +348,7 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
             variant="contained"
             color="primary"
             disabled={!currentReport.name || !currentReport.config.xField || !currentReport.config.yField}
+            size={fullScreen ? 'large' : 'medium'}
           >
             Speichern
           </Button>
@@ -878,9 +884,9 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                 </>
               )}
             </Box>
-
-            {/* Preview Panel */}
-            <Box 
+          
+          {/* Preview Panel */}
+          <Box 
               flex={1} 
               display="flex" 
               flexDirection="column" 
