@@ -159,74 +159,90 @@ class TitleCalculationService
         string $titleScope,
         ?Team $team = null,
         ?string $season = null,
-        ?League $league = null
+        ?League $league = null,
+        bool $useOlympicRanking = false
     ): array {
         $ranks = ['gold', 'silver', 'bronze'];
         $awarded = [];
-        $rankIndex = 0;
-        $lastGoalCount = null;
-        $playersThisRank = 0;
-        foreach ($playerGoals as $index => $row) {
-            if ($rankIndex > 2) {
-                break;
-            }
-            $player = $row['player'];
-            $value = $row['goal_count'];
+
+        // Group players by their goal count so that players with the same
+        // number of goals receive the same rank.
+        $groups = [];
+        foreach ($playerGoals as $row) {
+            $value = (int) ($row['goal_count'] ?? 0);
             if (0 === $value) {
                 continue;
             }
-            // Wenn neue Punktzahl, Rang erhöhen um die Anzahl der Spieler des letzten Rangs
-            if (null !== $lastGoalCount && $value < $lastGoalCount) {
-                $rankIndex += $playersThisRank;
-                $playersThisRank = 0;
-            }
-            if (!isset($ranks[$rankIndex])) {
+            $groups[$value][] = $row['player'];
+        }
+
+        if (empty($groups)) {
+            return $awarded;
+        }
+
+        // Sort groups by goal count descending (highest goals first)
+        krsort($groups, SORT_NUMERIC);
+
+        $rankIndex = 0;
+        foreach ($groups as $goalCount => $players) {
+            if ($rankIndex > 2) {
                 break;
             }
             $rank = $ranks[$rankIndex];
-            $lastGoalCount = $value;
-            ++$playersThisRank;
 
-            // Eindeutigkeitsprüfung: league immer als Kriterium, wenn scope=league
-            $criteria = [
-                'player' => $player,
-                'titleCategory' => $titleCategory,
-                'titleScope' => $titleScope,
-                'titleRank' => $rank,
-                'team' => $team,
-                'season' => $season,
-                'isActive' => true,
-            ];
-            if ('league' === $titleScope) {
-                $criteria['league'] = $league?->getId(); // auch wenn $league null ist, wird league explizit gesetzt
+            foreach ($players as $player) {
+                // Eindeutigkeitsprüfung: league immer als Kriterium, wenn scope=league
+                $criteria = [
+                    'player' => $player,
+                    'titleCategory' => $titleCategory,
+                    'titleScope' => $titleScope,
+                    'titleRank' => $rank,
+                    'team' => $team,
+                    'season' => $season,
+                    'isActive' => true,
+                ];
+                if ('league' === $titleScope) {
+                    $criteria['league'] = $league?->getId(); // auch wenn $league null ist, wird league explizit gesetzt
+                }
+                $existing = $this->entityManager->getRepository(PlayerTitle::class)->findOneBy($criteria);
+                if ($existing) {
+                    $awarded[] = $existing;
+                    continue;
+                }
+
+                $title = new PlayerTitle();
+                $title->setPlayer($player);
+                $title->setTitleCategory($titleCategory);
+                $title->setTitleScope($titleScope);
+                $title->setTitleRank($rank);
+
+                if ('league' === $titleScope) {
+                    $title->setTeam(null); // team bleibt null
+                    $title->setLeague($league); // league korrekt setzen (auch null möglich)
+                } else {
+                    $title->setTeam($team);
+                    $title->setLeague(null);
+                }
+
+                $title->setValue($goalCount);
+                $title->setIsActive(true);
+                $title->setAwardedAt(new DateTimeImmutable());
+                $title->setSeason($season);
+
+                $this->entityManager->persist($title);
+                $awarded[] = $title;
             }
-            $existing = $this->entityManager->getRepository(PlayerTitle::class)->findOneBy($criteria);
-            if ($existing) {
-                $awarded[] = $existing;
-                continue;
-            }
 
-            $title = new PlayerTitle();
-            $title->setPlayer($player);
-            $title->setTitleCategory($titleCategory);
-            $title->setTitleScope($titleScope);
-            $title->setTitleRank($rank);
-
-            if ('league' === $titleScope) {
-                $title->setTeam(null); // team bleibt null
-                $title->setLeague($league); // league korrekt setzen (auch null möglich)
+            // Move to next rank for the next distinct goal count.
+            // If Olympic ranking is requested, skip ranks according to the
+            // number of players that shared the current rank (standard
+            // competition / Olympic ranking). Otherwise use dense ranking
+            // (next distinct group always moves to the next ordinal rank).
+            if ($useOlympicRanking) {
+                $rankIndex += count($players);
             } else {
-                $title->setTeam($team);
-                $title->setLeague(null);
+                ++$rankIndex;
             }
-
-            $title->setValue($value);
-            $title->setIsActive(true);
-            $title->setAwardedAt(new DateTimeImmutable());
-            $title->setSeason($season);
-
-            $this->entityManager->persist($title);
-            $awarded[] = $title;
         }
         $this->entityManager->flush();
 
