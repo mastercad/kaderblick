@@ -108,10 +108,12 @@ const BaseModal: React.FC<BaseModalProps> = ({
       )}
 
       {/* Content */}
+
+      {/* Content */}
       <DialogContent
         sx={{
           pt: title ? 2 : 3,
-          pb: 2,
+          pb: (actions && (fullScreen || isMobile)) ? '84px' : 2,
           px: 3,
         }}
       >
@@ -121,12 +123,23 @@ const BaseModal: React.FC<BaseModalProps> = ({
       {/* Actions */}
       {actions && (
         <DialogActions
-          sx={{
+          sx={(theme) => ({
             px: 3,
             pb: 2,
             pt: 1,
             gap: 1,
-          }}
+            ...(fullScreen || isMobile ? {
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              px: 2,
+              py: 1,
+              background: theme.palette.background.paper,
+              boxShadow: '0 -8px 24px rgba(0,0,0,0.08)',
+              zIndex: theme.zIndex.modal + 1,
+            } : {}),
+          })}
         >
           {actions}
         </DialogActions>

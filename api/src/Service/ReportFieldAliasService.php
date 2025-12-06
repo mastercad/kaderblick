@@ -2,7 +2,9 @@
 
 namespace App\Service;
 
+use App\Entity\GameEventType;
 use DateTimeInterface;
+use Doctrine\ORM\EntityManagerInterface;
 
 class ReportFieldAliasService
 {
@@ -12,8 +14,20 @@ class ReportFieldAliasService
      *
      * @return array<string, array<string, mixed>>
      */
-    public static function fieldAliases(): array
+    public static function fieldAliases(?EntityManagerInterface $em = null): array
     {
+        // If an EntityManager is provided we can resolve GameEventType ids for code-based aliases
+        $typesByCode = [];
+        $typesById = [];
+        if (null !== $em) {
+            $types = $em->getRepository(GameEventType::class)->findAll();
+            foreach ($types as $t) {
+                // GameEventType is a known entity; call getters directly
+                $typesByCode[$t->getCode()] = $t;
+                $typesById[$t->getId()] = $t;
+            }
+        }
+
         return [
             // GameEvent fields
             'player' => [
@@ -116,6 +130,139 @@ class ReportFieldAliasService
                 'entity' => 'Player',
                 'field' => 'lastName',
                 'type' => 'string',
+            ],
+            // Metric aliases for radar charts and similar aggregated reports
+            'goals' => [
+                'label' => 'Tore',
+                'aggregate' => (static function (array $events) use ($typesByCode) {
+                    $goalId = null;
+                    if (isset($typesByCode['goal'])) {
+                        $goalId = $typesByCode['goal']->getId();
+                    }
+                    $c = 0;
+                    foreach ($events as $e) {
+                        if (method_exists($e, 'getGameEventType')) {
+                            $t = $e->getGameEventType();
+                            if ($t) {
+                                if (null !== $goalId && $t->getId() === $goalId) {
+                                    ++$c;
+                                    continue;
+                                }
+                                if ('goal' === $t->getCode()) {
+                                    ++$c;
+                                }
+                            }
+                        }
+                    }
+
+                    return $c;
+                }),
+            ],
+            'shots' => [
+                'label' => 'Schüsse',
+                'aggregate' => (static function (array $events) use ($typesByCode) {
+                    $shotIds = [];
+                    foreach (['shot', 'shot_on_target', 'shot_off_target'] as $code) {
+                        if (isset($typesByCode[$code])) {
+                            $shotIds[] = $typesByCode[$code]->getId();
+                        }
+                    }
+                    $c = 0;
+                    foreach ($events as $e) {
+                        if (method_exists($e, 'getGameEventType')) {
+                            $t = $e->getGameEventType();
+                            if ($t) {
+                                if (!empty($shotIds) && in_array($t->getId(), $shotIds, true)) {
+                                    ++$c;
+                                    continue;
+                                }
+                                $code = $t->getCode();
+                                if (in_array($code, ['shot', 'shot_on_target', 'shot_off_target'], true)) {
+                                    ++$c;
+                                }
+                            }
+                        }
+                    }
+
+                    return $c;
+                }),
+            ],
+            'dribbles' => [
+                'label' => 'Dribblings',
+                'aggregate' => (static function (array $events) use ($typesByCode) {
+                    $dribbleId = null;
+                    if (isset($typesByCode['dribble'])) {
+                        $dribbleId = $typesByCode['dribble']->getId();
+                    }
+                    $c = 0;
+                    foreach ($events as $e) {
+                        if (method_exists($e, 'getGameEventType')) {
+                            $t = $e->getGameEventType();
+                            if ($t) {
+                                if (null !== $dribbleId && $t->getId() === $dribbleId) {
+                                    ++$c;
+                                    continue;
+                                }
+                                if ('dribble' === $t->getCode()) {
+                                    ++$c;
+                                }
+                            }
+                        }
+                    }
+
+                    return $c;
+                }),
+            ],
+            'duelsWonPercent' => [
+                'label' => 'Zweikämpfe gewonnen %',
+                'aggregate' => (static function (array $events) use ($typesByCode) {
+                    $wonId = isset($typesByCode['duel_won']) ? $typesByCode['duel_won']->getId() : null;
+                    $lostId = isset($typesByCode['duel_lost']) ? $typesByCode['duel_lost']->getId() : null;
+                    $won = 0;
+                    $lost = 0;
+                    foreach ($events as $e) {
+                        if (method_exists($e, 'getGameEventType')) {
+                            $t = $e->getGameEventType();
+                            if ($t) {
+                                if (null !== $wonId && $t->getId() === $wonId) {
+                                    ++$won;
+                                    continue;
+                                }
+                                if (null !== $lostId && $t->getId() === $lostId) {
+                                    ++$lost;
+                                    continue;
+                                }
+                                $code = $t->getCode();
+                                if ('duel_won' === $code) {
+                                    ++$won;
+                                }
+                                if ('duel_lost' === $code) {
+                                    ++$lost;
+                                }
+                            }
+                        }
+                    }
+
+                    $total = $won + $lost;
+                    if (0 === $total) {
+                        return 0;
+                    }
+
+                    return ($won / $total) * 100;
+                }),
+            ],
+            'substitutionsIn' => [
+                'label' => 'Einwechslungen',
+                'aggregate' => (static function (array $events) {
+                    $c = 0;
+                    foreach ($events as $e) {
+                        if (method_exists($e, 'isSubstitutionIn') && $e->isSubstitutionIn()) {
+                            ++$c;
+                        }
+                    }
+
+                    return $c;
+                }),
             ],
             // Add more as needed ...
         ];
