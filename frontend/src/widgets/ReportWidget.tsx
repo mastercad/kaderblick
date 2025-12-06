@@ -341,6 +341,7 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
         borderDash: [6, 4],
         fill: false,
         yAxisID: ds.yAxisID ?? 'y',
+        type: 'line',
       });
     });
     return maDatasets;
@@ -356,6 +357,25 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
 
   // Responsive Chart: Container-Box steuert die Größe
   const chartProps = { data: chartData, options };
+
+  // If config requests moving average for simple chart types (line/area/bar),
+  // compute MA overlay datasets and append them to the chart data. We skip
+  // stackedarea (handled in its branch) and boxplot (handled in its branch).
+  try {
+    const maCfgGlobal = (data as any).config?.movingAverage;
+    const diagGlobal = ((data as any).diagramType || (data as any).config?.diagramType || type || '').toLowerCase();
+    if (maCfgGlobal && maCfgGlobal.enabled && Number.isInteger(maCfgGlobal.window) && maCfgGlobal.window > 1) {
+      if (['line', 'area', 'bar'].includes(diagGlobal)) {
+        const ma = applyMovingAverage(chartData.datasets || [], maCfgGlobal.window);
+        if (Array.isArray(ma) && ma.length > 0) {
+          chartProps.data = { ...(chartProps.data || {}), datasets: [...(chartProps.data?.datasets || []), ...ma] } as any;
+        }
+      }
+    }
+  } catch (e) {
+    // don't block rendering on MA computation errors
+    // console.debug('MA overlay skipped', e);
+  }
 
   return (
     <Box sx={{ width: '100%', height: { xs: 260, sm: 320, md: 360, lg: 400 }, minHeight: 220 }}>
@@ -591,7 +611,53 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
                 y: { stacked: false }
               }
             };
-            return <Bar data={bpData as any} options={bpOptions as any} />;
+            // If moving-average overlay requested, compute central values per label
+            // for each dataset (mean of each numeric-array entry) and append MA line datasets.
+            const maCfg = (data as any).config?.movingAverage;
+            let finalBpDatasets = bpData.datasets;
+            if (maCfg && maCfg.enabled && Number.isInteger(maCfg.window) && maCfg.window > 1) {
+              // Build temp numeric datasets: for each bp dataset, compute central values per label
+              const tempNumericDs: any[] = [];
+              bpData.datasets.forEach((ds: any, idx: number) => {
+                const central: number[] = [];
+                if (Array.isArray(ds.data)) {
+                  for (const entry of ds.data) {
+                        if (Array.isArray(entry) && entry.length > 0) {
+                          // compute central value (mean or median) depending on config
+                          const nums: number[] = [];
+                          for (const v of entry) {
+                            const n = Number(v);
+                            if (!isNaN(n)) nums.push(n);
+                          }
+                          if (nums.length === 0) {
+                            central.push(0);
+                          } else if ((maCfg && maCfg.method === 'median')) {
+                            nums.sort((a, b) => a - b);
+                            const m = nums.length;
+                            if (m % 2 === 1) {
+                              central.push(nums[(m - 1) / 2]);
+                            } else {
+                              central.push((nums[m / 2 - 1] + nums[m / 2]) / 2);
+                            }
+                          } else {
+                            const s = nums.reduce((a, b) => a + b, 0);
+                            central.push(s / nums.length);
+                          }
+                    } else if (typeof entry === 'number') {
+                      central.push(entry);
+                    } else {
+                      central.push(0);
+                    }
+                  }
+                }
+                tempNumericDs.push({ label: ds.label, data: central, borderColor: ds.borderColor || defaultColors[idx % defaultColors.length] });
+              });
+              const maDs = applyMovingAverage(tempNumericDs, maCfg.window);
+              // Append MA datasets after boxplot datasets; they are line-type datasets
+              finalBpDatasets = [...bpData.datasets, ...maDs];
+            }
+
+            return <Bar data={{ ...bpData, datasets: finalBpDatasets } as any} options={bpOptions as any} />;
           }
           case 'radaroverlay': {
             // datasets: each dataset.data is numeric array matching labels
