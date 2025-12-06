@@ -43,7 +43,8 @@ class TitleCalculationServiceLeagueTest extends TestCase
         $ref = new ReflectionClass($service);
         $method = $ref->getMethod('awardTitlesPerPlayerFromArray');
         $method->setAccessible(true);
-        $result = $method->invoke($service, $playerGoals, 'top_scorer', 'league', null, '2025/2026', $league);
+        // Request Olympic ranking for this league test to match previous expectation
+        $result = $method->invoke($service, $playerGoals, 'top_scorer', 'league', null, '2025/2026', $league, true);
         $this->assertCount(3, $result, 'Alle drei Spieler sollten einen Titel erhalten.');
         $ranks = array_map(fn ($t) => $t->getTitleRank(), $result);
         $this->assertEqualsCanonicalizing(['bronze', 'gold', 'gold'], $ranks, 'Zwei Gold, dann Bronze (Silber entfällt, Logik wie im Service).');
