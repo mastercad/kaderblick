@@ -39,6 +39,149 @@ class ReportDataService
 
         // (keine Area-spezifische Logik hier - Chart 'area' wird im Frontend als Line+Fill gerendert)
 
+        // Load alias metadata and check feature flag for DB-based aggregates
+        $fieldAliases = ReportFieldAliasService::fieldAliases($this->em);
+        $useDbAggregates = isset($config['use_db_aggregates']) ? (bool) $config['use_db_aggregates'] : false;
+
+        // If DB aggregates are enabled and a groupBy is provided, attempt a DB-side aggregation
+        // supporting multiple groupBy fields. We only handle simple COUNT-based aggregates
+        // and a couple of common metric filters (e.g. goals, shots). If unsupported, we
+        // fall back to in-memory aggregation and provide meta.suggestions explaining why.
+        if ($useDbAggregates && !empty($groupBy)) {
+            $metaLocal = ['eventsCount' => 0, 'dbAggregate' => false, 'warnings' => [], 'suggestions' => []];
+
+            // Determine whether the requested yField can be computed in DB
+            $yAlias = $fieldAliases[$yField] ?? null;
+            $supportedMetric = false;
+            if ($yAlias && isset($yAlias['aggregate']) && is_callable($yAlias['aggregate'])) {
+                if (in_array($yField, ['goals', 'shots'], true)) {
+                    $supportedMetric = true;
+                } else {
+                    $supportedMetric = false;
+                    $metaLocal['suggestions'][] = "DB-Aggregate: metric '{$yField}' not supported for DB aggregation (complex PHP aggregate).";
+                }
+            } else {
+                // tokens like eventType:ID or surfaceType:ID or generic count are supported
+                $supportedMetric = true;
+            }
+
+            if ($supportedMetric) {
+                $qb = $this->em->getRepository(GameEvent::class)->createQueryBuilder('e');
+
+                $groupLabelParts = [];
+                $groupByIdExprs = [];
+                $gbIndex = 0;
+                $canUseDb = true;
+
+                foreach ($groupBy as $gField) {
+                    $groupAlias = $fieldAliases[$gField] ?? null;
+                    if (!$groupAlias || !($groupAlias['accessibleFromEvent'] ?? false)) {
+                        $metaLocal['suggestions'][] = "Cannot DB-aggregate by '{$gField}' as it is not accessible from GameEvent.";
+                        $canUseDb = false;
+                        break;
+                    }
+
+                    // Use joinHint if provided, otherwise use path
+                    $joinPath = $groupAlias['joinHint'] ?? $groupAlias['path'] ?? [];
+                    $labelField = $groupAlias['subfield'] ?? $groupAlias['field'] ?? null;
+
+                    if (empty($joinPath) || !is_array($joinPath)) {
+                        $metaLocal['suggestions'][] = "No join path for groupBy '{$gField}', cannot DB-aggregate.";
+                        $canUseDb = false;
+                        break;
+                    }
+
+                    $prevAlias = 'e';
+                    $i = 0;
+                    $lastAlias = null;
+                    foreach ($joinPath as $segment) {
+                        $clean = preg_replace('/[^a-zA-Z0-9_]/', '_', $segment);
+                        $alias = 'g_' . $clean . '_' . $gbIndex . '_' . $i;
+                        // use LEFT JOIN to avoid dropping rows with missing relations
+                        $qb->leftJoin($prevAlias . '.' . $segment, $alias);
+                        $prevAlias = $alias;
+                        $lastAlias = $alias;
+                        ++$i;
+                    }
+
+                    // joinPath is non-empty (checked above), so lastAlias will be set; no need for extra null-check
+
+                    // Build a COALESCE label part for this group element
+                    $part = "COALESCE({$lastAlias}.name, {$lastAlias}.title, {$lastAlias}.label, {$lastAlias}.fullName, CONCAT(COALESCE({$lastAlias}.firstName, ''), ' ', COALESCE({$lastAlias}.lastName, '')), CONCAT('', {$lastAlias}.id))";
+                    $groupLabelParts[] = $part;
+                    $groupByIdExprs[] = $lastAlias . '.id';
+
+                    ++$gbIndex;
+                }
+
+                if ($canUseDb && !empty($groupByIdExprs)) {
+                    // Metric-specific WHEREs
+                    if ('goals' === $yField) {
+                        $qb->leftJoin('e.gameEventType', 'et')->andWhere('et.code = :goalCode')->setParameter('goalCode', 'goal');
+                    } elseif ('shots' === $yField) {
+                        $qb->leftJoin('e.gameEventType', 'et')->andWhere("et.code IN ('shot','shot_on_target','shot_off_target')");
+                    } elseif (preg_match('/^eventType:(\d+)$/', $yField, $m)) {
+                        $qb->andWhere('e.gameEventType = :evtype')->setParameter('evtype', (int) $m[1]);
+                    } elseif (preg_match('/^surfaceType:(\d+)$/', $yField, $m)) {
+                        // join through game -> location -> surfaceType
+                        $qb->leftJoin('e.game', 'g')->leftJoin('g.location', 'loc')->andWhere('loc.surfaceType = :surfaceType')->setParameter('surfaceType', (int) $m[1]);
+                    }
+
+                    // Apply standard filters (same as non-DB path)
+                    if (isset($filters['team'])) {
+                        $qb->andWhere('e.team = :team')->setParameter('team', $filters['team']);
+                    }
+                    if (isset($filters['eventType'])) {
+                        $qb->andWhere('e.gameEventType = :eventType')->setParameter('eventType', $filters['eventType']);
+                    }
+                    if (isset($filters['player'])) {
+                        $qb->andWhere('e.player = :player')->setParameter('player', $filters['player']);
+                    }
+                    if (isset($filters['surfaceType'])) {
+                        $qb->leftJoin('e.game', 'g2')->leftJoin('g2.location', 'loc2')->andWhere('loc2.surfaceType = :surfaceType')->setParameter('surfaceType', (int) $filters['surfaceType']);
+                    }
+                    if (isset($filters['dateFrom'])) {
+                        $qb->andWhere('DATE(e.timestamp) >= DATE(:dateFrom)')->setParameter('dateFrom', new DateTimeImmutable($filters['dateFrom']));
+                    }
+                    if (isset($filters['dateTo'])) {
+                        $qb->andWhere('DATE(e.timestamp) <= DATE(:dateTo)')->setParameter('dateTo', new DateTimeImmutable($filters['dateTo']));
+                    }
+
+                    // Build label expression by concatenating parts with ' | '
+                    $labelExpr = 'CONCAT(' . implode(", ' | ', ", $groupLabelParts) . ')';
+                    $qb->addSelect($labelExpr . ' AS label');
+                    foreach ($groupByIdExprs as $idx => $gexpr) {
+                        $qb->addGroupBy($gexpr);
+                    }
+
+                    $qb->select('label');
+                    $qb->addSelect('COUNT(e.id) AS value');
+                    $rows = $qb->getQuery()->getArrayResult();
+
+                    $labels = array_map(fn ($r) => $r['label'] ?? 'Unbekannt', $rows);
+                    $data = array_map(fn ($r) => (float) $r['value'], $rows);
+
+                    $datasetLabel = $fieldAliases[$yField]['label'] ?? $yField;
+                    $metaLocal['eventsCount'] = array_sum($data);
+                    $metaLocal['dbAggregate'] = true;
+
+                    return [
+                        'labels' => $labels,
+                        'datasets' => [
+                            ['label' => $datasetLabel, 'data' => $data]
+                        ],
+                        'meta' => $metaLocal,
+                    ];
+                }
+            }
+            // If we reach here, DB-aggregate wasn't possible — suggestions were pushed
+            // Create concise, user-facing tips (no DB-internals) for the UI and
+            // keep the technical suggestions in `metaLocal['suggestions']` for admins.
+            $metaLocal['userSuggestions'] = $this->deriveUserSuggestions($metaLocal['suggestions'], $metaLocal['warnings']);
+
+            // Fall back to loading events in PHP below.
+        }
+
         $qb = $this->em->getRepository(GameEvent::class)->createQueryBuilder('e');
         if (isset($filters['team'])) {
             $qb->andWhere('e.team = :team')->setParameter('team', $filters['team']);
@@ -103,6 +246,26 @@ class ReportDataService
         $meta = [];
         $meta['eventsCount'] = count($events);
 
+        // If DB-aggregate was attempted earlier, merge its meta information
+        // (technical suggestions remain for admins; userSuggestions are safe for end users).
+        if (isset($metaLocal)) {
+            // keep technical suggestions/warnings available for admins
+            // phpstan: metaLocal keys are built above but static analysis may be confused
+            // @phpstan-ignore-next-line
+            if (isset($metaLocal['suggestions']) && count($metaLocal['suggestions']) > 0) {
+                $meta['suggestions'] = $metaLocal['suggestions'];
+            }
+            // @phpstan-ignore-next-line
+            if (isset($metaLocal['warnings']) && count($metaLocal['warnings']) > 0) {
+                $meta['warnings'] = $metaLocal['warnings'];
+            }
+            // ensure dbAggregate is always a boolean
+            $meta['dbAggregate'] = (bool) $metaLocal['dbAggregate'];
+            // user-friendly tips to show to normal users
+            // @phpstan-ignore-next-line
+            $meta['userSuggestions'] = $metaLocal['userSuggestions'] ?? $this->deriveUserSuggestions($metaLocal['suggestions'] ?? [], $metaLocal['warnings'] ?? []);
+        }
+
         // Spatial heatmap support: if client requested spatial points, try to emit {x:0..100, y:0..100, intensity}
         if (isset($config['diagramType']) && 'pitchheatmap' === $config['diagramType'] && !empty($config['heatmapSpatial'])) {
             $meta['spatialRequested'] = true;
@@ -140,6 +303,14 @@ class ReportDataService
         }
 
         $result = $this->considerGroup($events, $diagramType, $xField, $yField, $groupBy);
+
+        // Ensure a concise, user-facing message is available for the preview UI.
+        // Ensure userMessage default is set when there are no events.
+        // @phpstan-ignore-next-line
+        if (0 === $meta['eventsCount'] && empty($meta['userMessage'])) {
+            $meta['userMessage'] = 'Keine Spielereignisse für die gewählten Filter / Zeitraum gefunden.';
+        }
+
         $result['meta'] = $meta;
 
         return $result;
@@ -363,11 +534,15 @@ class ReportDataService
             $counts[$y] = ($counts[$y] ?? 0) + 1;
         }
 
+        // Load alias metadata to resolve human-friendly labels for the dataset
+        $fieldAliases = ReportFieldAliasService::fieldAliases($this->em);
+        $datasetLabel = $fieldAliases[$yField]['label'] ?? $yField;
+
         return [
             'labels' => array_keys($counts),
             'datasets' => [
                 [
-                    'label' => $yField,
+                    'label' => $datasetLabel,
                     'data' => array_values($counts),
                 ]
             ],
@@ -400,11 +575,15 @@ class ReportDataService
             $data[] = $counts[$x];
         }
 
+        // Load alias metadata to resolve human-friendly labels for the dataset
+        $fieldAliases = ReportFieldAliasService::fieldAliases($this->em);
+        $datasetLabel = $fieldAliases[$yField]['label'] ?? $yField;
+
         return [
             'labels' => $xLabels,
             'datasets' => [
                 [
-                    'label' => $yField,
+                    'label' => $datasetLabel,
                     'data' => $data,
                 ]
             ],
@@ -426,10 +605,14 @@ class ReportDataService
         $layerValues = [];
         $matrix = [];
         foreach ($events as $event) {
-            $x = $this->retrieveFieldValue($event, $xField);
+            // Normalize x and groupBy values to safe string keys (entities/proxies may be returned)
+            $xRaw = $this->retrieveFieldValue($event, $xField);
+            $x = $this->stringifyValue($xRaw);
+
             $layerKeyParts = [];
             foreach ($groupBy as $gField) {
-                $layerKeyParts[] = $this->retrieveFieldValue($event, $gField);
+                $valRaw = $this->retrieveFieldValue($event, $gField);
+                $layerKeyParts[] = $this->stringifyValue($valRaw);
             }
             $layerKey = $layerKeyParts ? implode(' | ', $layerKeyParts) : '';
             $xValues[$x] = true;
@@ -481,6 +664,97 @@ class ReportDataService
         }
 
         return null;
+    }
+
+    /**
+     * Convert various value types (entity proxies, objects, arrays) into a safe string
+     * suitable for use as array keys / labels in charts.
+     */
+    private function stringifyValue(mixed $v): string
+    {
+        if (null === $v || '' === $v) {
+            return 'Unbekannt';
+        }
+
+        if (is_scalar($v)) {
+            return (string) $v;
+        }
+
+        if (is_array($v)) {
+            return json_encode($v, JSON_UNESCAPED_UNICODE);
+        }
+
+        if (is_object($v)) {
+            if (method_exists($v, 'getName')) {
+                return (string) $v->getName();
+            }
+            if (method_exists($v, 'getTitle')) {
+                return (string) $v->getTitle();
+            }
+            if (method_exists($v, 'getLabel')) {
+                return (string) $v->getLabel();
+            }
+            if (method_exists($v, 'getFullName')) {
+                return (string) $v->getFullName();
+            }
+            if (method_exists($v, 'getFirstName') && method_exists($v, 'getLastName')) {
+                return trim((string) $v->getFirstName() . ' ' . (string) $v->getLastName());
+            }
+            if (method_exists($v, 'getId')) {
+                return (string) $v->getId();
+            }
+            if (method_exists($v, '__toString')) {
+                return (string) $v;
+            }
+
+            return get_class($v);
+        }
+
+        return (string) $v;
+    }
+
+    /**
+     * Convert technical suggestions/warnings into short, user-facing tips (German).
+     * These tips must not contain DB-internal details and are intended for normal users.
+     *
+     * @param array<int, string> $suggestions
+     * @param array<int, string> $warnings
+     *
+     * @return array<int, string>
+     */
+    private function deriveUserSuggestions(array $suggestions, array $warnings = []): array
+    {
+        $tips = [];
+
+        if (empty($suggestions) && empty($warnings)) {
+            $tips[] = "Tipp: Probiere eines der Presets (z.B. 'Tore pro Spieler'), die meist schnelle Ergebnisse liefern.";
+
+            return array_values(array_unique($tips));
+        }
+
+        foreach ($suggestions as $s) {
+            $ls = strtolower($s);
+            if (str_contains($ls, 'metric') && str_contains($ls, 'not supported')) {
+                $tips[] = "Tipp: Für diese Metrik ist eine genauere Berechnung erforderlich; wähle 'Anzahl' oder 'Tore' für schnellere Ergebnisse.";
+                continue;
+            }
+            if (str_contains($ls, 'no join path') || str_contains($ls, 'join path') || str_contains($ls, 'not accessible') || str_contains($ls, 'unable to build join')) {
+                $tips[] = "Tipp: Wähle ein Feld, das direkt mit dem Ereignis verknüpft ist (z. B. 'player' oder 'team') oder verwende ein Preset.";
+                continue;
+            }
+            if (str_contains($ls, 'db-aggregate') || str_contains($ls, 'db aggregate')) {
+                $tips[] = 'Tipp: Entferne komplexe Gruppierungen oder wähle ein Preset für eine schnellere Vorschau.';
+                continue;
+            }
+
+            $tips[] = 'Tipp: Entferne komplexe Filter/Gruppierungen oder verwende eines der Presets für schnellere Ergebnisse.';
+        }
+
+        if (!empty($warnings)) {
+            $tips[] = 'Tipp: Prüfe die gesetzten Filter und den Zeitraum; erweitere ggf. den Zeitraum oder entferne Filter.';
+        }
+
+        return array_values(array_unique($tips));
     }
 
     /**
