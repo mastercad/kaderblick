@@ -6,6 +6,8 @@ use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Minishlink\WebPush\Subscription;
 use Minishlink\WebPush\WebPush;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class PushNotificationService
 {
@@ -14,7 +16,9 @@ class PushNotificationService
     public function __construct(
         private EntityManagerInterface $em,
         private string $vapidPublicKey,
-        private string $vapidPrivateKey
+        private string $vapidPrivateKey,
+        private ParameterBagInterface $params,
+        private LoggerInterface $logger
     ) {
     }
 
@@ -27,12 +31,19 @@ class PushNotificationService
     private function getWebPush(): WebPush
     {
         if (!$this->webPush) {
+            $subject = $this->params->get('app.website_url') ?: 'https://kaderblick.byte-artist.de';
+
             $this->webPush = new WebPush([
                 'VAPID' => [
-                    'subject' => 'https://kaderblick.byte-artist.de',
+                    'subject' => $subject,
                     'publicKey' => $this->vapidPublicKey,
                     'privateKey' => $this->vapidPrivateKey,
                 ],
+            ]);
+
+            $this->logger->info('WebPush initialized', [
+                'vapid_subject' => $subject,
+                'has_public_key' => (bool) $this->vapidPublicKey,
             ]);
         }
 
@@ -48,6 +59,12 @@ class PushNotificationService
 
         /** @var WebPush $webPush */
         $webPush = $this->getWebPush();
+
+        $this->logger->info('Sending push notification', [
+            'user_id' => $user->getId(),
+            'subscriptions_count' => count($subscriptions),
+            'title' => $title,
+        ]);
 
         $endpointMap = [];
 
@@ -84,16 +101,25 @@ class PushNotificationService
             );
         }
 
-        // Handle failed subscriptions
+        // Handle send reports
         foreach ($webPush->flush() as $report) {
-            if (!$report->isSuccess()) {
-                // If the subscription is expired (HTTP 404/410) remove the
-                // corresponding PushSubscription entity. MessageSentReport
-                // exposes the endpoint, so map it back to the entity.
-                $endpoint = $report->getEndpoint();
+            $endpoint = $report->getEndpoint();
 
-                if (isset($endpointMap[$endpoint])) {
-                    $this->em->remove($endpointMap[$endpoint]);
+            $this->logger->info('Push report', [
+                'endpoint' => $endpoint,
+                'success' => $report->isSuccess(),
+                'expired' => $report->isSubscriptionExpired(),
+                'reason' => $report->getReason(),
+                'response_status' => $report->getResponse()?->getStatusCode(),
+                'response_body' => $report->getResponseContent(),
+            ]);
+
+            if (!$report->isSuccess()) {
+                if ($report->isSubscriptionExpired()) {
+                    if (isset($endpointMap[$endpoint])) {
+                        $this->logger->info('Removing expired push subscription', ['endpoint' => $endpoint, 'user_id' => $user->getId()]);
+                        $this->em->remove($endpointMap[$endpoint]);
+                    }
                 }
             }
         }
