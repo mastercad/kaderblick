@@ -17,6 +17,7 @@ import {
   OutlinedInput,
   IconButton,
   Tooltip,
+  Popover,
   Alert,
   Dialog,
   DialogTitle,
@@ -119,6 +120,9 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
   const [builderData, setBuilderData] = useState<BuilderData | null>(null);
   const [prevGroupBy, setPrevGroupBy] = useState<string | undefined>(undefined);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [heatmapAnchorEl, setHeatmapAnchorEl] = useState<HTMLElement | null>(null);
+  const [groupAnchorEl, setGroupAnchorEl] = useState<HTMLElement | null>(null);
+  const [precipAnchorEl, setPrecipAnchorEl] = useState<HTMLElement | null>(null);
 
   // Initialize currentReport when report prop changes
   useEffect(() => {
@@ -419,6 +423,9 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                           bgcolor: snapshot.isDraggingOver ? 'action.hover' : 'background.paper',
                           border: 1,
                           borderColor: 'divider',
+                          touchAction: 'none',
+                          WebkitUserSelect: 'none',
+                          userSelect: 'none',
                         }}
                       >
                         {currentReport.config.xField ? (
@@ -432,7 +439,9 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                                 onDelete={() => handleConfigChange('xField', '')}
                                 variant="outlined"
                                 size="small"
-                                sx={{ cursor: 'grab' }}
+                                sx={{ cursor: 'grab', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'none' }}
+                                onDragStart={(e) => e.preventDefault()}
+                                onTouchStart={(e) => e.preventDefault()}
                               />
                             )}
                           </Draggable>
@@ -463,6 +472,9 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                           bgcolor: snapshot.isDraggingOver ? 'action.hover' : 'background.paper',
                           border: 1,
                           borderColor: 'divider',
+                          touchAction: 'none',
+                          WebkitUserSelect: 'none',
+                          userSelect: 'none',
                         }}
                       >
                         {currentReport.config.yField ? (
@@ -476,7 +488,9 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                                 onDelete={() => handleConfigChange('yField', '')}
                                 variant="outlined"
                                 size="small"
-                                sx={{ cursor: 'grab' }}
+                                sx={{ cursor: 'grab', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'none' }}
+                                onDragStart={(e) => e.preventDefault()}
+                                onTouchStart={(e) => e.preventDefault()}
                               />
                             )}
                           </Draggable>
@@ -510,6 +524,9 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                         display: 'flex',
                         flexWrap: 'wrap',
                         gap: 1,
+                        touchAction: 'none',
+                        WebkitUserSelect: 'none',
+                        userSelect: 'none',
                       }}
                     >
                       {availableFields
@@ -528,7 +545,9 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                               label={field.label}
                               variant="outlined"
                               size="small"
-                              sx={{ cursor: 'grab' }}
+                              sx={{ cursor: 'grab', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'none' }}
+                              onDragStart={(e) => e.preventDefault()}
+                              onTouchStart={(e) => e.preventDefault()}
                             />
                           )}
                         </Draggable>
@@ -594,25 +613,42 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
               {/* Heatmap style selector when pitchheatmap is chosen */}
               {currentReport.config.diagramType === 'pitchheatmap' && (
                 <>
-                  <FormControl fullWidth margin="normal">
-                    <Box display="flex" alignItems="center" gap={1}>
+                  <Box sx={{ position: 'relative' }}>
+                    <FormControl fullWidth margin="normal">
                       <InputLabel>Heatmap-Darstellung</InputLabel>
-                      <Tooltip enterDelay={300} title="Wähle Darstellung: 'Geglättet' für performante Overlay-Heatmap, 'Klassisch' für exakte Zellenwerte (Grid). 'Beides' zeigt beide Ansichten.">
-                        <IconButton size="small" aria-label="Info Heatmap-Stil" sx={{ color: 'text.secondary' }}>
-                          <InfoOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                    <Select
-                      value={(currentReport.config as any).heatmapStyle || 'smoothed'}
-                      onChange={(e) => handleConfigChange('heatmapStyle', e.target.value)}
-                      label="Heatmap-Darstellung"
+                      <Select
+                        value={(currentReport.config as any).heatmapStyle || 'smoothed'}
+                        onChange={(e) => handleConfigChange('heatmapStyle', e.target.value)}
+                        label="Heatmap-Darstellung"
+                      >
+                        <MenuItem value="smoothed">Geglättete Heatmap (Standard)</MenuItem>
+                        <MenuItem value="classic">Klassische Heatmap (Grid)</MenuItem>
+                        <MenuItem value="both">Beides (Grid + Glättung)</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <Tooltip enterDelay={300} title="Wähle Darstellung: 'Geglättet' für performante Overlay-Heatmap, 'Klassisch' für exakte Zellenwerte (Grid). 'Beides' zeigt beide Ansichten.">
+                      <IconButton
+                        size="small"
+                        aria-label="Info Heatmap-Stil"
+                        sx={{ color: 'text.secondary', position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}
+                        onClick={(e) => setHeatmapAnchorEl(e.currentTarget as HTMLElement)}
+                      >
+                        <InfoOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Popover
+                      open={Boolean(heatmapAnchorEl)}
+                      anchorEl={heatmapAnchorEl}
+                      onClose={() => setHeatmapAnchorEl(null)}
+                      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                     >
-                      <MenuItem value="smoothed">Geglättete Heatmap (Standard)</MenuItem>
-                      <MenuItem value="classic">Klassische Heatmap (Grid)</MenuItem>
-                      <MenuItem value="both">Beides (Grid + Glättung)</MenuItem>
-                    </Select>
-                  </FormControl>
+                      <Box sx={{ p: 2, maxWidth: 320 }}>
+                        <Typography variant="subtitle2">Heatmap-Darstellung</Typography>
+                        <Typography variant="body2">Wähle Darstellung: 'Geglättet' für performante Overlay-Heatmap, 'Klassisch' für exakte Zellenwerte (Grid). 'Beides' zeigt beide Ansichten.</Typography>
+                      </Box>
+                    </Popover>
+                  </Box>
 
                   <FormControl fullWidth margin="normal">
                     <Box display="flex" alignItems="center" gap={1}>
@@ -672,28 +708,45 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
               )}
 
               {/* Gruppierung */}
-              <FormControl fullWidth margin="normal">
-                <Box display="flex" alignItems="center" gap={1}>
+              <Box sx={{ position: 'relative' }}>
+                <FormControl fullWidth margin="normal">
                   <InputLabel>Gruppierung (optional)</InputLabel>
-                  <Tooltip enterDelay={300} title="Gruppiert die Daten in separate Layer (z. B. nach Spieler oder Team). Nützlich zum Vergleich über Kategorien hinweg.">
-                    <IconButton size="small" aria-label="Info Gruppierung" sx={{ color: 'text.secondary' }}>
-                      <InfoOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-                <Select
-                  value={currentReport.config.groupBy || ''}
-                  onChange={(e) => handleConfigChange('groupBy', e.target.value)}
-                  label="Gruppierung (optional)"
+                  <Select
+                    value={currentReport.config.groupBy || ''}
+                    onChange={(e) => handleConfigChange('groupBy', e.target.value)}
+                    label="Gruppierung (optional)"
+                  >
+                    <MenuItem value="">Keine Gruppierung</MenuItem>
+                    {availableFields.map((field) => (
+                      <MenuItem key={field.key} value={field.key}>
+                        {field.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <Tooltip enterDelay={300} title="Gruppiert die Daten in separate Layer (z. B. nach Spieler oder Team). Nützlich zum Vergleich über Kategorien hinweg.">
+                  <IconButton
+                    size="small"
+                    aria-label="Info Gruppierung"
+                    sx={{ color: 'text.secondary', position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}
+                    onClick={(e) => setGroupAnchorEl(e.currentTarget as HTMLElement)}
+                  >
+                    <InfoOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Popover
+                  open={Boolean(groupAnchorEl)}
+                  anchorEl={groupAnchorEl}
+                  onClose={() => setGroupAnchorEl(null)}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
-                  <MenuItem value="">Keine Gruppierung</MenuItem>
-                  {availableFields.map((field) => (
-                    <MenuItem key={field.key} value={field.key}>
-                      {field.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  <Box sx={{ p: 2, maxWidth: 320 }}>
+                    <Typography variant="subtitle2">Gruppierung</Typography>
+                    <Typography variant="body2">Gruppiert die Daten in separate Layer (z. B. nach Spieler oder Team). Nützlich zum Vergleich über Kategorien hinweg.</Typography>
+                  </Box>
+                </Popover>
+              </Box>
 
               {/* no area-specific UI here; 'area' is a chart type rendered as filled line chart */}
 
@@ -844,25 +897,42 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                       ))}
                     </Select>
                   </FormControl>
-                    <FormControl fullWidth margin="normal">
-                      <Box display="flex" alignItems="center" gap={1}>
+                    <Box sx={{ position: 'relative' }}>
+                      <FormControl fullWidth margin="normal">
                         <InputLabel>Wetter (Niederschlag)</InputLabel>
-                        <Tooltip enterDelay={300} title="Filtert Spiele nach vorhandenem Niederschlag (aus Wetterdaten).">
-                          <IconButton size="small" aria-label="Info Niederschlag" sx={{ color: 'text.secondary' }}>
-                            <InfoOutlinedIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                      <Select
-                        value={currentReport.config.filters?.precipitation || ''}
-                        onChange={(e) => handleFilterChange('precipitation', e.target.value)}
-                        label="Wetter (Niederschlag)"
+                        <Select
+                          value={currentReport.config.filters?.precipitation || ''}
+                          onChange={(e) => handleFilterChange('precipitation', e.target.value)}
+                          label="Wetter (Niederschlag)"
+                        >
+                          <MenuItem value="">Beliebig</MenuItem>
+                          <MenuItem value="yes">Mit Niederschlag</MenuItem>
+                          <MenuItem value="no">Ohne Niederschlag</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <Tooltip enterDelay={300} title="Filtert Spiele nach vorhandenem Niederschlag (aus Wetterdaten).">
+                        <IconButton
+                          size="small"
+                          aria-label="Info Niederschlag"
+                          sx={{ color: 'text.secondary', position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}
+                          onClick={(e) => setPrecipAnchorEl(e.currentTarget as HTMLElement)}
+                        >
+                          <InfoOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Popover
+                        open={Boolean(precipAnchorEl)}
+                        anchorEl={precipAnchorEl}
+                        onClose={() => setPrecipAnchorEl(null)}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                       >
-                        <MenuItem value="">Beliebig</MenuItem>
-                        <MenuItem value="yes">Mit Niederschlag</MenuItem>
-                        <MenuItem value="no">Ohne Niederschlag</MenuItem>
-                      </Select>
-                    </FormControl>
+                        <Box sx={{ p: 2, maxWidth: 320 }}>
+                          <Typography variant="subtitle2">Wetter (Niederschlag)</Typography>
+                          <Typography variant="body2">Filtert Spiele nach vorhandenem Niederschlag (aus Wetterdaten).</Typography>
+                        </Box>
+                      </Popover>
+                    </Box>
                     <Box display="flex" alignItems="center" gap={1}>
                       <FormControlLabel
                         control={<Checkbox checked={currentReport.config.groupBy === 'surfaceType'} onChange={(e) => {

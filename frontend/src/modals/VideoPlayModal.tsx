@@ -325,16 +325,13 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
               }}
               onReady={(e: YouTubeEvent) => {
                 playerRef.current = e.target;
-                // Warte bis Player vollständig geladen ist
                 const checkReady = () => {
                   try {
                     const duration = e.target.getDuration?.();
                     if (duration && duration > 0) {
                       setVideoDuration(duration);
                       playerReadyRef.current = true;
-                      console.log('Player ready, duration:', duration);
                     } else {
-                      // Versuche es nochmal nach kurzer Zeit
                       setTimeout(checkReady, 100);
                     }
                   } catch (err) {
@@ -345,7 +342,6 @@ const VideoPlayModal = forwardRef<any, VideoPlayModalProps>(({ open, onClose, vi
                 checkReady();
               }}
               onStateChange={(e: YouTubeEvent) => {
-                // Falls Dauer erst nach Play verfügbar ist
                 if (!videoDuration && e.target.getDuration) {
                   const dur = e.target.getDuration();
                   if (dur > 0) {

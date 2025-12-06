@@ -84,7 +84,6 @@ async function loadUsers() {
         const recipientSelect = document.getElementById('messageRecipients');
         recipientSelect.innerHTML = '';
         data.users.forEach(user => {
-            console.info(user);
             const option = new Option(`${user.fullName} (${user.email})`, user.id);
             recipientSelect.appendChild(option);
         });
@@ -93,7 +92,6 @@ async function loadUsers() {
         const groupMembersSelect = document.getElementById('groupMembers');
         groupMembersSelect.innerHTML = '';
         data.users.forEach(user => {
-            console.info(user);
             const option = new Option(`${user.fullName} (${user.email})`, user.id);
             groupMembersSelect.appendChild(option);
         });

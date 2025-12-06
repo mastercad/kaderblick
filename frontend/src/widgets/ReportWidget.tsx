@@ -3,12 +3,12 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { Bar, Line, Pie, Doughnut, Radar, PolarArea, Bubble, Scatter } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, RadialLinearScale, Tooltip, Legend, Title, ChartOptions } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, RadialLinearScale, Tooltip, Legend, Title, ChartOptions, Filler } from 'chart.js';
 import { apiJson } from '../utils/api';
 import { useWidgetRefresh } from '../context/WidgetRefreshContext';
 
 // Chart.js Komponenten registrieren (nur einmal pro App nötig, aber hier zur Sicherheit)
-ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, RadialLinearScale, Tooltip, Legend, Title);
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, RadialLinearScale, Tooltip, Legend, Title, Filler);
 
 // Boxplot drawing plugin: expects datasets where each dataset.data is an array of numbers
 const boxplotPlugin = {
@@ -249,28 +249,46 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
     'rgba(184,46,46,0.35)', 'rgba(49,99,149,0.35)'
   ];
 
+  // Determine effective diagram type (support preview objects where diagramType may be under config)
+  const effectiveType = ((data.diagramType as string) || (data as any).config?.diagramType || '').toLowerCase();
+
   const chartData = {
     labels: data.labels,
     datasets: data.datasets.map((ds, i) => {
       // Für Pie/PolarArea: backgroundColor als Array, sonst als String
-      const isPie = ["pie", "doughnut", "polararea"].includes((data.diagramType || '').toLowerCase());
-      const isArea = (data.diagramType || '').toLowerCase() === 'area';
+      const isPie = ["pie", "doughnut", "polararea"].includes(effectiveType);
+      const isArea = effectiveType === 'area';
+
+      // compute sensible colors
+      const computedBackground = ds.backgroundColor || (isPie
+        ? data.labels.map((_, idx) => defaultColors[idx % defaultColors.length])
+        : (isArea ? rgbaColors[i % rgbaColors.length] : defaultColors[i % defaultColors.length]));
+      const computedBorder = ds.borderColor || (isPie
+        ? data.labels.map((_, idx) => defaultColors[idx % defaultColors.length])
+        : defaultColors[i % defaultColors.length]);
+
+      // For area charts, explicitly enforce filling and a semi-transparent background
+      const enforcedProps: any = {};
+      if (isArea) {
+        enforcedProps.fill = ds.fill === false ? false : true; // allow explicit opt-out
+        enforcedProps.tension = ds.tension ?? 0.3;
+        // if background is a single hex (no alpha), prefer rgbaColors to ensure visible fill
+        if (!ds.backgroundColor) {
+          enforcedProps.backgroundColor = computedBackground;
+        }
+      }
+
       return {
         ...ds,
-        backgroundColor: ds.backgroundColor || (isPie
-          ? data.labels.map((_, idx) => defaultColors[idx % defaultColors.length])
-          : (isArea ? rgbaColors[i % rgbaColors.length] : defaultColors[i % defaultColors.length])),
-        borderColor: ds.borderColor || (isPie
-          ? data.labels.map((_, idx) => defaultColors[idx % defaultColors.length])
-          : defaultColors[i % defaultColors.length]),
-        borderWidth: 2,
-        ...(isArea ? { fill: true, tension: 0.3 } : {}),
+        backgroundColor: ds.backgroundColor || computedBackground,
+        borderColor: ds.borderColor || computedBorder,
+        borderWidth: ds.borderWidth ?? 2,
+        ...enforcedProps,
       };
     })
   };
 
-  const type = (data.diagramType || '').toLowerCase();
-
+  const type = effectiveType;
   // Chart.js Optionen (Default interaktive Legende, Responsive, etc.)
   const options = {
     responsive: true,
