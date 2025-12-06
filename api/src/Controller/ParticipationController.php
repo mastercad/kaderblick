@@ -108,14 +108,39 @@ class ParticipationController extends AbstractController
         $this->em->persist($participation);
         $this->em->flush();
 
-        // Create notification for participation status change
+        // Create notifications for other participants when a user changed
+        // their participation status (the actor does not need a notification).
         if ($isStatusChange || !$participation->getId()) {
-            $this->notificationService->createParticipationNotification(
-                $user,
-                $event->getTitle(),
-                $status->getCode(),
-                $participation->getId()
-            );
+            $actorName = $user->getFullName() ?? 'Ein Teilnehmer';
+
+            // Get all participations for this event and notify all users
+            // except the actor.
+            $allParticipations = $this->participationRepository->findByEvent($event);
+
+            foreach ($allParticipations as $p) {
+                $recipient = $p->getUser();
+                if (!$recipient || $recipient->getId() === $user->getId()) {
+                    continue;
+                }
+
+                $statusText = match ($status->getCode()) {
+                    'confirmed' => 'zugesagt',
+                    'declined' => 'abgesagt',
+                    'pending' => 'offen',
+                    default => $status->getCode()
+                };
+
+                $title = sprintf('%s: %s', $event->getTitle(), $actorName . ' - ' . $statusText);
+                $message = sprintf('%s hat seine Teilnahme auf "%s" gesetzt.', $actorName, $statusText);
+
+                $this->notificationService->createNotification(
+                    $recipient,
+                    'participation',
+                    $title,
+                    $message,
+                    ['participationId' => $participation->getId(), 'actorId' => $user->getId()]
+                );
+            }
         }
 
         return $this->json([

@@ -67,6 +67,21 @@ class NotificationRepository extends ServiceEntityRepository
     }
 
     /**
+     * Find unsent notifications (global, ordered by creation date).
+     *
+     * @return Notification[]
+     */
+    public function findUnsent(int $limit = 100): array
+    {
+        return $this->createQueryBuilder('n')
+            ->where('n.isSent = false')
+            ->orderBy('n.createdAt', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Count unread notifications for a user.
      */
     public function countUnreadByUser(User $user): int

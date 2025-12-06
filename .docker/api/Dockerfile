@@ -72,6 +72,10 @@ RUN echo "SHELL=/bin/bash" > /etc/cron.d/symfony-crons \
     && echo "" >> /etc/cron.d/symfony-crons \
     && echo "# Calculate and award titles (daily at 2 AM)" >> /etc/cron.d/symfony-crons \
     && echo "0 2 * * * www-data /bin/bash -lc 'cd /var/www/symfony && . /var/www/symfony/.env 2>/dev/null || true && . /var/www/symfony/.env.local 2>/dev/null || true && . /var/www/symfony/.env.$APP_ENV 2>/dev/null || true && . /var/www/symfony/.env.$APP_ENV.local 2>/dev/null || true && /usr/local/bin/cron_wrapper.sh app:xp:award-titles' 2>&1" >> /etc/cron.d/symfony-crons \
+    && chmod 0644 /etc/cron.d/symfony-crons \
+    && echo "# Send unsent Notifications (every 5 minutes)" >> /etc/cron.d/symfony-crons \
+    && echo "*/5 * * * * www-data /bin/bash -lc 'cd /var/www/symfony && . /var/www/symfony/.env 2>/dev/null || true && . /var/www/symfony/.env.local 2>/dev/null || true && . /var/www/symfony/.env.$APP_ENV 2>/dev/null || true && . /var/www/symfony/.env.$APP_ENV.local 2>/dev/null || true && /usr/local/bin/cron_wrapper.sh app:notifications:send-unsent' 2>&1" >> /etc/cron.d/symfony-crons \
     && chmod 0644 /etc/cron.d/symfony-crons
+
 
 CMD cron && apache2-foreground
