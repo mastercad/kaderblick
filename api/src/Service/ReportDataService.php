@@ -107,7 +107,8 @@ class ReportDataService
                     // joinPath is non-empty (checked above), so lastAlias will be set; no need for extra null-check
 
                     // Build a COALESCE label part for this group element
-                    $part = "COALESCE({$lastAlias}.name, {$lastAlias}.title, {$lastAlias}.label, {$lastAlias}.fullName, CONCAT(COALESCE({$lastAlias}.firstName, ''), ' ', COALESCE({$lastAlias}.lastName, '')), CONCAT('', {$lastAlias}.id))";
+                    $part = "COALESCE({$lastAlias}.name, {$lastAlias}.title, {$lastAlias}.label, {$lastAlias}.fullName, " .
+                        "CONCAT(COALESCE({$lastAlias}.firstName, ''), ' ', COALESCE({$lastAlias}.lastName, '')), CONCAT('', {$lastAlias}.id))";
                     $groupLabelParts[] = $part;
                     $groupByIdExprs[] = $lastAlias . '.id';
 
@@ -138,7 +139,8 @@ class ReportDataService
                         $qb->andWhere('e.player = :player')->setParameter('player', $filters['player']);
                     }
                     if (isset($filters['surfaceType'])) {
-                        $qb->leftJoin('e.game', 'g2')->leftJoin('g2.location', 'loc2')->andWhere('loc2.surfaceType = :surfaceType')->setParameter('surfaceType', (int) $filters['surfaceType']);
+                        $qb->leftJoin('e.game', 'g2')->leftJoin('g2.location', 'loc2')
+                            ->andWhere('loc2.surfaceType = :surfaceType')->setParameter('surfaceType', (int) $filters['surfaceType']);
                     }
                     if (isset($filters['dateFrom'])) {
                         $qb->andWhere('DATE(e.timestamp) >= DATE(:dateFrom)')->setParameter('dateFrom', new DateTimeImmutable($filters['dateFrom']));
