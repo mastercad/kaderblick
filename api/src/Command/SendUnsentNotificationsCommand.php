@@ -12,6 +12,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 
 #[AsCommand(name: 'app:notifications:send-unsent', description: 'Send unsent notifications via PushNotificationService')]
 class SendUnsentNotificationsCommand extends Command
@@ -43,8 +44,9 @@ class SendUnsentNotificationsCommand extends Command
         $notifications = $this->notificationRepository->findUnsent($limit);
         $count = count($notifications);
 
-        if ($count === 0) {
+        if (0 === $count) {
             $io->success('No unsent notifications found.');
+
             return Command::SUCCESS;
         }
 
@@ -55,12 +57,6 @@ class SendUnsentNotificationsCommand extends Command
 
         foreach ($notifications as $notification) {
             $user = $notification->getUser();
-            if (!$user) {
-                $this->logger->warning('Notification without user, skipping', ['notificationId' => $notification->getId()]);
-                $io->writeln('Skipping notification without user id ' . $notification->getId());
-                $io->progressAdvance();
-                continue;
-            }
 
             try {
                 $url = '/';
@@ -78,12 +74,12 @@ class SendUnsentNotificationsCommand extends Command
 
                 $notification->setIsSent(true);
                 $this->em->persist($notification);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $this->logger->error('Failed to send push for notification', ['id' => $notification->getId(), 'error' => $e->getMessage()]);
                 $io->error('Failed to send notification id ' . $notification->getId() . ': ' . $e->getMessage());
             }
 
-            $processed++;
+            ++$processed;
             $io->progressAdvance();
 
             if (0 === $processed % $batch) {
