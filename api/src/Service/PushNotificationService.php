@@ -49,12 +49,18 @@ class PushNotificationService
         /** @var WebPush $webPush */
         $webPush = $this->getWebPush();
 
+        $endpointMap = [];
+
         foreach ($subscriptions as $sub) {
             $subscription = Subscription::create([
                 'endpoint' => $sub->getEndpoint(),
                 'publicKey' => $sub->getPublicKey(),
                 'authToken' => $sub->getAuthToken(),
             ]);
+
+            // Keep a map from endpoint => PushSubscription entity so we can
+            // remove the DB entity when the subscription is expired.
+            $endpointMap[$subscription->getEndpoint()] = $sub;
 
             $webPush->sendOneNotification(
                 $subscription,
@@ -72,8 +78,6 @@ class PushNotificationService
                             'title' => 'Details anzeigen'
                         ]
                     ],
-                    // 'silent' => false, // erzwingt das die Benachrichtigung sofort angezeigt wird, auch wenn der Benutzer nicht auf den Link klickt
-                    // TODO tag vermeidet duplicate zum selben thema, das tag hier macht allerdings wenig sinn und ist nur zu testzwecken das
                     'tag' => 'notification-' . $user->getId(),
                     'requireInteraction' => true
                 ])
@@ -83,8 +87,14 @@ class PushNotificationService
         // Handle failed subscriptions
         foreach ($webPush->flush() as $report) {
             if (!$report->isSuccess()) {
-                // Remove invalid subscription
-                $this->em->remove($report->getSubscription());
+                // If the subscription is expired (HTTP 404/410) remove the
+                // corresponding PushSubscription entity. MessageSentReport
+                // exposes the endpoint, so map it back to the entity.
+                $endpoint = $report->getEndpoint();
+
+                if (isset($endpointMap[$endpoint])) {
+                    $this->em->remove($endpointMap[$endpoint]);
+                }
             }
         }
 
