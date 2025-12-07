@@ -191,6 +191,65 @@ class CalendarController extends AbstractController
     #[Route('/event/{id}', name: 'event_delete', methods: ['DELETE'])]
     public function deleteEvent(CalendarEvent $calendarEvent, EntityManagerInterface $entityManager): JsonResponse
     {
+        // 1. Delete all notifications related to this calendar event
+        $connection = $entityManager->getConnection();
+        $connection->executeStatement(
+            'DELETE FROM notifications WHERE JSON_EXTRACT(data, "$.eventId") = :eventId',
+            ['eventId' => $calendarEvent->getId()]
+        );
+
+        // 2. Delete all TeamRides (TeamRidePassengers will be cascaded)
+        $teamRideRepo = $entityManager->getRepository(\App\Entity\TeamRide::class);
+        $teamRides = $teamRideRepo->findBy(['event' => $calendarEvent]);
+        foreach ($teamRides as $teamRide) {
+            $entityManager->remove($teamRide);
+        }
+
+        // 3. Delete all Participations (CASCADE is set, but explicit deletion for clarity)
+        $participationRepo = $entityManager->getRepository(\App\Entity\Participation::class);
+        $participations = $participationRepo->findBy(['event' => $calendarEvent]);
+        foreach ($participations as $participation) {
+            $entityManager->remove($participation);
+        }
+
+        // 4. Delete Game if exists (Goals, GameEvents, Substitutions, Videos will be handled)
+        $game = $calendarEvent->getGame();
+        if ($game) {
+            // Delete Goals
+            $goalRepo = $entityManager->getRepository(\App\Entity\Goal::class);
+            $goals = $goalRepo->findBy(['game' => $game]);
+            foreach ($goals as $goal) {
+                $entityManager->remove($goal);
+            }
+
+            // Delete GameEvents
+            $gameEventRepo = $entityManager->getRepository(\App\Entity\GameEvent::class);
+            $gameEvents = $gameEventRepo->findBy(['game' => $game]);
+            foreach ($gameEvents as $gameEvent) {
+                $entityManager->remove($gameEvent);
+            }
+
+            // Delete Substitutions
+            $substitutionRepo = $entityManager->getRepository(\App\Entity\Substitution::class);
+            $substitutions = $substitutionRepo->findBy(['game' => $game]);
+            foreach ($substitutions as $substitution) {
+                $entityManager->remove($substitution);
+            }
+
+            // Delete Videos
+            $videoRepo = $entityManager->getRepository(\App\Entity\Video::class);
+            $videos = $videoRepo->findBy(['game' => $game]);
+            foreach ($videos as $video) {
+                $entityManager->remove($video);
+            }
+
+            // Now delete the game itself
+            $entityManager->remove($game);
+        }
+
+        // 5. WeatherData will be cascade deleted automatically
+
+        // 6. Finally delete the CalendarEvent itself
         $entityManager->remove($calendarEvent);
         $entityManager->flush();
 
