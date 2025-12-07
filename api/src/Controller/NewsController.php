@@ -188,12 +188,12 @@ class NewsController extends AbstractController
         $visibility = $data['visibility'] ?? null;
         $club = null;
         $team = null;
-        
+
         // Platform-News nur für ROLE_SUPERADMIN
         if ('platform' === $visibility && !in_array('ROLE_SUPERADMIN', $user->getRoles(), true)) {
             return new JsonResponse(['error' => 'Nur Systemadministratoren dürfen Platform-News erstellen.'], 403);
         }
-        
+
         if ('club' === $visibility && !empty($data['club_id'])) {
             $club = $this->em->getRepository(Club::class)->find($data['club_id']);
         }

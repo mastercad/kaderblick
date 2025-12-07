@@ -87,7 +87,7 @@ class NewsRepository extends ServiceEntityRepository implements NewsRepositoryIn
         }
 
         $qb->orderBy('n.createdAt', 'DESC');
-        
+
         if (null !== $limit) {
             $qb->setMaxResults($limit);
         }
