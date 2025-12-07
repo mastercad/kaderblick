@@ -86,7 +86,11 @@ class NewsEndToEndTest extends ApiWebTestCase
         $client = static::createClient();
         $this->authenticateUser($client, 'user6@example.com');
 
-        $client->request('POST', '/news/create');
+        $client->request('POST', '/news/create', [], [], [], json_encode([
+            'title' => 'Test News',
+            'content' => 'Test Content',
+            'visibility' => 'platform',
+        ]));
 
         // Add an assertion to prevent "no assertions" warning
         $this->assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);

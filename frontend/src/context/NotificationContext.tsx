@@ -22,6 +22,7 @@ interface NotificationProviderProps {
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [toasts, setToasts] = useState<AppNotification[]>([]);
+  const [selectedNotification, setSelectedNotification] = useState<AppNotification | null>(null);
   const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
@@ -205,6 +206,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     setNotifications([]);
   }, []);
 
+  const openNotificationDetail = useCallback((notification: AppNotification) => {
+    setSelectedNotification(notification);
+    if (!notification.read) {
+      markAsRead(notification.id);
+    }
+  }, [markAsRead]);
+
+  const closeNotificationDetail = useCallback(() => {
+    setSelectedNotification(null);
+  }, []);
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
@@ -217,6 +229,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       clearAll,
       unreadCount,
       requestPermission,
+      selectedNotification,
+      openNotificationDetail,
+      closeNotificationDetail,
     }}>
       {children}
       <ToastContainer toasts={toasts} onRemoveToast={removeToast} />

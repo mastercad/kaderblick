@@ -212,6 +212,9 @@ class GamesController extends AbstractController
         foreach ($cameras as $camera => $currentVideos) {
             $currentStart = 0;
             foreach ($currentVideos as $video) {
+                if (!$this->isGranted(VideoVoter::VIEW, $video)) {
+                    continue;
+                }
                 $videos[$camera][$currentStart] = $video;
                 $currentStart += $video->getLength();
             }
