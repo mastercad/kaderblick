@@ -129,6 +129,40 @@ class NewsController extends AbstractController
         ]);
     }
 
+    #[Route(path: '/{id}', name: 'app_news_show', methods: ['GET'])]
+    public function show(int $id): JsonResponse
+    {
+        /** @var ?User $user */
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return new JsonResponse(['error' => 'Unauthorized'], 401);
+        }
+
+        $news = $this->newsRepository->find($id);
+        if (!$news) {
+            return new JsonResponse(['error' => 'Diese Nachricht wurde nicht gefunden oder ist nicht mehr verfügbar.'], 404);
+        }
+
+        // Check if user has access to this news based on visibility
+        if (!$this->isGranted(NewsVoter::VIEW, $news)) {
+            return new JsonResponse(['error' => 'Sie haben keine Berechtigung, diese Nachricht anzuzeigen.'], 403);
+        }
+
+        $createdByUser = $news->getCreatedBy();
+
+        return new JsonResponse([
+            'id' => $news->getId(),
+            'title' => $news->getTitle(),
+            'content' => $news->getContent(),
+            'createdAt' => $news->getCreatedAt()->format('c'),
+            'createdByUserId' => $createdByUser->getId(),
+            'createdByUserName' => trim($createdByUser->getFirstName() . ' ' . $createdByUser->getLastName()),
+            'visibility' => $news->getVisibility(),
+            'club' => $news->getClub()?->getId(),
+            'team' => $news->getTeam()?->getId(),
+        ]);
+    }
+
     #[Route(path: '/create', name: 'app_news_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {

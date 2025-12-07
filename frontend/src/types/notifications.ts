@@ -19,6 +19,9 @@ export interface NotificationContextType {
   clearAll: () => void;
   unreadCount: number;
   requestPermission: () => Promise<boolean>;
+  selectedNotification: AppNotification | null;
+  openNotificationDetail: (notification: AppNotification) => void;
+  closeNotificationDetail: () => void;
 }
 
 export const NOTIFICATION_TYPES = {

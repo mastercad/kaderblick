@@ -26,6 +26,7 @@ import MarkAsReadIcon from '@mui/icons-material/DoneAll';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useNotifications } from '../context/NotificationContext';
 import { AppNotification } from '../types/notifications';
+import { NotificationDetailModal } from './NotificationDetailModal';
 
 const getNotificationIcon = (type: AppNotification['type']) => {
   switch (type) {
@@ -39,7 +40,16 @@ const getNotificationIcon = (type: AppNotification['type']) => {
 
 export const NotificationCenter: React.FC = () => {
   const theme = useTheme();
-  const { notifications, markAsRead, markAllAsRead, clearAll, unreadCount } = useNotifications();
+  const { 
+    notifications, 
+    markAsRead, 
+    markAllAsRead, 
+    clearAll, 
+    unreadCount,
+    selectedNotification,
+    openNotificationDetail,
+    closeNotificationDetail 
+  } = useNotifications();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '';
@@ -53,10 +63,8 @@ export const NotificationCenter: React.FC = () => {
   };
 
   const handleNotificationClick = (notification: AppNotification) => {
-    if (!notification.read) {
-      markAsRead(notification.id);
-    }
-    // Optional: Navigation zu relevanter Seite basierend auf notification.data
+    openNotificationDetail(notification);
+    handleClose(); // Schließe das Popover
   };
 
   const open = Boolean(anchorEl);
@@ -92,7 +100,7 @@ export const NotificationCenter: React.FC = () => {
           vertical: 'top',
           horizontal: 'right',
         }}
-        slotProps={{
+        PaperProps={{
           sx: {
             width: 400,
             maxHeight: 500,
@@ -214,6 +222,12 @@ export const NotificationCenter: React.FC = () => {
           )}
         </Box>
       </Popover>
+
+      <NotificationDetailModal
+        notification={selectedNotification}
+        open={Boolean(selectedNotification)}
+        onClose={closeNotificationDetail}
+      />
     </>
   );
 };

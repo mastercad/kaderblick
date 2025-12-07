@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Button, Card, CardContent, Typography, Stack, IconButton } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -32,6 +33,7 @@ interface NewsApiResponse {
 }
 
 const News: React.FC = () => {
+  const navigate = useNavigate();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -110,17 +112,41 @@ const News: React.FC = () => {
       ) : (
         <>
           {news.map(item => (
-            <Card key={item.id} sx={{ mb: 2 }}>
+            <Card 
+              key={item.id} 
+              sx={{ 
+                mb: 2,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  boxShadow: 4,
+                  transform: 'translateY(-2px)'
+                }
+              }}
+              onClick={() => navigate(`/news/${item.id}`)}
+            >
               <CardContent>
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="h6">{item.title}</Typography>
-                    <Typography variant="body1" sx={{ mb: 1 }}>{item.content}</Typography>
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        mb: 1,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}
+                    >
+                      {item.content}
+                    </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {item.createdAt && new Date(item.createdAt).toLocaleString()} – {item.createdByUserName}
                     </Typography>
                   </Box>
-                  <Stack direction="row" spacing={1}>
+                  <Stack direction="row" spacing={1} onClick={(e) => e.stopPropagation()}>
                     <IconButton aria-label="Bearbeiten" onClick={() => handleEdit(item)} size="small">
                       <EditIcon fontSize="small" />
                     </IconButton>

@@ -20,6 +20,7 @@ import GameDetails from './pages/GameDetails';
 import TestPage from './pages/TestPage';
 import SizeGuide from './pages/SizeGuide';
 import News from './pages/News';
+import NewsDetail from './pages/NewsDetail';
 import UserRelations from './pages/UserRelations';
 import SurveyList from './pages/SurveyList';
 import SurveyFill from './pages/SurveyFill';
@@ -131,7 +132,8 @@ function App() {
                   <Route path="/admin/feedback" element={<ProtectedRoute><FeedbackAdmin /></ProtectedRoute>} />
                   <Route path="/admin/user-relations" element={<ProtectedRoute><UserRelations /></ProtectedRoute>} />
                   <Route path="/admin/title-xp-overview" element={<ProtectedRoute><AdminTitleXpOverview /></ProtectedRoute>} />
-                  <Route path="news" element={<ProtectedRoute><News /></ProtectedRoute>} />
+                  <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
+                  <Route path="/news/:id" element={<ProtectedRoute><NewsDetail /></ProtectedRoute>} />
                   <Route path="locations" element={<ProtectedRoute><Locations /></ProtectedRoute>} />
                   <Route path="formations" element={<ProtectedRoute><Formations /></ProtectedRoute>} />
                   <Route path="clubs" element={<ProtectedRoute><Clubs /></ProtectedRoute>} />
