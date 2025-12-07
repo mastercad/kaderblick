@@ -389,6 +389,14 @@ class NewsController extends AbstractController
         if (!$this->isGranted(NewsVoter::DELETE, $news)) {
             return new JsonResponse(['error' => 'Forbidden'], 403);
         }
+
+        // Delete all notifications related to this news
+        $connection = $this->em->getConnection();
+        $connection->executeStatement(
+            'DELETE FROM notifications WHERE JSON_EXTRACT(data, "$.newsId") = :newsId',
+            ['newsId' => $news->getId()]
+        );
+
         $this->em->remove($news);
         $this->em->flush();
 
