@@ -9,7 +9,7 @@ class NewsEndToEndTest extends ApiWebTestCase
     public function testAdminCanCreatePlatformNews(): void
     {
         $client = static::createClient();
-        $this->authenticateUser($client, 'user16@example.com');
+        $this->authenticateUser($client, 'user21@example.com'); // ROLE_SUPERADMIN
 
         $client->request('POST', '/news/create', [], [], [], json_encode([
             'title' => 'Plattform-News',
