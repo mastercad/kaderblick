@@ -87,6 +87,9 @@ final class VideoVoter extends Voter
                             if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
                                 return true;
                             }
+                            if ($assignment->getTeam() === $subject->getGame()->getAwayTeam()) {
+                                return true;
+                            }
                         }
                     }
 
@@ -94,6 +97,9 @@ final class VideoVoter extends Voter
                         foreach ($userRelation->getCoach()->getCoachTeamAssignments() as $assignment) {
                             /** @var Video $subject */
                             if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
+                                return true;
+                            }
+                            if ($assignment->getTeam() === $subject->getGame()->getAwayTeam()) {
                                 return true;
                             }
                         }
@@ -112,6 +118,9 @@ final class VideoVoter extends Voter
                             if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
                                 return true;
                             }
+                            if ($assignment->getTeam() === $subject->getGame()->getAwayTeam()) {
+                                return true;
+                            }
                         }
                     }
 
@@ -119,6 +128,9 @@ final class VideoVoter extends Voter
                         foreach ($userRelation->getCoach()->getCoachTeamAssignments() as $assignment) {
                             /** @var Video $subject */
                             if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
+                                return true;
+                            }
+                            if ($assignment->getTeam() === $subject->getGame()->getAwayTeam()) {
                                 return true;
                             }
                         }
