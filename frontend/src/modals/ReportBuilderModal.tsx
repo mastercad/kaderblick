@@ -39,6 +39,9 @@ import BaseModal from './BaseModal';
 interface FieldOption {
   key: string;
   label: string;
+  source?: string;
+  dataType?: string;
+  isMetricCandidate?: boolean;
 }
 
 export interface Report {
@@ -52,9 +55,10 @@ export interface Report {
     yField: string;
     groupBy?: string;
     metrics?: string[];
-      movingAverage?: { enabled: boolean; window: number };
+      movingAverage?: { enabled: boolean; window: number; method?: 'mean' | 'median' };
       heatmapStyle?: string;
       heatmapSpatial?: boolean;
+      use_db_aggregates?: boolean;
     filters?: {
       team?: string;
       player?: string;
@@ -78,6 +82,8 @@ interface ReportBuilderModalProps {
 
 interface BuilderData {
   fields: FieldOption[];
+  advancedFields?: FieldOption[];
+  presets?: Array<any>;
   teams: Array<{ id: number; name: string }>;
   players: Array<{ id: number; fullName: string; firstName: string; lastName: string }>;
   eventTypes: Array<{ id: number; name: string }>;
@@ -105,9 +111,10 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
       diagramType: 'bar',
       xField: '',
       yField: '',
+      use_db_aggregates: false,
       groupBy: undefined,
       metrics: [],
-      movingAverage: { enabled: false, window: 3 },
+      movingAverage: { enabled: false, window: 3, method: 'mean' },
       filters: {},
       showLegend: true,
       showLabels: false,
@@ -118,11 +125,13 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
   const [previewData, setPreviewData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [builderData, setBuilderData] = useState<BuilderData | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [prevGroupBy, setPrevGroupBy] = useState<string | undefined>(undefined);
   const [helpOpen, setHelpOpen] = useState(false);
   const [heatmapAnchorEl, setHeatmapAnchorEl] = useState<HTMLElement | null>(null);
   const [groupAnchorEl, setGroupAnchorEl] = useState<HTMLElement | null>(null);
   const [precipAnchorEl, setPrecipAnchorEl] = useState<HTMLElement | null>(null);
+  const [showAdvancedMeta, setShowAdvancedMeta] = useState(false);
 
   // Initialize currentReport when report prop changes
   useEffect(() => {
@@ -167,6 +176,16 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
       console.error('Error loading builder data:', error);
     }
   };
+
+  // update visible fields when builderData or showAdvanced toggles
+  useEffect(() => {
+    if (!builderData) return;
+    if (showAdvanced) {
+      setAvailableFields([...(builderData.fields || []), ...(builderData['advancedFields'] || [])]);
+    } else {
+      setAvailableFields(builderData.fields || []);
+    }
+  }, [builderData, showAdvanced]);
 
   const loadPreview = async () => {
     if (!currentReport.config.xField || !currentReport.config.yField) {
@@ -295,13 +314,14 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
     try {
       const labelsLen = (previewData && Array.isArray(previewData.labels)) ? previewData.labels.length : 0;
       const maCfg = currentReport.config.movingAverage;
-      if (maCfg && maCfg.enabled && Number.isInteger(maCfg.window)) {
+      const diag = (previewData?.diagramType || currentReport.config.diagramType || '').toLowerCase();
+      const maApplicable = ['line', 'area', 'stackedarea', 'bar', 'boxplot'].includes(diag);
+      if (maApplicable && maCfg && maCfg.enabled && Number.isInteger(maCfg.window)) {
         if (labelsLen > 0 && maCfg.window > labelsLen) {
           warnings.movingAverageWindowTooLarge = true;
         }
       }
 
-      const diag = (previewData?.diagramType || currentReport.config.diagramType || '').toLowerCase();
       const dsets = previewData?.datasets || [];
       if (diag === 'boxplot') {
         // Expect each dataset.data to be an array where each entry is an array of numbers
@@ -382,6 +402,27 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                 rows={2}
               />
 
+              {/* Presets */}
+              {builderData?.presets && (
+                <Paper variant="outlined" sx={{ p: 1, my: 1 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Vorlagen</Typography>
+                  <Box display="flex" gap={1} flexWrap="wrap">
+                    {builderData.presets.map((p: any) => (
+                      <Button
+                        key={p.key}
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          setCurrentReport(prev => ({ ...prev, config: { ...prev.config, ...p.config } }));
+                        }}
+                      >
+                        {p.label}
+                      </Button>
+                    ))}
+                  </Box>
+                </Paper>
+              )}
+
               {/* Template Checkbox für SuperAdmin */}
               {isSuperAdmin && (
                 <FormControlLabel
@@ -401,6 +442,11 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
 
 
               {/* Field Assignment */}
+              <FormControlLabel
+                control={<Checkbox checked={showAdvanced} onChange={(e) => setShowAdvanced(e.target.checked)} />}
+                label="Erweiterte Felder anzeigen"
+                sx={{ mb: 1 }}
+              />
               <Typography variant="subtitle1" gutterBottom>
                 Feldkonfiguration
               </Typography>
@@ -542,7 +588,14 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                               ref={dragProvided.innerRef}
                               {...dragProvided.draggableProps}
                               {...dragProvided.dragHandleProps}
-                              label={field.label}
+                              label={
+                                <Box display="flex" alignItems="center" gap={1}>
+                                  <span>{field.label}</span>
+                                  {field.source && (
+                                    <Chip label={field.source} size="small" sx={{ fontSize: '0.65rem', ml: 0.5 }} />
+                                  )}
+                                </Box>
+                              }
                               variant="outlined"
                               size="small"
                               sx={{ cursor: 'grab', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'none' }}
@@ -584,18 +637,39 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
 
               {/* Advanced chart options */}
               <Box sx={{ mt: 1, display: 'flex', gap: 2, alignItems: 'center' }}>
+                {/* Always show the MA checkbox, but disable it for diagram types where it doesn't make sense */}
                 <Box display="flex" alignItems="center" gap={1}>
-                  <FormControlLabel
-                    control={<Checkbox checked={currentReport.config.movingAverage?.enabled || false} onChange={(e) => setCurrentReport(prev => ({ ...prev, config: { ...prev.config, movingAverage: { ...(prev.config.movingAverage || { enabled: false, window: 3 }), enabled: e.target.checked } } }))} />}
-                    label="Gleitender Durchschnitt"
-                  />
+                  {(() => {
+                    const diag = ((currentReport.config.diagramType || '') as string).toLowerCase();
+                    const maApplicable = ['line', 'area', 'stackedarea', 'bar', 'boxplot'].includes(diag);
+                    console.log(currentReport.config.diagramType);
+                    console.log(maApplicable);
+                    return (
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={currentReport.config.movingAverage?.enabled || false}
+                            onChange={(e) => setCurrentReport(prev => ({ ...prev, config: { ...prev.config, movingAverage: { ...(prev.config.movingAverage || { enabled: false, window: 3, method: 'mean' }), enabled: e.target.checked } } }))}
+                            disabled={!maApplicable}
+                          />
+                        }
+                        label="Gleitender Durchschnitt"
+                      />
+                    );
+                  })()}
                   <Tooltip enterDelay={300} title="Glättet die Serie über ein wählbares Fenster. Tipp: Wenn das Fenster größer ist als die Anzahl Datenpunkte, verkleinern oder Zeitraum erweitern.">
                     <IconButton size="small" aria-label="Info Gleitender Durchschnitt" sx={{ color: 'text.secondary' }}>
                       <InfoOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
+                  {!(['line', 'area', 'stackedarea', 'bar', 'boxplot'].includes(((currentReport.config.diagramType || '') as string).toLowerCase())) && (
+                    <Tooltip enterDelay={200} title="Nicht für diesen Diagrammtyp verfügbar">
+                      <InfoOutlinedIcon fontSize="small" sx={{ color: 'text.disabled', ml: 0.5 }} />
+                    </Tooltip>
+                  )}
                 </Box>
-                {currentReport.config.movingAverage?.enabled && (
+
+                {currentReport.config.movingAverage?.enabled && ['line', 'area', 'stackedarea', 'bar', 'boxplot'].includes((currentReport.config.diagramType || '').toLowerCase()) && (
                   <Box sx={{ width: 220, display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="body2">Fenster</Typography>
                     <Slider
@@ -606,6 +680,39 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                       onChange={(_, val) => setCurrentReport(prev => ({ ...prev, config: { ...prev.config, movingAverage: { ...(prev.config.movingAverage || { enabled: true, window: 3 }), window: val as number } } }))}
                       valueLabelDisplay="auto"
                     />
+                  </Box>
+                )}
+                {currentReport.config.movingAverage?.enabled && ['line', 'area', 'stackedarea', 'bar', 'boxplot'].includes((currentReport.config.diagramType || '').toLowerCase()) && (
+                  <FormControl size="small" sx={{ minWidth: 140 }}>
+                    <InputLabel id="ma-method-label">Zentralwert</InputLabel>
+                    <Select
+                      labelId="ma-method-label"
+                      value={currentReport.config.movingAverage?.method || 'mean'}
+                      label="Zentralwert"
+                      onChange={(e) => setCurrentReport(prev => ({ ...prev, config: { ...prev.config, movingAverage: { ...(prev.config.movingAverage || { enabled: true, window: 3, method: 'mean' }), method: e.target.value as 'mean' | 'median' } } }))}
+                    >
+                      <MenuItem value="mean">Mittelwert</MenuItem>
+                      <MenuItem value="median">Median</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
+
+                {isSuperAdmin && (
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={!!currentReport.config.use_db_aggregates}
+                          onChange={(e) => handleConfigChange('use_db_aggregates', e.target.checked)}
+                        />
+                      }
+                      label="DB-Aggregate (opt-in)"
+                    />
+                    <Tooltip enterDelay={300} title="Aktiviere diese Option, damit die Vorschau einfache Gruppierungen/Counts in der Datenbank statt in PHP berechnet (Admin-Option).">
+                      <IconButton size="small" aria-label="Info DB-Aggregate" sx={{ color: 'text.secondary' }}>
+                        <InfoOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
                 )}
               </Box>
@@ -1000,24 +1107,41 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
                     {/* Preview meta warnings */}
                     {previewData.meta && (
                       <Box sx={{ mb: 1 }}>
-                        {previewData.meta.eventsCount === 0 && (
-                          <Alert severity="warning">Keine Spielereignisse für die gewählten Filter / Zeitraum gefunden.</Alert>
+                        {/* User-facing concise message */}
+                        {previewData.meta.userMessage && (
+                          <Alert severity={previewData.meta.eventsCount === 0 ? 'warning' : 'info'}>{previewData.meta.userMessage}</Alert>
                         )}
-                        {previewData.meta.spatialRequested && previewData.meta.spatialProvided === false && (
-                          <Alert severity="info">Es wurden keine räumlichen Koordinaten für die Ereignisse gefunden. Die Heatmap wird als Matrix/Fallback gerendert.</Alert>
-                        )}
-                        {typeof previewData.meta.radarHasData !== 'undefined' && previewData.meta.radarHasData === false && (
-                          <Alert severity="warning">Die ausgewählten Radar-Metriken liefern keine Werte; prüfe deine Metriken oder Filter.</Alert>
-                        )}
-                        {/* Additional computed preview warnings */}
-                        {computePreviewWarnings().movingAverageWindowTooLarge && (
-                          <Alert severity="warning">Gleitschnitt-Fenster ist größer als die Anzahl an Datenpunkten — Ergebnis könnte leer aussehen. Vorschlag: Fenster verkleinern oder Zeitraum erweitern.</Alert>
-                        )}
-                        {computePreviewWarnings().boxplotFormatInvalid && (
-                          <Alert severity="warning">Boxplot erwartet pro Label Arrays mit numerischen Werten. Vorschlag: Prüfe, ob die gewählte Metrik für jedes Label Arrays mit Zahlen zurückgibt (z. B. mehrere Messwerte pro Label).</Alert>
-                        )}
-                        {computePreviewWarnings().scatterNonNumeric && (
-                          <Alert severity="warning">Scatter-Diagramm enthält nicht-numerische Werte. Vorschlag: Wähle ein numerisches Y-Feld oder konvertiere die Werte in der Datenquelle.</Alert>
+
+                        {/* Admin / advanced details (hidden by default) */}
+                        {isSuperAdmin && (
+                          <Box sx={{ mt: 1 }}>
+                            <Button size="small" onClick={() => setShowAdvancedMeta(s => !s)}>
+                              {showAdvancedMeta ? 'Erweiterte Details verbergen' : 'Erweiterte Details anzeigen'}
+                            </Button>
+                            {showAdvancedMeta && (
+                              <Box sx={{ mt: 1 }}>
+                                {previewData.meta.dbAggregate === true && (
+                                  <Alert severity="info">Vorschau berechnet Aggregation in der Datenbank (DB-Aggregate).</Alert>
+                                )}
+                                {Array.isArray(previewData.meta.warnings) && previewData.meta.warnings.map((w: string, idx: number) => (
+                                  <Alert key={`warn-${idx}`} severity="warning">{w}</Alert>
+                                ))}
+                                {Array.isArray(previewData.meta.suggestions) && previewData.meta.suggestions.map((s: string, idx: number) => (
+                                  <Alert key={`sug-${idx}`} severity="info">{s}</Alert>
+                                ))}
+                                {/* Additional computed preview warnings useful for debugging */}
+                                {computePreviewWarnings().movingAverageWindowTooLarge && (
+                                  <Alert severity="warning">Gleitschnitt-Fenster ist größer als die Anzahl an Datenpunkten — Ergebnis könnte leer aussehen.</Alert>
+                                )}
+                                {computePreviewWarnings().boxplotFormatInvalid && (
+                                  <Alert severity="warning">Boxplot erwartet pro Label Arrays mit numerischen Werten.</Alert>
+                                )}
+                                {computePreviewWarnings().scatterNonNumeric && (
+                                  <Alert severity="warning">Scatter-Diagramm enthält nicht-numerische Werte.</Alert>
+                                )}
+                              </Box>
+                            )}
+                          </Box>
                         )}
                       </Box>
                     )}

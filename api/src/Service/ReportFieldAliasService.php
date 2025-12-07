@@ -28,7 +28,7 @@ class ReportFieldAliasService
             }
         }
 
-        return [
+        $aliases = [
             // GameEvent fields
             'player' => [
                 'label' => 'Spieler',
@@ -266,5 +266,59 @@ class ReportFieldAliasService
             ],
             // Add more as needed ...
         ];
+
+        // Augment aliases with deterministic metadata to make accessibility checks and
+        // query building easier. We avoid changing existing alias semantics; this only
+        // adds helper fields: `accessibleFromEvent`, `path` and leaves room for `joinHint`.
+        foreach ($aliases as $k => &$v) {
+            // accessibleFromEvent: true when a runtime `value` is provided (callable) or when a relation `field` exists
+            // is_callable() on a possibly-missing entry: static analysis can be noisy here
+            $hasValueCallable = is_callable($v['value'] ?? null);
+            $v['accessibleFromEvent'] = $hasValueCallable || array_key_exists('field', $v);
+
+            // Build a normalized `path` array for traversal (prefer explicit subfield)
+            $path = [];
+            if (is_string($v['field'] ?? null)) {
+                $path[] = $v['field'];
+                if (is_string($v['subfield'] ?? null)) {
+                    $path[] = $v['subfield'];
+                }
+            } elseif (is_string($v['subfield'] ?? null)) {
+                // rare case: subfield without field — keep it as single path element
+                $path[] = $v['subfield'];
+            }
+            $v['path'] = $path;
+
+            // Provide joinHint for common aliases to make DB-aggregate generation deterministic
+            if ('player' === $k) {
+                $v['joinHint'] = ['player'];
+            } elseif ('team' === $k) {
+                $v['joinHint'] = ['team'];
+            } elseif ('surfaceType' === $k) {
+                // surfaceType is reachable via game -> location -> surfaceType
+                $v['joinHint'] = ['game', 'location', 'surfaceType'];
+            } elseif ('homeTeam' === $k) {
+                // Home/Away team are reachable via the game relation
+                $v['joinHint'] = ['game', 'homeTeam'];
+            } elseif ('awayTeam' === $k) {
+                $v['joinHint'] = ['game', 'awayTeam'];
+            } elseif ('gameDate' === $k) {
+                // gameDate is reachable via game -> calendarEvent (label field is startDate)
+                $v['joinHint'] = ['game', 'calendarEvent'];
+            } elseif ('playerFirstName' === $k) {
+                $v['joinHint'] = ['player', 'firstName'];
+            } elseif ('playerLastName' === $k) {
+                $v['joinHint'] = ['player', 'lastName'];
+            } else {
+                // Ensure joinHint exists (may be null) so callers can check for it
+                // @phpstan-ignore-next-line - joinHint presence is initialized above for common aliases
+                if (!array_key_exists('joinHint', $v)) {
+                    $v['joinHint'] = null;
+                }
+            }
+        }
+        unset($v);
+
+        return $aliases;
     }
 }

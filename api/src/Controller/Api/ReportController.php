@@ -72,11 +72,21 @@ class ReportController extends AbstractController
         $maxDate = $availableDates[count($availableDates) - 1] ?? null;
 
         $fields = [];
+        $advancedFields = [];
         foreach ($fieldAliases as $key => $data) {
-            $fields[] = [
+            $item = [
                 'key' => $key,
-                'label' => $data['label']
+                'label' => $data['label'],
+                'source' => $data['entity'] ?? 'GameEvent',
+                'dataType' => $data['type'] ?? 'numeric',
+                'isMetricCandidate' => isset($data['aggregate']) && is_callable($data['aggregate']),
             ];
+
+            if (isset($data['accessibleFromEvent']) && $data['accessibleFromEvent']) {
+                $fields[] = $item;
+            } else {
+                $advancedFields[] = $item;
+            }
         }
 
         // Expose metrics (alias-based aggregates) to the frontend as selectable metrics
@@ -109,8 +119,47 @@ class ReportController extends AbstractController
             'label' => 'Regen / Niederschlag (Spieltag)'
         ];
 
+        // Preset templates for common reports (frontend can offer these as one-click configs)
+        $presets = [
+            [
+                'key' => 'goals_per_player',
+                'label' => 'Tore pro Spieler',
+                'config' => [
+                    'diagramType' => 'bar',
+                    'xField' => 'player',
+                    'yField' => 'goals',
+                    'groupBy' => ['player'],
+                    'showLegend' => false,
+                ],
+            ],
+            [
+                'key' => 'goals_per_team',
+                'label' => 'Tore pro Mannschaft',
+                'config' => [
+                    'diagramType' => 'bar',
+                    'xField' => 'team',
+                    'yField' => 'goals',
+                    'groupBy' => ['team'],
+                    'showLegend' => false,
+                ],
+            ],
+            [
+                'key' => 'events_per_type',
+                'label' => 'Ereignisse pro Typ',
+                'config' => [
+                    'diagramType' => 'bar',
+                    'xField' => 'eventType',
+                    'yField' => 'eventType',
+                    'groupBy' => ['eventType'],
+                    'showLegend' => false,
+                ],
+            ],
+        ];
+
         return $this->json([
             'fields' => $fields,
+            'advancedFields' => $advancedFields,
+            'presets' => $presets,
             'teams' => $teamsData,
             'players' => $playersData,
             'eventTypes' => $eventTypesData,
@@ -154,7 +203,8 @@ class ReportController extends AbstractController
         return $this->json([
             'labels' => $reportData['labels'],
             'datasets' => $reportData['datasets'],
-            'diagramType' => $configData['diagramType'] ?? 'bar'
+            'diagramType' => $configData['diagramType'] ?? 'bar',
+            'meta' => $reportData['meta'] ?? null,
         ]);
     }
 
@@ -213,7 +263,8 @@ class ReportController extends AbstractController
             'config' => $config,
             'labels' => $reportData['labels'],
             'datasets' => $reportData['datasets'],
-            'diagramType' => $config['diagramType'] ?? 'bar'
+            'diagramType' => $config['diagramType'] ?? 'bar',
+            'meta' => $reportData['meta'] ?? null,
         ]);
     }
 
