@@ -31,7 +31,7 @@ class UserRelation
     #[ORM\JoinColumn(name: 'player_id', referencedColumnName: 'id', nullable: true)]
     private ?Player $player = null;
 
-    #[ORM\ManyToOne(targetEntity: Coach::class)]
+    #[ORM\ManyToOne(targetEntity: Coach::class, inversedBy: 'userRelations')]
     #[ORM\JoinColumn(name: 'coach_id', referencedColumnName: 'id', nullable: true)]
     private ?Coach $coach = null;
 

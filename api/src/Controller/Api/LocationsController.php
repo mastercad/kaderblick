@@ -22,6 +22,9 @@ class LocationsController extends AbstractController
     {
         $locations = $entityManager->getRepository(Location::class)->findBy([], ['name' => 'ASC']);
 
+        // Filtere basierend auf VIEW-Berechtigung
+        $locations = array_filter($locations, fn ($location) => $this->isGranted(LocationVoter::VIEW, $location));
+
         return $this->json([
             'locations' => array_map(fn (Location $location) => [
                 'id' => $location->getId(),

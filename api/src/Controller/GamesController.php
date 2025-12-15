@@ -94,6 +94,10 @@ class GamesController extends AbstractController
     #[Route(path: '/{id}', name: 'show', requirements: ['id' => '\\d+'], methods: ['GET'])]
     public function show(Game $game, GameEventRepository $gameEventRepository, VideoTypeRepository $videoTypeRepository, CameraRepository $cameraRepository): Response
     {
+        if (!$this->isGranted('GAME_VIEW', $game)) {
+            throw $this->createAccessDeniedException('Zugriff verweigert');
+        }
+
         $calendarEvent = $game->getCalendarEvent();
         $gameEvents = $gameEventRepository->findAllGameEvents($game);
 

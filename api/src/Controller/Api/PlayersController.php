@@ -37,6 +37,9 @@ class PlayersController extends AbstractController
     {
         $players = $this->entityManager->getRepository(Player::class)->findAll();
 
+        // Filtere Spieler basierend auf VIEW-Berechtigung
+        $players = array_filter($players, fn ($player) => $this->isGranted(PlayerVoter::VIEW, $player));
+
         return $this->json([
             'players' => array_map(fn ($player) => [
                 'id' => $player->getId(),
@@ -109,6 +112,10 @@ class PlayersController extends AbstractController
     #[Route('/{id}', methods: ['GET'], name: 'show')]
     public function show(Player $player): JsonResponse
     {
+        if (!$this->isGranted(PlayerVoter::VIEW, $player)) {
+            return $this->json(['error' => 'Zugriff verweigert'], Response::HTTP_FORBIDDEN);
+        }
+
         return $this->json([
             'player' => [
                 'id' => $player->getId(),

@@ -32,6 +32,10 @@ class SurveyController extends AbstractController
     public function list(SurveyRepository $surveyRepository): JsonResponse
     {
         $surveys = $surveyRepository->findAll();
+
+        // Filtere basierend auf VIEW-Berechtigung
+        $surveys = array_filter($surveys, fn ($survey) => $this->isGranted(SurveyVoter::VIEW, $survey));
+
         $data = array_map(fn ($survey) => [
             'id' => $survey->getId(),
             'title' => $survey->getTitle(),
@@ -44,6 +48,10 @@ class SurveyController extends AbstractController
     #[Route('/{id}', name: 'show', methods: ['GET'])]
     public function show(Survey $survey): JsonResponse
     {
+        if (!$this->isGranted(SurveyVoter::VIEW, $survey)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
         $questions = $survey->getQuestions()->map(fn ($q) => [
             'id' => $q->getId(),
             'questionText' => $q->getQuestionText(),
@@ -70,12 +78,16 @@ class SurveyController extends AbstractController
     #[Route('', name: 'create', methods: ['POST'])]
     public function create(Request $request, SurveyOptionTypeRepository $typeRepo): JsonResponse
     {
+        $survey = new Survey();
+        if (!$this->isGranted(SurveyVoter::CREATE, $survey)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
         $data = json_decode($request->getContent(), true);
         if (!$data || !isset($data['title'], $data['questions'])) {
             return $this->json(['error' => 'Invalid payload'], 400);
         }
 
-        $survey = new Survey();
         $survey->setTitle($data['title']);
         $survey->setDescription($data['description'] ?? null);
         if (!empty($data['dueDate'])) {
@@ -161,6 +173,10 @@ class SurveyController extends AbstractController
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
     public function update(Request $request, Survey $survey, SurveyOptionTypeRepository $typeRepo): JsonResponse
     {
+        if (!$this->isGranted(SurveyVoter::EDIT, $survey)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
         $data = json_decode($request->getContent(), true);
         if (!$data || !isset($data['title'], $data['questions'])) {
             return $this->json(['error' => 'Invalid payload'], 400);
@@ -225,6 +241,10 @@ class SurveyController extends AbstractController
     #[Route('/{id}/results', name: 'results', methods: ['GET'])]
     public function results(Survey $survey): JsonResponse
     {
+        if (!$this->isGranted(SurveyVoter::VIEW, $survey)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
         $results = [];
         $questions = $this->prepareQuestions($survey);
         $answers = $this->collectAnswers($questions, $survey->getId());

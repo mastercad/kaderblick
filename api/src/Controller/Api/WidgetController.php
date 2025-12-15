@@ -4,6 +4,7 @@ namespace App\Controller\Api;
 
 use App\Entity\DashboardWidget;
 use App\Entity\User;
+use App\Security\Voter\WidgetVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -50,9 +51,8 @@ class WidgetController extends AbstractController
         DashboardWidget $widget,
         EntityManagerInterface $em
     ): JsonResponse {
-        // Prüfen ob Widget dem aktuellen User gehört
-        if ($widget->getUser() !== $this->getUser()) {
-            throw $this->createAccessDeniedException();
+        if (!$this->isGranted(WidgetVoter::DELETE, $widget)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
         }
 
         $em->remove($widget);

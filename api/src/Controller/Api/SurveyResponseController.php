@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 use App\Entity\SurveyResponse;
 use App\Repository\SurveyRepository;
 use App\Repository\SurveyResponseRepository;
+use App\Security\Voter\SurveyResponseVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -18,6 +19,9 @@ class SurveyResponseController extends AbstractController
     public function list(SurveyResponseRepository $repo): JsonResponse
     {
         $responses = $repo->findAll();
+
+        $responses = array_filter($responses, fn ($r) => $this->isGranted(SurveyResponseVoter::VIEW, $r));
+
         $data = array_map(fn ($r) => [
             'id' => $r->getId(),
             'userId' => $r->getUserId(),
@@ -32,6 +36,10 @@ class SurveyResponseController extends AbstractController
     #[Route('/{id}', name: 'show', methods: ['GET'])]
     public function show(SurveyResponse $response): JsonResponse
     {
+        if (!$this->isGranted(SurveyResponseVoter::VIEW, $response)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
         $data = [
             'id' => $response->getId(),
             'userId' => $response->getUserId(),
@@ -51,6 +59,9 @@ class SurveyResponseController extends AbstractController
             return $this->json(['error' => 'Survey not found'], 404);
         }
         $responses = $repo->findBy(['survey' => $survey]);
+
+        $responses = array_filter($responses, fn ($r) => $this->isGranted(SurveyResponseVoter::VIEW, $r));
+
         $data = array_map(fn ($r) => [
             'id' => $r->getId(),
             'userId' => $r->getUserId(),

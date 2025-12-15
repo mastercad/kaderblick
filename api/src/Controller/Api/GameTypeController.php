@@ -3,6 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\GameType;
+use App\Security\Voter\GameTypeVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,6 +20,9 @@ class GameTypeController extends AbstractController
     public function list(): JsonResponse
     {
         $gameTypes = $this->em->getRepository(GameType::class)->findAll();
+
+        // Filtere basierend auf VIEW-Berechtigung
+        $gameTypes = array_filter($gameTypes, fn ($type) => $this->isGranted(GameTypeVoter::VIEW, $type));
 
         return $this->json([
             'entries' => array_map(fn (GameType $gameType) => [

@@ -5,8 +5,10 @@ namespace App\Controller\Api;
 use App\Entity\Notification;
 use App\Entity\User;
 use App\Repository\NotificationRepository;
+use App\Security\Voter\NotificationVoter;
 use App\Service\NotificationService;
 use Exception;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -34,6 +36,9 @@ class NotificationController extends AbstractController
         $limit = min((int) $request->query->get('limit', 50), 100);
 
         $notifications = $this->notificationService->getNotificationsForUser($user, $limit);
+
+        // Filtere basierend auf VIEW-Berechtigung
+        $notifications = array_filter($notifications, fn ($n) => $this->isGranted(NotificationVoter::VIEW, $n));
 
         return $this->json([
             'notifications' => array_map(fn ($n) => $n->toArray(), $notifications),
@@ -128,7 +133,7 @@ class NotificationController extends AbstractController
      * Create a test notification (for development/testing).
      */
     #[Route('/test', name: 'test', methods: ['POST'])]
-    public function createTestNotification(Request $request): JsonResponse
+    public function createTestNotification(Request $request, LoggerInterface $logger): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
@@ -153,7 +158,7 @@ class NotificationController extends AbstractController
                 'message' => 'Test-Benachrichtigung erfolgreich erstellt'
             ]);
         } catch (Exception $e) {
-            error_log('Error creating test notification: ' . $e->getMessage());
+            $logger->critical('Error creating test notification: ' . $e->getMessage());
 
             return $this->json([
                 'success' => false,

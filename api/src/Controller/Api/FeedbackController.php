@@ -6,6 +6,7 @@ use App\Entity\Feedback;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,7 +18,7 @@ class FeedbackController extends AbstractController
 {
     #[Route('/create', name: 'api_feedback_create', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function create(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function create(Request $request, EntityManagerInterface $entityManager, LoggerInterface $logger): JsonResponse
     {
         try {
             /** @var User $user */
@@ -57,7 +58,7 @@ class FeedbackController extends AbstractController
 
             return $this->json(['status' => 'success']);
         } catch (Exception $e) {
-            error_log('Feedback error: ' . $e->getMessage());
+            $logger->critical('Feedback error: ' . $e->getMessage());
 
             return $this->json([
                 'status' => 'error',

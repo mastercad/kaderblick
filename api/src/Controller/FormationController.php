@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Formation;
 use App\Entity\FormationType;
 use App\Entity\User;
+use App\Security\Voter\FormationVoter;
 use App\Service\CoachTeamPlayerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -34,6 +35,8 @@ class FormationController extends AbstractController
         $formations = $em->getRepository(Formation::class)->findBy([
             'user' => $user
         ]);
+
+        $formations = array_filter($formations, fn ($f) => $this->isGranted(FormationVoter::VIEW, $f));
 
         return $this->json(['formations' => array_map(fn (Formation $formation) => [
             'id' => $formation->getId(),
@@ -74,6 +77,10 @@ class FormationController extends AbstractController
     {
         /** @var User $user */
         $user = $this->getUser();
+
+        if (!$this->isGranted(FormationVoter::EDIT, $formation)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
 
         if ($request->isMethod('POST')) {
             $formationType = $em->getRepository(FormationType::class)->findOneBy(['name' => 'fußball']);
@@ -146,12 +153,16 @@ class FormationController extends AbstractController
     #[Route('/formation/{id}/delete', name: 'formation_delete', methods: ['DELETE'])]
     public function delete(Request $request, Formation $formation, EntityManagerInterface $em): JsonResponse
     {
-        //        if ($this->isCsrfTokenValid('delete' . $formation->getId(), $request->request->get('_token'))) {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if (!$this->isGranted(FormationVoter::DELETE, $formation)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
         $em->remove($formation);
         $em->flush();
-        //        }
 
-        //        return $this->redirectToRoute('formations_index');
         return $this->json(['success' => true]);
     }
 }

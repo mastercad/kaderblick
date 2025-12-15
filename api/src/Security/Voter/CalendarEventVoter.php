@@ -3,7 +3,17 @@
 namespace App\Security\Voter;
 
 use App\Entity\CalendarEvent;
+use App\Entity\CalendarEventPermission;
+use App\Entity\Club;
+use App\Entity\CoachClubAssignment;
+use App\Entity\CoachTeamAssignment;
+use App\Entity\PlayerClubAssignment;
+use App\Entity\PlayerTeamAssignment;
+use App\Entity\TaskAssignment;
+use App\Entity\Team;
 use App\Entity\User;
+use App\Enum\CalendarEventPermissionType;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
@@ -16,6 +26,11 @@ final class CalendarEventVoter extends Voter
     public const EDIT = 'CALENDAR_EVENT_EDIT';
     public const VIEW = 'CALENDAR_EVENT_VIEW';
     public const DELETE = 'CALENDAR_EVENT_DELETE';
+
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager
+    ) {
+    }
 
     protected function supports(string $attribute, mixed $subject): bool
     {
@@ -45,9 +60,129 @@ final class CalendarEventVoter extends Voter
 
                 break;
             case self::VIEW:
-                return true;
+                return $this->canViewCalendarEvent($subject, $user);
         }
 
         return false;
+    }
+
+    private function canViewCalendarEvent(CalendarEvent $calendarEvent, User $user): bool
+    {
+        // Admin und Superadmin können alles sehen
+        if (
+            in_array('ROLE_ADMIN', $user->getRoles())
+            || in_array('ROLE_SUPERADMIN', $user->getRoles())
+        ) {
+            return true;
+        }
+
+        // Creator kann immer sein eigenes Event sehen
+        if ($calendarEvent->getCreatedBy()?->getId() === $user->getId()) {
+            return true;
+        }
+
+        // Spiel-Events: prüfe Heim- und Auswärtsteams
+        if ($calendarEvent->getGame()) {
+            $game = $calendarEvent->getGame();
+            $homeTeam = $game->getHomeTeam();
+            $awayTeam = $game->getAwayTeam();
+
+            if ($homeTeam && $this->isUserInTeam($user, $homeTeam)) {
+                return true;
+            }
+            if ($awayTeam && $this->isUserInTeam($user, $awayTeam)) {
+                return true;
+            }
+        }
+
+        // Wenn keine Permissions definiert sind und kein Game-Event, ist das Event privat (nur Creator)
+        if ($calendarEvent->getPermissions()->isEmpty()) {
+            return false;
+        }
+
+        // Prüfe alle Permissions
+        foreach ($calendarEvent->getPermissions() as $permission) {
+            if ($this->userHasPermission($user, $permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function userHasPermission(User $user, CalendarEventPermission $permission): bool
+    {
+        return match ($permission->getPermissionType()) {
+            CalendarEventPermissionType::PUBLIC => true,
+            CalendarEventPermissionType::USER => $permission->getUser()?->getId() === $user->getId(),
+            CalendarEventPermissionType::TEAM => $permission->getTeam() ? $this->isUserInTeam($user, $permission->getTeam()) : false,
+            CalendarEventPermissionType::CLUB => $permission->getClub() ? $this->isUserInClub($user, $permission->getClub()) : false,
+        };
+    }
+
+    private function isUserInClub(User $user, Club $club): bool
+    {
+        // Check PlayerClubAssignment
+        $playerClubAssignment = $this->entityManager->getRepository(PlayerClubAssignment::class)
+            ->createQueryBuilder('pca')
+            ->innerJoin('pca.player', 'p')
+            ->innerJoin('p.userRelations', 'ur')
+            ->where('ur.user = :user')
+            ->andWhere('pca.club = :club')
+            ->setParameter('user', $user)
+            ->setParameter('club', $club)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if ($playerClubAssignment) {
+            return true;
+        }
+
+        // Check CoachClubAssignment
+        $coachClubAssignment = $this->entityManager->getRepository(CoachClubAssignment::class)
+            ->createQueryBuilder('cca')
+            ->innerJoin('cca.coach', 'c')
+            ->innerJoin('c.userRelations', 'ur')
+            ->where('ur.user = :user')
+            ->andWhere('cca.club = :club')
+            ->setParameter('user', $user)
+            ->setParameter('club', $club)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return null !== $coachClubAssignment;
+    }
+
+    private function isUserInTeam(User $user, Team $team): bool
+    {
+        // Check PlayerTeamAssignment
+        $playerTeamAssignment = $this->entityManager->getRepository(PlayerTeamAssignment::class)
+            ->createQueryBuilder('pta')
+            ->innerJoin('pta.player', 'p')
+            ->innerJoin('p.userRelations', 'ur')
+            ->where('ur.user = :user')
+            ->andWhere('pta.team = :team')
+            ->setParameter('user', $user)
+            ->setParameter('team', $team)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if ($playerTeamAssignment) {
+            return true;
+        }
+
+        // Check CoachTeamAssignment
+        $coachTeamAssignment = $this->entityManager->getRepository(CoachTeamAssignment::class)
+            ->createQueryBuilder('cta')
+            ->innerJoin('cta.coach', 'c')
+            ->innerJoin('c.userRelations', 'ur')
+            ->where('ur.user = :user')
+            ->andWhere('cta.team = :team')
+            ->setParameter('user', $user)
+            ->setParameter('team', $team)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return null !== $coachTeamAssignment;
     }
 }

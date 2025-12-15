@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Message;
 use App\Entity\MessageGroup;
 use App\Entity\User;
+use App\Security\Voter\MessageVoter;
 use App\Service\NotificationService;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
@@ -45,6 +46,8 @@ class MessageController extends AbstractController
             ->orderBy('m.sentAt', 'DESC')
             ->getQuery()
             ->getResult();
+
+        $messages = array_filter($messages, fn ($m) => $this->isGranted(MessageVoter::VIEW, $m));
 
         return $this->json([
             'messages' => array_map(fn (Message $message) => [
@@ -90,8 +93,9 @@ class MessageController extends AbstractController
         }
 
         /** @var User $user */
-        if (!$message->getRecipients()->contains($user)) {
-            return $this->json(['message' => 'Nachricht nicht gefunden'], 404);
+        $user = $this->getUser();
+        if (!$this->isGranted(MessageVoter::VIEW, $message)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
         }
 
         if (!$message->isReadBy($user)) {

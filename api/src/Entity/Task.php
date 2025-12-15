@@ -4,10 +4,12 @@ namespace App\Entity;
 
 use App\Repository\TaskRepository;
 use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
+#[ORM\Table(name: 'tasks')]
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
 class Task
 {
@@ -23,7 +25,11 @@ class Task
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(type: 'boolean')]
+    // Datum für einzelnes Vorkommen (Occurrence)
+    #[ORM\Column(type: 'date', nullable: true)]
+    private ?DateTimeInterface $assignedDate = null;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $isRecurring = false;
 
     // recurrenceMode: classic (Regel), per_match (an Spielplan gebunden)
@@ -56,6 +62,9 @@ class Task
 
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $rotationCount = 1;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $offsetDays = null;
 
     public function __construct()
     {
@@ -225,6 +234,30 @@ class Task
     public function setRotationCount(?int $count): self
     {
         $this->rotationCount = $count;
+
+        return $this;
+    }
+
+    public function getAssignedDate(): ?DateTimeInterface
+    {
+        return $this->assignedDate;
+    }
+
+    public function setOffsetDays(?int $offsetDays): self
+    {
+        $this->offsetDays = $offsetDays;
+
+        return $this;
+    }
+
+    public function getOffsetDays(): ?int
+    {
+        return $this->offsetDays;
+    }
+
+    public function setAssignedDate(?DateTimeInterface $assignedDate): self
+    {
+        $this->assignedDate = $assignedDate;
 
         return $this;
     }

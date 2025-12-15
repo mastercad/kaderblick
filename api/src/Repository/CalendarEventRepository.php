@@ -6,6 +6,7 @@ use App\Entity\CalendarEvent;
 use App\Entity\CalendarEventType;
 use App\Entity\Game;
 use App\Entity\Location;
+use App\Entity\User;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;

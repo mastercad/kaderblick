@@ -3,6 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\PlayerTeamAssignmentType;
+use App\Security\Voter\PlayerTeamAssignmentTypeVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,6 +20,9 @@ class PlayerTeamAssignmentTypesController extends AbstractController
     public function index(): JsonResponse
     {
         $playerTeamAssignmentTypes = $this->entityManager->getRepository(PlayerTeamAssignmentType::class)->findAll();
+
+        // Filtere basierend auf VIEW-Berechtigung
+        $playerTeamAssignmentTypes = array_filter($playerTeamAssignmentTypes, fn ($type) => $this->isGranted(PlayerTeamAssignmentTypeVoter::VIEW, $type));
 
         return $this->json(
             [

@@ -7,13 +7,15 @@ use App\Entity\User;
 use App\Repository\NotificationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+use Psr\Log\LoggerInterface;
 
 class NotificationService
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
         private NotificationRepository $notificationRepository,
-        private PushNotificationService $pushNotificationService
+        private PushNotificationService $pushNotificationService,
+        private LoggerInterface $logger
     ) {
     }
 
@@ -50,7 +52,7 @@ class NotificationService
             );
         } catch (Exception $e) {
             // Log error but don't fail the notification creation
-            error_log('Failed to send push notification: ' . $e->getMessage());
+            $this->logger->critical('Failed to send push notification: ' . $e->getMessage());
         }
 
         return $notification;

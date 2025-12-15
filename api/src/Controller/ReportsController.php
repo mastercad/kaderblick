@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\DashboardWidget;
 use App\Entity\ReportDefinition;
 use App\Entity\User;
+use App\Security\Voter\ReportVoter;
 use App\Service\ReportDataService;
 use App\Service\ReportFieldAliasService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -97,6 +98,9 @@ class ReportsController extends AbstractController
         $templates = $repo->findBy(['isTemplate' => true]);
         $userReports = $repo->findBy(['user' => $user]);
 
+        $templates = array_filter($templates, fn ($r) => $this->isGranted(ReportVoter::VIEW, $r));
+        $userReports = array_filter($userReports, fn ($r) => $this->isGranted(ReportVoter::VIEW, $r));
+
         return $this->render('report/list.html.twig', [
             'templates' => $templates,
             'userReports' => $userReports
@@ -112,7 +116,7 @@ class ReportsController extends AbstractController
         $isEdit = null !== $id;
         $report = $isEdit ? $repo->find($id) : new ReportDefinition();
         $fieldAliases = ReportFieldAliasService::fieldAliases($em);
-        if ($isEdit && (!$report || ($report->getUser() && $report->getUser() !== $user && !$this->isGranted('ROLE_ADMIN')))) {
+        if ($isEdit && (!$report || !$this->isGranted(ReportVoter::EDIT, $report))) {
             throw $this->createAccessDeniedException();
         }
 
@@ -210,7 +214,7 @@ class ReportsController extends AbstractController
     {
         $user = $this->getUser();
         $report = $em->getRepository(ReportDefinition::class)->find($id);
-        if (!$report || ($report->getUser() && $report->getUser() !== $user && !$this->isGranted('ROLE_ADMIN'))) {
+        if (!$report || !$this->isGranted(ReportVoter::DELETE, $report)) {
             throw $this->createNotFoundException('Report not found or access denied');
         }
         $em->remove($report);

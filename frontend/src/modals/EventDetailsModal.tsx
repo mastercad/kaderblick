@@ -39,6 +39,14 @@ export interface EventDetailsModalProps {
       awayTeam?: { name: string };
       gameType?: { name: string };
     };
+    task?: {
+      id: number;
+      isRecurring: boolean;
+      recurrenceMode: string;
+      recurrenceRule: string | null;
+      rotationUsers: { id: number; fullName: string }[];
+      rotationCount: number;
+    };
     permissions?: {
       canEdit?: boolean;
       canDelete?: boolean;

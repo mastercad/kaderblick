@@ -42,6 +42,10 @@ class VideosController extends AbstractController
             return new JsonResponse(['error' => 'Spiel nicht gefunden'], 404);
         }
 
+        if (!$this->isGranted('GAME_VIEW', $game)) {
+            return new JsonResponse(['error' => 'Zugriff verweigert'], 403);
+        }
+
         $rawVideos = $game->getVideos();
         $videos = [];
         /** @var Video $rawVideo */
@@ -103,6 +107,8 @@ class VideosController extends AbstractController
         CameraRepository $cameraRepository,
         EntityManagerInterface $em
     ): JsonResponse {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         /** @var ?Game $game */
         $game = $gameRepository->find($gameId);
         if (null === $game) {
@@ -203,6 +209,8 @@ class VideosController extends AbstractController
         EntityManagerInterface $em,
         CsrfTokenManagerInterface $csrfTokenManager
     ): JsonResponse {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $video = $videoRepository->find($id);
         if (!$video) {
             return new JsonResponse(['error' => 'Video nicht gefunden'], 404);

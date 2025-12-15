@@ -22,6 +22,9 @@ class StrongFeetController extends AbstractController
     {
         $strongFeets = $this->entityManager->getRepository(StrongFoot::class)->findAll();
 
+        // Filtere basierend auf VIEW-Berechtigung
+        $strongFeets = array_filter($strongFeets, fn ($strongFeet) => $this->isGranted(StrongFeetVoter::VIEW, $strongFeet));
+
         return $this->json(
             [
                 'strongFeets' => array_map(fn ($strongFeet) => [
@@ -42,6 +45,10 @@ class StrongFeetController extends AbstractController
     #[Route('/{id}', methods: ['GET'], name: 'show')]
     public function show(StrongFoot $strongFeet): JsonResponse
     {
+        if (!$this->isGranted(StrongFeetVoter::VIEW, $strongFeet)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
         return $this->json(
             [
                 'strongFeet' => [
@@ -97,6 +104,10 @@ class StrongFeetController extends AbstractController
     #[Route('/{id}', methods: ['DELETE'], name: 'delete')]
     public function delete(StrongFoot $strongFeet): JsonResponse
     {
+        if (!$this->isGranted(StrongFeetVoter::DELETE, $strongFeet)) {
+            return $this->json(['error' => 'Access denied'], 403);
+        }
+
         $this->entityManager->remove($strongFeet);
         $this->entityManager->flush();
 

@@ -95,6 +95,10 @@ class TeamsController extends AbstractController
     #[Route('/{id}/details', name: 'api_team_show', methods: ['GET'])]
     public function show(Team $team): JsonResponse
     {
+        if (!$this->isGranted(TeamVoter::VIEW, $team)) {
+            return $this->json(['error' => 'Zugriff verweigert'], Response::HTTP_FORBIDDEN);
+        }
+
         /** @var User $user */
         $user = $this->getUser();
 

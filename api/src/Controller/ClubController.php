@@ -21,6 +21,9 @@ class ClubController extends AbstractController
     {
         $clubs = $clubRepository->findAll();
 
+        // Filtere basierend auf VIEW-Berechtigung
+        $clubs = array_filter($clubs, fn ($club) => $this->isGranted(ClubVoter::VIEW, $club));
+
         return $this->json(array_map(
             fn (Club $club) => [
                 'club' => [
@@ -64,6 +67,10 @@ class ClubController extends AbstractController
     #[Route('/clubs/{id}/details', name: 'club_detail_modal', methods: ['GET'])]
     public function detailModal(Club $club): Response
     {
+        if (!$this->isGranted(ClubVoter::VIEW, $club)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
         return $this->json(
             [
                 'club' => [
@@ -302,6 +309,13 @@ class ClubController extends AbstractController
     #[Route('/clubs/{id}/delete', name: 'club_delete', methods: ['DELETE'])]
     public function delete(Club $club, EntityManagerInterface $em): JsonResponse
     {
+        if (
+            !$this->isGranted('ROLE_ADMIN')
+            || !$this->isGranted(ClubVoter::DELETE, $club)
+        ) {
+            return new JsonResponse(['error' => 'Unauthorized'], 403);
+        }
+
         $em->remove($club);
         $em->flush();
 

@@ -3,6 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\CalendarEventType;
+use App\Security\Voter\CalendarEventTypeVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,6 +20,9 @@ class CalendarEventTypesController extends AbstractController
     public function list(): JsonResponse
     {
         $calendarEventTypes = $this->em->getRepository(CalendarEventType::class)->findAll();
+
+        // Filtere basierend auf VIEW-Berechtigung
+        $calendarEventTypes = array_filter($calendarEventTypes, fn ($type) => $this->isGranted(CalendarEventTypeVoter::VIEW, $type));
 
         return $this->json([
             'entries' => array_map(fn (CalendarEventType $calendarEventType) => [

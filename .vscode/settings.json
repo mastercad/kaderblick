@@ -7,9 +7,10 @@
     "phpcbf.executablePath": "api/vendor/bin/phpcbf",
     "phpcbf.standard": "PSR12",
     
-    "php-cs-fixer.executablePath": "api/vendor/bin/php-cs-fixer",
+    "php-cs-fixer.executablePath": "/media/Austausch/Projekte/fussballverein/webapp/api/vendor/bin/php-cs-fixer",
     "php-cs-fixer.onsave": true,
 
     "phpstan.executablePath": "api/vendor/bin/phpstan",
-    "symfony-vscode.phpExecutablePath": "php"
+    "symfony-vscode.phpExecutablePath": "php",
+    "php-cs-fixer.executable": "/media/Austausch/Projekte/fussballverein/webapp/api/vendor/bin/php-cs-fixer"
 }

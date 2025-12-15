@@ -22,6 +22,9 @@ class AgeGroupsController extends AbstractController
     {
         $ageGroups = $this->entityManager->getRepository(AgeGroup::class)->findAll();
 
+        // Filtere Altersklassen basierend auf VIEW-Berechtigung
+        $ageGroups = array_filter($ageGroups, fn ($ageGroup) => $this->isGranted(AgeGroupVoter::VIEW, $ageGroup));
+
         return $this->json([
             'ageGroups' => array_map(fn ($ageGroup) => [
                 'id' => $ageGroup->getId(),
@@ -49,6 +52,10 @@ class AgeGroupsController extends AbstractController
 
         if (!$ageGroup) {
             return $this->json(['error' => 'Age group not found'], 404);
+        }
+
+        if (!$this->isGranted(AgeGroupVoter::VIEW, $ageGroup)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
         }
 
         return $this->json([
@@ -121,6 +128,10 @@ class AgeGroupsController extends AbstractController
 
         if (!$ageGroup) {
             return $this->json(['error' => 'Age group not found'], 404);
+        }
+
+        if (!$this->isGranted(AgeGroupVoter::DELETE, $ageGroup)) {
+            return $this->json(['error' => 'Access denied'], 403);
         }
 
         $this->entityManager->remove($ageGroup);
