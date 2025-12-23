@@ -9,6 +9,7 @@ use App\Repository\TaskAssignmentRepository;
 use App\Repository\TaskRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\TaskVoter;
+use App\Service\CalendarEventService;
 use App\Service\TaskEventGeneratorService;
 use DateTime;
 use DateTimeImmutable;
@@ -29,7 +30,6 @@ class TaskController extends AbstractController
     {
         $tasks = $taskRepository->findAll();
 
-        // Filtere basierend auf VIEW-Berechtigung
         $tasks = array_filter($tasks, fn ($task) => $this->isGranted(TaskVoter::VIEW, $task));
 
         return $this->json([
@@ -90,7 +90,10 @@ class TaskController extends AbstractController
         $task->setRecurrenceRule($data['recurrenceRule'] ?? null);
         $task->setRotationCount($data['rotationCount'] ?? 1);
 
-        if ($isRecurring && !empty($data['rotationUsers']) && is_array($data['rotationUsers'])) {
+        if ($isRecurring
+            && !empty($data['rotationUsers'])
+            && is_array($data['rotationUsers'])
+        ) {
             $users = $userRepository->findBy(['id' => $data['rotationUsers']]);
             $task->setRotationUsers(new ArrayCollection($users));
         }
@@ -160,42 +163,13 @@ class TaskController extends AbstractController
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
-    public function delete(Task $task, Request $request, EntityManagerInterface $em): JsonResponse
+    public function delete(Task $task, CalendarEventService $calendarEventService): JsonResponse
     {
         $this->denyAccessUnlessGranted(TaskVoter::DELETE, $task);
 
-        $deleteMode = $request->query->get('deleteMode', 'future');
+        $calendarEventService->deleteCalendarEventsForTask($task);
 
-        if ('future' === $deleteMode) {
-            // Lösche alle noch nicht vergangenen Task-Occurrences
-            $futureOccurrences = $em->getRepository(Task::class)
-                ->createQueryBuilder('t')
-                ->where('t.seriesId = :seriesId')
-                ->andWhere('t.assignedDate >= :now')
-                ->setParameter('seriesId', $task->getId())
-                ->setParameter('now', new DateTime())
-                ->getQuery()
-                ->getResult();
-
-            foreach ($futureOccurrences as $occurrence) {
-                // Lösche alle Assignments + deren CalendarEvents (cascade)
-                foreach ($occurrence->getAssignments() as $assignment) {
-                    $em->remove($assignment);
-                }
-                $em->remove($occurrence);
-            }
-            $em->flush();
-
-            return new JsonResponse(['message' => 'Task template and future occurrences deleted successfully'], Response::HTTP_OK);
-        }
-
-        foreach ($task->getAssignments() as $assignment) {
-            $em->remove($assignment);
-        }
-        $em->remove($task);
-        $em->flush();
-
-        return new JsonResponse(['message' => 'Single task deleted successfully'], Response::HTTP_OK);
+        return new JsonResponse(['message' => 'Task deleted successfully with all Dependencies'], Response::HTTP_OK);
     }
 
     #[Route('/assignments/{assignmentId}', name: 'assignment_update', methods: ['PUT', 'PATCH'])]

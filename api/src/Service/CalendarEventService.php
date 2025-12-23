@@ -62,9 +62,17 @@ class CalendarEventService
         // Implementation for updating a calendar event
     }
 
-    public function deleteCalendarEventForTask(): void
+    public function deleteCalendarEventsForTask(Task $task): void
     {
-        // Implementation for deleting a calendar event for a task
+        $taskAssignments = $this->entityManager->getRepository(TaskAssignment::class)
+            ->findBy(['task' => $task]);
+
+        foreach ($taskAssignments as $taskAssignment) {
+            $calendarEvent = $taskAssignment->getCalendarEvent();
+            if ($calendarEvent) {
+                $this->deleteCalendarEventWithDependencies($calendarEvent);
+            }
+        }
     }
 
     public function updateCalendarEventForTask(): void
@@ -168,12 +176,10 @@ class CalendarEventService
         /** @var User $currentUser */
         $currentUser = $this->security->getUser();
 
-        // Set createdBy wenn neues Event
         if (!$calendarEvent->getId()) {
             $calendarEvent->setCreatedBy($currentUser);
         }
 
-        // Aktualisiere Event-Typ
         if ($data['eventTypeId']) {
             $type = $this->entityManager->getReference(CalendarEventType::class, $data['eventTypeId']);
             $calendarEvent->setCalendarEventType($type);
@@ -234,7 +240,6 @@ class CalendarEventService
         if (isset($data['task']) && is_array($data['task'])) {
             $taskData = $data['task'];
 
-            // Check if this event already has a linked task
             $task = null;
             $taskAssignment = $this->entityManager->getRepository(TaskAssignment::class)
                 ->findOneBy(['calendarEvent' => $calendarEvent]);
@@ -280,19 +285,16 @@ class CalendarEventService
 
         $this->entityManager->flush();
 
-        // Erstelle/Aktualisiere Permissions basierend auf permissionType
         if (isset($data['permissionType']) && !isset($data['task'])) {
             $this->updatePermissionsForEvent($calendarEvent, $data['permissionType'], $data);
             $this->entityManager->persist($calendarEvent);
             $this->entityManager->flush();
         } elseif (!$calendarEvent->getId() && !isset($data['task'])) {
-            // Nur für neue Events: erstelle Default-Permissions basierend auf Event-Typ
             $this->createDefaultPermissionsForEvent($calendarEvent);
             $this->entityManager->persist($calendarEvent);
             $this->entityManager->flush();
         }
 
-        // Dispatch event if a new game was created
         if ($gameCreated && $calendarEvent->getGame()) {
             $this->eventDispatcher->dispatch(new GameCreatedEvent($calendarEvent->getGame()));
         }
