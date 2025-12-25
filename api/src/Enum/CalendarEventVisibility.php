@@ -12,7 +12,7 @@ enum CalendarEventVisibility: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::PRIVATE => 'Privat',
             self::SELF => 'Nur Zugewiesener',
             self::TEAM => 'Team',

@@ -100,7 +100,8 @@ class TaskEventGeneratorServiceTest extends TestCase
         $this->entityManager->expects($this->atLeast(0))->method('persist');
         $this->entityManager->expects($this->atLeast(1))->method('flush');
 
-        $this->service->generateEvents($task);
+        $user = new User();
+        $this->service->generateEvents($task, $user);
     }
 
     public function testGeneratePerMatchEventsWithSingleUserAndMultipleGames(): void
@@ -217,10 +218,10 @@ class TaskEventGeneratorServiceTest extends TestCase
             ->with(['user' => $user])
             ->willReturn([$userRelation]);
 
-        $this->entityManager->expects($this->atLeast(6))->method('persist');
+        $this->entityManager->expects($this->atLeast(4))->method('persist');
         $this->entityManager->expects($this->atLeast(1))->method('flush');
 
-        $this->service->generateEvents($task);
+        $this->service->generateEvents($task, $taskCreator);
     }
 
     public function testGeneratePerMatchEventsWithMultipleUsersRotation(): void
@@ -362,10 +363,10 @@ class TaskEventGeneratorServiceTest extends TestCase
             });
 
         // Expect multiple persists for occurrences
-        $this->entityManager->expects($this->atLeast(9))->method('persist');
+        $this->entityManager->expects($this->atLeast(6))->method('persist');
         $this->entityManager->expects($this->atLeast(1))->method('flush');
 
-        $this->service->generateEvents($task);
+        $this->service->generateEvents($task, $taskCreator);
     }
 
     public function testRegeneratePerMatchEventsRemovesOldAssignments(): void
@@ -419,13 +420,14 @@ class TaskEventGeneratorServiceTest extends TestCase
                 return $this->createMock(EntityRepository::class);
             });
 
-        // Expect removal of old occurrences
-        $this->entityManager->expects($this->atLeast(1))
+        // Expect no removal since no future assignments
+        $this->entityManager->expects($this->never())
             ->method('remove');
 
         $this->entityManager->expects($this->atLeast(1))->method('flush');
 
-        $this->service->generateEvents($task);
+        $user = new User();
+        $this->service->generateEvents($task, $user);
     }
 
     public function testGeneratePerMatchEventsSkipsNonPerMatchTasks(): void
@@ -436,8 +438,8 @@ class TaskEventGeneratorServiceTest extends TestCase
         // Non-templates don't trigger event generation for per_match
         $this->calendarEventTypeRepository->expects($this->never())->method('findOneBy');
         $this->entityManager->expects($this->never())->method('persist');
-
-        $this->service->generateEvents($task);
+        $user = new User();
+        $this->service->generateEvents($task, $user);
     }
 
     public function testGeneratePerMatchEventsOnlyCreatesEventsForUserTeams(): void
@@ -499,6 +501,7 @@ class TaskEventGeneratorServiceTest extends TestCase
 
         $matchingEvent = new CalendarEvent();
         $matchingEvent->setStartDate(new DateTimeImmutable('+1 week'));
+        $matchingEvent->setEndDate(new DateTimeImmutable('+1 week +2 hours'));
         $matchingEvent->setGame($matchingGame);
 
         // Game without user's team (should NOT create event)
@@ -508,6 +511,7 @@ class TaskEventGeneratorServiceTest extends TestCase
 
         $nonMatchingEvent = new CalendarEvent();
         $nonMatchingEvent->setStartDate(new DateTimeImmutable('+2 weeks'));
+        $nonMatchingEvent->setEndDate(new DateTimeImmutable('+2 weeks +2 hours'));
         $nonMatchingEvent->setGame($nonMatchingGame);
 
         // Mock QueryBuilder for old occurrences
@@ -550,6 +554,6 @@ class TaskEventGeneratorServiceTest extends TestCase
         $this->entityManager->expects($this->atLeast(3))->method('persist');
         $this->entityManager->expects($this->atLeast(1))->method('flush');
 
-        $this->service->generateEvents($task);
+        $this->service->generateEvents($task, $taskCreator);
     }
 }

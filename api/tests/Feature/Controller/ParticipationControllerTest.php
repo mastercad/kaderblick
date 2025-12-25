@@ -116,7 +116,22 @@ class ParticipationControllerTest extends WebTestCase
     protected function tearDown(): void
     {
         $connection = $this->entityManager->getConnection();
-        $connection->executeStatement('DELETE FROM participations WHERE id IN (SELECT id FROM (SELECT p.id FROM participations p JOIN calendar_events e ON p.event_id = e.id WHERE e.title LIKE "voter-test-%") AS tmp)');
+        $connection->executeStatement(
+            <<<SQL
+                DELETE 
+                FROM participations
+                WHERE id IN (
+                    SELECT id 
+                    FROM (
+                        SELECT p.id 
+                        FROM participations p 
+                        JOIN calendar_events e 
+                        ON p.event_id = e.id 
+                        WHERE e.title LIKE "voter-test-%"
+                    ) AS tmp
+                )
+            SQL
+        );
         $connection->executeStatement('DELETE FROM calendar_events WHERE title LIKE "voter-test-%"');
         $connection->executeStatement('DELETE FROM calendar_event_types WHERE name LIKE "voter-test-%"');
         $connection->executeStatement('DELETE FROM participation_statuses WHERE name LIKE "voter-test-%"');

@@ -50,14 +50,14 @@ final class TaskCreationTest extends ApiWebTestCase
     {
         $client = static::createClient();
         $container = static::getContainer();
-        $this->authenticateUser($client, 'user6@example.com');
+        $this->authenticateUser($client, 'user10@example.com');
         $entityManager = $container->get('doctrine')->getManager();
 
         $initialCalendarEvents = $this->loadCalendarEvents($entityManager);
         $initialTasks = $this->loadTasks($entityManager);
         $initialTaskAssignments = $this->loadTaskAssignments($entityManager);
 
-        $response = $client->request('POST', '/api/tasks', [], [], [], json_encode([
+        $client->request('POST', '/api/tasks', [], [], [], json_encode([
             'title' => 'Einzelaufgabe',
             'description' => 'Dies ist eine Einzelaufgabe für einen Benutzer ohne Beziehungen',
             'due_date' => '2024-07-10T10:00:00+00:00',
@@ -70,19 +70,19 @@ final class TaskCreationTest extends ApiWebTestCase
         $jsonContent = $client->getResponse()->getContent();
         $data = json_decode($jsonContent, true);
 
-        dump("JSON Response:");
-        dump($jsonContent);
-        dump("Decoded Data:");
-        dump($data);
-
-        $this->assertArrayHasKey('status', $data);
+        self::assertArrayHasKey('id', $data);
+        self::assertEquals('Einzelaufgabe', $data['title']);
+        self::assertEquals('Dies ist eine Einzelaufgabe für einen Benutzer ohne Beziehungen', $data['description']);
+        self::assertEquals(false, $data['isRecurring']);
+        self::assertNull($data['recurrenceRule']);
+        self::assertEquals(1, $data['rotationCount']);
 
         $currentCalendarEvents = $this->loadCalendarEvents($entityManager);
         $currentTasks = $this->loadTasks($entityManager);
         $currentTaskAssignments = $this->loadTaskAssignments($entityManager);
 
-        self::assertEquals($currentCalendarEvents, $initialCalendarEvents, 'One CalendarEvents should created');
-        self::assertEquals($currentTasks, $initialTasks, 'One Tasks should created');
+        self::assertCount(count($initialCalendarEvents), $currentCalendarEvents, 'CalendarEvents should not be created for non-recurring tasks');
+        self::assertCount(count($initialTasks) + 1, $currentTasks, 'One Task should be created');
         self::assertEquals($currentTaskAssignments, $initialTaskAssignments, 'TaskAssignments should not change');
     }
 
@@ -92,6 +92,7 @@ final class TaskCreationTest extends ApiWebTestCase
     private function loadCalendarEvents(EntityManagerInterface $entityManager): array
     {
         $currentCalendarEvents = $entityManager->getRepository(CalendarEvent::class)->findAll();
+
         return $currentCalendarEvents;
     }
 
@@ -101,6 +102,7 @@ final class TaskCreationTest extends ApiWebTestCase
     private function loadTasks(EntityManagerInterface $entityManager): array
     {
         $currentTasks = $entityManager->getRepository(Task::class)->findAll();
+
         return $currentTasks;
     }
 
@@ -110,6 +112,7 @@ final class TaskCreationTest extends ApiWebTestCase
     private function loadTaskAssignments(EntityManagerInterface $entityManager): array
     {
         $currentTaskAssignments = $entityManager->getRepository(TaskAssignment::class)->findAll();
+
         return $currentTaskAssignments;
     }
 }

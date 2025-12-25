@@ -233,7 +233,7 @@ class CalendarController extends AbstractController
         $taskAssignment = $taskAssignmentRepo->findOneBy(['calendarEvent' => $calendarEvent]);
         $task = $taskAssignment?->getTask();
 
-        if ($task && $deletionMode === 'series') {
+        if ($task && 'series' === $deletionMode) {
             $taskAssignments = $taskAssignmentRepo->findBy(['task' => $task]);
             foreach ($taskAssignments as $taskAssignment) {
                 if ($taskAssignment->getCalendarEvent()) {

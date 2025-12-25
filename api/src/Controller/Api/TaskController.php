@@ -11,7 +11,6 @@ use App\Repository\UserRepository;
 use App\Security\Voter\TaskVoter;
 use App\Service\CalendarEventService;
 use App\Service\TaskEventGeneratorService;
-use DateTime;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -90,7 +89,8 @@ class TaskController extends AbstractController
         $task->setRecurrenceRule($data['recurrenceRule'] ?? null);
         $task->setRotationCount($data['rotationCount'] ?? 1);
 
-        if ($isRecurring
+        if (
+            $isRecurring
             && !empty($data['rotationUsers'])
             && is_array($data['rotationUsers'])
         ) {
@@ -212,30 +212,15 @@ class TaskController extends AbstractController
         $deleteMode = $request->query->get('deleteMode', 'single');
         $task = $assignment->getTask();
 
-        // Wenn Assignment zu einer Occurrence gehört, kann der User die Series löschen
+        // Bei deleteMode=series: Lösche einfach den Task und seine Assignments (keine Serien-Logik mehr)
         if ('series' === $deleteMode) {
-            // Lösche das Template und alle Occurrences
-            $allOccurrences = $em->getRepository(Task::class)
-                ->createQueryBuilder('t')
-                ->where('t.seriesId = :seriesId')
-                ->setParameter('seriesId', $task->getId())
-                    ->getQuery()
-                    ->getResult();
-
-            foreach ($allOccurrences as $occurrence) {
-                foreach ($occurrence->getAssignments() as $occ_assignment) {
-                    $em->remove($occ_assignment);
-                }
-                $em->remove($occurrence);
-            }
-
-            foreach ($task->getAssignments() as $template_assignment) {
-                $em->remove($template_assignment);
+            foreach ($task->getAssignments() as $assignmentToDelete) {
+                $em->remove($assignmentToDelete);
             }
             $em->remove($task);
             $em->flush();
 
-            return new JsonResponse(['message' => 'Task series deleted successfully'], Response::HTTP_OK);
+            return new JsonResponse(['message' => 'Task deleted successfully'], Response::HTTP_OK);
         }
 
         // Einzelnes Assignment löschen

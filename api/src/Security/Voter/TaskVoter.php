@@ -73,7 +73,8 @@ final class TaskVoter extends Voter
                 return in_array('ROLE_ADMIN', $user->getRoles())
                     || in_array('ROLE_SUPERADMIN', $user->getRoles());
             case self::CREATE:
-                if (in_array('ROLE_USER', $user->getRoles())
+                if (
+                    in_array('ROLE_USER', $user->getRoles())
                     || in_array('ROLE_SUPPORTER', $user->getRoles())
                     || in_array('ROLE_ADMIN', $user->getRoles())
                     || in_array('ROLE_SUPERADMIN', $user->getRoles())

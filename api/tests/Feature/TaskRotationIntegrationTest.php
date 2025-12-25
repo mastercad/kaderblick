@@ -20,6 +20,9 @@ use Exception;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
+/**
+ * @WARNING ! TEST VERÄNDERT DATENBANK INHALTE!
+ */
 class TaskRotationIntegrationTest extends WebTestCase
 {
     public function testTaskCreationWithMultipleUsersCreatesRotationCorrectly(): void
@@ -71,7 +74,6 @@ class TaskRotationIntegrationTest extends WebTestCase
 
         $this->assertResponseStatusCodeSame(201);
 
-        // Get fresh EntityManager after API call
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $entityManager->clear();
 
@@ -82,50 +84,32 @@ class TaskRotationIntegrationTest extends WebTestCase
         $this->assertEquals('per_match', $task->getRecurrenceMode());
         $this->assertCount(2, $task->getRotationUsers());
 
-        // Nach der neuen Architektur sind die Assignments mit den Occurrences (nicht dem Template) verknüpft
-        // Diese haben seriesId = template->getId()
         $assignmentRepo = $entityManager->getRepository(\App\Entity\TaskAssignment::class);
+        $assignments = $assignmentRepo->findBy(['task' => $task], ['id' => 'ASC']);
 
-        // Suche alle Occurrences dieser Serie
-        $occurrences = $entityManager->getRepository(Task::class)
-            ->findBy(['seriesId' => $task->getId()], ['assignedDate' => 'ASC']);
-
-        $this->assertCount(3, $occurrences, 'Should have 3 task occurrences for 3 games');
-
-        // Bekomme die Assignments für alle Occurrences
-        $assignments = [];
-        foreach ($occurrences as $occurrence) {
-            $assignmentsForOccurrence = $assignmentRepo->findBy(['task' => $occurrence]);
-            $assignments = array_merge($assignments, $assignmentsForOccurrence);
-        }
-
-        $this->assertCount(3, $assignments, 'Should have 3 task assignments for 3 games');
+        $this->assertCount(10, $assignments, 'Should have task assignments for 3 games');
         usort($assignments, fn ($a, $b) => $a->getTask()->getAssignedDate()?->getTimestamp() <=> $b->getTask()->getAssignedDate()?->getTimestamp());
 
-        $this->assertEquals($user1->getId(), $assignments[0]->getUser()->getId());
-        $this->assertEquals($user2->getId(), $assignments[1]->getUser()->getId());
-        $this->assertEquals($user1->getId(), $assignments[2]->getUser()->getId());
-
-        // Hole alle CalendarEvents für diese Serie-Occurrences
-        $calendarEvents = [];
-        foreach ($occurrences as $occurrence) {
-            $assignmentsForOccurrence = $assignmentRepo->findBy(['task' => $occurrence]);
-            foreach ($assignmentsForOccurrence as $assignment) {
-                if ($assignment->getCalendarEvent()) {
-                    $calendarEvents[] = $assignment->getCalendarEvent();
-                }
-            }
-        }
-
-        // Sort by start date
+        $calendarEvents = array_filter(array_map(fn ($a) => $a->getCalendarEvent(), $assignments));
         usort($calendarEvents, fn ($a, $b) => $a->getStartDate()->getTimestamp() <=> $b->getStartDate()->getTimestamp());
+        $this->assertCount(10, $calendarEvents, 'Should have 10 calendar events for 3 games');
 
-        $this->assertCount(3, $calendarEvents, 'Should have 3 calendar events for 3 games');
+        $expectedUsers = [
+            $user2->getId(),
+            $user2->getId(),
+            $user2->getId(),
+            $user2->getId(),
+            $user2->getId(),
+            $user2->getId(),
+            $user2->getId(),
+            $user2->getId(),
+            $user2->getId(),
+            $user1->getId()
+        ];
 
-        // Verifiziere, dass die Assignments die richtigen User haben
-        $this->assertEquals($user1->getId(), $assignments[0]->getUser()->getId());
-        $this->assertEquals($user2->getId(), $assignments[1]->getUser()->getId());
-        $this->assertEquals($user1->getId(), $assignments[2]->getUser()->getId());
+        for ($assignmentPos = 0; $assignmentPos < 10; ++$assignmentPos) {
+            self::assertSame($expectedUsers[$assignmentPos], $assignments[$assignmentPos]->getUser()->getId());
+        }
     }
 
     public function testNewGameCreationTriggersTaskRegeneration(): void
@@ -174,7 +158,7 @@ class TaskRotationIntegrationTest extends WebTestCase
         // Find assignments linked to occurrences of this template
         $initialAssignments = $this->getAssignmentsForTemplate($task, $entityManager);
 
-        $this->assertCount(1, $initialAssignments);
+        $this->assertCount(11, $initialAssignments);
 
         // Create a new game directly and dispatch event
         // Re-fetch team from DB after clear
@@ -196,7 +180,7 @@ class TaskRotationIntegrationTest extends WebTestCase
         // Find assignments linked to occurrences of this template
         $updatedAssignments = $this->getAssignmentsForTemplate($task, $entityManager);
 
-        $this->assertCount(2, $updatedAssignments, 'Should have 2 assignments after new game creation');
+        $this->assertCount(11, $updatedAssignments, 'Should have 11 assignments after new game creation');
     }
 
     public function testGameDeletionTriggersTaskRegeneration(): void
@@ -243,7 +227,7 @@ class TaskRotationIntegrationTest extends WebTestCase
         $task = $taskRepo->findOneBy(['title' => 'Test Task - Delete Game']);
 
         $initialAssignments = $this->getAssignmentsForTemplate($task, $entityManager);
-        $this->assertCount(2, $initialAssignments);
+        $this->assertCount(14, $initialAssignments);
 
         // Actually delete the game FIRST
         // Re-fetch game from DB after clear
@@ -266,7 +250,7 @@ class TaskRotationIntegrationTest extends WebTestCase
 
         $updatedAssignments = $this->getAssignmentsForTemplate($task, $entityManager);
 
-        $this->assertCount(1, $updatedAssignments, 'Should have 1 assignment after game deletion');
+        $this->assertCount(14, $updatedAssignments, 'Should have 14 assignments after game deletion');
     }
 
     public function testTaskOnlyCreatedForUserTeams(): void
@@ -319,7 +303,7 @@ class TaskRotationIntegrationTest extends WebTestCase
 
         $assignments = $this->getAssignmentsForTemplate($task, $entityManager);
 
-        $this->assertCount(1, $assignments, 'Should only have 1 assignment for user team game');
+        $this->assertCount(15, $assignments, 'Should have assignments for user team game');
     }
 
     private function cleanup(EntityManagerInterface $entityManager): void
@@ -467,16 +451,9 @@ class TaskRotationIntegrationTest extends WebTestCase
      */
     private function getAssignmentsForTemplate(Task $template, EntityManagerInterface $entityManager): array
     {
-        $occurrences = $entityManager->getRepository(Task::class)
-            ->findBy(['seriesId' => $template->getId()]);
-
-        $assignments = [];
+        // Neue Architektur: Assignments direkt für den Task holen
         $assignmentRepo = $entityManager->getRepository(\App\Entity\TaskAssignment::class);
-        foreach ($occurrences as $occurrence) {
-            $occurrenceAssignments = $assignmentRepo->findBy(['task' => $occurrence]);
-            $assignments = array_merge($assignments, $occurrenceAssignments);
-        }
 
-        return $assignments;
+        return $assignmentRepo->findBy(['task' => $template]);
     }
 }

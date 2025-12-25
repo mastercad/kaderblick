@@ -22,7 +22,6 @@ use App\Entity\Video;
 use App\Enum\CalendarEventPermissionType;
 use App\Event\GameCreatedEvent;
 use App\Event\GameDeletedEvent;
-use App\Service\TaskEventGeneratorService;
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -56,7 +55,7 @@ class CalendarEventService
     }
 
     /**
-     * Löscht ein CalendarEvent und alle seine Abhängigkeiten
+     * Löscht ein CalendarEvent und alle seine Abhängigkeiten.
      */
     public function deleteCalendarEventWithDependencies(CalendarEvent $calendarEvent): void
     {
@@ -279,7 +278,7 @@ class CalendarEventService
         $task->setRotationCount($taskData['rotationCount'] ?? 1);
 
         // Set recurrence rule for classic mode
-        if ($task->isRecurring() && $task->getRecurrenceMode() === 'classic') {
+        if ($task->isRecurring() && 'classic' === $task->getRecurrenceMode()) {
             if (isset($taskData['recurrenceRule']) && $taskData['recurrenceRule']) {
                 $task->setRecurrenceRule($taskData['recurrenceRule']);
             }
@@ -293,7 +292,7 @@ class CalendarEventService
     }
 
     /**
-     * Aktualisiert oder erstellt Permissions für ein Event basierend auf permissionType und IDs
+     * Aktualisiert oder erstellt Permissions für ein Event basierend auf permissionType und IDs.
      *
      * @param array<string, mixed> $data
      */
@@ -304,13 +303,13 @@ class CalendarEventService
             $this->entityManager->remove($permission);
         }
 
-        if ($permissionType === 'public') {
+        if ('public' === $permissionType) {
             // Public: eine PUBLIC Permission
             $permission = new CalendarEventPermission();
             $permission->setCalendarEvent($calendarEvent);
             $permission->setPermissionType(CalendarEventPermissionType::PUBLIC);
             $this->entityManager->persist($permission);
-        } elseif ($permissionType === 'user' && isset($data['permissionUsers'])) {
+        } elseif ('user' === $permissionType && isset($data['permissionUsers'])) {
             // User: eine Permission pro User
             $userIds = $data['permissionUsers'];
             foreach ($userIds as $userId) {
@@ -321,7 +320,7 @@ class CalendarEventService
                 $permission->setUser($user);
                 $this->entityManager->persist($permission);
             }
-        } elseif ($permissionType === 'team' && isset($data['permissionTeams'])) {
+        } elseif ('team' === $permissionType && isset($data['permissionTeams'])) {
             // Team: eine Permission pro Team
             $teamIds = $data['permissionTeams'];
             foreach ($teamIds as $teamId) {
@@ -332,7 +331,7 @@ class CalendarEventService
                 $permission->setTeam($team);
                 $this->entityManager->persist($permission);
             }
-        } elseif ($permissionType === 'club' && isset($data['permissionClubs'])) {
+        } elseif ('club' === $permissionType && isset($data['permissionClubs'])) {
             // Club: eine Permission pro Club
             $clubIds = $data['permissionClubs'];
             foreach ($clubIds as $clubId) {
@@ -347,7 +346,7 @@ class CalendarEventService
     }
 
     /**
-     * Erstellt Standard-Permissions für ein neues Event basierend auf dem Event-Typ
+     * Erstellt Standard-Permissions für ein neues Event basierend auf dem Event-Typ.
      */
     private function createDefaultPermissionsForEvent(CalendarEvent $calendarEvent): void
     {

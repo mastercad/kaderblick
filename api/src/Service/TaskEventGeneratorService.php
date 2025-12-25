@@ -78,7 +78,7 @@ class TaskEventGeneratorService
 
         $users = $task->getRotationUsers()->toArray();
 
-        if (0 < count($users)) {
+        if (0 === count($users)) {
             $users = [$user];
         }
 

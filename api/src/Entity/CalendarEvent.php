@@ -2,7 +2,6 @@
 
 namespace App\Entity;
 
-use App\Entity\CalendarEventType;
 use App\Repository\CalendarEventRepository;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;

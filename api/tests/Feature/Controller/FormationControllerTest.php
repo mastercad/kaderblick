@@ -49,7 +49,11 @@ class FormationControllerTest extends WebTestCase
         $otherFormation = $this->createFormation($user2, $type, 'voter-test-Other Formation');
 
         $this->client->loginUser($user1);
-        $this->client->request('POST', '/formation/' . $otherFormation->getId() . '/edit', [], [],
+        $this->client->request(
+            'POST',
+            '/formation/' . $otherFormation->getId() . '/edit',
+            [],
+            [],
             ['CONTENT_TYPE' => 'application/json'],
             json_encode(['name' => 'voter-test-Hacked', 'formationData' => []])
         );
@@ -64,7 +68,11 @@ class FormationControllerTest extends WebTestCase
         $formation = $this->createFormation($user, $type, 'voter-test-My Formation');
 
         $this->client->loginUser($user);
-        $this->client->request('POST', '/formation/' . $formation->getId() . '/edit', [], [],
+        $this->client->request(
+            'POST',
+            '/formation/' . $formation->getId() . '/edit',
+            [],
+            [],
             ['CONTENT_TYPE' => 'application/json'],
             json_encode(['name' => 'voter-test-Updated', 'formationData' => []])
         );
@@ -105,7 +113,11 @@ class FormationControllerTest extends WebTestCase
         $userFormation = $this->createFormation($regularUser, $type, 'voter-test-User Formation');
 
         $this->client->loginUser($admin);
-        $this->client->request('POST', '/formation/' . $userFormation->getId() . '/edit', [], [],
+        $this->client->request(
+            'POST',
+            '/formation/' . $userFormation->getId() . '/edit',
+            [],
+            [],
             ['CONTENT_TYPE' => 'application/json'],
             json_encode(['name' => 'voter-test-Admin Modified', 'formationData' => []])
         );

@@ -142,25 +142,17 @@ class TaskDeletionTest extends WebTestCase
     }
 
     /**
-     * Helper zum Abrufen aller Assignments für ein Task-Template
-     * Nach der neuen Architektur gibt es Occurrences mit seriesId.
+     * Helper zum Abrufen aller Assignments für einen Task.
      *
      * @return array<TaskAssignment>
      */
-    private function getAssignmentsForTemplate(Task $template, EntityManagerInterface $entityManager): array
+    private function getAssignmentsForTask(Task $task, EntityManagerInterface $entityManager): array
     {
-        $occurrences = $entityManager->getRepository(Task::class)
-            ->findBy(['seriesId' => $template->getId()]);
-
-        $assignments = [];
         $assignmentRepo = $entityManager->getRepository(TaskAssignment::class);
-        foreach ($occurrences as $occurrence) {
-            $occurrenceAssignments = $assignmentRepo->findBy(['task' => $occurrence]);
-            $assignments = array_merge($assignments, $occurrenceAssignments);
-        }
-
-        // Sort by assigned date
-        usort($assignments, fn ($a, $b) => ($a->getTask()->getAssignedDate()?->getTimestamp() ?? 0) <=>
+        $assignments = $assignmentRepo->findBy(['task' => $task]);
+        usort(
+            $assignments,
+            fn ($a, $b) => ($a->getTask()->getAssignedDate()?->getTimestamp() ?? 0) <=>
             ($b->getTask()->getAssignedDate()?->getTimestamp() ?? 0)
         );
 
@@ -221,7 +213,7 @@ class TaskDeletionTest extends WebTestCase
         $task = $taskRepo->findOneBy(['title' => 'Test Task - Delete Single']);
         $this->assertNotNull($task);
 
-        $assignments = $this->getAssignmentsForTemplate($task, $entityManager);
+        $assignments = $this->getAssignmentsForTask($task, $entityManager);
         $initialCount = count($assignments);
         $this->assertGreaterThan(0, $initialCount, 'Should have at least one assignment');
 
@@ -239,7 +231,7 @@ class TaskDeletionTest extends WebTestCase
         $task = $taskRepo->findOneBy(['title' => 'Test Task - Delete Single']);
         $this->assertNotNull($task, 'Task should still exist');
 
-        $remainingAssignments = $this->getAssignmentsForTemplate($task, $entityManager);
+        $remainingAssignments = $this->getAssignmentsForTask($task, $entityManager);
         $this->assertCount($initialCount - 1, $remainingAssignments, 'Should have one less assignment');
 
         // Verify the specific assignment was deleted
@@ -296,7 +288,7 @@ class TaskDeletionTest extends WebTestCase
         $this->assertNotNull($task);
         $taskId = $task->getId();
 
-        $assignments = $this->getAssignmentsForTemplate($task, $entityManager);
+        $assignments = $this->getAssignmentsForTask($task, $entityManager);
         $this->assertGreaterThan(0, count($assignments), 'Should have at least one assignment');
 
         // Delete via the assignment endpoint instead (which works)
@@ -317,10 +309,6 @@ class TaskDeletionTest extends WebTestCase
         $taskRepo = $entityManager->getRepository(Task::class);
         $task = $taskRepo->find($taskId);
         $this->assertNull($task, 'Task should be deleted');
-
-        // Verifiziere dass alle Occurrences gelöscht wurden
-        $occurrences = $taskRepo->findBy(['seriesId' => $taskId]);
-        $this->assertCount(0, $occurrences, 'All occurrences should be deleted');
     }
 
     public function testDeleteSeriesViaAssignmentEndpoint(): void
@@ -376,7 +364,7 @@ class TaskDeletionTest extends WebTestCase
         $this->assertNotNull($task);
         $taskId = $task->getId();
 
-        $assignments = $this->getAssignmentsForTemplate($task, $entityManager);
+        $assignments = $this->getAssignmentsForTask($task, $entityManager);
         $this->assertGreaterThan(0, count($assignments), 'Should have at least one assignment');
 
         $firstAssignment = $assignments[0];
@@ -392,9 +380,8 @@ class TaskDeletionTest extends WebTestCase
         $task = $taskRepo->find($taskId);
         $this->assertNull($task, 'Task should be deleted');
 
-        // Verifiziere dass alle Occurrences gelöscht wurden
-        $occurrences = $taskRepo->findBy(['seriesId' => $taskId]);
-        $this->assertCount(0, $occurrences, 'All occurrences should be deleted');
+        // Verifiziere, dass der Task gelöscht wurde (keine Serien mehr)
+        // (Task wurde oben schon geprüft)
     }
 
     public function testDeleteSingleAssignmentRemovesCalendarEvent(): void
@@ -468,7 +455,7 @@ class TaskDeletionTest extends WebTestCase
         $task = $taskRepo->findOneBy(['title' => 'Test Task - Delete Calendar']);
         $this->assertNotNull($task);
 
-        $assignments = $this->getAssignmentsForTemplate($task, $entityManager);
+        $assignments = $this->getAssignmentsForTask($task, $entityManager);
         $this->assertGreaterThan(0, count($assignments), 'Should have at least one assignment');
         $firstAssignment = $assignments[0];
 
