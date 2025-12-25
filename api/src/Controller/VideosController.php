@@ -12,6 +12,7 @@ use App\Repository\GameEventRepository;
 use App\Repository\GameRepository;
 use App\Repository\VideoRepository;
 use App\Repository\VideoTypeRepository;
+use App\Security\Voter\GameVoter;
 use App\Service\VideoTimelineService;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -42,7 +43,7 @@ class VideosController extends AbstractController
             return new JsonResponse(['error' => 'Spiel nicht gefunden'], 404);
         }
 
-        if (!$this->isGranted('GAME_VIEW', $game)) {
+        if (!$this->isGranted(GameVoter::VIEW, $game)) {
             return new JsonResponse(['error' => 'Zugriff verweigert'], 403);
         }
 

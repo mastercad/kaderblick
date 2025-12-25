@@ -10,6 +10,7 @@ use App\Repository\CameraRepository;
 use App\Repository\GameEventRepository;
 use App\Repository\GameRepository;
 use App\Repository\VideoTypeRepository;
+use App\Security\Voter\GameVoter;
 use App\Security\Voter\VideoVoter;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -94,7 +95,7 @@ class GamesController extends AbstractController
     #[Route(path: '/{id}', name: 'show', requirements: ['id' => '\\d+'], methods: ['GET'])]
     public function show(Game $game, GameEventRepository $gameEventRepository, VideoTypeRepository $videoTypeRepository, CameraRepository $cameraRepository): Response
     {
-        if (!$this->isGranted('GAME_VIEW', $game)) {
+        if (!$this->isGranted(GameVoter::VIEW, $game)) {
             throw $this->createAccessDeniedException('Zugriff verweigert');
         }
 

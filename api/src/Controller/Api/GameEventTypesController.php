@@ -23,7 +23,7 @@ class GameEventTypesController extends AbstractController
         $gameEventTypes = $this->entityManager->getRepository(GameEventType::class)->findAll();
 
         // Filtere Spielereignistypen basierend auf VIEW-Berechtigung
-        $gameEventTypes = array_filter($gameEventTypes, fn ($gameEventType) => $this->isGranted('GAME_EVENT_TYPE_VIEW', $gameEventType));
+        $gameEventTypes = array_filter($gameEventTypes, fn ($gameEventType) => $this->isGranted(GameEventTypeVoter::VIEW, $gameEventType));
 
         return $this->json([
             'gameEventTypes' => array_map(fn ($gameEventType) => [
@@ -34,10 +34,10 @@ class GameEventTypesController extends AbstractController
                 'icon' => $gameEventType->getIcon(),
                 'isSystem' => $gameEventType->isSystem(),
                 'permissions' => [
-                    'canView' => $this->isGranted('GAME_EVENT_TYPE_VIEW', $gameEventType),
-                    'canCreate' => $this->isGranted('GAME_EVENT_TYPE_CREATE', $gameEventType),
-                    'canEdit' => $this->isGranted('GAME_EVENT_TYPE_EDIT', $gameEventType),
-                    'canDelete' => $this->isGranted('GAME_EVENT_TYPE_DELETE', $gameEventType)
+                    'canView' => $this->isGranted(GameEventTypeVoter::VIEW, $gameEventType),
+                    'canCreate' => $this->isGranted(GameEventTypeVoter::CREATE, $gameEventType),
+                    'canEdit' => $this->isGranted(GameEventTypeVoter::EDIT, $gameEventType),
+                    'canDelete' => $this->isGranted(GameEventTypeVoter::DELETE, $gameEventType)
                 ]
             ], $gameEventTypes)
         ]);
@@ -52,7 +52,7 @@ class GameEventTypesController extends AbstractController
             return $this->json(['error' => 'GameEventType not found'], 404);
         }
 
-        if (!$this->isGranted('GAME_EVENT_TYPE_VIEW', $gameEventType)) {
+        if (!$this->isGranted(GameEventTypeVoter::VIEW, $gameEventType)) {
             return $this->json(['error' => 'Zugriff verweigert'], 403);
         }
 
@@ -65,10 +65,10 @@ class GameEventTypesController extends AbstractController
                 'icon' => $gameEventType->getIcon(),
                 'isSystem' => $gameEventType->isSystem(),
                 'permissions' => [
-                    'canView' => $this->isGranted('GAME_EVENT_TYPE_VIEW', $gameEventType),
-                    'canCreate' => $this->isGranted('GAME_EVENT_TYPE_CREATE', $gameEventType),
-                    'canEdit' => $this->isGranted('GAME_EVENT_TYPE_EDIT', $gameEventType),
-                    'canDelete' => $this->isGranted('GAME_EVENT_TYPE_DELETE', $gameEventType)
+                    'canView' => $this->isGranted(GameEventTypeVoter::VIEW, $gameEventType),
+                    'canCreate' => $this->isGranted(GameEventTypeVoter::CREATE, $gameEventType),
+                    'canEdit' => $this->isGranted(GameEventTypeVoter::EDIT, $gameEventType),
+                    'canDelete' => $this->isGranted(GameEventTypeVoter::DELETE, $gameEventType)
                 ]
             ]
         ]);
