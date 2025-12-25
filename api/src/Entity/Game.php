@@ -178,6 +178,11 @@ class Game
     {
         $this->calendarEvent = $calendarEvent;
 
+        // Setze die bidirektionale Relation
+        if (null !== $calendarEvent && $calendarEvent->getGame() !== $this) {
+            $calendarEvent->setGame($this);
+        }
+
         return $this;
     }
 

@@ -4,6 +4,7 @@ namespace App\Controller\Api;
 
 use App\Entity\ReportDefinition;
 use App\Entity\User;
+use App\Security\Voter\ReportVoter;
 use App\Service\ReportDataService;
 use App\Service\ReportFieldAliasService;
 use DateTimeImmutable;
@@ -277,6 +278,9 @@ class ReportController extends AbstractController
         $templates = $repo->findBy(['isTemplate' => true]);
         $userReports = $repo->findBy(['user' => $user]);
 
+        $templates = array_filter($templates, fn ($r) => $this->isGranted(ReportVoter::VIEW, $r));
+        $userReports = array_filter($userReports, fn ($r) => $this->isGranted(ReportVoter::VIEW, $r));
+
         // Convert to simple arrays to avoid circular references
         $templatesData = array_map(fn ($report) => [
             'id' => $report->getId(),
@@ -303,6 +307,9 @@ class ReportController extends AbstractController
     #[Route('/definition', name: 'api_report_create', methods: ['POST'])]
     public function create(Request $request, EntityManagerInterface $em): JsonResponse
     {
+        // Reports können von authentifizierten Benutzern erstellt werden
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+
         $data = json_decode($request->getContent(), true);
         if (!isset($data['name'], $data['config'])) {
             return $this->json(['error' => 'Missing name or config'], 400);

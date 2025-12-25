@@ -6,6 +6,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { EventDetailsModal } from '../modals/EventDetailsModal';
 import { EventModal } from '../modals/EventModal';
 import { DynamicConfirmationModal } from '../modals/DynamicConfirmationModal';
+import { TaskDeletionModal } from '../modals/TaskDeletionModal';
 import { AlertModal } from '../modals/AlertModal';
 import { Calendar as BigCalendar, momentLocalizer, Views } from 'react-big-calendar';
 import Box from '@mui/material/Box';
@@ -75,6 +76,15 @@ type CalendarEvent = {
     homeTeam?: { id: number; name: string };
     awayTeam?: { id: number; name: string };
   };
+  task?: {
+    id: number;
+    isRecurring: boolean;
+    recurrenceMode: string;
+    recurrenceRule: string | null;
+    rotationUsers: { id: number; fullName: string }[];
+    rotationCount: number;
+    offset: number;
+  };
 };
 
 type CalendarEventType = {
@@ -131,6 +141,30 @@ type EventFormData = {
   homeTeam?: string;
   awayTeam?: string;
   gameType?: string;
+  permissionType?: string;
+  permissionTeams?: string[];
+  permissionClubs?: string[];
+  permissionUsers?: string[];
+  // Task-bezogene Felder
+  task?: {
+    id: number;
+    isRecurring: boolean;
+    recurrenceMode: string;
+    recurrenceRule: string | null;
+    rotationUsers: { id: number; fullName: string }[];
+    rotationCount: number;
+    offset: number;
+  };
+  taskIsRecurring?: boolean;
+  taskRecurrenceMode?: string;
+  taskFreq?: string;
+  taskInterval?: number;
+  taskByDay?: string;
+  taskByMonthDay?: number;
+  taskRecurrenceRule?: string;
+  taskRotationUsers?: string[];
+  taskRotationCount?: number;
+  taskOffset?: number;
 };
 
 const messages = {
@@ -195,7 +229,9 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     eventType: '',
     locationId: '',
     description: '',
-    leagueId: ''
+    leagueId: '',
+    permissionType: 'public',
+    taskOffset: 0
   });
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [eventSaving, setEventSaving] = useState(false);
@@ -206,6 +242,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   const [gameTypes, setGameTypes] = useState<{ createAndEditAllowed: boolean; entries: GameType[] }>({ createAndEditAllowed: false, entries: [] });
   const [locations, setLocations] = useState<Location[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
+  const [users, setUsers] = useState<{ id: string | number; fullName?: string; firstName?: string; lastName?: string }[]>([]);
 
   // Filter State - Set mit aktiven Event-Type-IDs (standardmäßig alle aktiv)
   const [activeEventTypeIds, setActiveEventTypeIds] = useState<Set<number>>(new Set());
@@ -234,6 +271,12 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     onConfirm: () => {}
   });
 
+  const [taskDeletionModal, setTaskDeletionModal] = useState<{
+    open: boolean;
+  }>({
+    open: false
+  });
+
   // Mobile views should be limited but include month for better UX
   const availableViews = isMobile ? ['month', 'day', 'agenda'] : ['month', 'week', 'day', 'agenda'];
 
@@ -256,14 +299,15 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     });
   };
 
-  // Lade Event-Types, Teams, Game-Types und Locations beim ersten Laden
+  // Lade Event-Types, Teams, Game-Types, Locations und Users beim ersten Laden
   useEffect(() => {    
     Promise.all([
       apiJson<{ createAndEditAllowed: boolean; entries: CalendarEventType[] }>('/api/calendar-event-types').catch(() => ({ createAndEditAllowed: false, entries: [] })),
       apiJson<TeamsApiResponse[]>('/api/teams/list').catch(() => []),
       apiJson<{ createAndEditAllowed: boolean; entries: GameType[] }>('/api/game-types').catch(() => ({ createAndEditAllowed: false, entries: [] })),
-      apiJson<LocationsApiResponse>('/api/locations').catch(() => ({ locations: [], permissions: { canCreate: false, canEdit: false, canView: false, canDelete: false } }))
-    ]).then(([eventTypesData, teamsData, gameTypesData, locationsData]) => {
+      apiJson<LocationsApiResponse>('/api/locations').catch(() => ({ locations: [], permissions: { canCreate: false, canEdit: false, canView: false, canDelete: false } })),
+      apiJson<{ users: { id: string; firstName: string; lastName: string }[] }>('/api/users').catch(() => ({ users: [] }))
+    ]).then(([eventTypesData, teamsData, gameTypesData, locationsData, usersData]) => {
       // Defensive: handle possible error objects
       if ('error' in eventTypesData) {
         setEventTypes({ createAndEditAllowed: false, entries: [] });
@@ -292,6 +336,11 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       } else {
         setLocations(locationsData.locations || []);
       }
+      if ('error' in usersData || !usersData.users) {
+        setUsers([]);
+      } else {
+        setUsers(usersData.users || []);
+      }
     }).catch(console.error);
   }, []);
 
@@ -318,6 +367,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
           eventType: ev.type || {},
           location: ev.location || {},
           game: ev.game || undefined,
+          task: ev.task || undefined,
           weatherData: ev.weatherData || undefined
         })));
         setLoading(false);
@@ -337,7 +387,9 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       time: '',
       eventType: '',
       locationId: '',
-      description: ''
+      description: '',
+      permissionType: 'public',
+      taskOffset: 0
     });
     setEditingEventId(null);
     setEventModalOpen(true);
@@ -366,7 +418,17 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       gameType: (event.game && 'gameType' in event.game && (event.game as any).gameType?.id?.toString())
         || event.gameType?.id?.toString()
         || '',
-      leagueId: event.game && (event.game as any).league?.id ? (event.game as any).league.id.toString() : ''
+      leagueId: event.game && (event.game as any).league?.id ? (event.game as any).league.id.toString() : '',
+      permissionType: event.permissionType ?? 'public',
+      task: event.task ? {
+        id: event.task.id,
+        isRecurring: event.task.isRecurring,
+        recurrenceMode: event.task.recurrenceMode,
+        recurrenceRule: event.task.recurrenceRule,
+        rotationUsers: event.task.rotationUsers,
+        rotationCount: event.task.rotationCount,
+        offset: event.task.offset,
+      } : undefined
     });
     setEditingEventId(event.id);
     setSelectedEvent(null);
@@ -374,7 +436,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   };
 
   // Formular-Änderungen verwalten
-  const handleFormChange = (field: string, value: string) => {
+  const handleFormChange = (field: string, value: string | number | boolean | string[]) => {
     setEventFormData(prev => ({
       ...prev,
       [field]: value
@@ -402,6 +464,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     // Spiel-spezifische Validierung
     const selectedEventType = eventTypes.entries.find(et => et.id.toString() === eventFormData.eventType);
     const isGameEvent = selectedEventType?.name?.toLowerCase().includes('spiel') || false;
+    const isTaskEvent = selectedEventType?.name?.toLowerCase().includes('aufgabe') || false;
     
     if (isGameEvent) {
       if (!eventFormData.homeTeam) {
@@ -440,7 +503,11 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         endDate: endDateTime,
         eventTypeId: eventFormData.eventType ? parseInt(eventFormData.eventType) : undefined,
         description: eventFormData.description || '',
-        locationId: eventFormData.locationId ? parseInt(eventFormData.locationId) : undefined
+        locationId: eventFormData.locationId ? parseInt(eventFormData.locationId) : undefined,
+        permissionType: eventFormData.permissionType || 'public',
+        permissionTeams: eventFormData.permissionTeams?.map(id => parseInt(id)) || [],
+        permissionClubs: eventFormData.permissionClubs?.map(id => parseInt(id)) || [],
+        permissionUsers: eventFormData.permissionUsers?.map(id => parseInt(id)) || []
       };
 
       // Spiel-spezifische Daten hinzufügen
@@ -457,6 +524,27 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         payload.leagueId = eventFormData.leagueId ? parseInt(eventFormData.leagueId): undefined;
       }
 
+      // Task-spezifische Daten hinzufügen
+      if (isTaskEvent) {
+        var taskRecurrenceRule = JSON.stringify({'freq': eventFormData.taskFreq, 'interval': eventFormData.taskInterval, 'byday': eventFormData.taskByDay, 'bymonthday': eventFormData.taskByMonthDay});
+        payload.task = {
+          isRecurring: eventFormData.taskIsRecurring || false,
+          recurrenceMode: eventFormData.taskRecurrenceMode || 'classic',
+          rotationUsers: eventFormData.taskRotationUsers?.map(id => parseInt(id)) || [],
+          rotationCount: eventFormData.taskRotationCount || 1,
+          recurrenceRule: taskRecurrenceRule,
+          offset: eventFormData.taskOffset || 0
+        };
+        
+        // Recurrence-Rule für classic Mode zusammenbauen
+        if (eventFormData.taskIsRecurring && eventFormData.taskRecurrenceMode === 'classic') {
+          const rule: any = { freq: eventFormData.taskFreq || 'WEEKLY', interval: eventFormData.taskInterval || 1 };
+          if (eventFormData.taskFreq === 'WEEKLY') rule.byday = [eventFormData.taskByDay || 'MO'];
+          if (eventFormData.taskFreq === 'MONTHLY') rule.bymonthday = eventFormData.taskByMonthDay || 1;
+          payload.task.recurrenceRule = JSON.stringify(rule);
+        }
+      }
+
       const url = editingEventId ? `/api/calendar/event/${editingEventId}` : '/api/calendar/event';
       const method = editingEventId ? 'PUT' : 'POST';
 
@@ -470,7 +558,6 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         throw new Error(errorData.message || `HTTP ${response.status}`);
       }
 
-      // Events neu laden
       await refreshEvents();
 
       setEventModalOpen(false);
@@ -480,7 +567,9 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         time: '',
         eventType: '',
         locationId: '',
-        description: ''
+        description: '',
+        permissionType: 'public',
+        taskOffset: 0
       });
 
       showAlert('Event wurde erfolgreich gespeichert!', 'success', 'Erfolgreich gespeichert');
@@ -493,49 +582,64 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     }
   };
 
-  // Event löschen
   const handleDeleteEvent = async () => {
     if (!editingEventId) return;
-    
-    showConfirm(
-      'Möchten Sie dieses Event wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
-      async () => {
-        setEventSaving(true);
-        try {
-          const response = await apiRequest(`/api/calendar/event/${editingEventId}`, {
-            method: 'DELETE'
-          });
 
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: 'Unbekannter Fehler' }));
-            throw new Error(errorData.message || `HTTP ${response.status}`);
-          }
+    const isTaskEvent = eventFormData.task && Object.keys(eventFormData.task).length > 0;
 
-          // Events neu laden
-          await refreshEvents();
-
-          setEventModalOpen(false);
-          setEventFormData({
-            title: '',
-            date: '',
-            time: '',
-            eventType: '',
-            locationId: '',
-            description: ''
-          });
-
-          showAlert('Event wurde erfolgreich gelöscht!', 'success', 'Erfolgreich gelöscht');
-          
-        } catch (error: any) {
-          console.error('Error deleting event:', error);
-          showAlert('Fehler beim Löschen des Events: ' + error.message, 'error', 'Löschen fehlgeschlagen');
-        } finally {
-          setEventSaving(false);
-        }
-      },
-      'Event löschen'
-    );
+    if (isTaskEvent) {
+      setTaskDeletionModal({ open: true });
+    } else {
+      showConfirm(
+        'Möchten Sie dieses Event wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+        async () => {
+          await performDeleteEvent('single');
+        },
+        'Event löschen'
+      );
+    }
   };
+
+  const performDeleteEvent = async (deletionMode: 'single' | 'series') => {
+    if (!editingEventId) return;
+    
+    setEventSaving(true);
+    try {
+      const response = await apiRequest(`/api/calendar/event/${editingEventId}`, {
+        method: 'DELETE',
+        body: {deletionMode: deletionMode}
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unbekannter Fehler' }));
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+
+      // Events neu laden
+      await refreshEvents();
+
+      setEventModalOpen(false);
+      setTaskDeletionModal({ open: false });
+      setEventFormData({
+        title: '',
+        date: '',
+        time: '',
+        eventType: '',
+        locationId: '',
+        description: '',
+        permissionType: 'public',
+        taskOffset: 0
+      });
+
+      showAlert('Event wurde erfolgreich gelöscht!', 'success', 'Erfolgreich gelöscht');
+      
+    } catch (error: any) {
+      console.error('Error deleting event:', error);
+      showAlert('Fehler beim Löschen des Events: ' + error.message, 'error', 'Löschen fehlgeschlagen');
+    } finally {
+      setEventSaving(false);
+    }
+  }
 
   // Helper-Funktion zum Neu-Laden der Events
   const refreshEvents = async () => {
@@ -554,7 +658,9 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         description: ev.description || '',
         eventType: ev.type || {},  // Backend sendet 'type', wir mappen es zu 'eventType'
         location: ev.location || {},
-        game: ev.game || undefined
+        game: ev.game || undefined,
+        task: ev.task || undefined,
+        weatherData: ev.weatherData || undefined
       }));
     }
     setEvents(mappedEvents);
@@ -569,7 +675,8 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       time: '',
       eventType: '',
       locationId: '',
-      description: ''
+      description: '',
+      taskOffset: 0
     });
     setEditingEventId(null);
     setEventModalOpen(true);
@@ -914,6 +1021,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
           type: selectedEvent.eventType,
           location: selectedEvent.location,
           game: selectedEvent.game,
+          task: selectedEvent.task,
           weatherData: selectedEvent.weatherData
         } : null}
         onEdit={() => selectedEvent && handleEditEvent(selectedEvent)}
@@ -931,7 +1039,9 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
             time: '',
             eventType: '',
             locationId: '',
-            description: ''
+            description: '',
+            permissionType: 'public',
+            taskOffset: 0
           });
         }}
         onSave={handleSaveEvent}
@@ -942,6 +1052,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         teams={teams.map(t => ({ value: t.id.toString(), label: t.name }))}
         gameTypes={gameTypes.entries.map(gt => ({ value: gt.id.toString(), label: gt.name }))}
         locations={locations.map(l => ({ value: l.id.toString(), label: l.name }))}
+        users={users}
         onChange={handleFormChange}
         loading={eventSaving}
       />
@@ -970,10 +1081,24 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         confirmColor="error"
         loading={eventSaving}
       />
+
+      {/* Task Deletion Modal with 3 buttons */}
+      <TaskDeletionModal
+        open={taskDeletionModal.open}
+        onClose={() => setTaskDeletionModal({ open: false })}
+        onDeleteSingle={() => {
+          setTaskDeletionModal({ open: false });
+          performDeleteEvent('single');
+        }}
+        onDeleteSeries={() => {
+          setTaskDeletionModal({ open: false });
+          performDeleteEvent('series');
+        }}
+        loading={eventSaving}
+      />
     </>
   );
 }
-
 
 type CalendarExportProps = {
   setCalendarFabHandler?: (handler: (() => void) | null) => void;

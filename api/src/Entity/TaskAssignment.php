@@ -6,6 +6,7 @@ use App\Repository\TaskAssignmentRepository;
 use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 
+#[ORM\Table(name: 'task_assignments')]
 #[ORM\Entity(repositoryClass: TaskAssignmentRepository::class)]
 class TaskAssignment
 {
@@ -33,9 +34,9 @@ class TaskAssignment
     #[ORM\JoinColumn(nullable: true)]
     private ?User $substituteUser = null;
 
-    #[ORM\ManyToOne(targetEntity: TaskAssignment::class)]
+    #[ORM\OneToOne(targetEntity: CalendarEvent::class, cascade: ['remove'])]
     #[ORM\JoinColumn(nullable: true)]
-    private ?TaskAssignment $swappedWithAssignment = null;
+    private ?CalendarEvent $calendarEvent = null;
 
     public function getId(): ?int
     {
@@ -102,14 +103,14 @@ class TaskAssignment
         return $this;
     }
 
-    public function getSwappedWithAssignment(): ?TaskAssignment
+    public function getCalendarEvent(): ?CalendarEvent
     {
-        return $this->swappedWithAssignment;
+        return $this->calendarEvent;
     }
 
-    public function setSwappedWithAssignment(?TaskAssignment $swappedWithAssignment): self
+    public function setCalendarEvent(?CalendarEvent $calendarEvent): self
     {
-        $this->swappedWithAssignment = $swappedWithAssignment;
+        $this->calendarEvent = $calendarEvent;
 
         return $this;
     }

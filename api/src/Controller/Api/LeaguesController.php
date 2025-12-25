@@ -22,6 +22,9 @@ class LeaguesController extends AbstractController
     {
         $leagues = $this->entityManager->getRepository(League::class)->findAll();
 
+        // Filtere Ligen basierend auf VIEW-Berechtigung
+        $leagues = array_filter($leagues, fn ($league) => $this->isGranted(LeagueVoter::VIEW, $league));
+
         return $this->json(
             [
                 'leagues' => array_map(fn ($league) => [
@@ -41,6 +44,10 @@ class LeaguesController extends AbstractController
     #[Route('/{id}', methods: ['GET'], name: 'show')]
     public function show(League $league): JsonResponse
     {
+        if (!$this->isGranted(LeagueVoter::VIEW, $league)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
         return $this->json(
             [
                 'league' => [
@@ -93,6 +100,10 @@ class LeaguesController extends AbstractController
     #[Route('/{id}', methods: ['DELETE'], name: 'delete')]
     public function delete(League $league): JsonResponse
     {
+        if (!$this->isGranted(LeagueVoter::DELETE, $league)) {
+            return $this->json(['error' => 'Access denied'], 403);
+        }
+
         $this->entityManager->remove($league);
         $this->entityManager->flush();
 

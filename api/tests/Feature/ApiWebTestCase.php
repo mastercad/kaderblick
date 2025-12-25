@@ -17,14 +17,4 @@ abstract class ApiWebTestCase extends WebTestCase
 
         $client->setServerParameter('HTTP_AUTHORIZATION', 'Bearer ' . $token);
     }
-
-    protected function tearDown(): void
-    {
-        // Cleanup nach jedem Test
-        $em = self::$kernel->getContainer()->get('doctrine')->getManager();
-        $connection = $em->getConnection();
-        $connection->executeStatement('DELETE FROM video_segments');
-
-        parent::tearDown();
-    }
 }

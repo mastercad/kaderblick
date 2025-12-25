@@ -41,7 +41,6 @@ services:
         resource: '../src/'
         exclude:
             - '../src/DependencyInjection/'
-            - '../src/Entity/'
             - '../src/Kernel.php'
     
     # Configure DataFixtures as services with autowiring

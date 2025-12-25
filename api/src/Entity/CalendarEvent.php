@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Repository\CalendarEventRepository;
 use DateTimeInterface;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -70,6 +72,21 @@ class CalendarEvent
 
     #[ORM\Column]
     private bool $notificationSent = false;
+
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'created_by_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    private ?User $createdBy = null;
+
+    /**
+     * @var Collection<int, CalendarEventPermission>
+     */
+    #[ORM\OneToMany(targetEntity: CalendarEventPermission::class, mappedBy: 'calendarEvent', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $permissions;
+
+    public function __construct()
+    {
+        $this->permissions = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -191,5 +208,46 @@ class CalendarEvent
     public function __toString(): string
     {
         return $this->title ?? 'UNKNOWN CALENDAR EVENT';
+    }
+
+    public function getCreatedBy(): ?User
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?User $createdBy): self
+    {
+        $this->createdBy = $createdBy;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, CalendarEventPermission>
+     */
+    public function getPermissions(): Collection
+    {
+        return $this->permissions;
+    }
+
+    public function addPermission(CalendarEventPermission $permission): self
+    {
+        if (!$this->permissions->contains($permission)) {
+            $this->permissions->add($permission);
+            $permission->setCalendarEvent($this);
+        }
+
+        return $this;
+    }
+
+    public function removePermission(CalendarEventPermission $permission): self
+    {
+        if ($this->permissions->removeElement($permission)) {
+            if ($permission->getCalendarEvent() === $this) {
+                $permission->setCalendarEvent(null);
+            }
+        }
+
+        return $this;
     }
 }

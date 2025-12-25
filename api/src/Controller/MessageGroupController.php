@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\MessageGroup;
 use App\Entity\User;
+use App\Security\Voter\MessageGroupVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,6 +25,8 @@ class MessageGroupController extends AbstractController
     {
         $groups = $this->entityManager->getRepository(MessageGroup::class)
             ->findBy(['owner' => $this->getUser()]);
+
+        $groups = array_filter($groups, fn ($g) => $this->isGranted(MessageGroupVoter::VIEW, $g));
 
         return $this->json([
             'groups' => array_map(fn (MessageGroup $group) => [

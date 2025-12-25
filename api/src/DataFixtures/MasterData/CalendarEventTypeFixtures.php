@@ -20,7 +20,8 @@ class CalendarEventTypeFixtures extends Fixture implements FixtureGroupInterface
             ['name' => 'Spiel', 'color' => '#1a4789'],
             ['name' => 'Training', 'color' => '#28a745'],
             ['name' => 'Vereinstreffen', 'color' => '#ffc107'],
-            ['name' => 'Event', 'color' => '#dc3545']
+            ['name' => 'Event', 'color' => '#dc3545'],
+            ['name' => 'Aufgabe', 'color' => '#6c757d']
         ];
 
         foreach ($types as $type) {

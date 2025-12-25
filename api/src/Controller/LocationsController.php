@@ -28,6 +28,8 @@ class LocationsController extends AbstractController
     #[Route('/api/locations/{id}', name: 'locations_update', methods: ['PUT'])]
     public function update(Location $location, Request $request, EntityManagerInterface $em): JsonResponse
     {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $jsonData = json_decode($request->getContent(), true);
         $location->setName($jsonData['name']);
         $location->setAddress($jsonData['address']);
@@ -69,6 +71,8 @@ class LocationsController extends AbstractController
     #[Route('/api/locations', name: 'locations_create', methods: ['POST'])]
     public function create(Request $request, EntityManagerInterface $em): JsonResponse
     {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $jsonData = json_decode($request->getContent(), true);
 
         $location = new Location();
@@ -112,6 +116,8 @@ class LocationsController extends AbstractController
     #[Route('/locations/delete/{id}', name: 'locations_delete', methods: ['DELETE'])]
     public function delete(Location $location, EntityManagerInterface $em): JsonResponse
     {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $em->remove($location);
         $em->flush();
 

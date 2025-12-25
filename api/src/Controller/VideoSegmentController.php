@@ -106,6 +106,8 @@ class VideoSegmentController extends AbstractController
         EntityManagerInterface $em,
         ValidatorInterface $validator
     ): JsonResponse {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         /** @var User|null $user */
         $user = $this->getUser();
 
@@ -179,6 +181,8 @@ class VideoSegmentController extends AbstractController
         EntityManagerInterface $em,
         ValidatorInterface $validator
     ): JsonResponse {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $user = $this->getUser();
         if (!$user) {
             return new JsonResponse(['error' => 'Nicht angemeldet'], Response::HTTP_UNAUTHORIZED);
@@ -248,6 +252,8 @@ class VideoSegmentController extends AbstractController
         VideoSegmentRepository $videoSegmentRepository,
         EntityManagerInterface $em
     ): JsonResponse {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $user = $this->getUser();
         if (!$user) {
             return new JsonResponse(['error' => 'Nicht angemeldet'], Response::HTTP_UNAUTHORIZED);

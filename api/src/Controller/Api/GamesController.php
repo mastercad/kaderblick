@@ -79,6 +79,10 @@ class GamesController extends ApiController
         CameraRepository $cameraRepository,
         UserTitleService $userTitleService
     ): JsonResponse {
+        if (!$this->isGranted('GAME_VIEW', $game)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
         $calendarEvent = $game->getCalendarEvent();
         $gameEvents = $gameEventRepository->findAllGameEvents($game);
 

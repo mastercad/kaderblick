@@ -37,6 +37,9 @@ class CoachesController extends AbstractController
     {
         $coaches = $this->entityManager->getRepository(Coach::class)->findAll();
 
+        // Filtere Trainer basierend auf VIEW-Berechtigung
+        $coaches = array_filter($coaches, fn ($coach) => $this->isGranted(CoachVoter::VIEW, $coach));
+
         return $this->json([
             'coaches' => array_map(fn ($coach) => [
                 'id' => $coach->getId(),
@@ -106,6 +109,10 @@ class CoachesController extends AbstractController
     #[Route('/{id}', name: 'show', methods: ['GET'])]
     public function show(Coach $coach): JsonResponse
     {
+        if (!$this->isGranted(CoachVoter::VIEW, $coach)) {
+            return $this->json(['error' => 'Zugriff verweigert'], Response::HTTP_FORBIDDEN);
+        }
+
         return $this->json([
             'coach' => [
                 'id' => $coach->getId(),

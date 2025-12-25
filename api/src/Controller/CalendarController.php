@@ -4,16 +4,16 @@ namespace App\Controller;
 
 use App\Entity\CalendarEvent;
 use App\Entity\CalendarEventType;
-use App\Entity\Game;
 use App\Entity\GameType;
-use App\Entity\League;
 use App\Entity\Location;
+use App\Entity\TaskAssignment;
 use App\Entity\Team;
 use App\Entity\User;
 use App\Entity\WeatherData;
 use App\Repository\CalendarEventRepository;
 use App\Repository\ParticipationRepository;
 use App\Security\Voter\CalendarEventVoter;
+use App\Service\CalendarEventService;
 use App\Service\EmailNotificationService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,8 +23,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Validator\ConstraintViolationList;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/calendar', name: 'api_calendar_')]
 class CalendarController extends AbstractController
@@ -32,8 +30,8 @@ class CalendarController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly EmailNotificationService $emailService,
-        private readonly ValidatorInterface $validator,
-        private readonly ParticipationRepository $participationRepository
+        private readonly ParticipationRepository $participationRepository,
+        private readonly CalendarEventService $calendarEventService
     ) {
     }
 
@@ -64,7 +62,11 @@ class CalendarController extends AbstractController
         $start = new DateTime($request->query->get('start'));
         $end = new DateTime($request->query->get('end'));
 
-        $calendarEvents = $calendarEventRepository->findBetweenDates($start, $end);
+        $unfilteredCalendarEvents = $calendarEventRepository->findBetweenDates($start, $end);
+
+        // Filtere basierend auf VIEW-Berechtigung
+        $calendarEvents = array_filter($unfilteredCalendarEvents, fn ($calendarEvent) => $this->isGranted(CalendarEventVoter::VIEW, $calendarEvent));
+
         /** @var ?User $user */
         $user = $this->getUser();
 
@@ -89,6 +91,26 @@ class CalendarController extends AbstractController
                 ];
             } else {
                 $participationStatus = null;
+            }
+
+            // Find task through TaskAssignment
+            $taskFromAssignment = null;
+            $taskAssignment = $this->entityManager->getRepository(TaskAssignment::class)
+                ->findOneBy(['calendarEvent' => $calendarEvent]);
+            if ($taskAssignment && $taskAssignment->getTask()) {
+                $task = $taskAssignment->getTask();
+                $taskFromAssignment = [
+                    'id' => $task->getId(),
+                    'isRecurring' => $task->isRecurring(),
+                    'recurrenceMode' => $task->getRecurrenceMode(),
+                    'recurrenceRule' => $task->getRecurrenceRule(),
+                    'rotationUsers' => $task->getRotationUsers()->map(fn ($rotationUser) => [
+                        'id' => $rotationUser->getId(),
+                        'fullName' => $rotationUser->getFullName()
+                    ])->toArray(),
+                    'rotationCount' => $task->getRotationCount(),
+                    'offset' => $task->getOffsetDays(),
+                ];
             }
 
             return [
@@ -119,6 +141,7 @@ class CalendarController extends AbstractController
                         'name' => $calendarEvent->getGame()->getLeague()?->getName()
                     ]
                 ] : null,
+                'task' => $taskFromAssignment,
                 'type' => $calendarEvent->getCalendarEventType() ? [
                     'id' => $calendarEvent->getCalendarEventType()->getId(),
                     'name' => $calendarEvent->getCalendarEventType()->getName(),
@@ -141,7 +164,7 @@ class CalendarController extends AbstractController
             ];
         }, $calendarEvents);
 
-        return $this->json($formattedEvents);
+        return $this->json(array_values($formattedEvents));
     }
 
     #[Route('/event', name: 'event_create', methods: ['POST'])]
@@ -157,7 +180,11 @@ class CalendarController extends AbstractController
             $context
         );
 
-        $errors = $this->updateEventFromData($calendarEvent, json_decode($data, true));
+        if (!$this->isGranted(CalendarEventVoter::CREATE, $calendarEvent)) {
+            return $this->json(['error' => 'Forbidden', 'success' => false], 403);
+        }
+
+        $errors = $this->calendarEventService->updateEventFromData($calendarEvent, json_decode($data, true));
 
         $messages = [];
         if (0 < count($errors)) {
@@ -180,78 +207,51 @@ class CalendarController extends AbstractController
     #[Route('/event/{id}', name: 'event_update', methods: ['PUT'])]
     public function updateCalendarEvent(CalendarEvent $calendarEvent, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
+        if (!$this->isGranted(CalendarEventVoter::EDIT, $calendarEvent)) {
+            return $this->json(['error' => 'Forbidden'], 403);
+        }
+
         $data = json_decode($request->getContent(), true);
 
-        $this->updateEventFromData($calendarEvent, $data);
+        $this->calendarEventService->updateEventFromData($calendarEvent, $data);
         $entityManager->flush();
 
         return $this->json(['success' => true]);
     }
 
     #[Route('/event/{id}', name: 'event_delete', methods: ['DELETE'])]
-    public function deleteEvent(CalendarEvent $calendarEvent, EntityManagerInterface $entityManager): JsonResponse
+    public function deleteEvent(CalendarEvent $calendarEvent, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
-        // 1. Delete all notifications related to this calendar event
-        $connection = $entityManager->getConnection();
-        $connection->executeStatement(
-            'DELETE FROM notifications WHERE JSON_EXTRACT(data, "$.eventId") = :eventId',
-            ['eventId' => $calendarEvent->getId()]
-        );
-
-        // 2. Delete all TeamRides (TeamRidePassengers will be cascaded)
-        $teamRideRepo = $entityManager->getRepository(\App\Entity\TeamRide::class);
-        $teamRides = $teamRideRepo->findBy(['event' => $calendarEvent]);
-        foreach ($teamRides as $teamRide) {
-            $entityManager->remove($teamRide);
+        if (!$this->isGranted(CalendarEventVoter::DELETE, $calendarEvent)) {
+            return $this->json(['error' => 'Forbidden'], 403);
         }
 
-        // 3. Delete all Participations (CASCADE is set, but explicit deletion for clarity)
-        $participationRepo = $entityManager->getRepository(\App\Entity\Participation::class);
-        $participations = $participationRepo->findBy(['event' => $calendarEvent]);
-        foreach ($participations as $participation) {
-            $entityManager->remove($participation);
+        $data = json_decode($request->getContent(), true);
+        $deletionMode = $data['deletionMode'] ?? 'single'; // 'single' oder 'series'
+
+        $taskAssignmentRepo = $entityManager->getRepository(TaskAssignment::class);
+        $taskAssignment = $taskAssignmentRepo->findOneBy(['calendarEvent' => $calendarEvent]);
+        $task = $taskAssignment?->getTask();
+
+        if ($task && 'series' === $deletionMode) {
+            $taskAssignments = $taskAssignmentRepo->findBy(['task' => $task]);
+            foreach ($taskAssignments as $taskAssignment) {
+                if ($taskAssignment->getCalendarEvent()) {
+                    $this->calendarEventService->deleteCalendarEventWithDependencies($taskAssignment->getCalendarEvent());
+                }
+                $entityManager->remove($taskAssignment);
+            }
+
+            $taskRotationUsers = $task->getRotationUsers();
+            foreach ($taskRotationUsers as $user) {
+                $task->removeRotationUser($user);
+            }
+
+            $entityManager->remove($task);
+            $entityManager->flush();
+        } else {
+            $this->calendarEventService->deleteCalendarEventWithDependencies($calendarEvent);
         }
-
-        // 4. Delete Game if exists (Goals, GameEvents, Substitutions, Videos will be handled)
-        $game = $calendarEvent->getGame();
-        if ($game) {
-            // Delete Goals
-            $goalRepo = $entityManager->getRepository(\App\Entity\Goal::class);
-            $goals = $goalRepo->findBy(['game' => $game]);
-            foreach ($goals as $goal) {
-                $entityManager->remove($goal);
-            }
-
-            // Delete GameEvents
-            $gameEventRepo = $entityManager->getRepository(\App\Entity\GameEvent::class);
-            $gameEvents = $gameEventRepo->findBy(['game' => $game]);
-            foreach ($gameEvents as $gameEvent) {
-                $entityManager->remove($gameEvent);
-            }
-
-            // Delete Substitutions
-            $substitutionRepo = $entityManager->getRepository(\App\Entity\Substitution::class);
-            $substitutions = $substitutionRepo->findBy(['game' => $game]);
-            foreach ($substitutions as $substitution) {
-                $entityManager->remove($substitution);
-            }
-
-            // Delete Videos
-            $videoRepo = $entityManager->getRepository(\App\Entity\Video::class);
-            $videos = $videoRepo->findBy(['game' => $game]);
-            foreach ($videos as $video) {
-                $entityManager->remove($video);
-            }
-
-            // Now delete the game itself
-            $entityManager->remove($game);
-        }
-
-        // 5. WeatherData will be cascade deleted automatically
-
-        // 6. Finally delete the CalendarEvent itself
-        $entityManager->remove($calendarEvent);
-        $entityManager->flush();
 
         return $this->json(['success' => true]);
     }
@@ -259,6 +259,10 @@ class CalendarController extends AbstractController
     #[Route('/event/{id}/weather-data', name: 'event_weather_data', methods: ['GET'])]
     public function viewEventWeatherData(CalendarEvent $calendarEvent): JsonResponse
     {
+        if (!$this->isGranted(CalendarEventVoter::VIEW, $calendarEvent)) {
+            return $this->json(['error' => 'Forbidden'], 403);
+        }
+
         $weatherData = $calendarEvent->getWeatherData();
 
         if (!$weatherData instanceof WeatherData) {
@@ -292,7 +296,11 @@ class CalendarController extends AbstractController
     #[Route('/event/notify', name: 'event_notify', methods: ['POST'])]
     public function notifyAboutEvent(CalendarEvent $calendarEvent): JsonResponse
     {
-        $recipients = $this->loadEventRecipients($calendarEvent);
+        if (!$this->isGranted(CalendarEventVoter::EDIT, $calendarEvent)) {
+            return $this->json(['error' => 'Forbidden'], 403);
+        }
+
+        $recipients = $this->calendarEventService->loadEventRecipients($calendarEvent);
         $this->emailService->sendEventNotification($recipients, $calendarEvent);
 
         $calendarEvent->setNotificationSent(true);
@@ -307,104 +315,6 @@ class CalendarController extends AbstractController
         $calendarEvents = $calendarEventRepository->findUpcoming();
 
         return $this->json($calendarEvents, 200, [], ['groups' => ['calendar_event:read']]);
-    }
-
-    /**
-     * @param array<mixed> $data
-     *
-     * @return ConstraintViolationList<int, mixed>
-     */
-    private function updateEventFromData(CalendarEvent $calendarEvent, array $data): ConstraintViolationList
-    {
-        $calendarEventTypeSpiel = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Spiel']);
-        $calendarEvent->setTitle($data['title'] ?? $calendarEvent->getTitle());
-        $calendarEvent->setDescription($data['description'] ?? null);
-        $calendarEvent->setStartDate(new DateTime($data['startDate']));
-
-        if (isset($data['endDate'])) {
-            $calendarEvent->setEndDate(new DateTime($data['endDate']));
-        }
-
-        if ($data['eventTypeId']) {
-            $type = $this->entityManager->getReference(CalendarEventType::class, $data['eventTypeId']);
-            $calendarEvent->setCalendarEventType($type);
-        }
-
-        if ($data['locationId']) {
-            $location = $this->entityManager->getReference(Location::class, (int) $data['locationId']);
-            $calendarEvent->setLocation($location);
-        }
-
-        if (
-            $data['eventTypeId']
-            && (int) $data['eventTypeId'] === $calendarEventTypeSpiel->getId()
-        ) {
-            if (null === $calendarEvent->getGame()) {
-                $game = new Game();
-                $calendarEvent->setGame($game);
-                $game->setCalendarEvent($calendarEvent);
-                $this->entityManager->persist($game);
-            }
-        }
-
-        if (isset($data['game']['homeTeamId']) && $data['game']['homeTeamId']) {
-            $homeTeam = $this->entityManager->getReference(Team::class, (int) $data['game']['homeTeamId']);
-            $calendarEvent->getGame()?->setHomeTeam($homeTeam);
-        }
-
-        if (isset($data['game']['awayTeamId']) && $data['game']['awayTeamId']) {
-            $awayTeam = $this->entityManager->getReference(Team::class, (int) $data['game']['awayTeamId']);
-            $calendarEvent->getGame()?->setAwayTeam($awayTeam);
-        }
-
-        if (isset($data['gameTypeId']) && $data['gameTypeId']) {
-            $gameType = $this->entityManager->getReference(GameType::class, (int) $data['gameTypeId']);
-            $calendarEvent->getGame()?->setGameType($gameType);
-        }
-
-        if (isset($data['fussballDeUrl']) && $data['fussballDeUrl']) {
-            $calendarEvent->getGame()?->setFussballDeUrl($data['fussballDeUrl']);
-        }
-
-        if (isset($data['fussballDeId']) && $data['fussballDeId']) {
-            $calendarEvent->getGame()?->setFussballDeId($data['fussballDeId']);
-        }
-
-        if ($data['leagueId']) {
-            $league = $this->entityManager->getReference(League::class, (int) $data['leagueId']);
-            $calendarEvent->getGame()?->setLeague($league);
-        }
-
-        $this->entityManager->persist($calendarEvent);
-
-        /** @var ConstraintViolationList $errors */
-        $errors = $this->validator->validate($calendarEvent);
-
-        if ($calendarEvent->getGame()) {
-            $gameErrors = $this->validator->validate($calendarEvent->getGame());
-            foreach ($gameErrors as $gameError) {
-                $errors->add($gameError);
-            }
-        }
-
-        if ($errors->count()) {
-            return $errors;
-        }
-
-        $this->entityManager->flush();
-
-        return new ConstraintViolationList();
-    }
-
-    /** @return array<int, string> */
-    private function loadEventRecipients(CalendarEvent $calendarEvent): array
-    {
-        return $this->entityManager->getRepository(User::class)
-            ->createQueryBuilder('u')
-            ->select('u.email')
-            ->where('u.isVerified = true')
-            ->getQuery()
-            ->getSingleColumnResult();
     }
 
     #[Route('/locations/search', name: 'search_locations', methods: ['GET'])]

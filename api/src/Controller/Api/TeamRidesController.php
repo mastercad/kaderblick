@@ -8,6 +8,7 @@ use App\Entity\TeamRidePassenger;
 use App\Entity\User;
 use App\Repository\CalendarEventRepository;
 use App\Repository\TeamRideRepository;
+use App\Security\Voter\TeamRideVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -33,6 +34,9 @@ class TeamRidesController extends AbstractController
             return $this->json(['error' => 'Event not found'], Response::HTTP_NOT_FOUND);
         }
         $rides = $this->teamRideRepo->findBy(['event' => $event]);
+
+        $rides = array_filter($rides, fn ($r) => $this->isGranted(TeamRideVoter::VIEW, $r));
+
         $data = [];
         foreach ($rides as $ride) {
             $data[] = [

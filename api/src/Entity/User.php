@@ -28,7 +28,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     /** @phpstan-ignore-next-line Property is set by Doctrine and never written in code */
-    private int $id;
+    private ?int $id = null;
 
     #[ORM\Column(type: 'string', unique: true)]
     private string $email;
@@ -226,6 +226,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getRoles(): array
     {
+        /*
         $roles = $this->roles;
         if ($this->isVerified) {
             $roles[] = 'ROLE_USER';
@@ -235,8 +236,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->userRelations->count() > 0) {
             $roles[] = 'ROLE_RELATED_USER';
         }
+        */
 
-        return array_unique($roles);
+        return array_unique($this->roles);
     }
 
     /**

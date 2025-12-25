@@ -22,6 +22,9 @@ class SurfaceTypesController extends AbstractController
     {
         $surfaceTypes = $this->entityManager->getRepository(SurfaceType::class)->findAll();
 
+        // Filtere Oberflächentypen basierend auf VIEW-Berechtigung
+        $surfaceTypes = array_filter($surfaceTypes, fn ($surfaceType) => $this->isGranted(SurfaceTypeVoter::VIEW, $surfaceType));
+
         return $this->json(
             [
                 'surfaceTypes' => array_map(fn ($surfaceType) => [
@@ -46,6 +49,10 @@ class SurfaceTypesController extends AbstractController
 
         if (!$surfaceType) {
             return $this->json(['error' => 'SurfaceType not found'], 404);
+        }
+
+        if (!$this->isGranted(SurfaceTypeVoter::VIEW, $surfaceType)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
         }
 
         return $this->json(
@@ -103,6 +110,10 @@ class SurfaceTypesController extends AbstractController
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
     public function delete(SurfaceType $surfaceType): JsonResponse
     {
+        if (!$this->isGranted(SurfaceTypeVoter::DELETE, $surfaceType)) {
+            return $this->json(['error' => 'Access denied'], 403);
+        }
+
         $this->entityManager->remove($surfaceType);
         $this->entityManager->flush();
 

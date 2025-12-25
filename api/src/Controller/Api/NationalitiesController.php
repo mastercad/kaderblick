@@ -23,6 +23,9 @@ class NationalitiesController extends AbstractController
     {
         $nationalities = $this->entityManager->getRepository(Nationality::class)->findAll();
 
+        // Filtere Nationalitäten basierend auf VIEW-Berechtigung
+        $nationalities = array_filter($nationalities, fn ($nationality) => $this->isGranted(NationalityVoter::VIEW, $nationality));
+
         return $this->json(
             [
                 'nationalities' => array_map(fn ($nationality) => [
@@ -47,6 +50,10 @@ class NationalitiesController extends AbstractController
 
         if (!$nationality) {
             return $this->json(['error' => 'Nationality not found'], 404);
+        }
+
+        if (!$this->isGranted(NationalityVoter::VIEW, $nationality)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
         }
 
         return $this->json(
@@ -134,6 +141,10 @@ class NationalitiesController extends AbstractController
 
         if (!$nationality) {
             return $this->json(['error' => 'Nationality not found'], 404);
+        }
+
+        if (!$this->isGranted(NationalityVoter::DELETE, $nationality)) {
+            return $this->json(['error' => 'Access denied'], 403);
         }
 
         $this->entityManager->remove($nationality);

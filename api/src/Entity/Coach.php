@@ -61,12 +61,18 @@ class Coach
     #[ORM\OneToMany(targetEntity: CoachLicenseAssignment::class, mappedBy: 'coach')]
     private Collection $coachLicenseAssignments;
 
+    /** @var Collection<int, UserRelation> */
+    #[Groups(['player:read'])]
+    #[ORM\OneToMany(targetEntity: UserRelation::class, mappedBy: 'player')]
+    private Collection $userRelations;
+
     public function __construct()
     {
         $this->coachTeamAssignments = new ArrayCollection();
         $this->coachClubAssignments = new ArrayCollection();
         $this->coachNationalityAssignments = new ArrayCollection();
         $this->coachLicenseAssignments = new ArrayCollection();
+        $this->userRelations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -243,6 +249,46 @@ class Coach
                 && $assignment->getStartDate() <= $today
                 && (null === $assignment->getEndDate() || $assignment->getEndDate() >= $today);
         });
+    }
+
+    /**
+     * @return Collection<int, UserRelation>
+     */
+    public function getUserRelations(): Collection
+    {
+        return $this->userRelations;
+    }
+
+    /**
+     * @param Collection<int, UserRelation> $userRelations
+     */
+    public function setUserRelations(Collection $userRelations): self
+    {
+        $this->userRelations = $userRelations;
+
+        return $this;
+    }
+
+    public function addUserRelation(UserRelation $userRelation): self
+    {
+        if (!$this->userRelations->contains($userRelation)) {
+            $this->userRelations->add($userRelation);
+            $userRelation->setCoach($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUserRelation(UserRelation $userRelation): self
+    {
+        if ($this->userRelations->removeElement($userRelation)) {
+            // Set the owning side to null (unless already changed)
+            if ($userRelation->getCoach() === $this) {
+                $userRelation->setCoach(null);
+            }
+        }
+
+        return $this;
     }
 
     public function getFullName(): string

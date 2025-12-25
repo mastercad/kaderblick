@@ -9,6 +9,7 @@ use App\Repository\GameEventRepository;
 use App\Repository\GameEventTypeRepository;
 use App\Repository\PlayerRepository;
 use App\Repository\SubstitutionReasonRepository;
+use App\Security\Voter\GameVoter;
 use App\Service\FussballDeCrawlerService;
 use App\Service\GameDetailsSyncService;
 use DateTime;
@@ -31,6 +32,10 @@ class GameEventsController extends AbstractController
         GameEventRepository $eventRepo,
         SubstitutionReasonRepository $substitutionReasonRepo
     ): Response {
+        if (!$this->isGranted(GameVoter::VIEW, $game)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
         $eventTypes = $eventTypeRepo->findAll();
         $teams = array_filter([$game->getHomeTeam(), $game->getAwayTeam()]);
         $players = $playerRepo->findActiveByTeams($teams);
@@ -57,6 +62,9 @@ class GameEventsController extends AbstractController
         GameEventTypeRepository $eventTypeRepo,
         SubstitutionReasonRepository $substitutionReasonRepo
     ): JsonResponse {
+        // Require ROLE_ADMIN to add game events
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $data = json_decode($request->getContent(), true);
         if (!$data) {
             return $this->json(['error' => 'Invalid data'], 400);

@@ -26,6 +26,8 @@ class VideoUploadController extends AbstractController
     #[Route('/upload', name: 'upload', methods: ['POST'])]
     public function upload(Request $request): JsonResponse
     {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $videoFile = $request->files->get('video');
         if (!$videoFile instanceof UploadedFile) {
             return new JsonResponse(['error' => 'No video file provided'], 400);
@@ -63,6 +65,8 @@ class VideoUploadController extends AbstractController
     #[Route('/create-folder', name: 'create_folder', methods: ['POST'])]
     public function createFolder(Request $request): JsonResponse
     {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $data = json_decode($request->getContent(), true);
         $gameName = $data['gameName'] ?? null;
         $force = $data['force'] ?? false;
@@ -86,6 +90,8 @@ class VideoUploadController extends AbstractController
     #[Route('/create-device-folder', name: 'create_device_folder', methods: ['POST'])]
     public function createDeviceFolder(Request $request): JsonResponse
     {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $data = json_decode($request->getContent(), true);
         $parentFolderId = $data['parentFolderId'] ?? null;
         $deviceName = $data['deviceName'] ?? null;
@@ -110,6 +116,8 @@ class VideoUploadController extends AbstractController
     #[Route('/upload-batch', name: 'upload_batch', methods: ['POST'])]
     public function uploadBatch(Request $request): JsonResponse
     {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $video = $request->files->get('video');
         $folderId = $request->request->get('folderId');
 
@@ -139,6 +147,8 @@ class VideoUploadController extends AbstractController
     #[Route('/upload-batch-chunked', name: 'upload_batch_chunked', methods: ['POST'])]
     public function uploadBatchChunked(Request $request): JsonResponse
     {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $video = $request->files->get('video');
         $folderId = $request->request->get('folderId');
         $force = 'true' === $request->request->get('force');
@@ -173,6 +183,8 @@ class VideoUploadController extends AbstractController
     #[Route('/notify', name: 'notify', methods: ['POST'])]
     public function notify(Request $request): JsonResponse
     {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $folderId = $request->request->get('folderId');
         $notifyEmails = json_decode($request->request->get('notifyEmails', '[]'), true);
         $uploadedFiles = json_decode($request->request->get('uploadedFiles', '[]'), true);

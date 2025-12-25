@@ -8,6 +8,8 @@ use App\Entity\User;
 use App\Repository\TaskAssignmentRepository;
 use App\Repository\TaskRepository;
 use App\Repository\UserRepository;
+use App\Security\Voter\TaskVoter;
+use App\Service\CalendarEventService;
 use App\Service\TaskEventGeneratorService;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -26,6 +28,8 @@ class TaskController extends AbstractController
     public function list(TaskRepository $taskRepository, SerializerInterface $serializer): JsonResponse
     {
         $tasks = $taskRepository->findAll();
+
+        $tasks = array_filter($tasks, fn ($task) => $this->isGranted(TaskVoter::VIEW, $task));
 
         return $this->json([
             'tasks' => array_map(fn ($task) => [
@@ -49,6 +53,10 @@ class TaskController extends AbstractController
     #[Route('/{id}', name: 'show', methods: ['GET'])]
     public function show(Task $task, SerializerInterface $serializer): JsonResponse
     {
+        if (!$this->isGranted(TaskVoter::VIEW, $task)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
         $data = $serializer->serialize($task, 'json', ['groups' => ['task:read', 'assignment:read']]);
 
         return JsonResponse::fromJsonString($data, Response::HTTP_OK);
@@ -69,28 +77,34 @@ class TaskController extends AbstractController
         $task = new Task();
         $task->setTitle($data['title'] ?? '');
         $task->setDescription($data['description'] ?? null);
-        $task->setIsRecurring($data['isRecurring'] ?? false);
-        $task->setRecurrenceMode($data['recurrenceMode'] ?? 'classic');
-        $task->setRecurrenceRule($data['recurrenceRule'] ?? null);
 
-        // rotationCount
-        if (isset($data['rotationCount'])) {
-            $task->setRotationCount($data['rotationCount']);
+        if (!$this->isGranted(TaskVoter::CREATE, $task)) {
+            return $this->json(['error' => 'Zugriff für anlegen verweigert'], 403);
         }
 
-        // rotationUsers (IDs zu Entities)
-        if (!empty($data['rotationUsers']) && is_array($data['rotationUsers'])) {
-            dump($data['rotationUsers']);
+        $isRecurring = $data['isRecurring'] ?? false;
+
+        $task->setIsRecurring($isRecurring);
+        $task->setRecurrenceMode($data['recurrenceMode'] ?? 'classic');
+        $task->setRecurrenceRule($data['recurrenceRule'] ?? null);
+        $task->setRotationCount($data['rotationCount'] ?? 1);
+
+        if (
+            $isRecurring
+            && !empty($data['rotationUsers'])
+            && is_array($data['rotationUsers'])
+        ) {
             $users = $userRepository->findBy(['id' => $data['rotationUsers']]);
             $task->setRotationUsers(new ArrayCollection($users));
         }
 
         $task->setCreatedBy($user);
+
         $em->persist($task);
         $em->flush();
 
-        // Automatische CalendarEvents für Aufgaben (egal ob classic oder per_match)
-        $taskEventGeneratorService->generateEvents($task);
+        $taskEventGeneratorService->generateEvents($task, $user);
+
         $json = $serializer->serialize($task, 'json', ['groups' => ['task:read']]);
 
         return JsonResponse::fromJsonString($json, Response::HTTP_CREATED);
@@ -105,6 +119,11 @@ class TaskController extends AbstractController
         UserRepository $userRepository,
         TaskEventGeneratorService $taskEventGeneratorService
     ): JsonResponse {
+        $this->denyAccessUnlessGranted(TaskVoter::EDIT, $task);
+
+        /** @var User $user */
+        $user = $this->getUser();
+
         $data = json_decode($request->getContent(), true);
         if (isset($data['title'])) {
             $task->setTitle($data['title']);
@@ -112,6 +131,7 @@ class TaskController extends AbstractController
         if (array_key_exists('description', $data)) {
             $task->setDescription($data['description']);
         }
+
         if (isset($data['isRecurring'])) {
             $task->setIsRecurring($data['isRecurring']);
         }
@@ -121,37 +141,35 @@ class TaskController extends AbstractController
         if (array_key_exists('recurrenceRule', $data)) {
             $task->setRecurrenceRule($data['recurrenceRule']);
         }
-        // rotationCount
         if (array_key_exists('rotationCount', $data)) {
             $task->setRotationCount($data['rotationCount']);
         }
-        // rotationUsers (IDs zu Entities)
         if (array_key_exists('rotationUsers', $data) && is_array($data['rotationUsers'])) {
-            // If an empty array is provided, clear the rotationUsers collection
             if (0 === count($data['rotationUsers'])) {
                 $task->setRotationUsers(new ArrayCollection());
             } else {
-                // Doctrine expects an array of ids for an IN query, don't implode them into a string
                 $users = $userRepository->findBy(['id' => $data['rotationUsers']]);
                 $task->setRotationUsers(new ArrayCollection($users));
             }
         }
+
         $em->flush();
 
-        // Automatische CalendarEvents für Aufgaben (egal ob classic oder per_match)
-        $taskEventGeneratorService->generateEvents($task);
+        $taskEventGeneratorService->generateEvents($task, $user);
+
         $json = $serializer->serialize($task, 'json', ['groups' => ['task:read']]);
 
         return JsonResponse::fromJsonString($json, Response::HTTP_OK);
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
-    public function delete(Task $task, EntityManagerInterface $em): JsonResponse
+    public function delete(Task $task, CalendarEventService $calendarEventService): JsonResponse
     {
-        $em->remove($task);
-        $em->flush();
+        $this->denyAccessUnlessGranted(TaskVoter::DELETE, $task);
 
-        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        $calendarEventService->deleteCalendarEventsForTask($task);
+
+        return new JsonResponse(['message' => 'Task deleted successfully with all Dependencies'], Response::HTTP_OK);
     }
 
     #[Route('/assignments/{assignmentId}', name: 'assignment_update', methods: ['PUT', 'PATCH'])]
@@ -180,26 +198,47 @@ class TaskController extends AbstractController
     }
 
     #[Route('/assignments/{assignmentId}', name: 'assignment_delete', methods: ['DELETE'])]
-    public function deleteAssignment(int $assignmentId, TaskAssignmentRepository $assignmentRepo, EntityManagerInterface $em): JsonResponse
-    {
+    public function deleteAssignment(
+        int $assignmentId,
+        TaskAssignmentRepository $assignmentRepo,
+        EntityManagerInterface $em,
+        Request $request
+    ): JsonResponse {
         $assignment = $assignmentRepo->find($assignmentId);
         if (!$assignment) {
             return new JsonResponse(['error' => 'Assignment not found'], Response::HTTP_NOT_FOUND);
         }
+
+        $deleteMode = $request->query->get('deleteMode', 'single');
+        $task = $assignment->getTask();
+
+        // Bei deleteMode=series: Lösche einfach den Task und seine Assignments (keine Serien-Logik mehr)
+        if ('series' === $deleteMode) {
+            foreach ($task->getAssignments() as $assignmentToDelete) {
+                $em->remove($assignmentToDelete);
+            }
+            $em->remove($task);
+            $em->flush();
+
+            return new JsonResponse(['message' => 'Task deleted successfully'], Response::HTTP_OK);
+        }
+
+        // Einzelnes Assignment löschen
         $em->remove($assignment);
         $em->flush();
 
-        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        return new JsonResponse(['message' => 'Task assignment deleted successfully'], Response::HTTP_OK);
     }
 
     #[Route('/{id}/assignments', name: 'assignments_create', methods: ['POST'])]
     public function createAssignment(Task $task, Request $request, EntityManagerInterface $em, SerializerInterface $serializer): JsonResponse
     {
+        /** @var User $user */
+        $user = $this->getUser();
         $data = json_decode($request->getContent(), true);
         $assignment = new TaskAssignment();
         $assignment->setTask($task);
-        // TODO: User-Entity anhand ID laden
-        // $assignment->setUser($user);
+        $assignment->setUser($user);
         $assignment->setAssignedDate(new DateTimeImmutable($data['assignedDate'] ?? 'now'));
         $assignment->setStatus($data['status'] ?? 'offen');
         $em->persist($assignment);

@@ -3,6 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\GameEventType;
+use App\Security\Voter\GameEventTypeVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,6 +21,9 @@ class GameEventTypesController extends AbstractController
     public function index(): JsonResponse
     {
         $gameEventTypes = $this->entityManager->getRepository(GameEventType::class)->findAll();
+
+        // Filtere Spielereignistypen basierend auf VIEW-Berechtigung
+        $gameEventTypes = array_filter($gameEventTypes, fn ($gameEventType) => $this->isGranted('GAME_EVENT_TYPE_VIEW', $gameEventType));
 
         return $this->json([
             'gameEventTypes' => array_map(fn ($gameEventType) => [
@@ -46,6 +50,10 @@ class GameEventTypesController extends AbstractController
 
         if (!$gameEventType) {
             return $this->json(['error' => 'GameEventType not found'], 404);
+        }
+
+        if (!$this->isGranted('GAME_EVENT_TYPE_VIEW', $gameEventType)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
         }
 
         return $this->json([
@@ -111,6 +119,10 @@ class GameEventTypesController extends AbstractController
 
         if (!$gameEventType) {
             return $this->json(['error' => 'GameEventType not found'], 404);
+        }
+
+        if (!$this->isGranted(GameEventTypeVoter::DELETE, $gameEventType)) {
+            return $this->json(['error' => 'Access denied'], 403);
         }
 
         $this->entityManager->remove($gameEventType);

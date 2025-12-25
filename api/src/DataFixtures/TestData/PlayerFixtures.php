@@ -158,6 +158,22 @@ class PlayerFixtures extends Fixture implements DependentFixtureInterface, Fixtu
             }
         }
 
+        // Ensure player_1_1 (used for user1@example.com relation) has a PlayerTeamAssignment to Team 1
+        $player_1_1 = $this->getReference('player_1_1', Player::class);
+        $team_1 = $this->getReference('Team 1', Team::class);
+        $existingAssignment = $manager->getRepository(PlayerTeamAssignment::class)->findOneBy([
+            'player' => $player_1_1,
+            'team' => $team_1,
+        ]);
+        if (!$existingAssignment) {
+            $pta = new PlayerTeamAssignment();
+            $pta->setPlayer($player_1_1);
+            $pta->setTeam($team_1);
+            $pta->setStartDate(new DateTimeImmutable('2023-01-01'));
+            $pta->setPlayerTeamAssignmentType($this->getReference('player_team_assignment_type_vertragsspieler', PlayerTeamAssignmentType::class));
+            $manager->persist($pta);
+        }
+
         $manager->flush();
     }
 

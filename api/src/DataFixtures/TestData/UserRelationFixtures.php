@@ -31,6 +31,57 @@ class UserRelationFixtures extends Fixture implements DependentFixtureInterface,
 
     public function load(ObjectManager $manager): void
     {
+        // Zusätzliche Relationen für Test-User mit ROLE_USER (user6, user7, user8)
+        $user6 = $this->getReference('user_6', User::class); // ROLE_USER
+        $user7 = $this->getReference('user_7', User::class); // ROLE_USER
+        $user8 = $this->getReference('user_8', User::class); // ROLE_USER
+        $player1_1 = $this->getReference('player_1_1', Player::class); // Team 1
+        $player_2_1 = $this->getReference('player_2_1', Player::class); // Team 1
+        $player_3_2 = $this->getReference('player_3_2', Player::class); // Team 2
+        $relationTypeParent = $this->getReference('relation_type_parent', RelationType::class);
+
+        // user6 -> Elternteil von Spieler 1 in Team 1
+        $existing = $manager->getRepository(UserRelation::class)->findOneBy([
+            'user' => $user6,
+            'player' => $player1_1,
+            'relationType' => $relationTypeParent,
+        ]);
+        if (!$existing) {
+            $rel = new UserRelation();
+            $rel->setUser($user6);
+            $rel->setPlayer($player1_1);
+            $rel->setRelationType($relationTypeParent);
+            $manager->persist($rel);
+        }
+
+        // user7 -> Elternteil von Spieler 2 in Team 1
+        $existing = $manager->getRepository(UserRelation::class)->findOneBy([
+            'user' => $user7,
+            'player' => $player_2_1,
+            'relationType' => $relationTypeParent,
+        ]);
+        if (!$existing) {
+            $rel = new UserRelation();
+            $rel->setUser($user7);
+            $rel->setPlayer($player_2_1);
+            $rel->setRelationType($relationTypeParent);
+            $manager->persist($rel);
+        }
+
+        // user8 -> Elternteil von Spieler 3 in Team 2
+        $existing = $manager->getRepository(UserRelation::class)->findOneBy([
+            'user' => $user8,
+            'player' => $player_3_2,
+            'relationType' => $relationTypeParent,
+        ]);
+        if (!$existing) {
+            $rel = new UserRelation();
+            $rel->setUser($user8);
+            $rel->setPlayer($player_3_2);
+            $rel->setRelationType($relationTypeParent);
+            $manager->persist($rel);
+        }
+
         $userMutterVonSpielerEinsTeamEins = $this->getReference('user_1', User::class);
         $playerEinsTeamEins = $this->getReference('player_1_1', Player::class);
 

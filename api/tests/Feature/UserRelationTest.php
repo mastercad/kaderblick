@@ -126,8 +126,8 @@ class UserRelationTest extends KernelTestCase
     public function testUserWithoutAnyRelationsDontSeeAnyPlayerOrAnyTeam(): void
     {
         $entityManager = self::getContainer()->get('doctrine')->getManager();
-        // Verwende einen existierenden User ohne UserRelation, z.B. user6@example.com (user_6)
-        $user = $entityManager->getRepository(User::class)->findOneBy(['email' => 'user6@example.com']);
+        // Verwende einen existierenden User ohne UserRelation, z.B. user10@example.com (user_10)
+        $user = $entityManager->getRepository(User::class)->findOneBy(['email' => 'user10@example.com']);
 
         $teams = $entityManager->getRepository(Team::class)->fetchOptimizedList($user);
         $players = $entityManager->getRepository(Player::class)->fetchOptimizedList($user);

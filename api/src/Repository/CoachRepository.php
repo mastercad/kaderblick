@@ -51,6 +51,7 @@ class CoachRepository extends ServiceEntityRepository implements OptimizedReposi
 
         if ($user && !in_array('ROLE_ADMIN', $user->getRoles(), true)) {
             $teamIds = [];
+            $relatedCoachIds = [];
             if ($user instanceof User) {
                 foreach ($user->getUserRelations() as $relation) {
                     if ($relation->getPlayer()) {
@@ -64,14 +65,24 @@ class CoachRepository extends ServiceEntityRepository implements OptimizedReposi
                             $team = $cta->getTeam();
                             $teamIds[] = $team->getId();
                         }
+                        $relatedCoachIds[] = $relation->getCoach()->getId();
                     }
                 }
             }
             $teamIds = array_unique($teamIds);
-            if ($teamIds) {
-                $qb->join('c.coachTeamAssignments', 'cta_filter')
-                   ->andWhere('cta_filter.team IN (:teamIds)')
-                   ->setParameter('teamIds', $teamIds);
+            $relatedCoachIds = array_unique($relatedCoachIds);
+            if ($teamIds || $relatedCoachIds) {
+                $orX = $qb->expr()->orX();
+                if ($teamIds) {
+                    $qb->join('c.coachTeamAssignments', 'cta_filter');
+                    $orX->add('cta_filter.team IN (:teamIds)');
+                    $qb->setParameter('teamIds', $teamIds);
+                }
+                if ($relatedCoachIds) {
+                    $orX->add('c.id IN (:relatedCoachIds)');
+                    $qb->setParameter('relatedCoachIds', $relatedCoachIds);
+                }
+                $qb->andWhere($orX);
             } else {
                 // User hat keine relevante Relation, keine Coaches anzeigen
                 $qb->andWhere('1 = 0');

@@ -7,6 +7,7 @@ use App\Entity\Participation;
 use App\Entity\User;
 use App\Repository\ParticipationRepository;
 use App\Repository\ParticipationStatusRepository;
+use App\Security\Voter\ParticipationVoter;
 use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,6 +30,8 @@ class ParticipationController extends AbstractController
     public function getEventParticipations(CalendarEvent $event): JsonResponse
     {
         $participations = $this->participationRepository->findBy(['event' => $event]);
+
+        $participations = array_filter($participations, fn ($p) => $this->isGranted(ParticipationVoter::VIEW, $p));
 
         $participationData = [];
 

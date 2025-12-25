@@ -22,6 +22,9 @@ class PositionsController extends AbstractController
     {
         $positions = $this->entityManager->getRepository(Position::class)->findAll();
 
+        // Filtere Positionen basierend auf VIEW-Berechtigung
+        $positions = array_filter($positions, fn ($position) => $this->isGranted(PositionVoter::VIEW, $position));
+
         return $this->json([
             'positions' => array_map(fn ($position) => [
                 'id' => $position->getId(),

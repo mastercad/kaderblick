@@ -22,6 +22,9 @@ class CoachLicensesController extends AbstractController
     {
         $coachLicenses = $this->entityManager->getRepository(CoachLicense::class)->findAll();
 
+        // Filtere Trainerlizenzen basierend auf VIEW-Berechtigung
+        $coachLicenses = array_filter($coachLicenses, fn ($coachLicense) => $this->isGranted(CoachLicenseVoter::VIEW, $coachLicense));
+
         return $this->json(
             [
                 'coachLicenses' => array_map(fn ($coachLicense) => [
@@ -43,6 +46,10 @@ class CoachLicensesController extends AbstractController
     #[Route('/{id}', methods: ['GET'], name: 'show')]
     public function show(CoachLicense $coachLicense): JsonResponse
     {
+        if (!$this->isGranted(CoachLicenseVoter::VIEW, $coachLicense)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
         return $this->json(
             [
                 'coachLicense' => [
@@ -123,6 +130,10 @@ class CoachLicensesController extends AbstractController
     #[Route('/{id}', methods: ['DELETE'], name: 'delete')]
     public function delete(CoachLicense $coachLicense): JsonResponse
     {
+        if (!$this->isGranted(CoachLicenseVoter::DELETE, $coachLicense)) {
+            return $this->json(['error' => 'Access denied'], 403);
+        }
+
         $this->entityManager->remove($coachLicense);
         $this->entityManager->flush();
 
