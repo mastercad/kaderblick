@@ -86,8 +86,10 @@ final class GameVoter extends Voter
                 foreach ($user->getUserRelations() as $userRelation) {
                     if ($userRelation->getPlayer()) {
                         foreach ($userRelation->getPlayer()->getPlayerTeamAssignments() as $assignment) {
-                            /** @var GameEvent $subject */
-                            if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
+                            if (
+                                $assignment->getTeam() === $subject->getHomeTeam()
+                                || $assignment->getTeam() === $subject->getAwayTeam()
+                            ) {
                                 return true;
                             }
                         }
@@ -95,8 +97,10 @@ final class GameVoter extends Voter
 
                     if ($userRelation->getCoach()) {
                         foreach ($userRelation->getCoach()->getCoachTeamAssignments() as $assignment) {
-                            /** @var GameEvent $subject */
-                            if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
+                            if (
+                                $assignment->getTeam() === $subject->getHomeTeam()
+                                || $assignment->getTeam() === $subject->getAwayTeam()
+                            ) {
                                 return true;
                             }
                         }
