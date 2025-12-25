@@ -11,6 +11,7 @@ use App\Repository\CameraRepository;
 use App\Repository\GameEventRepository;
 use App\Repository\GameRepository;
 use App\Security\Voter\GameEventVoter;
+use App\Security\Voter\GameVoter;
 use App\Security\Voter\VideoVoter;
 use App\Service\UserTitleService;
 use App\Service\VideoTimelineService;
@@ -79,7 +80,7 @@ class GamesController extends ApiController
         CameraRepository $cameraRepository,
         UserTitleService $userTitleService
     ): JsonResponse {
-        if (!$this->isGranted('GAME_VIEW', $game)) {
+        if (!$this->isGranted(GameVoter::VIEW, $game)) {
             return $this->json(['error' => 'Zugriff verweigert'], 403);
         }
 

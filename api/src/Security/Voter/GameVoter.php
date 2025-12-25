@@ -12,10 +12,10 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
  */
 final class GameVoter extends Voter
 {
-    public const CREATE = 'POST_CREATE';
-    public const EDIT = 'POST_EDIT';
-    public const VIEW = 'POST_VIEW';
-    public const DELETE = 'POST_DELETE';
+    public const CREATE = 'GAME_CREATE';
+    public const EDIT = 'GAME_EDIT';
+    public const VIEW = 'GAME_VIEW';
+    public const DELETE = 'GAME_DELETE';
 
     protected function supports(string $attribute, mixed $subject): bool
     {
@@ -33,10 +33,78 @@ final class GameVoter extends Voter
         }
 
         switch ($attribute) {
+            case self::CREATE:
+                if (in_array('ROLE_SUPERADMIN', $user->getRoles())) {
+                    return true;
+                }
+
+                if (
+                    !in_array('ROLE_ADMIN', $user->getRoles())
+                    && !in_array('ROLE_SUPPORTER', $user->getRoles())
+                ) {
+                    return false;
+                }
+
+                foreach ($user->getUserRelations() as $userRelation) {
+                    if ($userRelation->getPlayer()) {
+                        foreach ($userRelation->getPlayer()->getPlayerTeamAssignments() as $assignment) {
+                            if (
+                                $assignment->getTeam() === $subject->getHomeTeam()
+                                || $assignment->getTeam() === $subject->getAwayTeam()
+                            ) {
+                                return true;
+                            }
+                        }
+                    }
+
+                    if ($userRelation->getCoach()) {
+                        foreach ($userRelation->getCoach()->getCoachTeamAssignments() as $assignment) {
+                            if (
+                                $assignment->getTeam() === $subject->getHomeTeam()
+                                || $assignment->getTeam() === $subject->getAwayTeam()
+                            ) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+
+                break;
+            case self::DELETE:
             case self::EDIT:
+                if (in_array('ROLE_SUPERADMIN', $user->getRoles())) {
+                    return true;
+                }
+
+                if (
+                    !in_array('ROLE_ADMIN', $user->getRoles())
+                    && !in_array('ROLE_SUPPORTER', $user->getRoles())
+                ) {
+                    return false;
+                }
+
+                foreach ($user->getUserRelations() as $userRelation) {
+                    if ($userRelation->getPlayer()) {
+                        foreach ($userRelation->getPlayer()->getPlayerTeamAssignments() as $assignment) {
+                            /** @var GameEvent $subject */
+                            if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
+                                return true;
+                            }
+                        }
+                    }
+
+                    if ($userRelation->getCoach()) {
+                        foreach ($userRelation->getCoach()->getCoachTeamAssignments() as $assignment) {
+                            /** @var GameEvent $subject */
+                            if ($assignment->getTeam() === $subject->getGame()->getHomeTeam()) {
+                                return true;
+                            }
+                        }
+                    }
+                }
                 break;
             case self::VIEW:
-                break;
+                return true;
         }
 
         return false;
