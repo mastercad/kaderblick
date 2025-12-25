@@ -42,26 +42,6 @@ class CalendarEventService
     ) {
     }
 
-    public function createCalendarEvent(): void
-    {
-        // Implementation for creating a calendar event
-    }
-
-    public function createCalendarEventForTask(Task $task): void
-    {
-        // Implementation for creating a calendar event for a task
-    }
-
-    public function deleteCalendarEvent(): void
-    {
-        // Implementation for deleting a calendar event
-    }
-
-    public function updateCalendarEvent(): void
-    {
-        // Implementation for updating a calendar event
-    }
-
     public function deleteCalendarEventsForTask(Task $task): void
     {
         $taskAssignments = $this->entityManager->getRepository(TaskAssignment::class)
@@ -73,31 +53,6 @@ class CalendarEventService
                 $this->deleteCalendarEventWithDependencies($calendarEvent);
             }
         }
-    }
-
-    public function updateCalendarEventForTask(): void
-    {
-        // Implementation for updating a calendar event for a task
-    }
-
-    public function loadCalendarEventsForUser(): void
-    {
-        // Implementation for retrieving calendar events for a user
-    }
-
-    public function loadCalendarEventsForTask(): void
-    {
-        // Implementation for retrieving calendar events for a task
-    }
-
-    public function assignCalendarEventToTask(): void
-    {
-        // Implementation for assigning a calendar event to a task
-    }
-
-    public function unassignCalendarEventFromTask(): void
-    {
-        // Implementation for unassigning a calendar event from a task
     }
 
     /**
