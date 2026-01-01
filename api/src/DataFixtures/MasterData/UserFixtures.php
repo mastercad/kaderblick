@@ -17,11 +17,11 @@ class UserFixtures extends Fixture implements FixtureGroupInterface
     public function load(ObjectManager $manager): void
     {
         $existing = $manager->getRepository(User::class)->findOneBy([
-            'email' => 'andreas.kempe@byte-artist.de',
+            'email' => 'andreas.kempe@kaderblick.de',
         ]);
         if (!$existing) {
             $user = new User();
-            $user->setEmail('andreas.kempe@byte-artist.de')
+            $user->setEmail('andreas.kempe@kaderblick.de')
                 ->setFirstName('Andreas')
                 ->setLastName('Kempe')
                 ->setRoles(['ROLE_SUPERADMIN'])

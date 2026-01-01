@@ -213,7 +213,7 @@ class UserVerificationServiceTest extends TestCase
             ->with($this->callback(function (TemplatedEmail $email) {
                 $from = $email->getFrom();
                 $this->assertCount(1, $from);
-                $this->assertEquals('no-reply@byte-artist.de', $from[0]->getAddress());
+                $this->assertEquals('no-reply@kaderblick.de', $from[0]->getAddress());
 
                 return true;
             }));

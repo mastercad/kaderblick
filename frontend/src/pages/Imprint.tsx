@@ -14,7 +14,7 @@ const Imprint: React.FC = () => (
       </p>
       <p>
         <strong>Kontakt:</strong><br />
-        E-Mail: <a href="mailto:andreas.kempe@byte-artist.de">andreas.kempe@byte-artist.de</a>
+        E-Mail: <a href="mailto:andreas.kempe@kaderblick.de">andreas.kempe@kaderblick.de</a>
       </p>
       <h2>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h2>
       <p>
