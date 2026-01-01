@@ -46,6 +46,8 @@ import Tasks from './pages/Tasks';
 import Nationalities from './pages/Nationalities';
 import CoachLicenses from './pages/CoachLicenses';
 import Leagues from './pages/Leagues';
+import Cameras from './pages/Cameras';
+import VideoTypes from './pages/VideoTypes';
 import Imprint from './pages/Imprint';
 import Privacy from './pages/Privacy';
 import Teams from './pages/Teams';
@@ -149,6 +151,8 @@ function App() {
                   <Route path="leagues" element={<ProtectedRoute><Leagues /></ProtectedRoute>} />
                   <Route path="teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
                   <Route path="coachLicenses" element={<ProtectedRoute><CoachLicenses /></ProtectedRoute>} />
+                  <Route path="cameras" element={<ProtectedRoute><Cameras /></ProtectedRoute>} />
+                  <Route path="videoTypes" element={<ProtectedRoute><VideoTypes /></ProtectedRoute>} />
                   <Route path="/survey/fill/:surveyId" element={<ProtectedRoute><SurveyFill /></ProtectedRoute>} />
                   <Route path="/imprint" element={<Imprint />} />
                   <Route path="/privacy" element={<Privacy />} />

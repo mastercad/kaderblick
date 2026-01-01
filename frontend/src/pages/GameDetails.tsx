@@ -525,9 +525,21 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                   <ListItem
                     key={e.id}
                     alignItems="flex-start"
+                    sx={{ 
+                      flexDirection: { xs: 'column', md: 'row' },
+                      py: 2,
+                      gap: { xs: 1, md: 0 }
+                    }}
                     secondaryAction={
                       user && (
-                        <Box>
+                        <Box sx={{ 
+                          display: 'flex',
+                          position: { xs: 'static', md: 'absolute' },
+                          right: { md: 16 },
+                          top: { md: '50%' },
+                          transform: { md: 'translateY(-50%)' },
+                          mt: { xs: 1, md: 0 }
+                        }}>
                           <IconButton
                             edge="end"
                             onClick={() => {
@@ -535,6 +547,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                               setEventFormOpen(true);
                             }}
                             sx={{ mr: 1 }}
+                            size="small"
                           >
                             <EditIcon />
                           </IconButton>
@@ -543,6 +556,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                             onClick={() => {
                               setEventToDelete(event);
                             }}
+                            size="small"
                           >
                             <DeleteIcon />
                           </IconButton>
@@ -551,10 +565,35 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                     }
                   >
                     <ListItemText
+                      sx={{ 
+                        width: '100%',
+                        m: 0,
+                        pr: { xs: 0, md: user ? 10 : 0 }
+                      }}
                       primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                          <span>
-                            <Chip label={minute ?? ''} size="small" sx={{ mr: 1, bgcolor: 'grey.200', color: 'text.primary' }} />
+                        <Box sx={{ 
+                          display: 'flex',
+                          flexDirection: { xs: 'column', md: 'row' },
+                          gap: { xs: 1.5, md: 2 },
+                          alignItems: { xs: 'flex-start', md: 'center' }
+                        }}>
+                          {/* Zeit und Icon-Zeile */}
+                          <Box sx={{ 
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            minWidth: { md: '200px' }
+                          }}>
+                            <Chip 
+                              label={minute ?? ''} 
+                              size="small" 
+                              sx={{ 
+                                bgcolor: 'grey.200', 
+                                color: 'text.primary',
+                                fontWeight: 'bold',
+                                minWidth: '60px'
+                              }} 
+                            />
                             {e.typeColor && (
                               <span style={{
                                 display: 'inline-block',
@@ -562,21 +601,37 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                                 height: 12,
                                 borderRadius: '50%',
                                 background: e.typeColor,
-                                marginRight: 8,
-                                verticalAlign: 'middle'
+                                flexShrink: 0
                               }} />
                             )}
-                            { /*
-                            {e.typeIcon && (
-                              <i className={e.typeIcon} style={{ marginRight: 8, verticalAlign: 'middle' }} />
-                            )}
-                            */ }
-                            <span style={{ color: color, marginLeft: 8 }}>
-                            {
-                              getGameEventIconByCode(icon)
-                            }
+                            <span style={{ 
+                              color: color,
+                              display: 'flex',
+                              alignItems: 'center',
+                              fontSize: '1.2rem',
+                              flexShrink: 0
+                            }}>
+                              {getGameEventIconByCode(icon)}
                             </span>
-                            <strong style={{ marginRight: 10 }}>{e.type ?? e?.gameEventType.name ?? 'Unbekannt'}</strong>
+                            <Typography 
+                              component="strong" 
+                              sx={{ 
+                                fontWeight: 'bold',
+                                fontSize: { xs: '0.95rem', md: '1rem' }
+                              }}
+                            >
+                              {e.type ?? e?.gameEventType.name ?? 'Unbekannt'}
+                            </Typography>
+                          </Box>
+
+                          {/* Spieler-Zeile */}
+                          <Box sx={{ 
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            flex: { md: 1 },
+                            pl: { xs: 0, md: 0 }
+                          }}>
                             <UserAvatar
                               icon={e.player?.playerAvatarUrl}
                               name={playerDisplay || 'Unbekannt'}
@@ -585,23 +640,60 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                               titleObj={e.player?.titleData && e.player?.titleData.hasTitle ? e.player.titleData : undefined}
                               level={typeof e.player?.level === 'number' ? e.player.level : undefined}
                             />
-                            {e.description && (
-                              <span style={{ color: '#888', marginLeft: 8 }}>{e.description}</span>
-                            )}
-                          </span>
-                          {/* Video-Links zu diesem Event, falls vorhanden */}
+                          </Box>
+
+                          {/* Beschreibung-Zeile (optional) */}
+                          {e.description && (
+                            <Box sx={{ 
+                              width: { xs: '100%', md: 'auto' },
+                              pl: { xs: 0, md: 0 }
+                            }}>
+                              <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                  color: '#888',
+                                  fontStyle: 'italic',
+                                  fontSize: { xs: '0.85rem', md: '0.9rem' }
+                                }}
+                              >
+                                {e.description}
+                              </Typography>
+                            </Box>
+                          )}
+
+                          {/* Video-Links (optional) */}
                           {Object.keys(videosForEvent).length > 0 && (
-                            <Box sx={{ ml: 2, display: 'flex', gap: 1 }}>
+                            <Box sx={{ 
+                              display: 'flex',
+                              gap: 1.5,
+                              flexWrap: 'wrap',
+                              alignItems: 'center',
+                              width: { xs: '100%', md: 'auto' },
+                              pl: { xs: 0, md: 1 },
+                              pt: { xs: 0.5, md: 0 }
+                            }}>
                               {Object.entries(videosForEvent).map((currentVideo) => (
-                                <React.Fragment key={currentVideo[0]}>
-                                  <YouTubeIcon fontSize="small" />
+                                <Box 
+                                  key={currentVideo[0]}
+                                  sx={{ 
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.5
+                                  }}
+                                >
+                                  <YouTubeIcon fontSize="small" color="error" />
                                   <Link
                                     href={currentVideo[1]}
                                     target="_blank"
+                                    sx={{ 
+                                      fontSize: { xs: '0.85rem', md: '0.9rem' },
+                                      textDecoration: 'none',
+                                      '&:hover': { textDecoration: 'underline' }
+                                    }}
                                   >
-                                    { mappedCameras[Number(currentVideo[0])] }
+                                    {mappedCameras[Number(currentVideo[0])]}
                                   </Link>
-                                </React.Fragment>
+                                </Box>
                               ))}
                             </Box>
                           )}

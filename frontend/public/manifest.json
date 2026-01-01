@@ -7,7 +7,6 @@
   "theme_color": "#1976d2",
   "description": "Die Vereinsapp für Mitglieder, Teams und Fans.",
   "scope": "/",
-  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/images/icon-192.png",
