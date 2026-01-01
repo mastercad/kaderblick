@@ -41,6 +41,8 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import BusinessIcon from '@mui/icons-material/Business';
 import CheckroomIcon from '@mui/icons-material/Checkroom';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import VideocamIcon from '@mui/icons-material/Videocam';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import PublicIcon from '@mui/icons-material/Public';
 import SchoolIcon from '@mui/icons-material/School';
@@ -104,6 +106,8 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
         { label: 'Ereignistypen', page: 'gameEventTypes', icon: <LocalOfferIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
         { label: 'Nationalitäten', page: 'nationalities', icon: <PublicIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
         { label: 'Trainer-Lizensen', page: 'coachLicenses', icon: <SchoolIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Kameras', page: 'cameras', icon: <CameraAltIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Videotypen', page: 'videoTypes', icon: <VideocamIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
       ],
     },
     {

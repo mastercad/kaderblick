@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Box, Tooltip, IconButton } from '@mui/material';
 import { SkipPrevious as SkipPreviousIcon, ContentCut as ContentCutIcon } from '@mui/icons-material';
+import { keyframes } from '@mui/system';
 import { getGameEventIconByCode } from '../constants/gameEventIcons';
 
 interface TimelineEvent {
@@ -66,6 +67,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [dragState, setDragState] = useState<null | {
     eventId: number;
     origSeconds: number;
@@ -86,6 +88,29 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
   }>(null);
   const [pendingCut, setPendingCut] = useState<null | { startSeconds: number }>(null);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // State für Fine-Tuning Modus (Long-Press)
+  const [fineTuningState, setFineTuningState] = useState<null | {
+    type: 'event' | 'cutMarker';
+    eventId?: number;
+    markerId?: string;
+    markerType?: 'start' | 'end';
+    centerSeconds: number;
+    currentSeconds: number;
+    row?: number;
+  }>(null);
+  
+  // State für Long-Press Progress Indikator
+  const [longPressProgress, setLongPressProgress] = useState<null | {
+    type: 'event' | 'cutMarker';
+    eventId?: number;
+    markerId?: string;
+    markerType?: 'start' | 'end';
+    left: string;
+    top: number;
+    row?: number;
+    startTime: number;
+  }>(null);
 
   // Mobile Detection
   useEffect(() => {
@@ -279,8 +304,67 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       if (dragTimeoutRef.current) {
         clearTimeout(dragTimeoutRef.current);
       }
+      if (longPressTimeoutRef.current) {
+        clearTimeout(longPressTimeoutRef.current);
+      }
+      setLongPressProgress(null);
     };
   }, []);
+  
+  // Animation für Long-Press Progress
+  useEffect(() => {
+    if (!longPressProgress) return;
+    
+    const animationFrame = requestAnimationFrame(() => {
+      const elapsed = Date.now() - longPressProgress.startTime;
+      if (elapsed >= 500) {
+        setLongPressProgress(null);
+      }
+    });
+    
+    return () => cancelAnimationFrame(animationFrame);
+  }, [longPressProgress]);
+  
+  // Handler für Fine-Tuning Overlay
+  const handleFineTuningMove = (clientX: number, overlayElement: HTMLElement) => {
+    if (!fineTuningState) return;
+    
+    const overlayBox = overlayElement.getBoundingClientRect();
+    const timelineElement = overlayElement.querySelector('[data-fine-tuning-timeline]') as HTMLElement;
+    if (!timelineElement) return;
+    
+    const timelineBox = timelineElement.getBoundingClientRect();
+    const x = clientX - timelineBox.left;
+    
+    // Fine-Tuning Bereich: ±10 Sekunden um centerSeconds
+    const timeRange = 20; // 20 Sekunden Gesamtbereich
+    const relativePosition = Math.max(0, Math.min(1, x / timelineBox.width));
+    const newSeconds = fineTuningState.centerSeconds - (timeRange / 2) + (relativePosition * timeRange);
+    const clampedSeconds = Math.max(0, Math.min(duration, newSeconds));
+    
+    setFineTuningState(prev => prev ? { ...prev, currentSeconds: clampedSeconds } : null);
+    onSeek(clampedSeconds);
+  };
+  
+  const handleFineTuningEnd = () => {
+    if (!fineTuningState) return;
+    
+    if (fineTuningState.type === 'event' && fineTuningState.eventId !== undefined) {
+      const eventTime = fineTuningState.currentSeconds - gameStart;
+      onEventMove?.(fineTuningState.eventId, eventTime);
+    } else if (fineTuningState.type === 'cutMarker' && fineTuningState.markerId && fineTuningState.markerType) {
+      const marker = cutMarkers.find(m => m.id === fineTuningState.markerId);
+      if (marker && onCutMarkerMove) {
+        if (fineTuningState.markerType === 'start') {
+          onCutMarkerMove(marker.id, fineTuningState.currentSeconds, marker.endSeconds);
+        } else {
+          onCutMarkerMove(marker.id, marker.startSeconds, fineTuningState.currentSeconds);
+        }
+      }
+    }
+    
+    setFineTuningState(null);
+  };
   const markerRows: { event: TimelineEvent; left: string; px: number; row: number }[] = [];
   const rowHeight = 28; // px, Abstand zwischen Reihen
   const markerWidth = 24; // px, angenommene Markerbreite inkl. Padding
@@ -342,6 +426,14 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     e.stopPropagation();
     e.preventDefault();
     
+    // Clear any existing long-press timeout
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+    }
+    
+    let isFineTuning = false;
+    let hasMoved = false;
+    
     const box = containerRef.current?.getBoundingClientRect();
     if (!box) return;
     
@@ -350,13 +442,93 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     const markerX = box.left + (seconds / duration) * getTimelineWidth();
     const offsetX = clientX - markerX;
     
-    setCutDragState({
-      type,
+    // Handler für Bewegung während mousedown
+    const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
+      if (isFineTuning) return;
+      hasMoved = true;
+      
+      // Long-Press abbrechen
+      if (longPressTimeoutRef.current) {
+        clearTimeout(longPressTimeoutRef.current);
+        longPressTimeoutRef.current = null;
+      }
+      setLongPressProgress(null);
+      
+      // Drag starten
+      setCutDragState({
+        type,
+        markerId,
+        origSeconds: seconds,
+        offsetX: offsetX,
+        currentMouseX: clientX,
+      });
+      
+      // Event-Listener entfernen
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('touchmove', handleMove);
+    };
+    
+    // Long-Press für Fine-Tuning (nur wenn keine Bewegung)
+    const left = `${(seconds / duration) * 100}%`;
+    setLongPressProgress({
+      type: 'cutMarker',
       markerId,
-      origSeconds: seconds,
-      offsetX: offsetX,
-      currentMouseX: clientX,
+      markerType: type,
+      left,
+      top: 50,
+      startTime: Date.now(),
     });
+    
+    longPressTimeoutRef.current = setTimeout(() => {
+      if (hasMoved) return; // Nicht aktivieren wenn bereits bewegt
+      
+      isFineTuning = true;
+      setLongPressProgress(null);
+      setFineTuningState({
+        type: 'cutMarker',
+        markerId,
+        markerType: type,
+        centerSeconds: seconds,
+        currentSeconds: seconds,
+      });
+      // Event-Listener entfernen
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('mouseup', handleUpOrCancel);
+      window.removeEventListener('touchend', handleUpOrCancel);
+    }, 500);
+    
+    // Cleanup handler
+    const handleUpOrCancel = () => {
+      // Prüfe ob Fine-Tuning bereits aktiviert wurde
+      if (isFineTuning) {
+        return; // Nichts tun, Fine-Tuning läuft bereits
+      }
+      
+      if (longPressTimeoutRef.current) {
+        clearTimeout(longPressTimeoutRef.current);
+        longPressTimeoutRef.current = null;
+      }
+      
+      // Progress-Indikator abbrechen
+      setLongPressProgress(null);
+      
+      // Wenn nicht bewegt wurde, ist es ein Click (kein Drag)
+      if (!hasMoved && !isFineTuning) {
+        // Nur zum Marker springen
+        onSeek(seconds);
+      }
+      
+      window.removeEventListener('mouseup', handleUpOrCancel);
+      window.removeEventListener('touchend', handleUpOrCancel);
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('touchmove', handleMove);
+    };
+    
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('touchmove', handleMove);
+    window.addEventListener('mouseup', handleUpOrCancel, { once: true });
+    window.addEventListener('touchend', handleUpOrCancel, { once: true });
   };
 
   // Handler für Range-Drag (gesamte Schnittmarke verschieben)
@@ -391,14 +563,29 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
     }
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+    }
 
     // Bei kurzer Zeit (Click) -> Video springen
-    // Bei längerer Zeit (Hold) -> Dragging starten
+    // Bei Bewegung -> Dragging starten
+    // Bei langem Halten ohne Bewegung (500ms) -> Fine-Tuning Modus
     const startTime = Date.now();
     let isDragging = false;
+    let isFineTuning = false;
+    let hasMoved = false;
 
     const startDrag = () => {
+      if (isDragging || isFineTuning) return;
       isDragging = true;
+      
+      // Long-Press abbrechen
+      if (longPressTimeoutRef.current) {
+        clearTimeout(longPressTimeoutRef.current);
+        longPressTimeoutRef.current = null;
+      }
+      setLongPressProgress(null);
+      
       if (!onEventMove) {
         return;
       }
@@ -417,21 +604,74 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
         mouseX: clientX,
       });
     };
-
-    // Set timeout: nach 300ms wird Drag aktiviert
-    dragTimeoutRef.current = setTimeout(() => {
+    
+    // Handler für Mausbewegung während mousedown
+    const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
+      if (isFineTuning) return;
+      hasMoved = true;
+      // Bei erster Bewegung: Drag starten
       startDrag();
-    }, 300);
+      // Event-Listener entfernen, da wir jetzt im Drag-Modus sind
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('touchmove', handleMove);
+    };
+
+    // Long-Press: nach 500ms Fine-Tuning aktivieren (nur wenn keine Bewegung)
+    const videoPosition = origSeconds;
+    const left = `${(videoPosition / duration) * 100}%`;
+    setLongPressProgress({
+      type: 'event',
+      eventId,
+      left,
+      top: 16 + row * rowHeight,
+      row,
+      startTime: Date.now(),
+    });
+    
+    longPressTimeoutRef.current = setTimeout(() => {
+      if (hasMoved || isDragging) return; // Nicht aktivieren wenn bereits bewegt/dragging
+      
+      isFineTuning = true;
+      setLongPressProgress(null);
+      // Drag-State abbrechen falls irgendwie gestartet
+      setDragState(null);
+      
+      // Fine-Tuning Modus aktivieren
+      setFineTuningState({
+        type: 'event',
+        eventId,
+        centerSeconds: origSeconds,
+        currentSeconds: origSeconds,
+        row,
+      });
+      // Event-Listener entfernen
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchend', handleMouseUp);
+    }, 500);
 
     // Handle mouseup to check if it was a click or drag
     const handleMouseUp = () => {
+      // Prüfe ob Fine-Tuning bereits aktiviert wurde
+      if (isFineTuning) {
+        return; // Nichts tun, Fine-Tuning läuft bereits
+      }
+      
       if (dragTimeoutRef.current) {
         clearTimeout(dragTimeoutRef.current);
         dragTimeoutRef.current = null;
       }
+      if (longPressTimeoutRef.current) {
+        clearTimeout(longPressTimeoutRef.current);
+        longPressTimeoutRef.current = null;
+      }
+      
+      // Progress-Indikator abbrechen
+      setLongPressProgress(null);
 
-      // Wenn noch nicht dragging, war es ein Click -> seek
-      if (!isDragging) {
+      // Wenn noch nicht dragging und nicht fine-tuning, war es ein Click -> seek
+      if (!isDragging && !isFineTuning) {
         if (typeof window !== 'undefined') {
         }
         // origSeconds ist bereits die Video-Position (timestamp + gameStart)
@@ -439,9 +679,17 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       }
 
       window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchend', handleMouseUp);
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('touchmove', handleMove);
     };
 
+    // Event-Listener für Bewegung und mouseup registrieren
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('touchmove', handleMove);
     window.addEventListener('mouseup', handleMouseUp, { once: true });
+    window.addEventListener('touchend', handleMouseUp, { once: true });
+    
     e.preventDefault();
     e.stopPropagation();
   };
@@ -587,6 +835,71 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
           ) || '•'}
         </Box>
         </Tooltip>
+        );
+      })()}
+      
+      {/* Long-Press Progress Indikator */}
+      {longPressProgress && longPressProgress.type === 'event' && (() => {
+        const progressAnimation = keyframes`
+          from { stroke-dashoffset: 176; }
+          to { stroke-dashoffset: 0; }
+        `;
+        
+        return (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: longPressProgress.top,
+              left: longPressProgress.left,
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none',
+              zIndex: 20,
+              width: 64,
+              height: 64,
+            }}
+          >
+            <svg width="64" height="64" viewBox="0 0 64 64">
+              {/* Hintergrund-Kreis */}
+              <circle
+                cx="32"
+                cy="32"
+                r="28"
+                fill="rgba(255, 255, 255, 0.9)"
+                stroke="rgba(25, 118, 210, 0.2)"
+                strokeWidth="2"
+              />
+              {/* Progress-Kreis */}
+              <Box
+                component="circle"
+                cx="32"
+                cy="32"
+                r="28"
+                fill="none"
+                stroke="#1976d2"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeDasharray="176"
+                strokeDashoffset="176"
+                transform="rotate(-90 32 32)"
+                sx={{
+                  animation: `${progressAnimation} 500ms linear forwards`,
+                }}
+              />
+              {/* Icon in der Mitte */}
+              <text
+                x="32"
+                y="32"
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize="24"
+                fill="#1976d2"
+              >
+                {longPressProgress.eventId && getGameEventIconByCode(
+                  events.find(ev => ev.id === longPressProgress.eventId)?.icon || ''
+                ) || '•'}
+              </text>
+            </svg>
+          </Box>
         );
       })()}
       </Box>
@@ -881,8 +1194,231 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
             </Box>
           );
         })()}
+        
+        {/* Long-Press Progress Indikator für Cut-Marker */}
+        {longPressProgress && longPressProgress.type === 'cutMarker' && (() => {
+          const progressAnimation = keyframes`
+            from { stroke-dashoffset: 176; }
+            to { stroke-dashoffset: 0; }
+          `;
+          
+          return (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: { xs: 50, sm: 30 },
+                left: longPressProgress.left,
+                transform: 'translate(-50%, -50%)',
+                pointerEvents: 'none',
+                zIndex: 20,
+                width: { xs: 72, sm: 64 },
+                height: { xs: 72, sm: 64 },
+              }}
+            >
+              <svg width="100%" height="100%" viewBox="0 0 64 64">
+                {/* Hintergrund-Kreis */}
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="28"
+                  fill="rgba(255, 255, 255, 0.9)"
+                  stroke="rgba(255, 152, 0, 0.2)"
+                  strokeWidth="2"
+                />
+                {/* Progress-Kreis */}
+                <Box
+                  component="circle"
+                  cx="32"
+                  cy="32"
+                  r="28"
+                  fill="none"
+                  stroke="#ff9800"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray="176"
+                  strokeDashoffset="176"
+                  transform="rotate(-90 32 32)"
+                  sx={{
+                    animation: `${progressAnimation} 500ms linear forwards`,
+                  }}
+                />
+                {/* Icon in der Mitte */}
+                <text
+                  x="32"
+                  y="32"
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize="24"
+                  fill="#ff9800"
+                >
+                  {longPressProgress.markerType === 'start' ? '◀' : '▶'}
+                </text>
+              </svg>
+            </Box>
+          );
+        })()}
       </Box>
     )}
+    
+    {/* Fine-Tuning Overlay - Kompakt über dem Icon */}
+    {fineTuningState && containerRef.current && (() => {
+      const box = containerRef.current.getBoundingClientRect();
+      const timeRange = 20; // ±10 Sekunden
+      const startTime = Math.max(0, fineTuningState.centerSeconds - timeRange / 2);
+      const endTime = Math.min(duration, fineTuningState.centerSeconds + timeRange / 2);
+      const actualRange = endTime - startTime;
+      const currentPosition = ((fineTuningState.currentSeconds - startTime) / actualRange) * 100;
+      
+      // Berechne Position über dem Icon
+      let iconLeft, iconTop;
+      if (fineTuningState.type === 'event' && fineTuningState.row !== undefined) {
+        const videoPosition = fineTuningState.centerSeconds;
+        iconLeft = `${(videoPosition / duration) * 100}%`;
+        iconTop = 16 + fineTuningState.row * rowHeight;
+      } else {
+        iconLeft = `${(fineTuningState.centerSeconds / duration) * 100}%`;
+        iconTop = 50; // Cut-Marker Position
+      }
+      
+      return (
+        <>
+          {/* Dezenter Backdrop */}
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              bgcolor: 'rgba(0, 0, 0, 0.3)',
+              zIndex: 9998,
+            }}
+            onClick={handleFineTuningEnd}
+          />
+          
+          {/* Kompaktes Overlay */}
+          <Box
+            sx={{
+              position: 'absolute',
+              left: iconLeft,
+              top: iconTop,
+              transform: 'translate(-50%, calc(-100% - 20px))', // Über dem Icon mit 20px Abstand
+              width: { xs: 280, sm: 320 },
+              bgcolor: 'rgba(0, 0, 0, 0.92)',
+              borderRadius: 2,
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+              zIndex: 9999,
+              p: { xs: 1.5, sm: 2 },
+              border: `2px solid ${fineTuningState.type === 'cutMarker' ? '#ff9800' : '#1976d2'}`,
+            }}
+            onMouseMove={(e) => {
+              handleFineTuningMove(e.clientX, e.currentTarget);
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              handleFineTuningMove(e.touches[0].clientX, e.currentTarget);
+            }}
+            onMouseUp={handleFineTuningEnd}
+            onTouchEnd={handleFineTuningEnd}
+          >
+            {/* Zeit-Anzeige */}
+            <Box sx={{ textAlign: 'center', mb: 1.5, color: 'white' }}>
+              <Box sx={{ fontSize: { xs: 20, sm: 24 }, fontWeight: 'bold', fontFamily: 'monospace' }}>
+                {formatSeconds(fineTuningState.currentSeconds)}
+              </Box>
+              {fineTuningState.type === 'event' && (
+                <Box sx={{ fontSize: { xs: 10, sm: 11 }, color: '#999', mt: 0.3 }}>
+                  Spiel: {formatSeconds(fineTuningState.currentSeconds - gameStart + cumulativeOffset)}
+                </Box>
+              )}
+            </Box>
+            
+            {/* Kompakte Timeline */}
+            <Box 
+              data-fine-tuning-timeline
+              sx={{ position: 'relative', width: '100%', height: { xs: 50, sm: 40 }, mb: 1 }}
+            >
+              {/* Timeline Bar */}
+              <Box sx={{ 
+                position: 'absolute', 
+                top: '50%', 
+                left: 0, 
+                right: 0, 
+                height: 4, 
+                bgcolor: 'rgba(255, 255, 255, 0.2)', 
+                borderRadius: 1,
+                transform: 'translateY(-50%)',
+              }} />
+              
+              {/* Center Marker (Original Position) */}
+              <Box sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: 2,
+                height: '80%',
+                bgcolor: 'rgba(255, 255, 255, 0.4)',
+                zIndex: 1,
+              }} />
+              
+              {/* Current Position Marker */}
+              <Box sx={{
+                position: 'absolute',
+                top: '50%',
+                left: `${currentPosition}%`,
+                transform: 'translate(-50%, -50%)',
+                width: { xs: 40, sm: 32 },
+                height: { xs: 40, sm: 32 },
+                bgcolor: fineTuningState.type === 'cutMarker' ? '#ff9800' : '#1976d2',
+                borderRadius: '50%',
+                boxShadow: `0 0 12px ${fineTuningState.type === 'cutMarker' ? 'rgba(255, 152, 0, 0.6)' : 'rgba(25, 118, 210, 0.6)'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: { xs: 20, sm: 16 },
+                zIndex: 2,
+                border: '2px solid white',
+              }}>
+                {fineTuningState.type === 'event' 
+                  ? (getGameEventIconByCode(
+                      events.find(ev => ev.id === fineTuningState.eventId)?.icon || ''
+                    ) || '•')
+                  : fineTuningState.markerType === 'start' ? '◀' : '▶'
+                }
+              </Box>
+              
+              {/* Time Labels */}
+              <Box sx={{
+                position: 'absolute',
+                bottom: -18,
+                left: 0,
+                right: 0,
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: { xs: 9, sm: 10 },
+                color: '#999',
+                fontFamily: 'monospace',
+              }}>
+                <span>{formatSeconds(startTime)}</span>
+                <span>{formatSeconds(endTime)}</span>
+              </Box>
+            </Box>
+            
+            {/* Kompakter Hinweis */}
+            <Box sx={{ 
+              textAlign: 'center', 
+              fontSize: { xs: 9, sm: 10 }, 
+              color: '#999',
+              mt: 2,
+            }}>
+              Schieben • Loslassen zum Bestätigen
+            </Box>
+          </Box>
+        </>
+      );
+    })()}
     </Box>
   );
 };

@@ -21,17 +21,18 @@ class Camera
     private ?string $name = null;
 
     #[ORM\ManyToOne(inversedBy: 'camerasCreated')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?User $created_from = null;
+    #[ORM\JoinColumn(name: 'created_from_id', nullable: false)]
+    private ?User $createdFrom = null;
 
     #[ORM\ManyToOne(inversedBy: 'camerasUpdated')]
-    private ?User $updated_from = null;
+    #[ORM\JoinColumn(name: 'updated_from_id')]
+    private ?User $updatedFrom = null;
 
-    #[ORM\Column]
-    private ?DateTimeImmutable $created_at = null;
+    #[ORM\Column(name: 'created_at')]
+    private ?DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?DateTimeImmutable $updated_at = null;
+    #[ORM\Column(name: 'updated_at', nullable: true)]
+    private ?DateTimeImmutable $updatedAt = null;
 
     /**
      * @var Collection<int, Video>
@@ -63,48 +64,48 @@ class Camera
 
     public function getCreatedFrom(): ?User
     {
-        return $this->created_from;
+        return $this->createdFrom;
     }
 
-    public function setCreatedFrom(?User $created_from): static
+    public function setCreatedFrom(?User $createdFrom): static
     {
-        $this->created_from = $created_from;
+        $this->createdFrom = $createdFrom;
 
         return $this;
     }
 
     public function getUpdatedFrom(): ?User
     {
-        return $this->updated_from;
+        return $this->updatedFrom;
     }
 
-    public function setUpdatedFrom(?User $updated_from): static
+    public function setUpdatedFrom(?User $updatedFrom): static
     {
-        $this->updated_from = $updated_from;
+        $this->updatedFrom = $updatedFrom;
 
         return $this;
     }
 
     public function getCreatedAt(): ?DateTimeImmutable
     {
-        return $this->created_at;
+        return $this->createdAt;
     }
 
-    public function setCreatedAt(DateTimeImmutable $created_at): static
+    public function setCreatedAt(DateTimeImmutable $createdAt): static
     {
-        $this->created_at = $created_at;
+        $this->createdAt = $createdAt;
 
         return $this;
     }
 
     public function getUpdatedAt(): ?DateTimeImmutable
     {
-        return $this->updated_at;
+        return $this->updatedAt;
     }
 
-    public function setUpdatedAt(?DateTimeImmutable $updated_at): static
+    public function setUpdatedAt(?DateTimeImmutable $updatedAt): static
     {
-        $this->updated_at = $updated_at;
+        $this->updatedAt = $updatedAt;
 
         return $this;
     }
