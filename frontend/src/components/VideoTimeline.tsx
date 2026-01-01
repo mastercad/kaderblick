@@ -791,6 +791,9 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 transition: 'box-shadow 0.2s',
                 '&:hover': { boxShadow: 4, bgcolor: '#f5f5f5' },
                 userSelect: 'none',
+                WebkitUserSelect: 'none',
+                WebkitTouchCallout: 'none',
+                touchAction: 'none',
               }}
               onMouseDown={(e) => handleMouseDown(e, event.id, event.timestamp + gameStart, row)}
               onTouchStart={(e) => handleMouseDown(e as unknown as React.MouseEvent, event.id, event.timestamp + gameStart, row)}
