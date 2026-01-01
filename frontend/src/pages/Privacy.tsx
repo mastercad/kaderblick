@@ -10,7 +10,7 @@ const Privacy: React.FC = () => (
       <h2>1. Verantwortlicher</h2>
       <p>Verantwortlich für die Datenverarbeitung auf dieser Webseite ist:<br />
         <strong>Andreas Kempe</strong> (Seitenbetreiber, privat)<br />
-        E-Mail: <a href="mailto:andreas.kempe@byte-artist.de">andreas.kempe@byte-artist.de</a></p>
+        E-Mail: <a href="mailto:andreas.kempe@kaderblick.de">andreas.kempe@kaderblick.de</a></p>
 
       <h2>2. Erhebung und Verarbeitung personenbezogener Daten</h2>
       <ul>
@@ -52,7 +52,7 @@ const Privacy: React.FC = () => (
         <li>Widerruf einer Einwilligung</li>
         <li>Beschwerde bei der Datenschutzbehörde</li>
       </ul>
-      <p>Bitte wenden Sie sich bei Fragen an: <a href="mailto:andreas.kempe@byte-artist.de">andreas.kempe@byte-artist.de</a></p>
+      <p>Bitte wenden Sie sich bei Fragen an: <a href="mailto:andreas.kempe@kaderblick.de">andreas.kempe@kaderblick.de</a></p>
 
       <h2>8. Änderungen</h2>
       <p>Wir behalten uns vor, diese Datenschutzerklärung zu aktualisieren. Die jeweils aktuelle Version finden Sie auf dieser Seite.</p>

@@ -142,7 +142,7 @@ jobs:
 
             echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> api/.env
             echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> api/.env
-            echo "VITE_BACKEND_URL=https://api.kaderblick.byte-artist.de" > frontend/.env
+            echo "VITE_BACKEND_URL=https://api.kaderblick.de" > frontend/.env
 
             echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > api/config/secrets/prod/prod.decrypt.private.php
             chmod 655 api/config/secrets/prod/prod.decrypt.private.php

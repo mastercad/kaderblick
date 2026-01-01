@@ -31,7 +31,7 @@ class PushNotificationService
     private function getWebPush(): WebPush
     {
         if (!$this->webPush) {
-            $subject = $this->params->get('app.website_url') ?: 'https://kaderblick.byte-artist.de';
+            $subject = $this->params->get('app.website_url') ?: 'https://kaderblick.de';
 
             $this->webPush = new WebPush([
                 'VAPID' => [

@@ -53,7 +53,7 @@ class VerificationController extends AbstractController
         $this->em->flush();
 
         $email = (new TemplatedEmail())
-            ->from('no-reply@byte-artist.de')
+            ->from('no-reply@kaderblick.de')
             ->to($user->getEmail())
             ->subject('Willkommen auf der Plattform')
             ->htmlTemplate('emails/welcome.html.twig')

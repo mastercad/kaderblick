@@ -29,7 +29,7 @@ class VideoTypeFixtures extends Fixture implements FixtureGroupInterface, Depend
     {
         // Hole den Master-User (Andreas Kempe)
         $masterUser = $manager->getRepository(User::class)->findOneBy([
-            'email' => 'andreas.kempe@byte-artist.de',
+            'email' => 'andreas.kempe@kaderblick.de',
         ]);
 
         if (!$masterUser) {
