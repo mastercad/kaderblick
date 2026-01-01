@@ -9,6 +9,7 @@ use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
+use RuntimeException;
 
 class CameraFixtures extends Fixture implements FixtureGroupInterface, DependentFixtureInterface
 {
@@ -32,7 +33,7 @@ class CameraFixtures extends Fixture implements FixtureGroupInterface, Dependent
         ]);
 
         if (!$masterUser) {
-            throw new \RuntimeException('Master user not found. Please run UserFixtures first.');
+            throw new RuntimeException('Master user not found. Please run UserFixtures first.');
         }
 
         $cameras = [
