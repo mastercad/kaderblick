@@ -697,7 +697,16 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
   return (
     <Box
       ref={containerRef}
-      sx={{ position: 'relative', width: '100%', mt: 1, mb: 2 }}
+      sx={{ 
+        position: 'relative', 
+        width: '100%', 
+        mt: 1, 
+        mb: 2,
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+      }}
+      onContextMenu={(e) => e.preventDefault()}
     >
       {/* Time labels and info - Events Timeline */}
       {!showCutMarkers && (
@@ -785,6 +794,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
               }}
               onMouseDown={(e) => handleMouseDown(e, event.id, event.timestamp + gameStart, row)}
               onTouchStart={(e) => handleMouseDown(e as unknown as React.MouseEvent, event.id, event.timestamp + gameStart, row)}
+              onContextMenu={(e) => e.preventDefault()}
             >
               {getGameEventIconByCode(event.icon) || '•'}
             </Box>
@@ -1280,6 +1290,22 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
         iconTop = 50; // Cut-Marker Position
       }
       
+      // Berechne absolute Position und prüfe Bildschirmgrenzen
+      const containerBox = containerRef.current.getBoundingClientRect();
+      const iconPercent = (fineTuningState.centerSeconds / duration) * 100;
+      const iconAbsoluteX = containerBox.left + (containerBox.width * iconPercent / 100);
+      const dialogWidth = isMobile ? window.innerWidth * 0.9 : 400;
+      
+      // Prüfe ob Dialog links oder rechts aus dem Bildschirm ragt
+      let leftAdjustment = 0;
+      if (iconAbsoluteX - dialogWidth / 2 < 10) {
+        // Zu weit links
+        leftAdjustment = (10 - (iconAbsoluteX - dialogWidth / 2));
+      } else if (iconAbsoluteX + dialogWidth / 2 > window.innerWidth - 10) {
+        // Zu weit rechts
+        leftAdjustment = (window.innerWidth - 10 - (iconAbsoluteX + dialogWidth / 2));
+      }
+      
       return (
         <>
           {/* Dezenter Backdrop */}
@@ -1296,22 +1322,28 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
             onClick={handleFineTuningEnd}
           />
           
-          {/* Kompaktes Overlay */}
+          {/* Kompakte Leiste über dem Icon */}
           <Box
             sx={{
               position: 'absolute',
               left: iconLeft,
               top: iconTop,
-              transform: 'translate(-50%, calc(-100% - 20px))', // Über dem Icon mit 20px Abstand
-              width: { xs: 280, sm: 320 },
-              bgcolor: 'rgba(0, 0, 0, 0.92)',
+              transform: `translate(calc(-50% + ${leftAdjustment}px), calc(-100% - 12px))`,
+              width: { xs: '90vw', sm: 400 },
+              maxWidth: 500,
+              bgcolor: 'rgba(0, 0, 0, 0.95)',
               borderRadius: 2,
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
               zIndex: 9999,
-              p: { xs: 1.5, sm: 2 },
+              px: 2,
+              py: 1.5,
               border: `2px solid ${fineTuningState.type === 'cutMarker' ? '#ff9800' : '#1976d2'}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
             }}
             onMouseMove={(e) => {
+              e.preventDefault();
               handleFineTuningMove(e.clientX, e.currentTarget);
             }}
             onTouchMove={(e) => {
@@ -1320,23 +1352,48 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
             }}
             onMouseUp={handleFineTuningEnd}
             onTouchEnd={handleFineTuningEnd}
+            onContextMenu={(e) => e.preventDefault()}
+            style={{
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              WebkitTouchCallout: 'none',
+            }}
           >
-            {/* Zeit-Anzeige */}
-            <Box sx={{ textAlign: 'center', mb: 1.5, color: 'white' }}>
-              <Box sx={{ fontSize: { xs: 20, sm: 24 }, fontWeight: 'bold', fontFamily: 'monospace' }}>
+            {/* Zeit-Anzeige links */}
+            <Box sx={{ 
+              color: 'white',
+              minWidth: { xs: 70, sm: 80 },
+              flexShrink: 0,
+            }}>
+              <Box sx={{ 
+                fontSize: { xs: 16, sm: 20 }, 
+                fontWeight: 'bold', 
+                fontFamily: 'monospace',
+                lineHeight: 1.2,
+                color: '#fff',
+              }}>
                 {formatSeconds(fineTuningState.currentSeconds)}
               </Box>
               {fineTuningState.type === 'event' && (
-                <Box sx={{ fontSize: { xs: 10, sm: 11 }, color: '#999', mt: 0.3 }}>
-                  Spiel: {formatSeconds(fineTuningState.currentSeconds - gameStart + cumulativeOffset)}
+                <Box sx={{ 
+                  fontSize: { xs: 11, sm: 12 }, 
+                  color: '#bbb',
+                  fontFamily: 'monospace',
+                }}>
+                  {formatSeconds(fineTuningState.currentSeconds - gameStart + cumulativeOffset)}
                 </Box>
               )}
             </Box>
             
-            {/* Kompakte Timeline */}
+            {/* Timeline in der Mitte - flexibel */}
             <Box 
               data-fine-tuning-timeline
-              sx={{ position: 'relative', width: '100%', height: { xs: 50, sm: 40 }, mb: 1 }}
+              sx={{ 
+                position: 'relative', 
+                flex: 1, 
+                height: 40,
+                minWidth: 0,
+              }}
             >
               {/* Timeline Bar */}
               <Box sx={{ 
@@ -1357,8 +1414,8 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
                 width: 2,
-                height: '80%',
-                bgcolor: 'rgba(255, 255, 255, 0.4)',
+                height: 28,
+                bgcolor: 'rgba(255, 255, 255, 0.5)',
                 zIndex: 1,
               }} />
               
@@ -1368,8 +1425,8 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 top: '50%',
                 left: `${currentPosition}%`,
                 transform: 'translate(-50%, -50%)',
-                width: { xs: 40, sm: 32 },
-                height: { xs: 40, sm: 32 },
+                width: 32,
+                height: 32,
                 bgcolor: fineTuningState.type === 'cutMarker' ? '#ff9800' : '#1976d2',
                 borderRadius: '50%',
                 boxShadow: `0 0 12px ${fineTuningState.type === 'cutMarker' ? 'rgba(255, 152, 0, 0.6)' : 'rgba(25, 118, 210, 0.6)'}`,
@@ -1377,7 +1434,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'white',
-                fontSize: { xs: 20, sm: 16 },
+                fontSize: 16,
                 zIndex: 2,
                 border: '2px solid white',
               }}>
@@ -1388,32 +1445,22 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                   : fineTuningState.markerType === 'start' ? '◀' : '▶'
                 }
               </Box>
-              
-              {/* Time Labels */}
-              <Box sx={{
-                position: 'absolute',
-                bottom: -18,
-                left: 0,
-                right: 0,
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: { xs: 9, sm: 10 },
-                color: '#999',
-                fontFamily: 'monospace',
-              }}>
-                <span>{formatSeconds(startTime)}</span>
-                <span>{formatSeconds(endTime)}</span>
-              </Box>
             </Box>
             
-            {/* Kompakter Hinweis */}
-            <Box sx={{ 
-              textAlign: 'center', 
-              fontSize: { xs: 9, sm: 10 }, 
-              color: '#999',
-              mt: 2,
+            {/* Zeit-Labels rechts */}
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              fontSize: { xs: 10, sm: 11 },
+              color: '#bbb',
+              fontFamily: 'monospace',
+              minWidth: { xs: 42, sm: 45 },
+              flexShrink: 0,
+              textAlign: 'right',
+              gap: 0.5,
             }}>
-              Schieben • Loslassen zum Bestätigen
+              <span>{formatSeconds(startTime)}</span>
+              <span>{formatSeconds(endTime)}</span>
             </Box>
           </Box>
         </>
