@@ -29,7 +29,7 @@ class CameraFixtures extends Fixture implements FixtureGroupInterface, Dependent
     {
         // Hole den Master-User (Andreas Kempe)
         $masterUser = $manager->getRepository(User::class)->findOneBy([
-            'email' => 'andreas.kempe@byte-artist.de',
+            'email' => 'andreas.kempe@kaderblick.de',
         ]);
 
         if (!$masterUser) {

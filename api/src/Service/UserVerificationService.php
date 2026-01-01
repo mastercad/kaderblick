@@ -42,7 +42,7 @@ class UserVerificationService
         );
 
         $email = (new TemplatedEmail())
-            ->from('no-reply@byte-artist.de')
+            ->from('no-reply@kaderblick.de')
             ->to($user->getEmail())
             ->subject('Bitte bestätige deine E-Mail')
             ->htmlTemplate('emails/verification.html.twig')

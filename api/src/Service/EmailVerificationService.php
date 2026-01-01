@@ -15,7 +15,7 @@ class EmailVerificationService
         private EntityManagerInterface $entityManager,
         private MailerInterface $mailer,
         private UrlGeneratorInterface $urlGenerator,
-        private string $emailFrom = 'noreply@kaderblick.byte-artist.de'
+        private string $emailFrom = 'noreply@kaderblick.de'
     ) {
     }
 
