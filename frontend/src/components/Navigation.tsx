@@ -83,7 +83,6 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
     { key: 'home', label: 'Home', disabled: false },
     { key: 'dashboard', label: 'Dashboard', disabled: false },
     { key: 'surveys', label: 'Umfragen', disabled: false },
-    { key: 'teams', label: 'Teams', disabled: false },
     { key: 'games', label: 'Spiele', disabled: false },
     { key: 'reports', label: 'Reports', disabled: false },
     { key: 'calendar', label: 'Kalender', disabled: false },
