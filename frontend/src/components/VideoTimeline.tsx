@@ -199,11 +199,21 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       setDragState(null);
       onDragEnd?.();
     };
+    
+    const handleMoveWithPrevent = (e: MouseEvent | TouchEvent) => {
+      e.preventDefault();
+      handleMove(e);
+    };
+    
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleUp);
+    window.addEventListener('touchmove', handleMoveWithPrevent as any, { passive: false });
+    window.addEventListener('touchend', handleUp as any);
     return () => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
+      window.removeEventListener('touchmove', handleMoveWithPrevent as any);
+      window.removeEventListener('touchend', handleUp as any);
     };
   }, [dragState, duration, onEventMove, onSeek, gameStart]);
 
