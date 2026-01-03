@@ -446,8 +446,11 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     type: 'start' | 'end',
     seconds: number
   ) => {
-    e.stopPropagation();
-    e.preventDefault();
+    // Prevent context menu IMMEDIATELY for touch events
+    if ('touches' in e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     
     // Clear any existing long-press timeout
     if (longPressTimeoutRef.current) {
@@ -597,6 +600,12 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
 
   // Mouse-Event-Handler für Click oder Drag
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent, eventId: number, origSeconds: number, row: number) => {
+    // Prevent context menu IMMEDIATELY for touch events
+    if ('touches' in e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     // Clear any existing timeout
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
@@ -741,7 +750,10 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     window.addEventListener('mouseup', handleMouseUp, { once: true });
     window.addEventListener('touchend', handleMouseUp, { once: true });
     
-    e.preventDefault();
+    // Only preventDefault for mouse events (touch already handled at start)
+    if (!('touches' in e)) {
+      e.preventDefault();
+    }
     e.stopPropagation();
   };
 
