@@ -600,6 +600,9 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
 
   // Mouse-Event-Handler für Click oder Drag
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent, eventId: number, origSeconds: number, row: number) => {
+    // Capture clientX IMMEDIATELY before React recycles the event
+    const initialClientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    
     // Prevent context menu IMMEDIATELY for touch events
     if ('touches' in e) {
       e.preventDefault();
@@ -642,14 +645,13 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
         return;
       }
       // origSeconds ist bereits die Video-Position (timestamp + gameStart)
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
       const markerX = box.left + (origSeconds / duration) * getTimelineWidth();
       setDragState({
         eventId,
         origSeconds,
         row,
-        offsetX: clientX - markerX,
-        mouseX: clientX,
+        offsetX: initialClientX - markerX,
+        mouseX: initialClientX,
       });
     };
     
