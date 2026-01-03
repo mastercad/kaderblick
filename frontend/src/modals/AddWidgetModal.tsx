@@ -21,7 +21,6 @@ interface AddWidgetModalProps {
 
 const widgetOptions = [
   { type: 'calendar', label: 'Kalender', icon: <CalendarMonthIcon /> },
-  { type: 'stats', label: 'Statistiken', icon: <BarChartIcon /> },
   { type: 'messages', label: 'Nachrichten', icon: <EmailIcon /> },
   { type: 'news', label: 'News', icon: <NewspaperIcon /> },
   { type: 'upcoming_events', label: 'Anstehende Veranstaltungen', icon: <EventIcon /> },

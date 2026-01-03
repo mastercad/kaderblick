@@ -18,9 +18,6 @@ const dashboardModalTemplates = {
               <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="calendar">
                 <i class="fas fa-calendar"></i> Kalender
               </button>
-              <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="stats">
-                <i class="fas fa-chart-bar"></i> Statistiken
-              </button>
               <button type="button" class="list-group-item list-group-item-action btn-add-widget" data-widget-type="messages">
                 <i class="fas fa-envelope"></i> Nachrichten
               </button>
@@ -199,7 +196,6 @@ async function addWidget(widgetId) {
 function getWidgetTitle(type) {
   const titles = {
     calendar: 'Kalender',
-    stats: 'Statistiken',
     messages: 'Nachrichten',
     news: 'News',
     upcoming_events: 'Anstehende Veranstaltungen'
