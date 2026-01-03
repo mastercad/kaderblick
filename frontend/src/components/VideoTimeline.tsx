@@ -28,14 +28,15 @@ interface VideoTimelineProps {
   onEventMove?: (eventId: number, newSeconds: number) => void;
   onSeekToGameStart?: () => void;
   gameStart?: number;
-  cumulativeOffset?: number; // Kumulativer Offset für absolute Spielzeit
-  // Schnittmarken Props
+  cumulativeOffset?: number;
   cutMarkers?: CutMarker[];
   onCutMarkerAdd?: (startSeconds: number, endSeconds: number) => void;
   onCutMarkerMove?: (id: string, startSeconds: number, endSeconds: number) => void;
   cutModeActive?: boolean;
   onToggleCutMode?: () => void;
-  showCutMarkers?: boolean; // Neue Prop um Schnittmarken-Elemente zu steuern
+  showCutMarkers?: boolean;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }
 
 /**
@@ -63,7 +64,9 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
   onCutMarkerMove,
   cutModeActive = false,
   onToggleCutMode,
-  showCutMarkers = false
+  showCutMarkers = false,
+  onDragStart,
+  onDragEnd
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -194,6 +197,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       const eventTime = videoPosition - gameStart;
       onEventMove?.(dragState.eventId, eventTime);
       setDragState(null);
+      onDragEnd?.();
     };
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleUp);
@@ -244,6 +248,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       const marker = cutMarkers.find(m => m.id === cutDragState.markerId);
       if (!marker || !onCutMarkerMove) {
         setCutDragState(null);
+        onDragEnd?.();
         return;
       }
       
@@ -279,6 +284,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       }
       
       setCutDragState(null);
+      onDragEnd?.();
     };
     
     const handleMoveWithPrevent = (e: MouseEvent | TouchEvent) => {
@@ -397,7 +403,14 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     }
     
     const box = containerRef.current.getBoundingClientRect();
-    const clientX = 'touches' in e ? e.touches[0]?.clientX : 'changedTouches' in e ? e.changedTouches[0]?.clientX : e.clientX;
+    let clientX: number | undefined;
+    if ('touches' in e && e.touches[0]) {
+      clientX = e.touches[0].clientX;
+    } else if ('changedTouches' in e && (e as any).changedTouches?.[0]) {
+      clientX = (e as any).changedTouches[0].clientX;
+    } else {
+      clientX = (e as React.MouseEvent).clientX;
+    }
     if (!clientX) return;
     
     const x = clientX - box.left;
@@ -445,9 +458,16 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     // Handler für Bewegung während mousedown
     const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
       if (isFineTuning) return;
+      
+      // Prevent default behavior to avoid scrolling during drag
+      if ('touches' in moveEvent) {
+        moveEvent.preventDefault();
+      }
+      
       hasMoved = true;
       
-      // Long-Press abbrechen
+      onDragStart?.();
+      
       if (longPressTimeoutRef.current) {
         clearTimeout(longPressTimeoutRef.current);
         longPressTimeoutRef.current = null;
@@ -465,7 +485,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       
       // Event-Listener entfernen
       window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchmove', handleCutMoveWithPrevent as any);
     };
     
     // Long-Press für Fine-Tuning (nur wenn keine Bewegung)
@@ -493,7 +513,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       });
       // Event-Listener entfernen
       window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchmove', handleCutMoveWithPrevent as any);
       window.removeEventListener('mouseup', handleUpOrCancel);
       window.removeEventListener('touchend', handleUpOrCancel);
     }, 500);
@@ -522,11 +542,17 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       window.removeEventListener('mouseup', handleUpOrCancel);
       window.removeEventListener('touchend', handleUpOrCancel);
       window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchmove', handleCutMoveWithPrevent as any);
+    };
+    
+    // Wrapper for touch events with preventDefault
+    const handleCutMoveWithPrevent = (e: TouchEvent) => {
+      e.preventDefault();
+      handleMove(e);
     };
     
     window.addEventListener('mousemove', handleMove);
-    window.addEventListener('touchmove', handleMove);
+    window.addEventListener('touchmove', handleCutMoveWithPrevent, { passive: false });
     window.addEventListener('mouseup', handleUpOrCancel, { once: true });
     window.addEventListener('touchend', handleUpOrCancel, { once: true });
   };
@@ -540,6 +566,8 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
   ) => {
     e.stopPropagation();
     e.preventDefault();
+    
+    onDragStart?.();
     
     const box = containerRef.current?.getBoundingClientRect();
     if (!box) return;
@@ -579,7 +607,8 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       if (isDragging || isFineTuning) return;
       isDragging = true;
       
-      // Long-Press abbrechen
+      onDragStart?.();
+      
       if (longPressTimeoutRef.current) {
         clearTimeout(longPressTimeoutRef.current);
         longPressTimeoutRef.current = null;
@@ -608,12 +637,18 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
     // Handler für Mausbewegung während mousedown
     const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
       if (isFineTuning) return;
+      
+      // Prevent default behavior to avoid scrolling during drag
+      if ('touches' in moveEvent) {
+        moveEvent.preventDefault();
+      }
+      
       hasMoved = true;
       // Bei erster Bewegung: Drag starten
       startDrag();
       // Event-Listener entfernen, da wir jetzt im Drag-Modus sind
       window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchmove', handleMoveWithPrevent as any);
     };
 
     // Long-Press: nach 500ms Fine-Tuning aktivieren (nur wenn keine Bewegung)
@@ -646,7 +681,7 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       });
       // Event-Listener entfernen
       window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchmove', handleMoveWithPrevent as any);
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('touchend', handleMouseUp);
     }, 500);
@@ -681,12 +716,18 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('touchend', handleMouseUp);
       window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchmove', handleMoveWithPrevent as any);
     };
 
+    // Wrapper for touch events with preventDefault
+    const handleMoveWithPrevent = (e: TouchEvent) => {
+      e.preventDefault();
+      handleMove(e);
+    };
+    
     // Event-Listener für Bewegung und mouseup registrieren
     window.addEventListener('mousemove', handleMove);
-    window.addEventListener('touchmove', handleMove);
+    window.addEventListener('touchmove', handleMoveWithPrevent, { passive: false });
     window.addEventListener('mouseup', handleMouseUp, { once: true });
     window.addEventListener('touchend', handleMouseUp, { once: true });
     
@@ -794,10 +835,16 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 WebkitUserSelect: 'none',
                 WebkitTouchCallout: 'none',
                 touchAction: 'none',
+                '& img': {
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                  WebkitUserDrag: 'none',
+                },
               }}
               onMouseDown={(e) => handleMouseDown(e, event.id, event.timestamp + gameStart, row)}
               onTouchStart={(e) => handleMouseDown(e as unknown as React.MouseEvent, event.id, event.timestamp + gameStart, row)}
-              onContextMenu={(e) => e.preventDefault()}
+              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onDragStart={(e) => e.preventDefault()}
             >
               {getGameEventIconByCode(event.icon) || '•'}
             </Box>
@@ -1016,6 +1063,8 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 // Range-Drag nur wenn wirklich mittig geklickt (mindestens 48px von beiden Buttons entfernt)
                 handleRangeMouseDown(e as unknown as React.MouseEvent, marker.id, marker.startSeconds, marker.endSeconds);
               }}
+              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onDragStart={(e) => e.preventDefault()}
             >
               <Tooltip title={`${formatSeconds(marker.startSeconds)} - ${formatSeconds(marker.endSeconds)} (${formatSeconds(marker.endSeconds - marker.startSeconds)})`}>
                 <Box sx={{ width: '100%', height: '100%' }} />
@@ -1070,6 +1119,8 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                     e.stopPropagation();
                     handleCutMarkerMouseDown(e as unknown as React.MouseEvent, marker.id, 'start', marker.startSeconds);
                   }}
+                  onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDragStart={(e) => e.preventDefault()}
                 >
                   ◀
                 </Box>
@@ -1111,6 +1162,8 @@ const VideoTimeline: React.FC<VideoTimelineProps> = ({
                     e.stopPropagation();
                     handleCutMarkerMouseDown(e as unknown as React.MouseEvent, marker.id, 'end', marker.endSeconds);
                   }}
+                  onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDragStart={(e) => e.preventDefault()}
                 >
                   ▶
                 </Box>
