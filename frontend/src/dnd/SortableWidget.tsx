@@ -26,7 +26,7 @@ export function SortableWidget({ id, children }: { id: string; children: (dragPr
       {...listeners} 
       {...attributes} 
       size={isMobile ? "small" : "medium"}
-      sx={{ 
+      sx={{
         cursor: isDragging ? 'grabbing' : 'grab',
         color: 'text.secondary',
         '&:hover': {
