@@ -8,6 +8,7 @@ use App\Entity\CalendarEventType;
 use App\Entity\Club;
 use App\Entity\Game;
 use App\Entity\GameEvent;
+use App\Entity\GameEventType;
 use App\Entity\GameType;
 use App\Entity\League;
 use App\Entity\Location;
@@ -17,6 +18,8 @@ use App\Entity\Task;
 use App\Entity\TaskAssignment;
 use App\Entity\Team;
 use App\Entity\TeamRide;
+use App\Entity\Tournament;
+use App\Entity\TournamentMatch;
 use App\Entity\User;
 use App\Entity\Video;
 use App\Enum\CalendarEventPermissionType;
@@ -25,6 +28,7 @@ use App\Event\GameDeletedEvent;
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
+use RuntimeException;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Validator\ConstraintViolationList;
@@ -59,6 +63,33 @@ class CalendarEventService
      */
     public function deleteCalendarEventWithDependencies(CalendarEvent $calendarEvent): void
     {
+
+        // Wenn Turnier-Event: Tournament, Matches und zugehörige Games löschen
+        if ($calendarEvent->getCalendarEventType()?->getName() === 'Turnier') {
+            $tournament = $this->entityManager->getRepository(\App\Entity\Tournament::class)->findOneBy(['calendarEvent' => $calendarEvent]);
+            if ($tournament) {
+                // Sammle alle Game-IDs, die zu den Matches gehören
+                $gameIds = [];
+                foreach ($tournament->getMatches() as $match) {
+                    if ($match->getGame()) {
+                        $gameIds[] = $match->getGame()->getId();
+                    }
+                    $this->entityManager->remove($match);
+                }
+                $this->entityManager->remove($tournament);
+                // Lösche alle Games, die zu den Matches gehörten (auch wenn sie nicht mehr referenziert werden)
+                if (count($gameIds) > 0) {
+                    $gameRepo = $this->entityManager->getRepository(\App\Entity\Game::class);
+                    foreach ($gameIds as $gid) {
+                        $game = $gameRepo->find($gid);
+                        if ($game) {
+                            $this->entityManager->remove($game);
+                        }
+                    }
+                }
+            }
+        }
+
         $game = $calendarEvent->getGame();
 
         $connection = $this->entityManager->getConnection();
@@ -123,6 +154,8 @@ class CalendarEventService
     public function updateEventFromData(CalendarEvent $calendarEvent, array $data): ConstraintViolationList
     {
         $calendarEventTypeSpiel = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Spiel']);
+        $calendarEventTypeTournament = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Turnier']);
+        $gameEventTypeTournament = $this->entityManager->getRepository(GameEventType::class)->findOneBy(['name' => 'Turnier']);
         $calendarEvent->setTitle($data['title'] ?? $calendarEvent->getTitle());
         $calendarEvent->setDescription($data['description'] ?? null);
         $calendarEvent->setStartDate(new DateTime($data['startDate']));
@@ -147,11 +180,17 @@ class CalendarEventService
             $location = $this->entityManager->getReference(Location::class, (int) $data['locationId']);
             $calendarEvent->setLocation($location);
         }
-
         $gameCreated = false;
         $isGameEvent = $data['eventTypeId'] && (int) $data['eventTypeId'] === $calendarEventTypeSpiel->getId();
+        $isTournamentPayload = isset($data['pendingTournamentMatches']) && is_array($data['pendingTournamentMatches']) && count($data['pendingTournamentMatches']) > 0;
+        $isTournamentEvent = $data['eventTypeId'] && (int) $data['eventTypeId'] === $calendarEventTypeTournament->getId();
 
-        if ($isGameEvent) {
+        if ($isTournamentEvent) {
+            $this->processTournament($calendarEvent, $data);
+        }
+
+        // Nur ein Spiel anlegen, wenn es KEIN Turnier-Payload ist
+        if ($isGameEvent && !$isTournamentPayload) {
             if (null === $calendarEvent->getGame()) {
                 $game = new Game();
                 $calendarEvent->setGame($game);
@@ -159,9 +198,7 @@ class CalendarEventService
                 $this->entityManager->persist($game);
                 $gameCreated = true;
             }
-        }
 
-        if ($isGameEvent) {
             if (isset($data['game']['homeTeamId']) && $data['game']['homeTeamId']) {
                 $homeTeam = $this->entityManager->getReference(Team::class, (int) $data['game']['homeTeamId']);
                 $calendarEvent->getGame()?->setHomeTeam($homeTeam);
@@ -254,6 +291,274 @@ class CalendarEventService
         }
 
         return new ConstraintViolationList();
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function processTournament(CalendarEvent $calendarEvent, array $data): void
+    {
+        $tournamentRepo = $this->entityManager->getRepository(Tournament::class);
+        $tournamentMatchRepo = $this->entityManager->getRepository(TournamentMatch::class);
+
+        $tournament = $calendarEvent->getTournament() ?? null;
+        $tournamentData = $data['game'] ?? $data;
+
+        if (!$tournament) {
+            $tournament = new Tournament();
+            $tournament->setCalendarEvent($calendarEvent);
+            $this->entityManager->persist($tournament);
+            $calendarEvent->setTournament($tournament);
+        }
+
+        $settings = $tournament->getSettings() ?: [];
+        if (isset($tournamentData['tournamentType'])) {
+            $settings['type'] = $tournamentData['tournamentType'];
+        }
+        if (isset($tournamentData['tournamentRoundDuration'])) {
+            $settings['roundDuration'] = $tournamentData['tournamentRoundDuration'];
+        }
+        if (isset($tournamentData['tournamentBreakTime'])) {
+            $settings['breakTime'] = $tournamentData['tournamentBreakTime'];
+        }
+        if (isset($tournamentData['tournamentGameMode'])) {
+            $settings['gameMode'] = $tournamentData['tournamentGameMode'];
+        }
+        if (isset($tournamentData['tournamentNumberOfGroups'])) {
+            $settings['numberOfGroups'] = $tournamentData['tournamentNumberOfGroups'];
+        }
+
+        $tournament->setSettings($settings);
+
+        $tournamentName = $tournamentData['name'] ?? $data['title'] ?? ($tournament->getName() !== '' ? $tournament->getName() : 'Turnier');
+        $tournament->setName($tournamentName);
+
+        $tournamentType = $settings['type'] ?? $tournamentData['tournamentType'] ?? ($tournament->getType() !== '' ? $tournament->getType() : 'default');
+        $tournament->setType($tournamentType);
+
+        if (isset($tournamentData['pendingTournamentMatches']) && is_array($tournamentData['pendingTournamentMatches'])) {
+            // @TODO check, why this collection is empty but matches exists in db!
+            // $existingMatches = $tournament->getMatches();
+            $existingMatches = $this->entityManager->getRepository(TournamentMatch::class)->findBy(['tournament' => $tournament]);
+            $processedMatches = [];
+            $payloadMatchKeys = array_map(function ($m) {
+                return $m['id'] ?? null;
+            }, $tournamentData['pendingTournamentMatches']);
+            foreach ($existingMatches as $match) {
+                if (!in_array($match->getId(), $payloadMatchKeys)) {
+                    $tournament->removeMatch($match);
+                    $this->entityManager->remove($match);
+                } else {
+                    foreach ($tournamentData['pendingTournamentMatches'] as $matchKey => $matchData) {
+                        $processedMatches[] = $matchData['id'] ?? null;
+
+                        $this->processTournamentMatch($match, $matchData);
+                    }
+                }
+            }
+
+            foreach ($tournamentData['pendingTournamentMatches'] as $matchKey => $matchData) {
+                if (isset($matchData['id']) && in_array($matchData['id'], $processedMatches, true)) {
+                    continue;
+                }
+                $match = null;
+                if (isset($matchData['id'])) {
+                    $match = $tournamentMatchRepo->find($matchData['id']);
+                }
+                if (!$match) {
+                    $match = new TournamentMatch();
+                    $match->setTournament($tournament);
+                    $this->entityManager->persist($match);
+                    $tournament->addMatch($match);
+                }
+
+                $this->processTournamentMatch($match, $matchData);
+            }
+        }
+
+        $this->entityManager->persist($tournament);
+        $this->entityManager->flush();
+    }
+
+    private function processTournamentMatch(TournamentMatch $match, array $data): TournamentMatch
+    {
+        $match->setScheduledAt($data['scheduledAt'] ? new DateTime($data['scheduledAt']) : null);
+        $match->setHomeTeam(isset($data['homeTeamId']) ? $this->entityManager->getRepository(Team::class)->find((int) $data['homeTeamId']) : null);
+        $match->setAwayTeam(isset($data['awayTeamId']) ? $this->entityManager->getRepository(Team::class)->find((int) $data['awayTeamId']) : null);
+        $match->setRound($data['round'] ?? null);
+        $match->setSlot($data['slot'] ?? null);
+        $match->setStage($data['stage'] ?? null);
+        $match->setLocation(isset($data['locationId']) && $data['locationId'] ? $this->entityManager->getRepository(Location::class)->find((int) $data['locationId']) : $match->getTournament()->getCalendarEvent()->getLocation() ?? null);
+        $settings = $match->getTournament()->getSettings();
+
+        $game = $match->getGame();
+
+        if (!$game && $match->getHomeTeam() && $match->getAwayTeam()) {
+            $gameType = $this->entityManager->getRepository(GameType::class)->findOneBy(['name' => 'Turnier-Match']);
+            $eventType = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Turnier-Match']);
+            if ($gameType && $eventType) {
+                $game = new Game();
+                $game->setHomeTeam($match->getHomeTeam());
+                $game->setAwayTeam($match->getAwayTeam());
+                $game->setGameType($gameType);
+
+                $this->entityManager->persist($game);
+
+                $match->setGame($game);
+
+                $calendarEvent = new CalendarEvent();
+                $calendarEvent->setTitle(($match->getHomeTeam()->getName() !== '' ? $match->getHomeTeam()->getName() : '-') . ' vs ' . ($match->getAwayTeam()->getName() !== '' ? $match->getAwayTeam()->getName() : '-'));
+                $calendarEvent->setStartDate($match->getScheduledAt() ?? new DateTime());
+                $calendarEvent->setEndDate($match->getScheduledAt() ? (clone $calendarEvent->getStartDate())->modify('+'.$settings['roundDuration'].' minutes') : null);
+                $calendarEvent->setCalendarEventType($eventType);
+                $calendarEvent->setGame($game);
+
+                $this->entityManager->persist($calendarEvent);
+                $game->setCalendarEvent($calendarEvent);
+            }
+        } elseif ($game) {
+            $game->setHomeTeam($match->getHomeTeam());
+            $game->setAwayTeam($match->getAwayTeam());
+        
+            $calendarEvent = $game->getCalendarEvent();
+            $calendarEvent->setTitle(($match->getHomeTeam()->getName() !== '' ? $match->getHomeTeam()->getName() : '-') . ' vs ' . ($match->getAwayTeam()->getName() !== '' ? $match->getAwayTeam()->getName() : '-'));
+            $calendarEvent->setStartDate($match->getScheduledAt() ?? new DateTime());
+            $calendarEvent->setEndDate($match->getScheduledAt() ? (clone $calendarEvent->getStartDate())->modify('+'.$settings['roundDuration'].' minutes') : null);
+            $calendarEvent->setGame($game);
+            /** retrieve location from parent calendarEvent */
+            $calendarEvent->setLocation($match->getTournament()->getCalendarEvent()->getLocation());
+        }
+
+        return $match;
+    }
+
+    /**
+     * Verarbeitet das Update eines Turniers und seiner Matches/Games/Events für ein CalendarEvent.
+     *
+     * @param array<string, mixed> $data
+     */
+    private function processTournamentUpdate(CalendarEvent $calendarEvent, array $data): void
+    {
+        $tournamentRepo = $this->entityManager->getRepository(Tournament::class);
+        $tournamentMatchRepo = $this->entityManager->getRepository(TournamentMatch::class);
+        $tournament = null;
+        $tournamentData = $data['game'] ?? $data;
+        if (isset($tournamentData['tournamentId']) && $tournamentData['tournamentId']) {
+            $tournament = $tournamentRepo->find($tournamentData['tournamentId']);
+        }
+
+        if (!$tournament) {
+            return;
+        }
+
+        $settings = $tournament->getSettings() ?: [];
+        if (isset($tournamentData['tournamentType'])) {
+            $settings['type'] = $tournamentData['tournamentType'];
+        }
+        if (isset($tournamentData['tournamentRoundDuration'])) {
+            $settings['roundDuration'] = $tournamentData['tournamentRoundDuration'];
+        }
+        if (isset($tournamentData['tournamentBreakTime'])) {
+            $settings['breakTime'] = $tournamentData['tournamentBreakTime'];
+        }
+        if (isset($tournamentData['tournamentGameMode'])) {
+            $settings['gameMode'] = $tournamentData['tournamentGameMode'];
+        }
+        if (isset($tournamentData['tournamentNumberOfGroups'])) {
+            $settings['numberOfGroups'] = $tournamentData['tournamentNumberOfGroups'];
+        }
+
+        $tournament->setSettings($settings);
+        $tournamentName = $tournamentData['name'] ?? $data['title'] ?? ($tournament->getName() !== '' ? $tournament->getName() : 'Turnier');
+        $tournament->setName($tournamentName);
+        $tournamentType = $settings['type'] ?? $tournamentData['tournamentType'] ?? ($tournament->getType() !== '' ? $tournament->getType() : 'default');
+        $tournament->setType($tournamentType);
+
+        if (isset($tournamentData['pendingTournamentMatches']) && is_array($tournamentData['pendingTournamentMatches'])) {
+            $existingMatches = $tournament->getMatches();
+            $payloadMatchKeys = array_map(function ($m) {
+                return $m['id'] ?? null;
+            }, $tournamentData['pendingTournamentMatches']);
+            foreach ($existingMatches as $match) {
+                if (!in_array($match->getId(), $payloadMatchKeys)) {
+                    $tournament->removeMatch($match);
+                    $this->entityManager->remove($match);
+                }
+            }
+            foreach ($tournamentData['pendingTournamentMatches'] as $mData) {
+                $match = null;
+                if (isset($mData['id'])) {
+                    $match = $tournamentMatchRepo->find($mData['id']);
+                }
+                if (!$match) {
+                    $match = new TournamentMatch();
+                    $match->setTournament($tournament);
+                    $this->entityManager->persist($match);
+                    $tournament->addMatch($match);
+                }
+                // Setze Home/Away nur wenn numerisch
+                $homeTeam = (isset($mData['homeTeamId']) && is_numeric($mData['homeTeamId']))
+                    ? $this->entityManager->getRepository(Team::class)->find((int)$mData['homeTeamId'])
+                    : null;
+                $awayTeam = (isset($mData['awayTeamId']) && is_numeric($mData['awayTeamId']))
+                    ? $this->entityManager->getRepository(Team::class)->find((int)$mData['awayTeamId'])
+                    : null;
+                $match->setHomeTeam($homeTeam);
+                $match->setAwayTeam($awayTeam);
+                // Nur wenn beide Teams numerisch und vorhanden sind, Game+Event anlegen
+                if ($homeTeam && $awayTeam) {
+                    $game = $match->getGame();
+                    if (!$game) {
+                        $gameType = $this->entityManager->getRepository(GameType::class)->findOneBy(['name' => 'Turnier-Match']);
+                        $eventType = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Turnier-Match']);
+                        if ($gameType && $eventType) {
+                            $game = new Game();
+                            $game->setHomeTeam($homeTeam);
+                            $game->setAwayTeam($awayTeam);
+                            $game->setGameType($gameType);
+                            $this->entityManager->persist($game);
+                            $match->setGame($game);
+                            $ce = new CalendarEvent();
+                            $ce->setTitle(($homeTeam->getName() !== '' ? $homeTeam->getName() : '-') . ' vs ' . ($awayTeam->getName() !== '' ? $awayTeam->getName() : '-'));
+                            $ce->setStartDate($match->getScheduledAt() ?? new \DateTime());
+                            $ce->setCalendarEventType($eventType);
+                            $ce->setGame($game);
+                            $game->setCalendarEvent($ce);
+                            $this->entityManager->persist($ce);
+                        }
+                    } else {
+                        $game->setHomeTeam($homeTeam);
+                        $game->setAwayTeam($awayTeam);
+                        $ce = $game->getCalendarEvent();
+                        if ($ce) {
+                            $ce->setTitle(($homeTeam->getName() !== '' ? $homeTeam->getName() : '-') . ' vs ' . ($awayTeam->getName() !== '' ? $awayTeam->getName() : '-'));
+                            $ce->setStartDate($match->getScheduledAt() ?? new \DateTime());
+                        }
+                    }
+                } else {
+                    // Wenn eines der Teams nicht numerisch, Game löschen
+                    if ($match->getGame()) {
+                        $this->entityManager->remove($match->getGame());
+                        $match->setGame(null);
+                    }
+                }
+                if (isset($mData['round'])) {
+                    $match->setRound($mData['round']);
+                }
+                if (isset($mData['slot'])) {
+                    $match->setSlot($mData['slot']);
+                }
+                if (isset($mData['scheduledAt'])) {
+                    $match->setScheduledAt(new \DateTime($mData['scheduledAt']));
+                }
+                if (isset($mData['status'])) {
+                    $match->setStatus($mData['status']);
+                }
+            }
+        }
+
+        $this->entityManager->persist($tournament);
+        $this->entityManager->flush();
     }
 
     /**

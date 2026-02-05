@@ -68,6 +68,7 @@ class GameDetailsSyncService
                     $data['sub_out_shirt_number'] = $ptaOut ? $ptaOut->getShirtNumber() : null;
                 }
             }
+            
             // GameEvent anlegen/aktualisieren
             $this->gameEventRepo->updateOrCreateFromCrawler($data);
         }

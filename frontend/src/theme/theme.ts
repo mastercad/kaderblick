@@ -150,7 +150,7 @@ export const lightTheme = createTheme({
       danger: '#d32f2f', // Kräftiges Rot für Warnungen/Löschen
     },
     secondary: {
-      main: '#00c853', // Frisches, lebendiges Grün
+      main: '#00c853',
       light: '#5efc82',
       dark: '#009624',
       contrastText: '#ffffff',
@@ -159,7 +159,7 @@ export const lightTheme = createTheme({
       main: '#00e676', // Leuchtend grün für Erfolg
     },
     background: {
-      default: '#f5f5f5', // Etwas wärmer als zuvor
+      default: '#f5f5f5',
       paper: '#ffffff',
     },
     text: {
@@ -172,7 +172,7 @@ export const lightTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          background: 'linear-gradient(135deg, #018606 0%, #00c853 100%)', // Frischer Gradient
+          background: 'linear-gradient(135deg, #018606 0%, #00c853 100%)',
         },
       },
     },
@@ -264,7 +264,7 @@ export const darkTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          background: 'linear-gradient(135deg, #018606 0%, #02b008 100%)', // Frischer Gradient
+          background: 'linear-gradient(135deg, #018606 0%, #02b008 100%)',
         },
       },
     },

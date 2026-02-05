@@ -73,6 +73,10 @@ class GameTypeFixtures extends Fixture implements FixtureGroupInterface
                 'name' => 'Qualifikationsspiel',
                 'description' => 'Spiele zur Qualifikation für Turniere wie WM oder EM'
             ],
+            [
+                'name' => 'Turnier-Match',
+                'description' => 'Automatisch erzeugte Spiele für Turnier-Matches. Nicht für manuelle Auswahl.'
+            ],
         ];
 
         foreach ($types as $type) {

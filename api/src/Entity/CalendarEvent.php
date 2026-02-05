@@ -70,6 +70,10 @@ class CalendarEvent
     #[ORM\OneToOne(targetEntity: Game::class, mappedBy: 'calendarEvent', cascade: ['persist', 'remove'])]
     private ?Game $game = null;
 
+    #[Groups(['calendar_event:read'])]
+    #[ORM\OneToOne(targetEntity: Tournament::class, mappedBy: 'calendarEvent', cascade: ['persist', 'remove'])]
+    private ?Tournament $tournament = null;
+
     #[ORM\Column]
     private bool $notificationSent = false;
 
@@ -247,6 +251,18 @@ class CalendarEvent
                 $permission->setCalendarEvent(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getTournament(): ?Tournament
+    {
+        return $this->tournament;
+    }
+
+    public function setTournament(?Tournament $tournament): self
+    {
+        $this->tournament = $tournament;
 
         return $this;
     }
