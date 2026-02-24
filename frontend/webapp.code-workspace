@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../../docs-kaderblick"
+		}
+	],
+	"settings": {
+		"php-cs-fixer.executablePath": "/media/Austausch/Projekte/fussballverein/webapp/api/vendor/bin/php-cs-fixer",
+		"php-cs-fixer.onsave": true,
+		"symfony-vscode.phpExecutablePath": "php",
+		"php-cs-fixer.executable": "/media/Austausch/Projekte/fussballverein/webapp/api/vendor/bin/php-cs-fixer"
+	}
+}

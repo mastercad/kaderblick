@@ -51,6 +51,7 @@ export default defineConfig({
   ],
   /* Wahrscheinlich sinnfrei, bleibt aber erstmal drin, der login modal für google sso jetzt erstmal so funktioniert */
   server: {
+    https: true,  // Selbstsignierte Zertifikate für lokalen HTTPS-Dev
     middlewareMode: false,
     setupMiddlewares(middlewares) {
       middlewares.use((req, res, next) => {

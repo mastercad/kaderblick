@@ -3,3 +3,4 @@ public/uploads
 api/var/cache/
 api/var/logs/
 nginx.conf.example
+.docker/nginx/*.pem
