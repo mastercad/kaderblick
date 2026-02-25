@@ -25,6 +25,12 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 class TaskRotationIntegrationTest extends WebTestCase
 {
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        restore_exception_handler();
+    }
+
     public function testTaskCreationWithMultipleUsersCreatesRotationCorrectly(): void
     {
         $client = static::createClient();

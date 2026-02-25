@@ -22,6 +22,12 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class TaskDeletionTest extends WebTestCase
 {
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        restore_exception_handler();
+    }
+
     private function cleanup(EntityManagerInterface $entityManager): void
     {
         $connection = $entityManager->getConnection();

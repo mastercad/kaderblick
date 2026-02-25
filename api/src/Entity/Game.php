@@ -11,18 +11,12 @@ use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: GameRepository::class)]
-#[ORM\Table(
-    name: 'games',
-    indexes: [
-        new ORM\Index(name: 'idx_games_home_team_id', columns: ['home_team_id']),
-        new ORM\Index(name: 'idx_games_away_team_id', columns: ['away_team_id']),
-        new ORM\Index(name: 'idx_games_game_type_id', columns: ['game_type_id']),
-        new ORM\Index(name: 'idx_games_location_id', columns: ['location_id'])
-    ],
-    uniqueConstraints: [
-        new ORM\UniqueConstraint(name: 'uniq_games_calendar_event_id', columns: ['calendar_event_id'])
-    ]
-)]
+#[ORM\Table(name: 'games')]
+#[ORM\Index(name: 'idx_games_home_team_id', columns: ['home_team_id'])]
+#[ORM\Index(name: 'idx_games_away_team_id', columns: ['away_team_id'])]
+#[ORM\Index(name: 'idx_games_game_type_id', columns: ['game_type_id'])]
+#[ORM\Index(name: 'idx_games_location_id', columns: ['location_id'])]
+#[ORM\UniqueConstraint(name: 'uniq_games_calendar_event_id', columns: ['calendar_event_id'])]
 #[ORM\HasLifecycleCallbacks]
 #[DifferentTeams]
 class Game
@@ -36,22 +30,22 @@ class Game
 
     #[Groups(['game:read', 'game:write', 'game_event:read', 'calendar_event:read'])]
     #[ORM\ManyToOne(targetEntity: Team::class)]
-    #[Assert\NotNull(message: 'Das Heimspiel-Team muss gesetzt sein.')]
+    /* #[Assert\NotNull(message: 'Das Heimspiel-Team muss gesetzt sein.')] */
     #[ORM\JoinColumn(
         name: 'home_team_id',
         referencedColumnName: 'id',
-        nullable: false,
+        nullable: true,
         onDelete: 'RESTRICT'
     )]
     private ?Team $homeTeam = null;
 
     #[Groups(['game:read', 'game:write', 'game_event:read', 'calendar_event:read'])]
     #[ORM\ManyToOne(targetEntity: Team::class)]
-    #[Assert\NotNull(message: 'Das Auswärts-Team muss gesetzt sein.')]
+    /* #[Assert\NotNull(message: 'Das Auswärts-Team muss gesetzt sein.')] */
     #[ORM\JoinColumn(
         name: 'away_team_id',
         referencedColumnName: 'id',
-        nullable: false,
+        nullable: true,
         onDelete: 'RESTRICT'
     )]
     private ?Team $awayTeam = null;
@@ -69,17 +63,17 @@ class Game
 
     /** @var Collection<int, Goal> */
     #[Groups(['game:read', 'game:write'])]
-    #[ORM\OneToMany(mappedBy: 'game', targetEntity: Goal::class)]
+    #[ORM\OneToMany(targetEntity: Goal::class, mappedBy: 'game')]
     private Collection $goals;
 
     /** @var Collection<int, GameEvent> */
     #[Groups(['game:read', 'game:write'])]
-    #[ORM\OneToMany(mappedBy: 'game', targetEntity: GameEvent::class)]
+    #[ORM\OneToMany(targetEntity: GameEvent::class, mappedBy: 'game')]
     private Collection $gameEvents;
 
     /** @var Collection<int, Substitution> */
     #[Groups(['game:read', 'game:write'])]
-    #[ORM\OneToMany(mappedBy: 'game', targetEntity: Substitution::class)]
+    #[ORM\OneToMany(targetEntity: Substitution::class, mappedBy: 'game')]
     private Collection $substitutions;
 
     #[Groups(['game:read', 'game:write'])]
@@ -96,12 +90,7 @@ class Game
 
     #[Groups(['game:read', 'game:write'])]
     #[ORM\ManyToOne(targetEntity: Location::class)]
-    #[ORM\JoinColumn(
-        name: 'location_id',
-        referencedColumnName: 'id',
-        nullable: true,
-        onDelete: 'SET NULL'
-    )]
+    #[ORM\JoinColumn(name: 'location_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
     private ?Location $location = null;
 
     #[ORM\ManyToOne(targetEntity: League::class)]
@@ -110,13 +99,12 @@ class Game
 
     #[Groups(['game:read', 'game:write'])]
     #[ORM\OneToOne(targetEntity: CalendarEvent::class, inversedBy: 'game', cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(
-        name: 'calendar_event_id',
-        referencedColumnName: 'id',
-        nullable: true,
-        onDelete: 'CASCADE'
-    )]
+    #[ORM\JoinColumn(name: 'calendar_event_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
     private ?CalendarEvent $calendarEvent;
+
+    #[Groups(['game:read', 'game:write'])]
+    #[ORM\OneToOne(targetEntity: TournamentMatch::class, mappedBy: 'game', cascade: ['persist', 'remove'])]
+    private ?TournamentMatch $tournamentMatch = null;
 
     #[Groups(['game:read', 'game:write'])]
     #[ORM\Column(type: 'string', nullable: true, unique: true, name: 'fussball_de_id')]
@@ -181,6 +169,23 @@ class Game
         // Setze die bidirektionale Relation
         if (null !== $calendarEvent && $calendarEvent->getGame() !== $this) {
             $calendarEvent->setGame($this);
+        }
+
+        return $this;
+    }
+
+    public function getTournamentMatch(): ?TournamentMatch
+    {
+        return $this->tournamentMatch;
+    }
+
+    public function setTournamentMatch(?TournamentMatch $tournamentMatch): self
+    {
+        $this->tournamentMatch = $tournamentMatch;
+
+        // Setze die bidirektionale Relation
+        if (null !== $tournamentMatch && $tournamentMatch->getGame() !== $this) {
+            $tournamentMatch->setGame($this);
         }
 
         return $this;

@@ -11,13 +11,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CalendarEventRepository::class)]
-#[ORM\Table(
-    name: 'calendar_events',
-    indexes: [
-        new ORM\Index(name: 'idx_calendar_events_calendar_event_type_id', columns: ['calendar_event_type_id']),
-        new ORM\Index(name: 'idx_calendar_events_location_id', columns: ['location_id'])
-    ]
-)]
+#[ORM\Table(name: 'calendar_events')]
+#[ORM\Index(name: 'idx_calendar_events_calendar_event_type_id', columns: ['calendar_event_type_id'])]
+#[ORM\Index(name: 'idx_calendar_events_location_id', columns: ['location_id'])]
 class CalendarEvent
 {
     #[ORM\Id]
@@ -69,6 +65,10 @@ class CalendarEvent
     #[Groups(['calendar_event:read'])]
     #[ORM\OneToOne(targetEntity: Game::class, mappedBy: 'calendarEvent', cascade: ['persist', 'remove'])]
     private ?Game $game = null;
+
+    #[Groups(['calendar_event:read'])]
+    #[ORM\OneToOne(targetEntity: Tournament::class, mappedBy: 'calendarEvent', cascade: ['persist', 'remove'])]
+    private ?Tournament $tournament = null;
 
     #[ORM\Column]
     private bool $notificationSent = false;
@@ -247,6 +247,18 @@ class CalendarEvent
                 $permission->setCalendarEvent(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getTournament(): ?Tournament
+    {
+        return $this->tournament;
+    }
+
+    public function setTournament(?Tournament $tournament): self
+    {
+        $this->tournament = $tournament;
 
         return $this;
     }

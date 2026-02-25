@@ -1,10 +1,12 @@
 import { apiJson } from '../utils/api';
-import { Game, GameEvent, GameEventType, Player, SubstitutionReason, GameWithScore } from '../types/games';
+import { Game, GameEvent, GameEventType, Player, SubstitutionReason, GameWithScore, TournamentOverview, TournamentDetail } from '../types/games';
 
 export interface GamesOverviewData {
   running_games: Game[];
   upcoming_games: Game[];
   finished_games: GameWithScore[];
+  tournaments: TournamentOverview[];
+  userTeamIds: number[];
 }
 
 // Spiele-Übersicht laden
@@ -43,6 +45,11 @@ export async function fetchPlayersForTeams(teamIds: number[]): Promise<Player[]>
 // Substitution Reasons laden
 export async function fetchSubstitutionReasons(): Promise<SubstitutionReason[]> {
   return apiJson<SubstitutionReason[]>('/api/substitution-reasons');
+}
+
+// Turnier-Details laden
+export async function fetchTournamentDetails(tournamentId: number): Promise<TournamentDetail> {
+  return apiJson<TournamentDetail>(`/api/tournaments/${tournamentId}`);
 }
 
 // Neues Game Event erstellen

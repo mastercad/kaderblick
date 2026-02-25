@@ -8,13 +8,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Table(
-    name: 'video_types',
-    indexes: [
-        new ORM\Index(name: 'idx_video_types_created_from', columns: ['created_from_id']),
-        new ORM\Index(name: 'idx_video_types_updated_from', columns: ['updated_from_id'])
-    ]
-)]
+#[ORM\Table(name: 'video_types')]
+#[ORM\Index(name: 'idx_video_types_created_from', columns: ['created_from_id'])]
+#[ORM\Index(name: 'idx_video_types_updated_from', columns: ['updated_from_id'])]
 #[ORM\Entity(repositoryClass: VideoTypeRepository::class)]
 class VideoType
 {

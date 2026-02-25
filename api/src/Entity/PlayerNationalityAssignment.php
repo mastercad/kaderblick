@@ -8,13 +8,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: PlayerNationalityAssignmentRepository::class)]
-#[ORM\Table(
-    name: 'player_nationality_assignments',
-    indexes: [
-        new ORM\Index(name: 'idx_player_nationality_assignment_player_id', columns: ['player_id']),
-        new ORM\Index(name: 'idx_player_nationality_assignment_nationality_id', columns: ['nationality_id'])
-    ]
-)]
+#[ORM\Table(name: 'player_nationality_assignments')]
+#[ORM\Index(name: 'idx_player_nationality_assignment_player_id', columns: ['player_id'])]
+#[ORM\Index(name: 'idx_player_nationality_assignment_nationality_id', columns: ['nationality_id'])]
 class PlayerNationalityAssignment
 {
     #[ORM\Id]

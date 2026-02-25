@@ -8,15 +8,9 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: LocationRepository::class)]
-#[ORM\Table(
-    name: 'locations',
-    indexes: [
-        new ORM\Index(name: 'idx_location_surface_type_id', columns: ['surface_type_id'])
-    ],
-    uniqueConstraints: [
-        new ORM\UniqueConstraint(name: 'unique_location_name', columns: ['name'])
-    ]
-)]
+#[ORM\Table(name: 'locations')]
+#[ORM\Index(name: 'idx_location_surface_type_id', columns: ['surface_type_id'])]
+#[ORM\UniqueConstraint(name: 'unique_location_name', columns: ['name'])]
 #[UniqueEntity(fields: ['name'], message: 'Dieser Name ist bereits vergeben.')]
 class Location
 {

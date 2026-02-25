@@ -7,20 +7,14 @@ use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PlayerTitleRepository::class)]
-#[ORM\Table(
-    name: 'player_titles',
-    indexes: [
-        new ORM\Index(name: 'idx_player_titles_player_id', columns: ['player_id']),
-        new ORM\Index(name: 'idx_player_titles_team_id', columns: ['team_id']),
-        new ORM\Index(name: 'idx_player_titles_league_id', columns: ['league_id']),
-        new ORM\Index(name: 'idx_player_titles_is_active', columns: ['is_active']),
-    ],
-    uniqueConstraints: [
-        new ORM\UniqueConstraint(
-            name: 'uniq_player_title_active',
-            columns: ['player_id', 'title_category', 'title_scope', 'team_id', 'league_id', 'is_active']
-        )
-    ]
+#[ORM\Table(name: 'player_titles')]
+#[ORM\Index(name: 'idx_player_titles_player_id', columns: ['player_id'])]
+#[ORM\Index(name: 'idx_player_titles_team_id', columns: ['team_id'])]
+#[ORM\Index(name: 'idx_player_titles_league_id', columns: ['league_id'])]
+#[ORM\Index(name: 'idx_player_titles_is_active', columns: ['is_active'])]
+#[ORM\UniqueConstraint(
+    name: 'uniq_player_title_active',
+    columns: ['player_id', 'title_category', 'title_scope', 'team_id', 'league_id', 'is_active']
 )]
 class PlayerTitle
 {

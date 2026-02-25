@@ -99,6 +99,73 @@ export interface GameWithScore {
   awayScore: number | null;
 }
 
+export interface TournamentMatchOverview {
+  id: number;
+  round: number | null;
+  slot: number | null;
+  stage: string | null;
+  status: string;
+  scheduledAt: string | null;
+  homeTeam: Team | null;
+  awayTeam: Team | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  gameId: number | null;
+  location?: Location;
+}
+
+export interface TournamentOverview {
+  id: number;
+  name: string;
+  type: string;
+  status: 'upcoming' | 'running' | 'finished';
+  matchCount: number;
+  teamIds: number[];
+  calendarEvent?: {
+    id: number;
+    startDate: string;
+    endDate: string;
+    weatherData?: {
+      weatherCode?: number[];
+    };
+  };
+  location?: Location;
+}
+
+export interface TournamentTeamInfo {
+  id: number;
+  teamId: number;
+  name: string;
+  seed: number | null;
+  groupKey: string | null;
+}
+
+export interface TournamentDetail {
+  id: number;
+  name: string;
+  type: string;
+  status: 'upcoming' | 'running' | 'finished';
+  settings?: {
+    roundDuration?: number;
+    breakTime?: number;
+    gameMode?: string;
+    tournamentType?: string;
+    numberOfGroups?: number;
+  };
+  calendarEvent?: {
+    id: number;
+    startDate: string;
+    endDate: string;
+    weatherData?: {
+      weatherCode?: number[];
+    };
+  };
+  location?: Location;
+  teams: TournamentTeamInfo[];
+  matches: TournamentMatchOverview[];
+  createdBy?: number;
+}
+
 export interface Video {
   id: number;
   name: string;

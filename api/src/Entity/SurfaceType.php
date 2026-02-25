@@ -10,9 +10,8 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: SurfaceTypeRepository::class)]
-#[ORM\Table(name: 'surface_types', uniqueConstraints: [
-    new ORM\UniqueConstraint(name: 'uniq_surface_type_name', columns: ['name'])
-])]
+#[ORM\Table(name: 'surface_types')]
+#[ORM\UniqueConstraint(name: 'uniq_surface_type_name', columns: ['name'])]
 #[UniqueEntity(fields: ['name'], message: 'Dieser Name ist bereits vergeben.')]
 class SurfaceType
 {

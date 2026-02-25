@@ -10,15 +10,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity()]
-#[ORM\Table(
-    name: 'refresh_tokens',
-    indexes: [
-        new ORM\Index(name: 'idx_refresh_token_user_id', columns: ['user_id'])
-    ],
-    uniqueConstraints: [
-        new ORM\UniqueConstraint(name: 'uniq_refresh_token_token', columns: ['token'])
-    ]
-)]
+#[ORM\Table(name: 'refresh_tokens')]
+#[ORM\Index(name: 'idx_refresh_token_user_id', columns: ['user_id'])]
+#[ORM\UniqueConstraint(name: 'uniq_refresh_token_token', columns: ['token'])]
 class RefreshToken
 {
     #[ORM\Id]

@@ -6,15 +6,11 @@ use App\Repository\UserRelationRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: UserRelationRepository::class)]
-#[ORM\Table(
-    name: 'user_relations',
-    indexes: [
-        new ORM\Index(name: 'idx_user_relations_user_id', columns: ['user_id']),
-        new ORM\Index(name: 'idx_user_relations_player_id', columns: ['player_id']),
-        new ORM\Index(name: 'idx_user_relations_coach_id', columns: ['coach_id']),
-        new ORM\Index(name: 'idx_user_relations_relation_type_id', columns: ['relation_type_id'])
-    ]
-)]
+#[ORM\Table(name: 'user_relations')]
+#[ORM\Index(name: 'idx_user_relations_user_id', columns: ['user_id'])]
+#[ORM\Index(name: 'idx_user_relations_player_id', columns: ['player_id'])]
+#[ORM\Index(name: 'idx_user_relations_coach_id', columns: ['coach_id'])]
+#[ORM\Index(name: 'idx_user_relations_relation_type_id', columns: ['relation_type_id'])]
 class UserRelation
 {
     #[ORM\Id]

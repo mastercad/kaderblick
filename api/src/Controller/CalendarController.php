@@ -7,7 +7,6 @@ use App\Entity\CalendarEventType;
 use App\Entity\GameType;
 use App\Entity\Location;
 use App\Entity\TaskAssignment;
-use App\Entity\Team;
 use App\Entity\User;
 use App\Entity\WeatherData;
 use App\Repository\CalendarEventRepository;
@@ -20,7 +19,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -35,42 +33,23 @@ class CalendarController extends AbstractController
     ) {
     }
 
-    #[Route('', name: 'index', methods: ['GET'])]
-    public function index(CalendarEventRepository $calendarEventRepository): Response
-    {
-        $calendarGameEventTypeSpiel = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Spiel']);
-
-        return $this->render('calendar/index.html.twig', [
-            'calendarGameEventTypeId' => $calendarGameEventTypeSpiel?->getId(),
-            'upcomingEvents' => $calendarEventRepository->findUpcoming(),
-            'eventTypes' => $this->entityManager->getRepository(CalendarEventType::class)->findAll(),
-            'locations' => $this->entityManager->getRepository(Location::class)->findAll(),
-            'teams' => $this->entityManager->getRepository(Team::class)->findAll(),
-            'gameTypes' => $this->entityManager->getRepository(GameType::class)->findAll(),
-            'permissions' => [
-                'CREATE' => CalendarEventVoter::CREATE,
-                'EDIT' => CalendarEventVoter::EDIT,
-                'VIEW' => CalendarEventVoter::VIEW,
-                'DELETE' => CalendarEventVoter::DELETE,
-            ]
-        ]);
-    }
-
     #[Route('/events', name: 'events', methods: ['GET'])]
     public function retrieveEvents(Request $request, CalendarEventRepository $calendarEventRepository): JsonResponse
     {
         $start = new DateTime($request->query->get('start'));
         $end = new DateTime($request->query->get('end'));
 
+        // TODO hier noch umbauen, dass nur die Events überhaupt geladen werden, die irgend wie etwas mit dem user zu tun haben
         $unfilteredCalendarEvents = $calendarEventRepository->findBetweenDates($start, $end);
 
         // Filtere basierend auf VIEW-Berechtigung
         $calendarEvents = array_filter($unfilteredCalendarEvents, fn ($calendarEvent) => $this->isGranted(CalendarEventVoter::VIEW, $calendarEvent));
+        $tournamentEventType = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Turnier']);
 
         /** @var ?User $user */
         $user = $this->getUser();
 
-        $formattedEvents = array_map(function ($calendarEvent) use ($user) {
+        $formattedEvents = array_map(function ($calendarEvent) use ($user, $tournamentEventType) {
             $endDate = $calendarEvent->getEndDate();
             if (!$endDate) {
                 $endDate = new DateTime();
@@ -113,24 +92,27 @@ class CalendarController extends AbstractController
                 ];
             }
 
-            return [
+            $isTournamentEvent = $calendarEvent->getCalendarEventType()?->getId() === $tournamentEventType?->getId();
+
+            $eventArr = [
                 'id' => $calendarEvent->getId(),
                 'title' => $calendarEvent->getTitle(),
                 'start' => $calendarEvent->getStartDate()->format('Y-m-d\TH:i:s'),
                 'end' => $endDate->format('Y-m-d\TH:i:s'),
                 'description' => $calendarEvent->getDescription(),
+                'tournamentSettings' => $calendarEvent->getTournament()?->getSettings(),
                 'weatherData' => [
                     'weatherCode' => $calendarEvent->getWeatherData()?->getDailyWeatherData()['weathercode'][0] ?? null,
                 ],
                 'game' => $calendarEvent->getGame() ? [
                     'id' => $calendarEvent->getGame()->getId(),
                     'homeTeam' => [
-                        'id' => $calendarEvent->getGame()->getHomeTeam()->getId(),
-                        'name' => $calendarEvent->getGame()->getHomeTeam()->getName()
+                        'id' => $calendarEvent->getGame()->getHomeTeam() ? $calendarEvent->getGame()->getHomeTeam()->getId() : null,
+                        'name' => $calendarEvent->getGame()->getHomeTeam() ? $calendarEvent->getGame()->getHomeTeam()->getName() : null
                     ],
                     'awayTeam' => [
-                        'id' => $calendarEvent->getGame()->getAwayTeam()->getId(),
-                        'name' => $calendarEvent->getGame()->getAwayTeam()->getName()
+                        'id' => $calendarEvent->getGame()->getAwayTeam() ? $calendarEvent->getGame()->getAwayTeam()->getId() : null,
+                        'name' => $calendarEvent->getGame()->getAwayTeam() ? $calendarEvent->getGame()->getAwayTeam()->getName() : null
                     ],
                     'gameType' => [
                         'id' => $calendarEvent->getGame()->getGameType()->getId(),
@@ -162,6 +144,33 @@ class CalendarController extends AbstractController
                 ],
                 'participation_status' => $participationStatus,
             ];
+
+            // Wenn das Event ein Tournament hat, hänge es mit Matches und Games an
+            // (sowohl für CalendarEventType "Turnier" als auch für "Spiel" mit GameType "Turnier")
+            $tournament = $calendarEvent->getTournament();
+            if (!$tournament) {
+                // Fallback: suche per Repository (falls die ORM-Relation nicht geladen ist)
+                $tournament = $this->entityManager->getRepository(\App\Entity\Tournament::class)->findOneBy(['calendarEvent' => $calendarEvent]);
+            }
+            if ($tournament) {
+                $eventArr['tournament'] = [
+                    'id' => $tournament->getId(),
+                    'settings' => $tournament->getSettings(),
+                    'matches' => array_map(function ($match) {
+                        return [
+                            'id' => $match->getId(),
+                            'round' => $match->getRound(),
+                            'slot' => $match->getSlot(),
+                            'homeTeamId' => $match->getHomeTeam()?->getId(),
+                            'awayTeamId' => $match->getAwayTeam()?->getId(),
+                            'scheduledAt' => $match->getScheduledAt()?->format('Y-m-d\\TH:i:s'),
+                            'gameId' => $match->getGame()?->getId(),
+                        ];
+                    }, $tournament->getMatches()->toArray()),
+                ];
+            }
+
+            return $eventArr;
         }, $calendarEvents);
 
         return $this->json(array_values($formattedEvents));

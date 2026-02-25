@@ -119,5 +119,6 @@ class NotificationControllerTest extends WebTestCase
         $connection->executeStatement('DELETE FROM users WHERE email LIKE "voter-test-%"');
         $this->entityManager->close();
         parent::tearDown();
+        restore_exception_handler();
     }
 }

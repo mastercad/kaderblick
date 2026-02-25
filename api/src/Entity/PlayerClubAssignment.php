@@ -9,13 +9,9 @@ use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: PlayerClubAssignmentRepository::class)]
-#[ORM\Table(
-    name: 'player_club_assignments',
-    indexes: [
-        new ORM\Index(name: 'idx_player_club_assignment_player_id', columns: ['player_id']),
-        new ORM\Index(name: 'idx_player_club_assignment_club_id', columns: ['club_id'])
-    ]
-)]
+#[ORM\Table(name: 'player_club_assignments')]
+#[ORM\Index(name: 'idx_player_club_assignment_player_id', columns: ['player_id'])]
+#[ORM\Index(name: 'idx_player_club_assignment_club_id', columns: ['club_id'])]
 class PlayerClubAssignment
 {
     #[ORM\Id]

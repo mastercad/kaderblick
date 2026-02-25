@@ -8,13 +8,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Table(
-    name: 'video_segments',
-    indexes: [
-        new ORM\Index(name: 'idx_video_segments_video_id', columns: ['video_id']),
-        new ORM\Index(name: 'idx_video_segments_user_id', columns: ['user_id']),
-    ]
-)]
+#[ORM\Table(name: 'video_segments')]
+#[ORM\Index(name: 'idx_video_segments_video_id', columns: ['video_id'])]
+#[ORM\Index(name: 'idx_video_segments_user_id', columns: ['user_id'])]
 #[ORM\Entity(repositoryClass: VideoSegmentRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class VideoSegment

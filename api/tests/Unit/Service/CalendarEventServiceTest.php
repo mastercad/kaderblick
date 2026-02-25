@@ -181,7 +181,13 @@ class CalendarEventServiceTest extends TestCase
             ->disableOriginalConstructor()
             ->onlyMethods(['findOneBy'])
             ->getMock();
-        $repoType->method('findOneBy')->willReturn($calendarEventType);
+        $repoType->method('findOneBy')->willReturnCallback(function (array $criteria) use ($calendarEventType) {
+            if (isset($criteria['name']) && 'Spiel' === $criteria['name']) {
+                return $calendarEventType;
+            }
+
+            return null;
+        });
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($repoType);
         $em->method('getReference')->willReturn($calendarEventType);
@@ -233,7 +239,13 @@ class CalendarEventServiceTest extends TestCase
             ->disableOriginalConstructor()
             ->onlyMethods(['findOneBy'])
             ->getMock();
-        $repoType->method('findOneBy')->willReturn($calendarEventType);
+        $repoType->method('findOneBy')->willReturnCallback(function (array $criteria) use ($calendarEventType) {
+            if (isset($criteria['name']) && 'Spiel' === $criteria['name']) {
+                return $calendarEventType;
+            }
+
+            return null;
+        });
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($repoType);
         $em->method('getReference')->willReturn($calendarEventType);

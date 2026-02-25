@@ -28,10 +28,10 @@ class Camera
     #[ORM\JoinColumn(name: 'updated_from_id')]
     private ?User $updatedFrom = null;
 
-    #[ORM\Column(name: 'created_at')]
+    #[ORM\Column]
     private ?DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column(name: 'updated_at', nullable: true)]
+    #[ORM\Column(nullable: true)]
     private ?DateTimeImmutable $updatedAt = null;
 
     /**

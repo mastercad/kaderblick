@@ -8,9 +8,8 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: PositionRepository::class)]
-#[ORM\Table(name: 'positions', uniqueConstraints: [
-    new ORM\UniqueConstraint(name: 'uniq_position_name', columns: ['name'])
-])]
+#[ORM\Table(name: 'positions')]
+#[ORM\UniqueConstraint(name: 'uniq_position_name', columns: ['name'])]
 #[UniqueEntity(fields: ['name'], message: 'Diese Position existiert bereits.')]
 class Position
 {

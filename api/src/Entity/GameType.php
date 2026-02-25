@@ -9,9 +9,8 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: GameTypeRepository::class)]
-#[ORM\Table(name: 'game_types', uniqueConstraints: [
-    new ORM\UniqueConstraint(name: 'uniq_game_type_name', columns: ['name'])
-])]
+#[ORM\Table(name: 'game_types')]
+#[ORM\UniqueConstraint(name: 'uniq_game_type_name', columns: ['name'])]
 class GameType
 {
     #[Groups(['game_type:read', 'game_type:write', 'game:read', 'calendar_event:read'])]

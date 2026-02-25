@@ -5,13 +5,9 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
-#[ORM\Table(
-    name: 'formations',
-    indexes: [
-        new ORM\Index(name: 'idx_formation_user_id', columns: ['user_id']),
-        new ORM\Index(name: 'idx_formation_formation_type_id', columns: ['formation_type_id'])
-    ]
-)]
+#[ORM\Table(name: 'formations')]
+#[ORM\Index(name: 'idx_formation_user_id', columns: ['user_id'])]
+#[ORM\Index(name: 'idx_formation_formation_type_id', columns: ['formation_type_id'])]
 class Formation
 {
     #[ORM\Id]
