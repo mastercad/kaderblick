@@ -13,9 +13,9 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'idx_player_titles_league_id', columns: ['league_id'])]
 #[ORM\Index(name: 'idx_player_titles_is_active', columns: ['is_active'])]
 #[ORM\UniqueConstraint(
-            name: 'uniq_player_title_active',
-            columns: ['player_id', 'title_category', 'title_scope', 'team_id', 'league_id', 'is_active']
-        )]
+    name: 'uniq_player_title_active',
+    columns: ['player_id', 'title_category', 'title_scope', 'team_id', 'league_id', 'is_active']
+)]
 class PlayerTitle
 {
     #[ORM\Id]

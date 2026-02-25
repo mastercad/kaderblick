@@ -13,9 +13,9 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ORM\Index(name: 'idx_coach_team_assignment_coach_id', columns: ['coach_id'])]
 #[ORM\Index(name: 'idx_coach_team_assignment_team_id', columns: ['team_id'])]
 #[ORM\Index(
-            name: 'idx_coach_team_assignment_coach_team_assignment_type_id',
-            columns: ['coach_team_assignment_type_id']
-        )]
+    name: 'idx_coach_team_assignment_coach_team_assignment_type_id',
+    columns: ['coach_team_assignment_type_id']
+)]
 class CoachTeamAssignment
 {
     #[ORM\Id]

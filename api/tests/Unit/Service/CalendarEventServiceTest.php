@@ -182,7 +182,7 @@ class CalendarEventServiceTest extends TestCase
             ->onlyMethods(['findOneBy'])
             ->getMock();
         $repoType->method('findOneBy')->willReturnCallback(function (array $criteria) use ($calendarEventType) {
-            if (isset($criteria['name']) && $criteria['name'] === 'Spiel') {
+            if (isset($criteria['name']) && 'Spiel' === $criteria['name']) {
                 return $calendarEventType;
             }
 
@@ -240,7 +240,7 @@ class CalendarEventServiceTest extends TestCase
             ->onlyMethods(['findOneBy'])
             ->getMock();
         $repoType->method('findOneBy')->willReturnCallback(function (array $criteria) use ($calendarEventType) {
-            if (isset($criteria['name']) && $criteria['name'] === 'Spiel') {
+            if (isset($criteria['name']) && 'Spiel' === $criteria['name']) {
                 return $calendarEventType;
             }
 

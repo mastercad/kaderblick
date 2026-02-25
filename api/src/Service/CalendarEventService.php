@@ -388,7 +388,9 @@ class CalendarEventService
         $match->setRound($data['round'] ?? null);
         $match->setSlot($data['slot'] ?? null);
         $match->setStage($data['stage'] ?? null);
-        $match->setLocation(isset($data['locationId']) && $data['locationId'] ? $this->entityManager->getRepository(Location::class)->find((int) $data['locationId']) : $match->getTournament()->getCalendarEvent()->getLocation() ?? null);
+        $match->setLocation(isset($data['locationId']) && $data['locationId'] ?
+            $this->entityManager->getRepository(Location::class)->find((int) $data['locationId']) :
+                $match->getTournament()->getCalendarEvent()->getLocation() ?? null);
         $settings = $match->getTournament()->getSettings();
 
         $game = $match->getGame();
@@ -407,9 +409,11 @@ class CalendarEventService
                 $match->setGame($game);
 
                 $calendarEvent = new CalendarEvent();
-                $calendarEvent->setTitle(('' !== $match->getHomeTeam()->getName() ? $match->getHomeTeam()->getName() : '-') . ' vs ' . ('' !== $match->getAwayTeam()->getName() ? $match->getAwayTeam()->getName() : '-'));
+                $calendarEvent->setTitle(('' !== $match->getHomeTeam()->getName() ? $match->getHomeTeam()->getName() : '-') .
+                    ' vs ' . ('' !== $match->getAwayTeam()->getName() ? $match->getAwayTeam()->getName() : '-'));
                 $calendarEvent->setStartDate($match->getScheduledAt() ?? new DateTime());
-                $calendarEvent->setEndDate($match->getScheduledAt() && $calendarEvent->getStartDate() ? \DateTime::createFromInterface($calendarEvent->getStartDate())->modify('+' . $settings['roundDuration'] . ' minutes') : null);
+                $calendarEvent->setEndDate($match->getScheduledAt() && $calendarEvent->getStartDate() ?
+                    DateTime::createFromInterface($calendarEvent->getStartDate())->modify('+' . $settings['roundDuration'] . ' minutes') : null);
                 $calendarEvent->setCalendarEventType($eventType);
                 $calendarEvent->setGame($game);
 
@@ -421,9 +425,11 @@ class CalendarEventService
             $game->setAwayTeam($match->getAwayTeam());
 
             $calendarEvent = $game->getCalendarEvent();
-            $calendarEvent->setTitle(('' !== $match->getHomeTeam()->getName() ? $match->getHomeTeam()->getName() : '-') . ' vs ' . ('' !== $match->getAwayTeam()->getName() ? $match->getAwayTeam()->getName() : '-'));
+            $calendarEvent->setTitle(('' !== $match->getHomeTeam()->getName() ? $match->getHomeTeam()->getName() : '-') .
+                ' vs ' . ('' !== $match->getAwayTeam()->getName() ? $match->getAwayTeam()->getName() : '-'));
             $calendarEvent->setStartDate($match->getScheduledAt() ?? new DateTime());
-            $calendarEvent->setEndDate($match->getScheduledAt() && $calendarEvent->getStartDate() ? \DateTime::createFromInterface($calendarEvent->getStartDate())->modify('+' . $settings['roundDuration'] . ' minutes') : null);
+            $calendarEvent->setEndDate($match->getScheduledAt() && $calendarEvent->getStartDate() ?
+                DateTime::createFromInterface($calendarEvent->getStartDate())->modify('+' . $settings['roundDuration'] . ' minutes') : null);
             $calendarEvent->setGame($game);
             /* retrieve location from parent calendarEvent */
             $calendarEvent->setLocation($match->getTournament()->getCalendarEvent()->getLocation());
