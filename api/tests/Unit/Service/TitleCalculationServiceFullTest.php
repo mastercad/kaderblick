@@ -141,6 +141,8 @@ class TitleCalculationServiceFullTest extends TestCase
         $em->method('getRepository')->willReturn($repoMock);
         $service = new TitleCalculationService($em, $repo);
         $result = $service->debugGoalsForSeason('2025/2026');
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
     }
 
     private function createGoalMock(int $id, string $lastName): GameEvent

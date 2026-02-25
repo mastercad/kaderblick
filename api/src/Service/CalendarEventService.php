@@ -28,7 +28,6 @@ use App\Event\GameDeletedEvent;
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
-use RuntimeException;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Validator\ConstraintViolationList;
@@ -63,10 +62,9 @@ class CalendarEventService
      */
     public function deleteCalendarEventWithDependencies(CalendarEvent $calendarEvent): void
     {
-
         // Wenn Turnier-Event: Tournament, Matches und zugehörige Games löschen
-        if ($calendarEvent->getCalendarEventType()?->getName() === 'Turnier') {
-            $tournament = $this->entityManager->getRepository(\App\Entity\Tournament::class)->findOneBy(['calendarEvent' => $calendarEvent]);
+        if ('Turnier' === $calendarEvent->getCalendarEventType()?->getName()) {
+            $tournament = $this->entityManager->getRepository(Tournament::class)->findOneBy(['calendarEvent' => $calendarEvent]);
             if ($tournament) {
                 // Sammle alle Game-IDs, die zu den Matches gehören
                 $gameIds = [];
@@ -79,7 +77,7 @@ class CalendarEventService
                 $this->entityManager->remove($tournament);
                 // Lösche alle Games, die zu den Matches gehörten (auch wenn sie nicht mehr referenziert werden)
                 if (count($gameIds) > 0) {
-                    $gameRepo = $this->entityManager->getRepository(\App\Entity\Game::class);
+                    $gameRepo = $this->entityManager->getRepository(Game::class);
                     foreach ($gameIds as $gid) {
                         $game = $gameRepo->find($gid);
                         if ($game) {
@@ -181,11 +179,12 @@ class CalendarEventService
             $calendarEvent->setLocation($location);
         }
         $gameCreated = false;
-        $isGameEvent = $data['eventTypeId'] && (int) $data['eventTypeId'] === $calendarEventTypeSpiel->getId();
+        $isGameEvent = $data['eventTypeId'] && $calendarEventTypeSpiel && (int) $data['eventTypeId'] === $calendarEventTypeSpiel->getId();
         $isTournamentPayload = isset($data['pendingTournamentMatches']) && is_array($data['pendingTournamentMatches']) && count($data['pendingTournamentMatches']) > 0;
-        $isTournamentEvent = $data['eventTypeId'] && (int) $data['eventTypeId'] === $calendarEventTypeTournament->getId();
+        $isTournamentEvent = $data['eventTypeId'] && $calendarEventTypeTournament && (int) $data['eventTypeId'] === $calendarEventTypeTournament->getId();
 
-        if ($isTournamentEvent) {
+        // Tournament verarbeiten, wenn EventType "Turnier" ODER "Spiel" mit Turnier-Payload
+        if ($isTournamentEvent || ($isGameEvent && $isTournamentPayload)) {
             $this->processTournament($calendarEvent, $data);
         }
 
@@ -330,10 +329,10 @@ class CalendarEventService
 
         $tournament->setSettings($settings);
 
-        $tournamentName = $tournamentData['name'] ?? $data['title'] ?? ($tournament->getName() !== '' ? $tournament->getName() : 'Turnier');
+        $tournamentName = $tournamentData['name'] ?? $data['title'] ?? ('' !== $tournament->getName() ? $tournament->getName() : 'Turnier');
         $tournament->setName($tournamentName);
 
-        $tournamentType = $settings['type'] ?? $tournamentData['tournamentType'] ?? ($tournament->getType() !== '' ? $tournament->getType() : 'default');
+        $tournamentType = $settings['type'] ?? $tournamentData['tournamentType'] ?? ('' !== $tournament->getType() ? $tournament->getType() : 'default');
         $tournament->setType($tournamentType);
 
         if (isset($tournamentData['pendingTournamentMatches']) && is_array($tournamentData['pendingTournamentMatches'])) {
@@ -380,6 +379,7 @@ class CalendarEventService
         $this->entityManager->flush();
     }
 
+    /** @param array<string, mixed> $data */
     private function processTournamentMatch(TournamentMatch $match, array $data): TournamentMatch
     {
         $match->setScheduledAt($data['scheduledAt'] ? new DateTime($data['scheduledAt']) : null);
@@ -407,9 +407,9 @@ class CalendarEventService
                 $match->setGame($game);
 
                 $calendarEvent = new CalendarEvent();
-                $calendarEvent->setTitle(($match->getHomeTeam()->getName() !== '' ? $match->getHomeTeam()->getName() : '-') . ' vs ' . ($match->getAwayTeam()->getName() !== '' ? $match->getAwayTeam()->getName() : '-'));
+                $calendarEvent->setTitle(('' !== $match->getHomeTeam()->getName() ? $match->getHomeTeam()->getName() : '-') . ' vs ' . ('' !== $match->getAwayTeam()->getName() ? $match->getAwayTeam()->getName() : '-'));
                 $calendarEvent->setStartDate($match->getScheduledAt() ?? new DateTime());
-                $calendarEvent->setEndDate($match->getScheduledAt() ? (clone $calendarEvent->getStartDate())->modify('+'.$settings['roundDuration'].' minutes') : null);
+                $calendarEvent->setEndDate($match->getScheduledAt() && $calendarEvent->getStartDate() ? \DateTime::createFromInterface($calendarEvent->getStartDate())->modify('+' . $settings['roundDuration'] . ' minutes') : null);
                 $calendarEvent->setCalendarEventType($eventType);
                 $calendarEvent->setGame($game);
 
@@ -419,13 +419,13 @@ class CalendarEventService
         } elseif ($game) {
             $game->setHomeTeam($match->getHomeTeam());
             $game->setAwayTeam($match->getAwayTeam());
-        
+
             $calendarEvent = $game->getCalendarEvent();
-            $calendarEvent->setTitle(($match->getHomeTeam()->getName() !== '' ? $match->getHomeTeam()->getName() : '-') . ' vs ' . ($match->getAwayTeam()->getName() !== '' ? $match->getAwayTeam()->getName() : '-'));
+            $calendarEvent->setTitle(('' !== $match->getHomeTeam()->getName() ? $match->getHomeTeam()->getName() : '-') . ' vs ' . ('' !== $match->getAwayTeam()->getName() ? $match->getAwayTeam()->getName() : '-'));
             $calendarEvent->setStartDate($match->getScheduledAt() ?? new DateTime());
-            $calendarEvent->setEndDate($match->getScheduledAt() ? (clone $calendarEvent->getStartDate())->modify('+'.$settings['roundDuration'].' minutes') : null);
+            $calendarEvent->setEndDate($match->getScheduledAt() && $calendarEvent->getStartDate() ? \DateTime::createFromInterface($calendarEvent->getStartDate())->modify('+' . $settings['roundDuration'] . ' minutes') : null);
             $calendarEvent->setGame($game);
-            /** retrieve location from parent calendarEvent */
+            /* retrieve location from parent calendarEvent */
             $calendarEvent->setLocation($match->getTournament()->getCalendarEvent()->getLocation());
         }
 
@@ -436,6 +436,8 @@ class CalendarEventService
      * Verarbeitet das Update eines Turniers und seiner Matches/Games/Events für ein CalendarEvent.
      *
      * @param array<string, mixed> $data
+     *
+     * @phpstan-ignore method.unused
      */
     private function processTournamentUpdate(CalendarEvent $calendarEvent, array $data): void
     {
@@ -469,9 +471,9 @@ class CalendarEventService
         }
 
         $tournament->setSettings($settings);
-        $tournamentName = $tournamentData['name'] ?? $data['title'] ?? ($tournament->getName() !== '' ? $tournament->getName() : 'Turnier');
+        $tournamentName = $tournamentData['name'] ?? $data['title'] ?? ('' !== $tournament->getName() ? $tournament->getName() : 'Turnier');
         $tournament->setName($tournamentName);
-        $tournamentType = $settings['type'] ?? $tournamentData['tournamentType'] ?? ($tournament->getType() !== '' ? $tournament->getType() : 'default');
+        $tournamentType = $settings['type'] ?? $tournamentData['tournamentType'] ?? ('' !== $tournament->getType() ? $tournament->getType() : 'default');
         $tournament->setType($tournamentType);
 
         if (isset($tournamentData['pendingTournamentMatches']) && is_array($tournamentData['pendingTournamentMatches'])) {
@@ -498,10 +500,10 @@ class CalendarEventService
                 }
                 // Setze Home/Away nur wenn numerisch
                 $homeTeam = (isset($mData['homeTeamId']) && is_numeric($mData['homeTeamId']))
-                    ? $this->entityManager->getRepository(Team::class)->find((int)$mData['homeTeamId'])
+                    ? $this->entityManager->getRepository(Team::class)->find((int) $mData['homeTeamId'])
                     : null;
                 $awayTeam = (isset($mData['awayTeamId']) && is_numeric($mData['awayTeamId']))
-                    ? $this->entityManager->getRepository(Team::class)->find((int)$mData['awayTeamId'])
+                    ? $this->entityManager->getRepository(Team::class)->find((int) $mData['awayTeamId'])
                     : null;
                 $match->setHomeTeam($homeTeam);
                 $match->setAwayTeam($awayTeam);
@@ -519,8 +521,8 @@ class CalendarEventService
                             $this->entityManager->persist($game);
                             $match->setGame($game);
                             $ce = new CalendarEvent();
-                            $ce->setTitle(($homeTeam->getName() !== '' ? $homeTeam->getName() : '-') . ' vs ' . ($awayTeam->getName() !== '' ? $awayTeam->getName() : '-'));
-                            $ce->setStartDate($match->getScheduledAt() ?? new \DateTime());
+                            $ce->setTitle(('' !== $homeTeam->getName() ? $homeTeam->getName() : '-') . ' vs ' . ('' !== $awayTeam->getName() ? $awayTeam->getName() : '-'));
+                            $ce->setStartDate($match->getScheduledAt() ?? new DateTime());
                             $ce->setCalendarEventType($eventType);
                             $ce->setGame($game);
                             $game->setCalendarEvent($ce);
@@ -531,8 +533,8 @@ class CalendarEventService
                         $game->setAwayTeam($awayTeam);
                         $ce = $game->getCalendarEvent();
                         if ($ce) {
-                            $ce->setTitle(($homeTeam->getName() !== '' ? $homeTeam->getName() : '-') . ' vs ' . ($awayTeam->getName() !== '' ? $awayTeam->getName() : '-'));
-                            $ce->setStartDate($match->getScheduledAt() ?? new \DateTime());
+                            $ce->setTitle(('' !== $homeTeam->getName() ? $homeTeam->getName() : '-') . ' vs ' . ('' !== $awayTeam->getName() ? $awayTeam->getName() : '-'));
+                            $ce->setStartDate($match->getScheduledAt() ?? new DateTime());
                         }
                     }
                 } else {
@@ -549,7 +551,7 @@ class CalendarEventService
                     $match->setSlot($mData['slot']);
                 }
                 if (isset($mData['scheduledAt'])) {
-                    $match->setScheduledAt(new \DateTime($mData['scheduledAt']));
+                    $match->setScheduledAt(new DateTime($mData['scheduledAt']));
                 }
                 if (isset($mData['status'])) {
                     $match->setStatus($mData['status']);

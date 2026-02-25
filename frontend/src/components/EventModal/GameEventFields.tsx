@@ -11,6 +11,7 @@ interface GameEventFieldsProps {
   gameTypes: SelectOption[];
   leagues: SelectOption[];
   isTournament: boolean;
+  isTournamentEventType: boolean;
   handleChange: (field: string, value: any) => void;
 }
 
@@ -26,6 +27,7 @@ const GameEventFieldsComponent: React.FC<GameEventFieldsProps> = ({
   gameTypes,
   leagues,
   isTournament,
+  isTournamentEventType,
   handleChange,
 }) => {
   return (
@@ -65,7 +67,8 @@ const GameEventFieldsComponent: React.FC<GameEventFieldsProps> = ({
         </>
       )}
       
-      {gameTypes.length > 0 && (
+      {/* Hide game type dropdown when CalendarEventType is "Turnier" — it's redundant */}
+      {gameTypes.length > 0 && !isTournamentEventType && (
         <FormControl fullWidth margin="normal">
           <InputLabel id="game-type-label">Spiel-Typ</InputLabel>
           <Select

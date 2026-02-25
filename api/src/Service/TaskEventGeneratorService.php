@@ -34,7 +34,7 @@ class TaskEventGeneratorService
             ->setParameter('task', $task)
             ->setParameter('now', new DateTime())
             ->getQuery()
-            ->getResult();
+            ->getResult() ?? [];
 
         foreach ($futureAssignments as $assignment) {
             if ($assignment->getCalendarEvent()) {

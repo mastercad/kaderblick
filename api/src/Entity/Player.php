@@ -13,13 +13,9 @@ use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PlayerRepository::class)]
-#[ORM\Table(
-    name: 'players',
-    indexes: [
-        new ORM\Index(name: 'idx_players_strong_foot_id', columns: ['strong_foot_id']),
-        new ORM\Index(name: 'idx_players_main_position_id', columns: ['main_position_id'])
-    ]
-)]
+#[ORM\Table(name: 'players')]
+#[ORM\Index(name: 'idx_players_strong_foot_id', columns: ['strong_foot_id'])]
+#[ORM\Index(name: 'idx_players_main_position_id', columns: ['main_position_id'])]
 class Player
 {
     #[ORM\Id]

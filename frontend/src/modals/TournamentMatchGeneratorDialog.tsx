@@ -15,18 +15,29 @@ import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import Tooltip from '@mui/material/Tooltip';
 import { TournamentGameMode, TournamentType } from '../types/tournament';
 import { generateTournamentMatches, calculateTournamentDuration } from '../utils/tournamentGenerator';
+
+interface TournamentGeneratorConfig {
+  gameMode: TournamentGameMode;
+  tournamentType: TournamentType;
+  roundDuration: number;
+  breakTime: number;
+  numberOfGroups: number;
+}
 
 interface TournamentMatchGeneratorDialogProps {
   open: boolean;
   onClose: () => void;
   teams: { value: string; label: string }[];
-  tournament: TournamentType | null;
+  tournament?: TournamentType | null;
   matchTeams?: string[];
+  initialMatches?: any[];
   startDate?: string;
   startTime?: string;
-  onGenerate: (matches: any[]) => void;
+  onGenerate: (matches: any[], config: TournamentGeneratorConfig) => void;
   // Initial values from EventModal
   initialGameMode?: TournamentGameMode;
   initialTournamentType?: TournamentType;
@@ -59,6 +70,8 @@ const TournamentMatchGeneratorDialog: React.FC<TournamentMatchGeneratorDialogPro
   const [numberOfGroups, setNumberOfGroups] = useState<number>(initialNumberOfGroups);
   const [previewMatches, setPreviewMatches] = useState<any[]>([]);
   const [totalDuration, setTotalDuration] = useState<number>(0);
+  // Track whether initial matches have been loaded to prevent auto-regeneration
+  const [matchesInitialized, setMatchesInitialized] = useState(false);
 
   // Update state when dialog opens or initial props change
   useEffect(() => {
@@ -68,6 +81,8 @@ const TournamentMatchGeneratorDialog: React.FC<TournamentMatchGeneratorDialogPro
       setRoundDuration(initialRoundDuration);
       setBreakTime(initialBreakTime);
       setNumberOfGroups(initialNumberOfGroups);
+      // Reset initialization flag when dialog reopens
+      setMatchesInitialized(false);
     }
   }, [open, initialGameMode, initialTournamentType, initialRoundDuration, initialBreakTime, initialNumberOfGroups]);
 
@@ -75,66 +90,57 @@ const TournamentMatchGeneratorDialog: React.FC<TournamentMatchGeneratorDialogPro
   console.debug("TOURNAMENT: ", tournament);
   console.debug("TEAMS: ", teams);
 
-  // Generate preview when settings change
+  // Initialize selected teams from matchTeams prop
   useEffect(() => {
-    if (selectedTeams.length === 0) {
-      if (matchTeams.length > 0) {
-        setSelectedTeams([]);
-        const selectedTeams = [];
-        for (const matchTeam of matchTeams) {
-          console.debug("SUCHE TEAM: ", matchTeam);
-          const team = teams.find(t => String(t.value) === String(matchTeam));
-          console.debug("GEFUNDENES TEAM: ", team);
-          if (team) {
-            console.debug("SETZE TEAM: ", team);
-            selectedTeams.push(team);
-          }
-
-          console.debug("AKTUELLE SELECTED TEAMS: ", selectedTeams);
+    if (selectedTeams.length === 0 && matchTeams.length > 0) {
+      const resolved: { value: string; label: string }[] = [];
+      for (const matchTeam of matchTeams) {
+        const team = teams.find(t => String(t.value) === String(matchTeam));
+        if (team) {
+          resolved.push(team);
         }
-
-        setSelectedTeams(selectedTeams);
-        console.debug("GEFUNDENE SELECTED TEAMS: ", selectedTeams);
-
-      } else {
-        setPreviewMatches([]);
-        setTotalDuration(0);
-        return;
       }
+      setSelectedTeams(resolved);
+    }
+  }, [matchTeams, teams]);
+
+  // Load initial matches when dialog opens (without regenerating)
+  useEffect(() => {
+    if (matchesInitialized) return;
+
+    if (initialMatches.length > 0) {
+      const loaded: any[] = [];
+      for (const match of initialMatches) {
+        const homeTeam = teams.find(team => String(team.value) === String(match.homeTeamId));
+        const awayTeam = teams.find(team => String(team.value) === String(match.awayTeamId));
+        loaded.push({
+          ...match,
+          homeTeamName: homeTeam?.label || match.homeTeamName || '',
+          awayTeamName: awayTeam?.label || match.awayTeamName || '',
+        });
+      }
+      setPreviewMatches(loaded);
+      setTotalDuration(calculateTournamentDuration(loaded.length, roundDuration, breakTime));
+      setMatchesInitialized(true);
+      console.debug("LOADED INITIAL MATCHES (no regeneration): ", loaded);
+    } else if (selectedTeams.length >= 2) {
+      // No initial matches exist - auto-generate only on first open
+      triggerGeneration();
+      setMatchesInitialized(true);
+    }
+  }, [initialMatches, selectedTeams, teams, matchesInitialized]);
+
+  // Explicit generation function - called by refresh button or first-time generation
+  const triggerGeneration = () => {
+    if (selectedTeams.length < 2) {
+      setPreviewMatches([]);
+      setTotalDuration(0);
+      return;
     }
 
-    console.debug("PREVIEW MATCHES: ", previewMatches);
-
-    if (previewMatches.length === 0
-      && initialMatches.length > 0
-    ) {
-        setPreviewMatches([]);
-
-        for (const match of initialMatches) {
-          const homeTeam = teams.find(team => String(team.value) === String(match.homeTeamId));
-          const awayTeam = teams.find(team => String(team.value) === String(match.awayTeamId));
-          if (homeTeam && awayTeam) {
-            match.homeTeamName = homeTeam.label;
-            match.awayTeamName = awayTeam.label;
-
-            setPreviewMatches(prev => [...prev, match]);
-          }
-        }
-    } else {
-      if (previewMatches.length < 2) {
-        setPreviewMatches([]);
-        setTotalDuration(0);
-
-        return;
-      }
-    }
-
-    console.debug("FINAL SELECTED TEAMS: ", selectedTeams);
-
-    // Validiere startTime - wenn nicht vorhanden, verwende 09:00 als Default
     const validStartTime = startTime || '09:00';
     const startDateTime = `${startDate || new Date().toISOString().split('T')[0]}T${validStartTime}:00`;
-    
+
     const matches = generateTournamentMatches({
       teams: selectedTeams,
       gameMode,
@@ -143,15 +149,12 @@ const TournamentMatchGeneratorDialog: React.FC<TournamentMatchGeneratorDialogPro
       breakTime,
       startTime: startDateTime,
       numberOfGroups: gameMode === 'groups_with_finals' ? numberOfGroups : undefined,
-      currentMatches: previewMatches
     });
 
     console.debug("GENERATED MATCHES: ", matches);
-
     setPreviewMatches(matches);
     setTotalDuration(calculateTournamentDuration(matches.length, roundDuration, breakTime));
-
-  }, [selectedTeams, gameMode, tournamentType, roundDuration, breakTime, numberOfGroups, startDate, startTime]);
+  };
 
   const handleGenerate = () => {
     if (previewMatches.length === 0) {
@@ -159,7 +162,13 @@ const TournamentMatchGeneratorDialog: React.FC<TournamentMatchGeneratorDialogPro
       return;
     }
 
-    onGenerate(previewMatches);
+    onGenerate(previewMatches, {
+      gameMode,
+      tournamentType,
+      roundDuration,
+      breakTime,
+      numberOfGroups,
+    });
     onClose();
   };
 
@@ -286,9 +295,23 @@ const TournamentMatchGeneratorDialog: React.FC<TournamentMatchGeneratorDialogPro
           <Divider sx={{ my: 2 }} />
 
           {/* Preview Section */}
-          <Typography variant="h6" gutterBottom>
-            Vorschau ({previewMatches.length} Spiele)
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
+              Vorschau ({previewMatches.length} Spiele)
+            </Typography>
+            <Tooltip title="Matches neu generieren (vorhandene werden überschrieben)">
+              <span>
+                <IconButton
+                  color="primary"
+                  onClick={triggerGeneration}
+                  disabled={selectedTeams.length < 2}
+                  size="small"
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
 
           {selectedTeams.length < 2 ? (
             <Typography color="text.secondary" sx={{ fontStyle: 'italic' }}>

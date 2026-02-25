@@ -11,7 +11,7 @@ class TournamentTeam
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    private ?int $id = null;
+    private ?int $id = null; // @phpstan-ignore property.unusedType
 
     #[ORM\ManyToOne(targetEntity: Tournament::class, inversedBy: 'teams')]
     #[ORM\JoinColumn(name: 'tournament_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
@@ -27,6 +27,7 @@ class TournamentTeam
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $groupKey = null;
 
+    /** @var array<string, mixed>|null */
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $metadata = null;
 
@@ -83,11 +84,13 @@ class TournamentTeam
         return $this;
     }
 
+    /** @return array<string, mixed>|null */
     public function getMetadata(): ?array
     {
         return $this->metadata;
     }
 
+    /** @param array<string, mixed>|null $metadata */
     public function setMetadata(?array $metadata): self
     {
         $this->metadata = $metadata;

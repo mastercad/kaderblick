@@ -9,17 +9,11 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ParticipationRepository::class)]
-#[ORM\Table(
-    name: 'participations',
-    indexes: [
-        new ORM\Index(name: 'idx_participations_user_id', columns: ['user_id']),
-        new ORM\Index(name: 'idx_participations_event_id', columns: ['event_id']),
-        new ORM\Index(name: 'idx_participations_status_id', columns: ['status_id'])
-    ],
-    uniqueConstraints: [
-        new ORM\UniqueConstraint(name: 'uniq_user_event', columns: ['user_id', 'event_id'])
-    ]
-)]
+#[ORM\Table(name: 'participations')]
+#[ORM\Index(name: 'idx_participations_user_id', columns: ['user_id'])]
+#[ORM\Index(name: 'idx_participations_event_id', columns: ['event_id'])]
+#[ORM\Index(name: 'idx_participations_status_id', columns: ['status_id'])]
+#[ORM\UniqueConstraint(name: 'uniq_user_event', columns: ['user_id', 'event_id'])]
 class Participation
 {
     #[ORM\Id]

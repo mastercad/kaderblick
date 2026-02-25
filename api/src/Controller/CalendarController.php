@@ -7,7 +7,6 @@ use App\Entity\CalendarEventType;
 use App\Entity\GameType;
 use App\Entity\Location;
 use App\Entity\TaskAssignment;
-use App\Entity\Team;
 use App\Entity\User;
 use App\Entity\WeatherData;
 use App\Repository\CalendarEventRepository;
@@ -20,7 +19,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -47,7 +45,7 @@ class CalendarController extends AbstractController
         // Filtere basierend auf VIEW-Berechtigung
         $calendarEvents = array_filter($unfilteredCalendarEvents, fn ($calendarEvent) => $this->isGranted(CalendarEventVoter::VIEW, $calendarEvent));
         $tournamentEventType = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Turnier']);
-        
+
         /** @var ?User $user */
         $user = $this->getUser();
 
@@ -102,7 +100,7 @@ class CalendarController extends AbstractController
                 'start' => $calendarEvent->getStartDate()->format('Y-m-d\TH:i:s'),
                 'end' => $endDate->format('Y-m-d\TH:i:s'),
                 'description' => $calendarEvent->getDescription(),
-                'tournamentSettings' => $isTournamentEvent ? $calendarEvent->getTournament()->getSettings() : null,
+                'tournamentSettings' => $calendarEvent->getTournament()?->getSettings(),
                 'weatherData' => [
                     'weatherCode' => $calendarEvent->getWeatherData()?->getDailyWeatherData()['weathercode'][0] ?? null,
                 ],
@@ -147,27 +145,31 @@ class CalendarController extends AbstractController
                 'participation_status' => $participationStatus,
             ];
 
-            // Wenn Event-Typ "Turnier", hänge das Tournament mit Matches und Games an
-            if ($calendarEvent->getCalendarEventType()?->getName() === 'Turnier') {
+            // Wenn das Event ein Tournament hat, hänge es mit Matches und Games an
+            // (sowohl für CalendarEventType "Turnier" als auch für "Spiel" mit GameType "Turnier")
+            $tournament = $calendarEvent->getTournament();
+            if (!$tournament) {
+                // Fallback: suche per Repository (falls die ORM-Relation nicht geladen ist)
                 $tournament = $this->entityManager->getRepository(\App\Entity\Tournament::class)->findOneBy(['calendarEvent' => $calendarEvent]);
-                if ($tournament) {
-                    $eventArr['tournament'] = [
-                        'id' => $tournament->getId(),
-                        'settings' => $tournament->getSettings(),
-                        'matches' => array_map(function ($match) {
-                            return [
-                                'id' => $match->getId(),
-                                'round' => $match->getRound(),
-                                'slot' => $match->getSlot(),
-                                'homeTeamId' => $match->getHomeTeam()?->getId(),
-                                'awayTeamId' => $match->getAwayTeam()?->getId(),
-                                'scheduledAt' => $match->getScheduledAt()?->format('Y-m-d\\TH:i:s'),
-                                'gameId' => $match->getGame()?->getId(),
-                            ];
-                        }, $tournament->getMatches()->toArray()),
-                    ];
-                }
             }
+            if ($tournament) {
+                $eventArr['tournament'] = [
+                    'id' => $tournament->getId(),
+                    'settings' => $tournament->getSettings(),
+                    'matches' => array_map(function ($match) {
+                        return [
+                            'id' => $match->getId(),
+                            'round' => $match->getRound(),
+                            'slot' => $match->getSlot(),
+                            'homeTeamId' => $match->getHomeTeam()?->getId(),
+                            'awayTeamId' => $match->getAwayTeam()?->getId(),
+                            'scheduledAt' => $match->getScheduledAt()?->format('Y-m-d\\TH:i:s'),
+                            'gameId' => $match->getGame()?->getId(),
+                        ];
+                    }, $tournament->getMatches()->toArray()),
+                ];
+            }
+
             return $eventArr;
         }, $calendarEvents);
 

@@ -9,18 +9,12 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
-#[ORM\Table(
-    name: 'videos',
-    indexes: [
-        new ORM\Index(name: 'idx_videos_game_id', columns: ['game_id']),
-        new ORM\Index(name: 'idx_videos_created_from', columns: ['created_from_id']),
-        new ORM\Index(name: 'idx_videos_updated_from', columns: ['updated_from_id'])
-    ],
-    uniqueConstraints: [
-        new ORM\UniqueConstraint(name: 'uniq_game_sort', columns: ['game_id', 'sort']),
-        new ORM\UniqueConstraint(name: 'uniq_game_name', columns: ['game_id', 'name'])
-    ]
-)]
+#[ORM\Table(name: 'videos')]
+#[ORM\Index(name: 'idx_videos_game_id', columns: ['game_id'])]
+#[ORM\Index(name: 'idx_videos_created_from', columns: ['created_from_id'])]
+#[ORM\Index(name: 'idx_videos_updated_from', columns: ['updated_from_id'])]
+#[ORM\UniqueConstraint(name: 'uniq_game_sort', columns: ['game_id', 'sort'])]
+#[ORM\UniqueConstraint(name: 'uniq_game_name', columns: ['game_id', 'name'])]
 #[UniqueEntity(fields: ['game', 'sort'], message: 'Es darf pro Spiel nur ein Video mit diesem Sort-Wert geben.')]
 #[UniqueEntity(fields: ['game', 'name'], message: 'Es darf pro Spiel nur ein Video mit diesem Namen geben.')]
 #[ORM\Entity(repositoryClass: VideoRepository::class)]

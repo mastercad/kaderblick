@@ -498,7 +498,6 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                   playerDisplay = `${e.player.firstName ?? ''} ${e.player.lastName ?? ''}`.trim();
                 }
                 if (e.minute) {
-                  // minutes are the old name, for better video marker we get seconds
                   const totalSeconds = Math.round(e.minute);
                   const mins = Math.floor(totalSeconds / 60);
                   const secs = totalSeconds % 60;
@@ -748,41 +747,35 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
               {videos.map((video) => (
                 <ListItem
                   key={video.id}
-                  secondaryAction={
-                    user && (
-                      <>
-                        <IconButton
-                          edge="end"
-                          color="primary"
-                          aria-label="Abspielen"
-                          onClick={() => handleOpenPlayVideo(video)}
-                          sx={{ mr: 1 }}
-                        >
-                          <YouTubeIcon />
-                        </IconButton>
-                        <IconButton edge="end" onClick={() => handleOpenEditVideo(video)} sx={{ mr: 1 }}>
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton edge="end" color="error" onClick={() => setVideoToDelete(video)}>
-                          <DeleteIcon />
-                        </IconButton>
-                      </>
-                    )
-                  }
-                  alignItems="flex-start"
+                  sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 1, sm: 2 },
+                    py: 1.5,
+                  }}
+                  disablePadding
                 >
-                  {video.youtubeId && (
-                    <a href={`https://youtu.be/${video.youtubeId}`} target="_blank" rel="noopener noreferrer">
-                      <img
-                        src={`https://img.youtube.com/vi/${video.youtubeId}/hqdefault.jpg`}
-                        alt="Video Thumbnail"
-                        style={{ width: 120, height: 'auto', marginRight: 16, borderRadius: 4 }}
-                      />
-                    </a>
-                  )}
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {/* Thumbnail + Info */}
+                  <Box sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 2,
+                    flex: 1,
+                    minWidth: 0,
+                    width: '100%',
+                  }}>
+                    {video.youtubeId && (
+                      <a href={`https://youtu.be/${video.youtubeId}`} target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0 }}>
+                        <img
+                          src={`https://img.youtube.com/vi/${video.youtubeId}/hqdefault.jpg`}
+                          alt="Video Thumbnail"
+                          style={{ width: 120, height: 'auto', borderRadius: 4 }}
+                        />
+                      </a>
+                    )}
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                         {video.youtubeId ? (
                           <a href={`https://youtu.be/${video.youtubeId}`} target="_blank" rel="noopener noreferrer">
                             <Typography variant="body1" color="primary" fontWeight="bold">{video.name}</Typography>
@@ -795,15 +788,49 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                           <Typography variant="body1">{video.name}</Typography>
                         )}
                         {video.videoType?.name && (
-                          <Chip label={video.videoType.name} size="small" sx={{ ml: 1 }} />
+                          <Chip label={video.videoType.name} size="small" />
                         )}
                         {video.length && (
-                          <Chip label={`${video.length}s`} size="small" sx={{ ml: 1 }} />
+                          <Chip label={`${video.length}s`} size="small" />
                         )}
                       </Box>
-                    }
-                    secondary={video.filePath ? `Dateipfad: ${video.filePath}` : undefined}
-                  />
+                      {video.filePath && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                          Dateipfad: {video.filePath}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+
+                  {/* Action Buttons */}
+                  {user && (
+                    <Box sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      flexShrink: 0,
+                      bgcolor: 'action.hover',
+                      borderRadius: 2,
+                      px: 0.5,
+                      py: 0.25,
+                      alignSelf: { xs: 'flex-end', sm: 'center' },
+                    }}>
+                      <IconButton
+                        color="primary"
+                        aria-label="Abspielen"
+                        onClick={() => handleOpenPlayVideo(video)}
+                        size="small"
+                      >
+                        <YouTubeIcon />
+                      </IconButton>
+                      <IconButton onClick={() => handleOpenEditVideo(video)} size="small">
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton color="error" onClick={() => setVideoToDelete(video)} size="small">
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  )}
                 </ListItem>
               ))}
             </List>

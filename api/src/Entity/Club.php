@@ -9,12 +9,8 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ClubRepository::class)]
-#[ORM\Table(
-    name: 'clubs',
-    indexes: [
-        new ORM\Index(name: 'idx_clubs_location_id', columns: ['location_id'])
-    ]
-)]
+#[ORM\Table(name: 'clubs')]
+#[ORM\Index(name: 'idx_clubs_location_id', columns: ['location_id'])]
 class Club
 {
     #[ORM\Id]

@@ -31,7 +31,6 @@ class TournamentVoter extends Voter
     }
 
     /**
-     * @param string $attribute
      * @param Tournament $subject
      */
     protected function voteOnAttribute(string $attribute, $subject, TokenInterface $token): bool

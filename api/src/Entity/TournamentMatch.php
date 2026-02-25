@@ -4,7 +4,6 @@ namespace App\Entity;
 
 use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'tournament_matches')]
@@ -13,7 +12,7 @@ class TournamentMatch
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    private ?int $id = null;
+    private ?int $id = null; // @phpstan-ignore property.unusedType
 
     #[ORM\ManyToOne(targetEntity: Tournament::class, inversedBy: 'matches')]
     #[ORM\JoinColumn(name: 'tournament_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]

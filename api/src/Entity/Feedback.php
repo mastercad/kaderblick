@@ -7,12 +7,8 @@ use DateTime;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: FeedbackRepository::class)]
-#[ORM\Table(
-    name: 'feedback',
-    indexes: [
-        new ORM\Index(name: 'idx_feedback_user_id', columns: ['user_id'])
-    ]
-)]
+#[ORM\Table(name: 'feedback')]
+#[ORM\Index(name: 'idx_feedback_user_id', columns: ['user_id'])]
 class Feedback
 {
     #[ORM\Id]

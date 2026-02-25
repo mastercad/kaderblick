@@ -17,4 +17,10 @@ abstract class ApiWebTestCase extends WebTestCase
 
         $client->setServerParameter('HTTP_AUTHORIZATION', 'Bearer ' . $token);
     }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        restore_exception_handler();
+    }
 }

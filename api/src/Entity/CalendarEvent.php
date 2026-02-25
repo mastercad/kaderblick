@@ -11,13 +11,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CalendarEventRepository::class)]
-#[ORM\Table(
-    name: 'calendar_events',
-    indexes: [
-        new ORM\Index(name: 'idx_calendar_events_calendar_event_type_id', columns: ['calendar_event_type_id']),
-        new ORM\Index(name: 'idx_calendar_events_location_id', columns: ['location_id'])
-    ]
-)]
+#[ORM\Table(name: 'calendar_events')]
+#[ORM\Index(name: 'idx_calendar_events_calendar_event_type_id', columns: ['calendar_event_type_id'])]
+#[ORM\Index(name: 'idx_calendar_events_location_id', columns: ['location_id'])]
 class CalendarEvent
 {
     #[ORM\Id]

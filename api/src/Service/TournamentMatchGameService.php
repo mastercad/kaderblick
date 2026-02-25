@@ -6,6 +6,7 @@ use App\Entity\CalendarEvent;
 use App\Entity\Game;
 use App\Entity\TournamentMatch;
 use App\Repository\GameTypeRepository;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
@@ -28,8 +29,8 @@ class TournamentMatchGameService
     {
         $game = new Game();
 
-        $homeTeam = $match->getHomeTeam()?->getTeam();
-        $awayTeam = $match->getAwayTeam()?->getTeam();
+        $homeTeam = $match->getHomeTeam();
+        $awayTeam = $match->getAwayTeam();
         if ($homeTeam) {
             $game->setHomeTeam($homeTeam);
         }
@@ -64,7 +65,7 @@ class TournamentMatchGameService
         if ($scheduledAt) {
             $calendarEvent->setStartDate($scheduledAt);
         } else {
-            $calendarEvent->setStartDate(new \DateTimeImmutable());
+            $calendarEvent->setStartDate(new DateTimeImmutable());
         }
         if ($eventType) {
             $calendarEvent->setCalendarEventType($eventType);

@@ -7,12 +7,8 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
-#[ORM\Table(
-    name: 'message_groups',
-    indexes: [
-        new ORM\Index(name: 'idx_message_groups_owner_id', columns: ['owner_id'])
-    ]
-)]
+#[ORM\Table(name: 'message_groups')]
+#[ORM\Index(name: 'idx_message_groups_owner_id', columns: ['owner_id'])]
 class MessageGroup
 {
     #[ORM\Id]

@@ -12,5 +12,8 @@
 
     "phpstan.executablePath": "api/vendor/bin/phpstan",
     "symfony-vscode.phpExecutablePath": "php",
-    "php-cs-fixer.executable": "/media/Austausch/Projekte/fussballverein/webapp/api/vendor/bin/php-cs-fixer"
+    "php-cs-fixer.executable": "/media/Austausch/Projekte/fussballverein/webapp/api/vendor/bin/php-cs-fixer",
+    "chat.tools.terminal.autoApprove": {
+        "npx tsc": true
+    }
 }

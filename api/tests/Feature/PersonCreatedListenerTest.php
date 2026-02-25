@@ -25,6 +25,7 @@ class PersonCreatedListenerTest extends KernelTestCase
     {
         $this->entityManager->close();
         parent::tearDown();
+        restore_exception_handler();
     }
 
     public function testPlayerCreationCreatesUserRelation(): void

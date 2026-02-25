@@ -24,5 +24,6 @@ abstract class DatabaseTestCase extends KernelTestCase
             $this->entityManager->rollback();
         }
         parent::tearDown();
+        restore_exception_handler();
     }
 }

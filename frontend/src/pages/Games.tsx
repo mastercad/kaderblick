@@ -8,23 +8,23 @@ import {
   List,
   ListItem,
   ListItemButton,
-  ListItemText,
   Chip,
   Button,
   Alert,
   CircularProgress,
-  Divider
+  Divider,
 } from '@mui/material';
 import {
   SportsSoccer as SoccerIcon,
   PlayArrow as LiveIcon,
   Schedule as ScheduleIcon,
-  CheckCircle as CompletedIcon
+  CheckCircle as CompletedIcon,
+  EmojiEvents as TournamentIcon,
 } from '@mui/icons-material';
 import { fetchGamesOverview, GamesOverviewData } from '../services/games';
-import { Game, GameWithScore } from '../types/games';
+import { Game, GameWithScore, TournamentOverview } from '../types/games';
 import { useAuth } from '../context/AuthContext';
-import Location, { LocationDisplayProps } from '../components/Location';
+import Location from '../components/Location';
 import { WeatherDisplay } from '../components/WeatherIcons';
 import WeatherModal from '../modals/WeatherModal';
 import { formatDateTime, formatTime } from '../utils/formatter';
@@ -52,7 +52,10 @@ export default function Games() {
       setLoading(true);
       setError(null);
       const result = await fetchGamesOverview();
-      setData(result);
+      if ('error' in result) {
+        throw new Error(String(result.error));
+      }
+      setData(result as GamesOverviewData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Laden der Spiele');
     } finally {
@@ -62,6 +65,10 @@ export default function Games() {
 
   const handleGameClick = (gameId: number) => {
     navigate(`/games/${gameId}`);
+  };
+
+  const handleTournamentClick = (tournamentId: number) => {
+    navigate(`/tournaments/${tournamentId}`);
   };
 
   if (loading) {
@@ -221,6 +228,122 @@ export default function Games() {
     </ListItem>
   );
 
+  const TournamentListItem = ({ tournament, isRunning = false }: {
+    tournament: TournamentOverview;
+    isRunning?: boolean;
+  }) => (
+    <ListItem disablePadding className="game-list-item-responsive">
+      <ListItemButton onClick={() => handleTournamentClick(tournament.id)} sx={{ width: '100%', alignItems: 'flex-start', p: { xs: 1, sm: 2 } }}>
+        <Box sx={{ width: '100%' }}>
+          {/* Titel */}
+          <Box sx={{
+            width: '100%',
+            mb: 0.5,
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1,
+          }}>
+            <TournamentIcon color="warning" sx={{ fontSize: 20 }} />
+            <Typography
+              variant="body1"
+              component="div"
+              sx={{
+                fontWeight: 700,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: { xs: 2, sm: 'unset' },
+                WebkitBoxOrient: 'vertical',
+                lineHeight: 1.2,
+                maxHeight: { xs: '2.6em', sm: 'unset' },
+                wordBreak: 'break-word',
+              }}
+            >
+              {tournament.name}
+            </Typography>
+            {isRunning && (
+              <Chip
+                icon={<LiveIcon />}
+                label="Live"
+                color="success"
+                size="small"
+                sx={{ ml: 0, mt: 0.5 }}
+              />
+            )}
+            {tournament.matchCount > 0 && (
+              <Chip
+                label={`${tournament.matchCount} Spiele`}
+                variant="outlined"
+                size="small"
+                sx={{ ml: 0, mt: 0.5 }}
+              />
+            )}
+          </Box>
+
+          {/* Datum/Uhrzeit & Location */}
+          <Box sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            mb: 0.5,
+            gap: 1,
+          }}>
+            <Typography variant="body2" color="text.secondary" sx={{ flex: 1, minWidth: 0 }}>
+              {tournament.calendarEvent?.startDate && formatDateTime(tournament.calendarEvent.startDate)}
+              {tournament.calendarEvent?.endDate && ` - ${formatTime(tournament.calendarEvent.endDate)}`}
+            </Typography>
+            {tournament.location && (
+              <Box sx={{ flexShrink: 0, ml: 1, maxWidth: { xs: '60%', sm: 'unset' }, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <Location
+                  id={tournament.location.id}
+                  name={tournament.location.name}
+                  address={tournament.location.address}
+                  longitude={tournament.location.longitude}
+                  latitude={tournament.location.latitude}
+                />
+              </Box>
+            )}
+          </Box>
+
+          {/* Wetter-Icon */}
+          {tournament.calendarEvent && (
+            <Box sx={{
+              width: '100%',
+              display: 'flex',
+              justifyContent: { xs: 'flex-end', sm: 'flex-start' },
+              alignItems: 'center',
+              mb: 0.5,
+            }}>
+              <span
+                style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+                title="Wetterdetails anzeigen"
+                onClick={e => {
+                  e.stopPropagation();
+                  openWeatherModal(tournament.calendarEvent!.id);
+                }}
+              >
+                <WeatherDisplay
+                  code={Array.isArray(tournament.calendarEvent.weatherData?.weatherCode) ? tournament.calendarEvent.weatherData.weatherCode[0] : undefined}
+                  theme={'light'}
+                  size={32}
+                />
+              </span>
+            </Box>
+          )}
+        </Box>
+      </ListItemButton>
+    </ListItem>
+  );
+
+  // Group tournaments by status
+  const runningTournaments = (data.tournaments || []).filter(t => t.status === 'running');
+  const upcomingTournaments = (data.tournaments || []).filter(t => t.status === 'upcoming');
+  const finishedTournaments = (data.tournaments || []).filter(t => t.status === 'finished');
+  const hasTournaments = (data.tournaments || []).length > 0;
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" component="h1" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -228,19 +351,25 @@ export default function Games() {
         Spiele
       </Typography>
 
-      {/* Laufende Spiele */}
-      {data.running_games.length > 0 && (
+      {/* Laufende Spiele & Turniere */}
+      {(data.running_games.length > 0 || runningTournaments.length > 0) && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Typography variant="h6" component="h2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <LiveIcon color="success" />
-              Aktuell laufende Spiele
+              Aktuell laufend
             </Typography>
             <List>
               {data.running_games.map((game, index) => (
-                <React.Fragment key={game.id}>
+                <React.Fragment key={`game-${game.id}`}>
                   <GameListItem game={game} isRunning={true} />
-                  {index < data.running_games.length - 1 && <Divider />}
+                  {(index < data.running_games.length - 1 || runningTournaments.length > 0) && <Divider />}
+                </React.Fragment>
+              ))}
+              {runningTournaments.map((t, index) => (
+                <React.Fragment key={`tournament-${t.id}`}>
+                  <TournamentListItem tournament={t} isRunning={true} />
+                  {index < runningTournaments.length - 1 && <Divider />}
                 </React.Fragment>
               ))}
             </List>
@@ -248,19 +377,25 @@ export default function Games() {
         </Card>
       )}
 
-      {/* Anstehende Spiele */}
-      {data.upcoming_games.length > 0 && (
+      {/* Anstehende Spiele & Turniere */}
+      {(data.upcoming_games.length > 0 || upcomingTournaments.length > 0) && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Typography variant="h6" component="h2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <ScheduleIcon color="primary" />
-              Anstehende Spiele
+              Anstehend
             </Typography>
             <List>
               {data.upcoming_games.map((game, index) => (
-                <React.Fragment key={game.id}>
+                <React.Fragment key={`game-${game.id}`}>
                   <GameListItem game={game} />
-                  {index < data.upcoming_games.length - 1 && <Divider />}
+                  {(index < data.upcoming_games.length - 1 || upcomingTournaments.length > 0) && <Divider />}
+                </React.Fragment>
+              ))}
+              {upcomingTournaments.map((t, index) => (
+                <React.Fragment key={`tournament-${t.id}`}>
+                  <TournamentListItem tournament={t} />
+                  {index < upcomingTournaments.length - 1 && <Divider />}
                 </React.Fragment>
               ))}
             </List>
@@ -268,22 +403,28 @@ export default function Games() {
         </Card>
       )}
 
-      {/* Absolvierte Spiele */}
-      {data.finished_games.length > 0 && (
+      {/* Absolvierte Spiele & Turniere */}
+      {(data.finished_games.length > 0 || finishedTournaments.length > 0) && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Typography variant="h6" component="h2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CompletedIcon color="action" />
-              Absolvierte Spiele
+              Absolviert
             </Typography>
             <List>
               {data.finished_games.map((gameData, index) => (
-                <React.Fragment key={gameData.game.id}>
+                <React.Fragment key={`game-${gameData.game.id}`}>
                   <GameListItem 
                     game={gameData.game} 
                     score={{ homeScore: gameData.homeScore, awayScore: gameData.awayScore }}
                   />
-                  {index < data.finished_games.length - 1 && <Divider />}
+                  {(index < data.finished_games.length - 1 || finishedTournaments.length > 0) && <Divider />}
+                </React.Fragment>
+              ))}
+              {finishedTournaments.map((t, index) => (
+                <React.Fragment key={`tournament-${t.id}`}>
+                  <TournamentListItem tournament={t} />
+                  {index < finishedTournaments.length - 1 && <Divider />}
                 </React.Fragment>
               ))}
             </List>
@@ -291,12 +432,13 @@ export default function Games() {
         </Card>
       )}
 
-      {/* Keine Spiele */}
+      {/* Keine Spiele und Turniere */}
       {data.running_games.length === 0 && 
        data.upcoming_games.length === 0 && 
-       data.finished_games.length === 0 && (
+       data.finished_games.length === 0 &&
+       !hasTournaments && (
         <Alert severity="info" sx={{ mt: 3 }}>
-          Keine Spiele gefunden.
+          Keine Spiele oder Turniere gefunden.
         </Alert>
       )}
 

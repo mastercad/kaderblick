@@ -16,9 +16,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
  * 5    Senioren    NULL    20      true.
  */
 #[ORM\Entity(repositoryClass: AgeGroupRepository::class)]
-#[ORM\Table(name: 'age_groups', uniqueConstraints: [
-    new ORM\UniqueConstraint(name: 'uniq_age_groups_name', columns: ['name'])
-])]
+#[ORM\Table(name: 'age_groups')]
+#[ORM\UniqueConstraint(name: 'uniq_age_groups_name', columns: ['name'])]
 class AgeGroup
 {
     #[ORM\Id]

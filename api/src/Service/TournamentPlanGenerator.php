@@ -30,6 +30,7 @@ class TournamentPlanGenerator
         usort($teams, function (TournamentTeam $a, TournamentTeam $b) {
             $seedA = $a->getSeed() ?? PHP_INT_MAX;
             $seedB = $b->getSeed() ?? PHP_INT_MAX;
+
             return $seedA <=> $seedB;
         });
 
@@ -45,7 +46,7 @@ class TournamentPlanGenerator
         }
 
         // pad with nulls (byes)
-        for ($i = $n; $i < $size; $i++) {
+        for ($i = $n; $i < $size; ++$i) {
             $teams[] = null;
         }
 
@@ -55,7 +56,7 @@ class TournamentPlanGenerator
         $round = 1;
         $matchesByRound = [];
         $pairCount = $size / 2;
-        for ($i = 0; $i < $pairCount; $i++) {
+        for ($i = 0; $i < $pairCount; ++$i) {
             $home = $teams[$i * 2];
             $away = $teams[$i * 2 + 1];
 
@@ -64,10 +65,10 @@ class TournamentPlanGenerator
             $m->setRound($round);
             $m->setSlot($i + 1);
             if ($home instanceof TournamentTeam) {
-                $m->setHomeTeam($home);
+                $m->setHomeTeam($home->getTeam());
             }
             if ($away instanceof TournamentTeam) {
-                $m->setAwayTeam($away);
+                $m->setAwayTeam($away->getTeam());
             }
 
             $this->em->persist($m);
@@ -78,10 +79,10 @@ class TournamentPlanGenerator
         // create subsequent rounds and link previous matches to next
         $prevRoundMatches = $matchesByRound[$round];
         while (count($prevRoundMatches) > 1) {
-            $round++;
+            ++$round;
             $matchesByRound[$round] = [];
             $pairCount = intdiv(count($prevRoundMatches), 2);
-            for ($i = 0; $i < $pairCount; $i++) {
+            for ($i = 0; $i < $pairCount; ++$i) {
                 $m = new TournamentMatch();
                 $m->setTournament($tournament);
                 $m->setRound($round);

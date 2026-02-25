@@ -6,6 +6,7 @@ use App\Entity\Game;
 use App\Entity\GameEvent;
 use App\Entity\GameEventType;
 use App\Entity\Player;
+use App\Entity\Tournament;
 use App\Entity\User;
 use App\Repository\CameraRepository;
 use App\Repository\GameEventRepository;
@@ -328,10 +329,101 @@ class GamesController extends ApiController
 
         $upcomingGamesArr = array_map($serializeGame, $upcomingGames);
 
+        // ---- Tournaments ----
+        $tournamentRepo = $this->entityManager->getRepository(Tournament::class);
+        $tournaments = $tournamentRepo->createQueryBuilder('t')
+            ->addSelect('ce', 'cet', 'loc', 'wd', 'tm')
+            ->leftJoin('t.calendarEvent', 'ce')
+            ->leftJoin('ce.calendarEventType', 'cet')
+            ->leftJoin('ce.location', 'loc')
+            ->leftJoin('ce.weatherData', 'wd')
+            ->leftJoin('t.matches', 'tm')
+            ->orderBy('ce.startDate', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        $serializeTournament = function (Tournament $tournament) use ($now) {
+            $ce = $tournament->getCalendarEvent();
+            $location = $ce?->getLocation();
+
+            $status = 'upcoming';
+            if ($ce) {
+                $start = $ce->getStartDate();
+                $end = $ce->getEndDate();
+                if ($start && $end && $now >= $start && $now <= $end) {
+                    $status = 'running';
+                } elseif ($start && $start <= $now) {
+                    $status = 'finished';
+                }
+            }
+
+            // Collect team IDs involved in this tournament
+            $teamIds = [];
+            foreach ($tournament->getMatches() as $match) {
+                $ht = $match->getHomeTeam();
+                $at = $match->getAwayTeam();
+                if ($ht) {
+                    $teamIds[$ht->getId()] = true;
+                }
+                if ($at) {
+                    $teamIds[$at->getId()] = true;
+                }
+            }
+
+            return [
+                'id' => $tournament->getId(),
+                'name' => $tournament->getName(),
+                'type' => $tournament->getType(),
+                'status' => $status,
+                'matchCount' => $tournament->getMatches()->count(),
+                'teamIds' => array_keys($teamIds),
+                'calendarEvent' => $ce ? [
+                    'id' => $ce->getId(),
+                    'startDate' => $ce->getStartDate()?->format('c'),
+                    'endDate' => $ce->getEndDate()?->format('c'),
+                    'weatherData' => $ce->getWeatherData() ? [
+                        'weatherCode' => $ce->getWeatherData()->getDailyWeatherData()['weathercode'] ?? [],
+                    ] : [],
+                ] : null,
+                'location' => $location ? [
+                    'id' => $location->getId(),
+                    'name' => $location->getName(),
+                    'latitude' => $location->getLatitude(),
+                    'longitude' => $location->getLongitude(),
+                    'address' => $location->getAddress() . ', ' . $location->getCity()
+                ] : null,
+            ];
+        };
+
+        $tournamentsArr = array_map($serializeTournament, $tournaments);
+
+        // ---- Resolve user team IDs ----
+        $userTeamIds = [];
+        /** @var User|null $currentUser */
+        $currentUser = $this->getUser();
+        if ($currentUser instanceof User) {
+            foreach ($currentUser->getUserRelations() as $rel) {
+                if ($rel->getPlayer() instanceof Player) {
+                    foreach ($rel->getPlayer()->getPlayerTeamAssignments() as $assignment) {
+                        $teamId = $assignment->getTeam()->getId();
+                        $userTeamIds[$teamId] = $teamId;
+                    }
+                }
+                if ($rel->getCoach() instanceof \App\Entity\Coach) {
+                    foreach ($rel->getCoach()->getCoachTeamAssignments() as $assignment) {
+                        $teamId = $assignment->getTeam()->getId();
+                        $userTeamIds[$teamId] = $teamId;
+                    }
+                }
+            }
+        }
+
         return $this->json([
             'running_games' => $running,
             'upcoming_games' => $upcomingGamesArr,
             'finished_games' => $finished,
+            'tournaments' => $tournamentsArr,
+            'userTeamIds' => array_values($userTeamIds),
         ]);
     }
 

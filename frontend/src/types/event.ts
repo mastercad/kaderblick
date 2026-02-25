@@ -46,6 +46,8 @@ export interface EventData {
   tournamentId?: string;
   tournamentMatchId?: string;
   pendingTournamentMatches?: any[];
+  teamIds?: string[];
+  tournament?: any;
   // Tournament settings
   tournamentRoundDuration?: number;
   tournamentBreakTime?: number;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -17,7 +17,7 @@ import {
 } from '../components/EventModal/TournamentFields';
 import { EventWizard } from '../components/EventModal/EventWizard';
 import { useTournamentMatches, useLeagues, useReloadTournamentMatches } from '../hooks/useEventData';
-import { isGameEventType, isTournamentGameType, isTournamentEventType, isTaskEventType } from '../utils/eventHelpers';
+import { useEventTypeFlags } from '../hooks/useEventTypeFlags';
 import { EventData, SelectOption, User } from '../types/event';
 import { apiRequest } from '../utils/api';
 
@@ -60,8 +60,6 @@ export const EventModal: React.FC<EventModalProps> = ({
   const [manualOpen, setManualOpen] = useState(false);
   const [generatorOpen, setGeneratorOpen] = useState(false);
 
-  console.debug("EventModal EVENT: ", event);
-
   // Turnier-Settings aus der API in Event-Felder übernehmen
   useEffect(() => {
     const fetchTournamentSettings = async () => {
@@ -91,14 +89,39 @@ export const EventModal: React.FC<EventModalProps> = ({
   const leagues = useLeagues(open);
   const reloadMatches = useReloadTournamentMatches();
 
+  // Populate tournamentMatches from all available sources:
+  // 1. pendingTournamentMatches (drafted in generator, not yet saved)
+  // 2. tournament.matches (embedded from backend when editing existing event)
+  // 3. useTournamentMatches hook (API call for existing tournamentId)
   useEffect(() => {
-    if (open && event?.pendingTournamentMatches && event.pendingTournamentMatches.length > 0) {
+    if (!open) return;
+
+    // Priority 1: Pending draft matches
+    if (event?.pendingTournamentMatches && event.pendingTournamentMatches.length > 0) {
       setTournamentMatches(
         event.pendingTournamentMatches.map((match: any, idx: number) => ({
-          id: `draft-${idx}`,
+          id: match.id || `draft-${idx}`,
           ...match,
           homeTeamName:
-            // TODO dieses dynamische laden der team namen könnte zukünftig ein performance problem sein, hier die namen mit den ids übergeben!
+            teams.find(team => String(team.value) === String(match.homeTeamId))?.label ||
+            match.homeTeamName ||
+            '',
+          awayTeamName:
+            teams.find(team => String(team.value) === String(match.awayTeamId))?.label ||
+            match.awayTeamName ||
+            '',
+        }))
+      );
+      return;
+    }
+
+    // Priority 2: Embedded matches from tournament object (loaded via handleEditEvent)
+    if (event?.tournament?.matches && event.tournament.matches.length > 0) {
+      setTournamentMatches(
+        event.tournament.matches.map((match: any) => ({
+          ...match,
+          id: match.id || `embedded-${match.round}-${match.slot}`,
+          homeTeamName:
             teams.find(team => String(team.value) === String(match.homeTeamId))?.label ||
             match.homeTeamName ||
             '',
@@ -109,24 +132,12 @@ export const EventModal: React.FC<EventModalProps> = ({
         }))
       );
     }
-  }, [open, event?.pendingTournamentMatches?.length, teams]);
+    // Priority 3: useTournamentMatches hook already loads from API when tournamentId exists
+  }, [open, event?.pendingTournamentMatches?.length, event?.tournament?.matches?.length, teams]);
 
-  // Determine event type flags - memoized for performance
-  const isGameEvent = useMemo(
-    () => isGameEventType(event.eventType, eventTypes),
-    [event.eventType, eventTypes]
-  );
-  const isTournament = useMemo(
-    () => isTournamentGameType(event.gameType, gameTypes),
-    [event.gameType, gameTypes]
-  );
-  const isTournamentEvent = useMemo(
-    () => isTournamentEventType(event.eventType, eventTypes),
-    [event.eventType, eventTypes]
-  );
-  const isTaskEvent = useMemo(
-    () => isTaskEventType(event.eventType, eventTypes),
-    [event.eventType, eventTypes]
+  // Single source of truth for event type classification
+  const { isMatchEvent, isTournament, isTournamentEventType, isTask, isGenericEvent } = useEventTypeFlags(
+    event.eventType, event.gameType, eventTypes, gameTypes,
   );
 
   // Pass changes up to parent
@@ -135,6 +146,20 @@ export const EventModal: React.FC<EventModalProps> = ({
       onChange(field, value);
     }
   }, [onChange]);
+
+  // Auto-fill gameType when CalendarEventType is "Turnier" but no game exists.
+  // Without a Game entity, gameType is empty — this ensures both wizard paths
+  // ("Turnier" and "Spiel + GameType Turnier") render identically.
+  useEffect(() => {
+    if (open && isTournament && !event.gameType && gameTypes.length > 0) {
+      const turnierGameType = gameTypes.find(
+        gt => gt.label.toLowerCase().includes('turnier')
+      );
+      if (turnierGameType) {
+        handleChange('gameType', turnierGameType.value);
+      }
+    }
+  }, [open, isTournament, event.gameType, gameTypes, handleChange]);
 
   // Save: pass current event data to parent
   const handleSave = useCallback(() => {
@@ -239,8 +264,16 @@ export const EventModal: React.FC<EventModalProps> = ({
   };
 
   // Handle tournament match generator close
-  const handleGeneratorClose = (matches: any[]) => {
+  const handleGeneratorClose = (matches: any[], config?: { gameMode?: string; tournamentType?: string; roundDuration?: number; breakTime?: number; numberOfGroups?: number }) => {
     handleChange('pendingTournamentMatches', matches);
+    // Sync tournament config back to event state
+    if (config) {
+      if (config.gameMode) handleChange('tournamentGameMode', config.gameMode);
+      if (config.tournamentType) handleChange('tournamentType', config.tournamentType);
+      if (config.roundDuration !== undefined) handleChange('tournamentRoundDuration', config.roundDuration);
+      if (config.breakTime !== undefined) handleChange('tournamentBreakTime', config.breakTime);
+      if (config.numberOfGroups !== undefined) handleChange('tournamentNumberOfGroups', config.numberOfGroups);
+    }
     setTournamentMatches(
       matches.map((m: any, idx: number) => ({
         id: `draft-${idx}`,
@@ -319,7 +352,8 @@ export const EventModal: React.FC<EventModalProps> = ({
               noOptionsText="Keine Orte gefunden (mindestens 2 Zeichen eingeben)"
             />
 
-            {isGameEvent && (
+            {/* Match events (Spiel + Turnier): unified rendering */}
+            {isMatchEvent && (
               <>
                 <GameEventFields
                   formData={event}
@@ -327,6 +361,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                   gameTypes={gameTypes}
                   leagues={leagues}
                   isTournament={isTournament}
+                  isTournamentEventType={isTournamentEventType}
                   handleChange={handleChange}
                 />
 
@@ -365,45 +400,11 @@ export const EventModal: React.FC<EventModalProps> = ({
               </>
             )}
 
-            {/** new way to have tournament events in place */}
-            {isTournamentEvent && !isGameEvent && (
-              <>
-                <TournamentSelection
-                  formData={event}
-                  tournaments={tournaments}
-                  tournamentMatches={tournamentMatches}
-                  onChange={handleChange}
-                  onTournamentMatchChange={handleTournamentMatchChange}
-                />
-
-                <div style={{ marginTop: 8 }}>
-                  <TournamentConfig
-                    formData={event}
-                    isExistingTournament={!!event.tournamentId}
-                    onChange={handleChange}
-                  />
-
-                  <TournamentMatchesManagement
-                    tournamentMatches={tournamentMatches}
-                    onImportOpen={() => setImportOpen(true)}
-                    onManualOpen={() => setManualOpen(true)}
-                    onGeneratorOpen={() => setGeneratorOpen(true)}
-                    onGeneratePlan={handleGeneratePlan}
-                    onClearMatches={() => {
-                      handleChange('pendingTournamentMatches', []);
-                      setTournamentMatches([]);
-                    }}
-                    showOldGeneration={!!event.tournamentId}
-                  />
-                </div>
-              </>
-            )}
-
-            {isTaskEvent && (
+            {isTask && (
               <TaskEventFields formData={event} users={users} handleChange={handleChange} />
             )}
 
-            {!isGameEvent && !isTournamentEvent && !isTaskEvent && (
+            {isGenericEvent && (
               <PermissionFields
                 formData={event}
                 teams={teams}
@@ -439,9 +440,6 @@ export const EventModal: React.FC<EventModalProps> = ({
           users={users}
           tournamentMatches={tournamentMatches}
           setTournamentMatches={setTournamentMatches}
-          isGameEvent={isGameEvent}
-          isTaskEvent={isTaskEvent}
-          isTournament={isTournament}
           onChange={handleChange}
           syncDraftsToParent={syncDraftsToParent}
         />

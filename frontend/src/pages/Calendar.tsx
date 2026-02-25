@@ -5,6 +5,7 @@ import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { EventDetailsModal } from '../modals/EventDetailsModal';
 import { EventModal } from '../modals/EventModal';
+import { getEventTypeFlags } from '../hooks/useEventTypeFlags';
 import { DynamicConfirmationModal } from '../modals/DynamicConfirmationModal';
 import { TaskDeletionModal } from '../modals/TaskDeletionModal';
 import { AlertModal } from '../modals/AlertModal';
@@ -94,12 +95,20 @@ type CalendarEvent = {
     offset: number;
   };
   tournament?: {
+    id?: number;
     matches?: any[];
     teams?: any[];
-
+    settings?: {
+      tournamentType?: TournamentType;
+      roundDuration?: number;
+      breakTime?: number;
+      gameMode?: TournamentGameMode;
+      numberOfGroups?: number;
+    };
   };
   permissionType?: string;
   pendingTournamentMatches?: any[];
+  teamIds?: any[];
 };
 
 type CalendarEventType = {
@@ -190,6 +199,9 @@ type EventFormData = {
   tournamentType?: TournamentType;
   tournamentNumberOfGroups?: number;
   tournament?: {
+    id?: number;
+    matches?: any[];
+    teams?: any[];
     settings?: {
       tournamentType?: TournamentType;
       tournamentRoundDuration?: number;
@@ -198,6 +210,7 @@ type EventFormData = {
       tournamentGameMode?: TournamentGameMode;
     }
   }
+  teamIds?: any[];
 };
 
 const messages = {
@@ -510,6 +523,22 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
 
     console.debug("Calendar HANDLE EDIT EVENT:", event);
 
+    // Determine gameType: if event type IS "Turnier" but no game entity exists,
+    // auto-fill with the "Turnier" gameType for consistent rendering
+    let resolvedGameType = (event.game && 'gameType' in event.game && (event.game as any).gameType?.id?.toString())
+      || event.gameType?.id?.toString()
+      || '';
+
+    if (!resolvedGameType) {
+      const eventTypeName = event.eventType?.name?.toLowerCase() || '';
+      if (eventTypeName.includes('turnier')) {
+        const turnierGT = gameTypes.entries.find(gt => gt.name.toLowerCase().includes('turnier'));
+        if (turnierGT) {
+          resolvedGameType = turnierGT.id.toString();
+        }
+      }
+    }
+
     setEventFormData({
       title: event.title,
       date: startDate.format('YYYY-MM-DD'),
@@ -521,12 +550,11 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       description: event.description || '',
       homeTeam: event.game?.homeTeam?.id?.toString() || '',
       awayTeam: event.game?.awayTeam?.id?.toString() || '',
-      gameType: (event.game && 'gameType' in event.game && (event.game as any).gameType?.id?.toString())
-        || event.gameType?.id?.toString()
-        || '',
+      gameType: resolvedGameType,
       leagueId: event.game && (event.game as any).league?.id ? (event.game as any).league.id.toString() : '',
       permissionType: event.permissionType ?? 'public',
-      tournamentType: event.tournament?.settings?.tournamentType || '',
+      tournamentId: event.tournament?.id?.toString() || (event as any).tournamentId?.toString() || '',
+      tournamentType: event.tournament?.settings?.tournamentType || undefined,
       tournamentRoundDuration: event.tournament?.settings?.roundDuration || 10,
       tournamentBreakTime: event.tournament?.settings?.breakTime || 2,
       tournamentGameMode: event.tournament?.settings?.gameMode || 'round_robin',
@@ -576,19 +604,12 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       return;
     }
 
-    // Spiel-spezifische Validierung
-    const selectedEventType = eventTypes.entries.find(eventType => eventType.id.toString() === eventFormData.eventType);
-    const isGameEvent = selectedEventType?.name?.toLowerCase().includes('spiel') || false;
-    const isTaskEvent = selectedEventType?.name?.toLowerCase().includes('aufgabe') || false;
-    const selectedGameType = gameTypes.entries.find(gameType => gameType.id.toString() === eventFormData.gameType);
-    const isTournamentGame = selectedGameType?.name?.toLowerCase().includes('turnier')
-      || (selectedGameType?.name?.toLowerCase() === 'turnierspiel')
-      || false;
-    const isTournamentEvent = selectedEventType?.name?.toLowerCase().includes('turnier')
-      || (selectedGameType?.name?.toLowerCase() === 'turnierspiel')
-      || false;
+    // Event type flags — single source of truth
+    const { isMatchEvent, isTournament, isTask } = getEventTypeFlags(
+      eventFormData.eventType, eventFormData.gameType, eventTypesOptions, gameTypesOptions,
+    );
     
-    if (!isTournamentGame && !isTournamentEvent && isGameEvent) {
+    if (isMatchEvent && !isTournament) {
       if (!eventFormData.homeTeam) {
         showAlert('Bitte wählen Sie ein Heim-Team aus.', 'warning', 'Heim-Team fehlt');
         return;
@@ -632,25 +653,26 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         permissionUsers: eventFormData.permissionUsers?.map(id => parseInt(id)) || []
       };
 
-      // Spiel-spezifische Daten hinzufügen
-      if (!isTournamentGame && !isTournamentEvent && isGameEvent && eventFormData.homeTeam && eventFormData.awayTeam) {
-        payload.game = {
-          homeTeamId: parseInt(eventFormData.homeTeam),
-          awayTeamId: parseInt(eventFormData.awayTeam)
-        };
-      }
+      // Match event data
+      if (isMatchEvent) {
+        // Non-tournament match events: add game (home/away teams)
+        if (!isTournament && eventFormData.homeTeam && eventFormData.awayTeam) {
+          payload.game = {
+            homeTeamId: parseInt(eventFormData.homeTeam),
+            awayTeamId: parseInt(eventFormData.awayTeam)
+          };
+        }
 
-      if (isGameEvent) {
-        // gameTypeId wird direkt im Root erwartet, nicht im game Objekt
+        // GameType & League
         if (eventFormData.gameType) {
           payload.gameTypeId = parseInt(eventFormData.gameType);
         }
-
-        payload.leagueId = eventFormData.leagueId ? parseInt(eventFormData.leagueId): undefined;
+        payload.leagueId = eventFormData.leagueId ? parseInt(eventFormData.leagueId) : undefined;
       }
 
-      if (isTournamentGame || isTournamentEvent) {
-        let teamIds = new Set<string>();
+      // Tournament data (same for both "Turnier" and "Spiel + Turnier GameType")
+      if (isTournament) {
+        const teamIds = new Set<string>();
         (eventFormData.pendingTournamentMatches || []).forEach((m: any) => {
           if (m.homeTeamId) teamIds.add(String(m.homeTeamId));
           if (m.awayTeamId) teamIds.add(String(m.awayTeamId));
@@ -666,7 +688,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       }
 
       // Task-spezifische Daten hinzufügen
-      if (isTaskEvent) {
+      if (isTask) {
         var taskRecurrenceRule = JSON.stringify({'freq': eventFormData.taskFreq, 'interval': eventFormData.taskInterval, 'byday': eventFormData.taskByDay, 'bymonthday': eventFormData.taskByMonthDay});
         payload.task = {
           isRecurring: eventFormData.taskIsRecurring || false,

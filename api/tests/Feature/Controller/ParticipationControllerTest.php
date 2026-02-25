@@ -139,5 +139,6 @@ class ParticipationControllerTest extends WebTestCase
 
         $this->entityManager->close();
         parent::tearDown();
+        restore_exception_handler();
     }
 }

@@ -16,6 +16,7 @@ class RegistrationTest extends WebTestCase
     protected function tearDown(): void
     {
         parent::tearDown();
+        restore_exception_handler();
     }
 
     private function getEntityManager(): EntityManagerInterface

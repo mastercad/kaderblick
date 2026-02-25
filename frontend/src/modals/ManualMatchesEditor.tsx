@@ -35,6 +35,8 @@ interface Props {
   // when no tournamentId is provided, onSaved will be called with the matches payload
   onSaved?: (matches?: any[]) => void;
   teams?: TeamOption[];
+  // pre-selected team IDs for tournament
+  matchTeams?: string[];
   // initial matches to populate editor (drafts)
   initialMatches?: any[];
   // game mode to determine if groups are needed

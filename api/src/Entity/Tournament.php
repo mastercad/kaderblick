@@ -6,7 +6,6 @@ use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use App\Entity\User;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity]
@@ -16,7 +15,7 @@ class Tournament
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    private ?int $id = null;
+    private ?int $id = null; // @phpstan-ignore property.unusedType
 
     #[ORM\Column(length: 255)]
     private string $name;
@@ -30,13 +29,16 @@ class Tournament
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTimeInterface $endAt = null;
 
+    /** @var array<string, mixed>|null */
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $settings = null;
 
+    /** @var Collection<int, TournamentTeam> */
     #[Groups(['tournament:read'])]
     #[ORM\OneToMany(mappedBy: 'tournament', targetEntity: TournamentTeam::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $teams;
 
+    /** @var Collection<int, TournamentMatch> */
     #[Groups(['tournament:read', 'calendar_event:read'])]
     #[ORM\OneToMany(mappedBy: 'tournament', targetEntity: TournamentMatch::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $matches;
@@ -109,11 +111,13 @@ class Tournament
         return $this;
     }
 
+    /** @return array<string, mixed>|null */
     public function getSettings(): ?array
     {
         return $this->settings;
     }
 
+    /** @param array<string, mixed>|null $settings */
     public function setSettings(?array $settings): self
     {
         $this->settings = $settings;
@@ -195,6 +199,7 @@ class Tournament
     public function setCalendarEvent(CalendarEvent $calendarEvent): self
     {
         $this->calendarEvent = $calendarEvent;
+
         return $this;
     }
 }

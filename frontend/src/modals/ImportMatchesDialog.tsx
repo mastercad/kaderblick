@@ -15,6 +15,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   tournamentId?: string;
+  // initial matches to show in editor
+  initialMatches?: any[];
   // when tournamentId is present, onImported is a notification; when not present, it may receive parsed payload
   onImported?: (payload?: any[]) => void;
 }

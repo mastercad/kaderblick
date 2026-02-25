@@ -13,6 +13,7 @@ class UserRelationTest extends KernelTestCase
     protected function tearDown(): void
     {
         parent::tearDown();
+        restore_exception_handler();
     }
 
     public function testUserWithMultiplePlayerRelationsSeesAllRelevantPlayersAndTeams(): void

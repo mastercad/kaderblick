@@ -8,16 +8,12 @@ use Symfony\Component\Serializer\Attribute\Groups;
 
 // Auswechsel
 #[ORM\Entity(repositoryClass: SubstitutionRepository::class)]
-#[ORM\Table(
-    name: 'substitutions',
-    indexes: [
-        new ORM\Index(name: 'idx_substitution_game_id', columns: ['game_id']),
-        new ORM\Index(name: 'idx_substitution_player_in_id', columns: ['player_in_id']),
-        new ORM\Index(name: 'idx_substitution_player_out_id', columns: ['player_out_id']),
-        new ORM\Index(name: 'idx_substitution_team_id', columns: ['team_id']),
-        new ORM\Index(name: 'idx_substitution_substitution_reason_id', columns: ['substitution_reason_id'])
-    ]
-)]
+#[ORM\Table(name: 'substitutions')]
+#[ORM\Index(name: 'idx_substitution_game_id', columns: ['game_id'])]
+#[ORM\Index(name: 'idx_substitution_player_in_id', columns: ['player_in_id'])]
+#[ORM\Index(name: 'idx_substitution_player_out_id', columns: ['player_out_id'])]
+#[ORM\Index(name: 'idx_substitution_team_id', columns: ['team_id'])]
+#[ORM\Index(name: 'idx_substitution_substitution_reason_id', columns: ['substitution_reason_id'])]
 class Substitution
 {
     #[ORM\Id]

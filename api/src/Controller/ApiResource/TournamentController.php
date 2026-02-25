@@ -2,14 +2,14 @@
 
 namespace App\Controller\ApiResource;
 
+use App\Entity\Team;
 use App\Entity\Tournament;
-use App\Entity\User;
 use App\Entity\TournamentMatch;
 use App\Entity\TournamentTeam;
-use App\Entity\Team;
+use App\Entity\User;
 use App\Security\Voter\TournamentVoter;
-use App\Service\TournamentPlanGenerator;
 use App\Service\TournamentMatchGameService;
+use App\Service\TournamentPlanGenerator;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -57,15 +57,125 @@ class TournamentController extends AbstractController
     #[Route('/{id}', name: 'show', methods: ['GET'])]
     public function show(Tournament $tournament): JsonResponse
     {
-        $repo = $this->em->getRepository(Tournament::class);
+        $ce = $tournament->getCalendarEvent();
+        $location = $ce?->getLocation();
+
+        $now = new DateTimeImmutable();
+        $status = 'upcoming';
+        if ($ce) {
+            $start = $ce->getStartDate();
+            $end = $ce->getEndDate();
+            if ($start && $end && $now >= $start && $now <= $end) {
+                $status = 'running';
+            } elseif ($start && $start <= $now) {
+                $status = 'finished';
+            }
+        }
+
+        // Load event types for score calculation
+        $gameEventGoal = $this->em->getRepository(\App\Entity\GameEventType::class)->findOneBy(['code' => 'goal']);
+        $gameEventOwnGoal = $this->em->getRepository(\App\Entity\GameEventType::class)->findOneBy(['code' => 'own_goal']);
+
+        // Serialize matches with scores
+        $matches = [];
+        foreach ($tournament->getMatches() as $tournamentMatch) {
+            $game = $tournamentMatch->getGame();
+            $homeTeam = $tournamentMatch->getHomeTeam();
+            $awayTeam = $tournamentMatch->getAwayTeam();
+
+            $homeScore = null;
+            $awayScore = null;
+            if ($game) {
+                $homeScore = 0;
+                $awayScore = 0;
+                foreach ($game->getGameEvents() as $ge) {
+                    if ($ge->getGameEventType() === $gameEventGoal) {
+                        if ($ge->getTeam() === $game->getHomeTeam()) {
+                            ++$homeScore;
+                        } elseif ($ge->getTeam() === $game->getAwayTeam()) {
+                            ++$awayScore;
+                        }
+                    } elseif ($ge->getGameEventType() === $gameEventOwnGoal) {
+                        if ($ge->getTeam() === $game->getHomeTeam()) {
+                            ++$awayScore;
+                        } elseif ($ge->getTeam() === $game->getAwayTeam()) {
+                            ++$homeScore;
+                        }
+                    }
+                }
+            }
+
+            $matchStatus = $tournamentMatch->getStatus();
+            if ('scheduled' === $matchStatus && $game && $game->isFinished()) {
+                $matchStatus = 'finished';
+            }
+
+            $matchLocation = $tournamentMatch->getLocation();
+
+            $matches[] = [
+                'id' => $tournamentMatch->getId(),
+                'round' => $tournamentMatch->getRound(),
+                'slot' => $tournamentMatch->getSlot(),
+                'stage' => $tournamentMatch->getStage(),
+                'status' => $matchStatus,
+                'scheduledAt' => $tournamentMatch->getScheduledAt()?->format('c'),
+                'homeTeam' => $homeTeam ? [
+                    'id' => $homeTeam->getId(),
+                    'name' => $homeTeam->getName(),
+                ] : null,
+                'awayTeam' => $awayTeam ? [
+                    'id' => $awayTeam->getId(),
+                    'name' => $awayTeam->getName(),
+                ] : null,
+                'homeScore' => $homeScore,
+                'awayScore' => $awayScore,
+                'gameId' => $game?->getId(),
+                'location' => $matchLocation ? [
+                    'id' => $matchLocation->getId(),
+                    'name' => $matchLocation->getName(),
+                    'latitude' => $matchLocation->getLatitude(),
+                    'longitude' => $matchLocation->getLongitude(),
+                    'address' => $matchLocation->getAddress() . ', ' . $matchLocation->getCity()
+                ] : null,
+            ];
+        }
+
+        // Serialize teams
+        $teams = [];
+        foreach ($tournament->getTeams() as $tt) {
+            $team = $tt->getTeam();
+            $teams[] = [
+                'id' => $tt->getId(),
+                'teamId' => $team->getId(),
+                'name' => $team->getName(),
+                'seed' => $tt->getSeed(),
+                'groupKey' => $tt->getGroupKey(),
+            ];
+        }
 
         $data = [
             'id' => $tournament->getId(),
             'name' => $tournament->getName(),
             'type' => $tournament->getType(),
-            'startAt' => $tournament->getStartAt()?->format(DATE_ATOM),
-            'endAt' => $tournament->getEndAt()?->format(DATE_ATOM),
+            'status' => $status,
             'settings' => $tournament->getSettings(),
+            'calendarEvent' => $ce ? [
+                'id' => $ce->getId(),
+                'startDate' => $ce->getStartDate()?->format('c'),
+                'endDate' => $ce->getEndDate()?->format('c'),
+                'weatherData' => $ce->getWeatherData() ? [
+                    'weatherCode' => $ce->getWeatherData()->getDailyWeatherData()['weathercode'] ?? [],
+                ] : [],
+            ] : null,
+            'location' => $location ? [
+                'id' => $location->getId(),
+                'name' => $location->getName(),
+                'latitude' => $location->getLatitude(),
+                'longitude' => $location->getLongitude(),
+                'address' => $location->getAddress() . ', ' . $location->getCity()
+            ] : null,
+            'teams' => $teams,
+            'matches' => $matches,
             'createdBy' => $tournament->getCreatedBy()?->getId(),
         ];
 
@@ -168,10 +278,10 @@ class TournamentController extends AbstractController
                 'id' => $tournamentMatch->getId(),
                 'round' => $tournamentMatch->getRound(),
                 'slot' => $tournamentMatch->getSlot(),
-                'homeTeamId' => $tournamentMatch->getHomeTeam()?->getTeam()?->getId(),
-                'awayTeamId' => $tournamentMatch->getAwayTeam()?->getTeam()?->getId(),
-                'homeTeamName' => $tournamentMatch->getHomeTeam()?->getTeam()?->__toString(),
-                'awayTeamName' => $tournamentMatch->getAwayTeam()?->getTeam()?->__toString(),
+                'homeTeamId' => $tournamentMatch->getHomeTeam()?->getId(),
+                'awayTeamId' => $tournamentMatch->getAwayTeam()?->getId(),
+                'homeTeamName' => $tournamentMatch->getHomeTeam()?->__toString(),
+                'awayTeamName' => $tournamentMatch->getAwayTeam()?->__toString(),
             ];
         }, $matches);
 
@@ -188,9 +298,9 @@ class TournamentController extends AbstractController
         $payload = json_decode((string) $request->getContent(), true);
 
         // If client supplies explicit matches list -> create them
-        if (is_array($payload) && ((!empty($payload['mode']) && $payload['mode'] === 'matches') || !empty($payload['matches']))) {
+        if (is_array($payload) && ((!empty($payload['mode']) && 'matches' === $payload['mode']) || !empty($payload['matches']))) {
             $matches = $payload['matches'] ?? [];
-            if (!is_array($matches) || count($matches) === 0) {
+            if (!is_array($matches) || 0 === count($matches)) {
                 return new JsonResponse(['error' => 'No matches provided'], Response::HTTP_BAD_REQUEST);
             }
 
@@ -219,7 +329,7 @@ class TournamentController extends AbstractController
                     $homeTT->setTournament($tournament);
                     $homeTT->setTeam($home);
                     if (!empty($match['group'])) {
-                        $homeTT->setGroupKey((string)$match['group']);
+                        $homeTT->setGroupKey((string) $match['group']);
                     }
                     $this->em->persist($homeTT);
                 }
@@ -229,19 +339,19 @@ class TournamentController extends AbstractController
                     $awayTT->setTournament($tournament);
                     $awayTT->setTeam($away);
                     if (!empty($match['group'])) {
-                        $awayTT->setGroupKey((string)$match['group']);
+                        $awayTT->setGroupKey((string) $match['group']);
                     }
                     $this->em->persist($awayTT);
                 }
 
                 $tournamentMatch = new TournamentMatch();
                 $tournamentMatch->setTournament($tournament);
-                $tournamentMatch->setHomeTeam($homeTT);
-                $tournamentMatch->setAwayTeam($awayTT);
-                $tournamentMatch->setRound(isset($match['round']) ? (int)$match['round'] : 0);
-                $tournamentMatch->setSlot(isset($match['slot']) ? (int)$match['slot'] : $slotCounter++);
+                $tournamentMatch->setHomeTeam($homeTT->getTeam());
+                $tournamentMatch->setAwayTeam($awayTT->getTeam());
+                $tournamentMatch->setRound(isset($match['round']) ? (int) $match['round'] : 0);
+                $tournamentMatch->setSlot(isset($match['slot']) ? (int) $match['slot'] : $slotCounter++);
                 if (!empty($match['status'])) {
-                    $tournamentMatch->setStatus((string)$match['status']);
+                    $tournamentMatch->setStatus((string) $match['status']);
                 }
                 if (!empty($match['scheduledAt'])) {
                     try {
@@ -262,7 +372,6 @@ class TournamentController extends AbstractController
                     $this->matchGameService->createGameForMatch($tournamentMatch, $tournamentMatch->getScheduledAt());
                 }
             }
-
 
             $data = array_map(function (TournamentMatch $tournamentMatch) {
                 return ['id' => $tournamentMatch->getId(), 'round' => $tournamentMatch->getRound(), 'slot' => $tournamentMatch->getSlot()];

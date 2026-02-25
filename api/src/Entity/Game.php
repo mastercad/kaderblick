@@ -11,18 +11,12 @@ use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: GameRepository::class)]
-#[ORM\Table(
-    name: 'games',
-    indexes: [
-        new ORM\Index(name: 'idx_games_home_team_id', columns: ['home_team_id']),
-        new ORM\Index(name: 'idx_games_away_team_id', columns: ['away_team_id']),
-        new ORM\Index(name: 'idx_games_game_type_id', columns: ['game_type_id']),
-        new ORM\Index(name: 'idx_games_location_id', columns: ['location_id'])
-    ],
-    uniqueConstraints: [
-        new ORM\UniqueConstraint(name: 'uniq_games_calendar_event_id', columns: ['calendar_event_id'])
-    ]
-)]
+#[ORM\Table(name: 'games')]
+#[ORM\Index(name: 'idx_games_home_team_id', columns: ['home_team_id'])]
+#[ORM\Index(name: 'idx_games_away_team_id', columns: ['away_team_id'])]
+#[ORM\Index(name: 'idx_games_game_type_id', columns: ['game_type_id'])]
+#[ORM\Index(name: 'idx_games_location_id', columns: ['location_id'])]
+#[ORM\UniqueConstraint(name: 'uniq_games_calendar_event_id', columns: ['calendar_event_id'])]
 #[ORM\HasLifecycleCallbacks]
 #[DifferentTeams]
 class Game
@@ -36,7 +30,7 @@ class Game
 
     #[Groups(['game:read', 'game:write', 'game_event:read', 'calendar_event:read'])]
     #[ORM\ManyToOne(targetEntity: Team::class)]
-    /* #[Assert\NotNull(message: 'Das Heimspiel-Team muss gesetzt sein.')]*/
+    /* #[Assert\NotNull(message: 'Das Heimspiel-Team muss gesetzt sein.')] */
     #[ORM\JoinColumn(
         name: 'home_team_id',
         referencedColumnName: 'id',
@@ -47,7 +41,7 @@ class Game
 
     #[Groups(['game:read', 'game:write', 'game_event:read', 'calendar_event:read'])]
     #[ORM\ManyToOne(targetEntity: Team::class)]
-    /* #[Assert\NotNull(message: 'Das Auswärts-Team muss gesetzt sein.')]*/
+    /* #[Assert\NotNull(message: 'Das Auswärts-Team muss gesetzt sein.')] */
     #[ORM\JoinColumn(
         name: 'away_team_id',
         referencedColumnName: 'id',
