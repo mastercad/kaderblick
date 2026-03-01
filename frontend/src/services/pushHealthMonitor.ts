@@ -328,6 +328,16 @@ class PushHealthMonitor {
       const existingSub = await registration.pushManager.getSubscription();
       diag.push(`Bestehende Subscription: ${existingSub ? 'ja' : 'nein'}`);
 
+      // Alte kaputte Subscription entfernen, bevor wir neu abonnieren
+      if (existingSub) {
+        try {
+          await existingSub.unsubscribe();
+          diag.push('Alte Subscription entfernt');
+        } catch (unsubErr: any) {
+          diag.push(`Alte Subscription entfernen fehlgeschlagen: ${unsubErr?.message || unsubErr}`);
+        }
+      }
+
       const vapidResponse = await apiJson('/api/push/vapid-key');
       const vapidKey = vapidResponse.key;
       if (!vapidKey) {
@@ -335,10 +345,21 @@ class PushHealthMonitor {
       }
       diag.push(`VAPID Key: ${vapidKey.substring(0, 10)}...`);
 
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: this.urlBase64ToUint8Array(vapidKey),
-      });
+      let subscription: PushSubscription | null = null;
+      try {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: this.urlBase64ToUint8Array(vapidKey),
+        });
+      } catch (subErr: any) {
+        diag.push(`subscribe() Fehler: ${subErr?.message || subErr}`);
+        return { success: false, error: `Push-Subscribe fehlgeschlagen: ${subErr?.message || subErr}\n\nDiagnose:\n${diag.join('\n')}` };
+      }
+
+      if (!subscription) {
+        diag.push('subscribe() gab null zurück');
+        return { success: false, error: `Push-Subscribe gab null zurück — der Browser konnte keine Subscription erstellen.\n\nDiagnose:\n${diag.join('\n')}` };
+      }
       diag.push(`Endpoint: ${subscription.endpoint.substring(0, 60)}...`);
 
       await apiJson('/api/push/subscribe', {
