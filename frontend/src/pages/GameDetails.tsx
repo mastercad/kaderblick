@@ -410,9 +410,11 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                   )}
                   {game.location && (
                     <Location 
-                      {...game.location}
-                      permissions={{ canCreate: false, canEdit: false, canView: true, canDelete: false }}
-                      surfaceTypeId={('surfaceTypeId' in game.location) ? (game.location as any).surfaceTypeId ?? 0 : 0}
+                      id={game.location.id}
+                      name={game.location.name}
+                      latitude={game.location.latitude}
+                      longitude={game.location.longitude}
+                      address={game.location.address}
                     />
                   )}
                 </Box>

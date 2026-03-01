@@ -23,7 +23,7 @@ import { Position } from '../types/position';
 const Positions = () => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [positionId, setPositionId] = useState<number | null>(null);
   const [positionEditModalOpen, setPositionEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -151,7 +151,7 @@ const Positions = () => {
             open={deleteModalOpen}
             positionName={deletePosition?.name}
             onClose={() => setDeleteModalOpen(false)}
-            onConfirm={async () => handleDelete(deletePosition.id) }
+            onConfirm={async () => handleDelete(deletePosition!.id) }
         />
     </Box>
   );

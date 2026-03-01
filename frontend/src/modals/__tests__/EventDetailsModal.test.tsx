@@ -3,19 +3,26 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import '@testing-library/jest-dom';
 import { EventDetailsModal, EventDetailsModalProps } from '../EventDetailsModal';
 
-// Mock MUI components that use portals, filter out irrelevant props to avoid React warnings
-const filterProps = (props: any) => {
-  const { children } = props;
-  return { children };
-};
-jest.mock('@mui/material/Dialog', () => (props: any) => <div data-testid="Dialog">{filterProps(props).children}</div>);
-jest.mock('@mui/material/DialogTitle', () => (props: any) => <div data-testid="DialogTitle">{filterProps(props).children}</div>);
-jest.mock('@mui/material/DialogContent', () => (props: any) => <div data-testid="DialogContent">{filterProps(props).children}</div>);
-jest.mock('@mui/material/DialogActions', () => (props: any) => <div data-testid="DialogActions">{filterProps(props).children}</div>);
+// Mock BaseModal to avoid MUI theme/useMediaQuery issues
+jest.mock('../BaseModal', () => ({
+  __esModule: true,
+  default: ({ open, title, children, actions }: any) => open ? (
+    <div data-testid="Dialog">
+      <div data-testid="DialogTitle">{title}</div>
+      <div data-testid="DialogContent">{children}</div>
+      <div data-testid="DialogActions">{actions}</div>
+    </div>
+  ) : null,
+}));
+
+// Mock sub-modals that also use BaseModal to avoid extra Dialog elements
+jest.mock('../WeatherModal', () => () => null);
+jest.mock('../TeamRideDetailsModal', () => () => null);
 
 // Mock WeatherDisplay and Location
 jest.mock('../../components/WeatherIcons', () => ({ WeatherDisplay: () => <div data-testid="WeatherDisplay" /> }));
 jest.mock('../../components/Location', () => () => <div data-testid="Location" />);
+jest.mock('../../components/TourTooltip', () => ({ children }: any) => <>{children}</>);
 
 // Mock apiJson
 jest.mock('../../utils/api', () => ({

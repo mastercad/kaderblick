@@ -16,5 +16,5 @@ export interface WidgetData {
 
 export async function fetchDashboardWidgets(): Promise<WidgetData[]> {
   const res = await apiJson<{ widgets: WidgetData[] }>('/');
-  return res.widgets;
+  return res?.widgets || [];
 }

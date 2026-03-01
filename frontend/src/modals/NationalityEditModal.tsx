@@ -49,8 +49,8 @@ const NationalityEditModal: React.FC<NationalityEditModalProps> = ({ openNationa
         setLoading(true);
         setError(null);
         try {
-          const url = nationality.id ? `/api/nationalities/${nationality.id}` : '/api/nationalities';
-          const method = nationality.id ? 'PUT' : 'POST';
+          const url = nationality!.id ? `/api/nationalities/${nationality!.id}` : '/api/nationalities';
+          const method = nationality!.id ? 'PUT' : 'POST';
           const res = await apiJson(url, {
             method,
             body: nationality,

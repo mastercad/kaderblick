@@ -1,4 +1,4 @@
-import { TournamentGameMode, TournamentType, GeneratedMatch } from "./types";
+import { TournamentGameMode, TournamentType, GeneratedMatch } from "../types/tournament";
 
 export type GenerateTournamentMatchesOptions = {
   teams: { value: string; label: string }[];

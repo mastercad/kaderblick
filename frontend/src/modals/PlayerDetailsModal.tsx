@@ -107,8 +107,8 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ open, playerId,
                         <Box>
                             <Typography variant="subtitle1" fontWeight={600} gutterBottom>Lizenzen</Typography>
                             <Stack direction="row" spacing={1} flexWrap="wrap">
-                                {getLicenses().length > 0 ? getLicenses().map((license, idx) => (
-                                    <Chip key={license.name + idx} label={license.name} color="success" variant="outlined" sx={{ mb: 1 }} />
+                                {getLicenses().length > 0 ? getLicenses().map((license: any, idx: number) => (
+                                    <Chip key={(license?.name || idx) + idx} label={license?.name} color="success" variant="outlined" sx={{ mb: 1 }} />
                                 )) : <Typography variant="body2" color="text.secondary">Keine Lizenzen</Typography>}
                             </Stack>
                         </Box>

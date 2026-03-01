@@ -49,8 +49,8 @@ const CameraEditModal: React.FC<CameraEditModalProps> = ({ openCameraEditModal, 
         setSaving(true);
         setError(null);
         try {
-          const url = camera.id ? `/api/cameras/${camera.id}` : '/api/cameras';
-          const method = camera.id ? 'PUT' : 'POST';
+          const url = camera!.id ? `/api/cameras/${camera!.id}` : '/api/cameras';
+          const method = camera!.id ? 'PUT' : 'POST';
           const res = await apiJson(url, {
             method,
             body: camera,

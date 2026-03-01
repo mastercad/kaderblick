@@ -196,7 +196,7 @@ const UserRelationEditModal: React.FC<UserRelationEditModalProps> = ({ open, onC
                                         <TextField
                                             select
                                             label="Beziehungstyp"
-                                            value={rel.relationType.id}
+                                            value={rel.relationType!.id}
                                             onChange={e => handleChange('coach', idx, 'relationType', relationTypes.find(rt => rt.id === +e.target.value) || null)}
                                             sx={{ minWidth: 180 }}
                                             size="small"

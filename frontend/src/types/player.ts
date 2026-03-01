@@ -18,6 +18,7 @@ export type Player = {
     height: number;
     weight: number;
     email: string;
+    profilePicturePath?: string;
     fussballDeId: string;
     fussballDeUrl: string;
     clubAssignments: PlayerClubAssignment[];

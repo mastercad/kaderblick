@@ -1,12 +1,12 @@
 // Hilfsfunktion: Sekunden zu MM:SS
-const secondsToMMSS = (seconds) => {
+const secondsToMMSS = (seconds: number) => {
   if (!seconds || isNaN(seconds)) return '0:00';
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
 // Hilfsfunktion: MM:SS oder Sekunden-String zu Sekunden
-const parseMinuteInput = (input) => {
+const parseMinuteInput = (input: string) => {
   if (!input) return 0;
   if (/^\d+$/.test(input)) return parseInt(input, 10);
   const parts = input.split(':').map(Number);
@@ -132,7 +132,7 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
   // Zeit-Logik
   const [currentTime, setCurrentTime] = useState(new Date());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const timerRef = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Annahme: game.calendarEvent?.startDate ist Startzeit
   useEffect(() => {

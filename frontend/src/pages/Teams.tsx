@@ -28,7 +28,7 @@ interface TeamResponseProps {
 const Teams = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [teamId, setTeamId] = useState<number | null>(null);
   const [teamDetailsModalOpen, setTeamDetailsModalOpen] = useState(false);
   const [teamEditModalOpen, setTeamEditModalOpen] = useState(false);
@@ -39,7 +39,7 @@ const Teams = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiJson<{ teams: TeamResponseProps[] }>('/api/teams/list');
+      const res = await apiJson<TeamResponseProps>('/api/teams/list');
       setTeams(res.teams);
     } catch (e) {
       setError('Fehler beim Laden der Teams.');
@@ -158,10 +158,10 @@ const Teams = () => {
         open={deleteModalOpen}
         teamName={deleteTeam?.name}
         onClose={() => setDeleteModalOpen(false)}
-        onConfirm={async () => handleDelete(deleteTeam.id) }
+        onConfirm={async () => handleDelete(deleteTeam!.id) }
       />
       <TeamDetailsModal
-        open={teamDetailsModalOpen}
+        teamDetailOpen={teamDetailsModalOpen}
         loadTeams={() => loadTeams()}
         teamId={teamId}
         onClose={() => setTeamDetailsModalOpen(false)}

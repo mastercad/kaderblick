@@ -23,7 +23,7 @@ import { SurfaceType } from '../types/surfaceType';
 const SurfaceTypes = () => {
   const [surfaceTypes, setSurfaceTypes] = useState<SurfaceType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [surfaceTypeId, setSurfaceTypeId] = useState<number | null>(null);
   const [surfaceTypeEditModalOpen, setSurfaceTypeEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -147,7 +147,7 @@ const SurfaceTypes = () => {
             open={deleteModalOpen}
             surfaceTypeName={deleteSurfaceType?.name}
             onClose={() => setDeleteModalOpen(false)}
-            onConfirm={async () => handleDelete(deleteSurfaceType.id) }
+            onConfirm={async () => handleDelete(deleteSurfaceType!.id) }
         />
     </Box>
   );

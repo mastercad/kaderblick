@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme as useMuiTheme } from '@mui/material/styles';
 import { Bar, Line, Pie, Doughnut, Radar, PolarArea, Bubble, Scatter } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, RadialLinearScale, Tooltip, Legend, Title, ChartOptions, Filler } from 'chart.js';
 import { apiJson } from '../utils/api';
@@ -205,6 +207,11 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Responsive breakpoints
+  const muiTheme = useMuiTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(muiTheme.breakpoints.between('sm', 'md'));
+
   const refreshTrigger = widgetId ? getRefreshTrigger(widgetId) : 0;
 
   useEffect(() => {
@@ -289,29 +296,140 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
   };
 
   const type = effectiveType;
-  // Chart.js Optionen (Default interaktive Legende, Responsive, etc.)
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true,
-        position: "top" as const,
-        labels: {
-          usePointStyle: true,
-          // Größere Klickfläche für Mobile
-          padding: 18,
-        },
-        // Chart.js handled hover/highlight automatisch
-      },
-      title: { display: false },
-      tooltip: { enabled: true },
-    },
-    hover: {
-      mode: "nearest" as const,
-      intersect: true,
-    },
+
+  // Hilfsfunktion: Labels kürzen auf mobile
+  const truncateLabel = (label: string, maxLen: number) => {
+    if (!label || label.length <= maxLen) return label;
+    return label.substring(0, maxLen - 1) + '…';
   };
+
+  // Anzahl Labels und Datasets für dynamische Anpassungen
+  const labelCount = data.labels?.length || 0;
+  const datasetCount = data.datasets?.length || 0;
+  const isPieType = ['pie', 'doughnut', 'polararea'].includes(type);
+  const isRadarType = ['radar', 'radaroverlay'].includes(type);
+  const hasManylabels = labelCount > 6;
+  const hasManyDatasets = datasetCount > 3;
+
+  // Chart.js Optionen – responsiv angepasst je nach Gerät
+  const options = useMemo(() => {
+    // Schriftgrößen
+    const legendFontSize = isMobile ? 10 : isTablet ? 11 : 12;
+    const tickFontSize = isMobile ? 9 : isTablet ? 10 : 12;
+    const tooltipFontSize = isMobile ? 11 : 13;
+
+    // Legende: auf Mobile nach unten, kompakter
+    const legendPosition = isMobile ? 'bottom' as const : 'top' as const;
+    const legendMaxLines = isMobile ? 2 : undefined;
+    const legendBoxWidth = isMobile ? 8 : isTablet ? 10 : 14;
+    const legendPadding = isMobile ? 8 : isTablet ? 12 : 18;
+
+    // Für Pie/Doughnut: Legende immer unten auf mobile, damit der Chart Platz hat
+    const pieLegendPosition = isMobile ? 'bottom' as const : 'right' as const;
+
+    // X-Achse: Labels rotieren wenn viele
+    const xTickRotation = isMobile && hasManylabels ? 45 : (isTablet && hasManylabels ? 30 : 0);
+    const maxTicksLimit = isMobile ? Math.min(labelCount, 8) : (isTablet ? Math.min(labelCount, 12) : undefined);
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: isMobile ? { left: 2, right: 2, top: 4, bottom: 4 } : { left: 8, right: 8, top: 8, bottom: 8 },
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: isPieType ? pieLegendPosition : legendPosition,
+          maxWidth: isMobile && isPieType ? undefined : undefined,
+          labels: {
+            usePointStyle: true,
+            pointStyle: 'circle',
+            boxWidth: legendBoxWidth,
+            boxHeight: isMobile ? 6 : 8,
+            padding: legendPadding,
+            font: {
+              size: legendFontSize,
+            },
+            // Labels auf Mobile kürzen
+            ...(isMobile ? {
+              generateLabels: (chart: any) => {
+                const original = ChartJS.defaults.plugins.legend.labels.generateLabels(chart);
+                return original.map((item: any) => ({
+                  ...item,
+                  text: truncateLabel(item.text || '', isPieType ? 14 : 18),
+                }));
+              },
+            } : {}),
+          },
+          // Auf Mobile: Legende max 2 Zeilen, Rest wird per Klick aufgedeckt
+          ...(isMobile ? { maxHeight: isPieType ? 80 : 60 } : {}),
+        },
+        title: { display: false },
+        tooltip: {
+          enabled: true,
+          titleFont: { size: tooltipFontSize },
+          bodyFont: { size: tooltipFontSize },
+          padding: isMobile ? 6 : 10,
+          // Auf Mobile: Tooltip-Interaktion erleichtern
+          ...(isMobile ? {
+            intersect: false,
+            mode: 'nearest' as const,
+          } : {}),
+        },
+      },
+      hover: {
+        mode: 'nearest' as const,
+        intersect: !isMobile,
+      },
+      // Achsen-Optionen (werden je nach Chart-Typ ggf. überschrieben)
+      ...(!isPieType && !isRadarType ? {
+        scales: {
+          x: {
+            ticks: {
+              font: { size: tickFontSize },
+              maxRotation: xTickRotation,
+              minRotation: xTickRotation > 0 ? xTickRotation : 0,
+              ...(maxTicksLimit ? { maxTicksLimit } : {}),
+              // Lange Labels kürzen
+              callback: function(this: any, value: any, index: number) {
+                const label = this.getLabelForValue ? this.getLabelForValue(value) : (data.labels?.[index] || value);
+                if (typeof label !== 'string') return label;
+                const maxLen = isMobile ? 10 : (isTablet ? 16 : 30);
+                return truncateLabel(label, maxLen);
+              },
+            },
+            grid: {
+              display: !isMobile,
+            },
+          },
+          y: {
+            ticks: {
+              font: { size: tickFontSize },
+              ...(isMobile ? { maxTicksLimit: 6 } : {}),
+            },
+            grid: {
+              ...(isMobile ? { color: 'rgba(0,0,0,0.05)' } : {}),
+            },
+          },
+        },
+      } : {}),
+      // Punkt- und Linienstärke auf Mobile reduzieren
+      elements: {
+        point: {
+          radius: isMobile ? 2 : 3,
+          hoverRadius: isMobile ? 4 : 6,
+          hitRadius: isMobile ? 12 : 8,
+        },
+        line: {
+          borderWidth: isMobile ? 1.5 : 2,
+        },
+        bar: {
+          borderWidth: isMobile ? 1 : 2,
+        },
+      },
+    };
+  }, [isMobile, isTablet, isPieType, isRadarType, hasManylabels, labelCount, datasetCount, data.labels, type]);
 
   // If config requests moving average, compute overlay datasets (non-stacked) from raw datasets
   const applyMovingAverage = (datasets: any[], windowSize: number) => {
@@ -377,8 +495,28 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
     // console.debug('MA overlay skipped', e);
   }
 
+  // Dynamische Container-Höhe: auf Mobile mehr Platz, besonders für Pie-Charts mit Bottom-Legende
+  const chartHeight = useMemo(() => {
+    if (isMobile) {
+      // Pie/Doughnut brauchen extra Platz für die Legende unten
+      if (isPieType) return Math.max(320, 280 + Math.min(datasetCount, labelCount) * 5);
+      // Radar etwas mehr Platz
+      if (isRadarType) return 320;
+      // Standard-Charts
+      return 300;
+    }
+    if (isTablet) return 340;
+    return 400;
+  }, [isMobile, isTablet, isPieType, isRadarType, datasetCount, labelCount]);
+
   return (
-    <Box sx={{ width: '100%', height: { xs: 260, sm: 320, md: 360, lg: 400 }, minHeight: 220 }}>
+    <Box sx={{
+      width: '100%',
+      height: chartHeight,
+      minHeight: isMobile ? 280 : 220,
+      // Auf Mobile: sanfter Overflow für sehr breite Charts (z.B. viele Bars)
+      position: 'relative',
+    }}>
       {(() => {
         switch (type) {
           case 'bar':
@@ -393,8 +531,8 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
             const stackedOptions = {
               ...options,
               scales: {
-                x: { stacked: true },
-                y: { stacked: true }
+                x: { ...(options as any).scales?.x, stacked: true },
+                y: { ...(options as any).scales?.y, stacked: true },
               }
             };
             const stackedData = {
@@ -414,8 +552,27 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
             return <Pie {...chartProps} />;
           case 'doughnut':
             return <Doughnut {...chartProps} />;
-          case 'radar':
-            return <Radar {...chartProps} />;
+          case 'radar': {
+            const radarMobileOptions = {
+              ...chartProps.options,
+              scales: {
+                r: {
+                  ticks: {
+                    font: { size: isMobile ? 8 : 10 },
+                    backdropPadding: isMobile ? 1 : 3,
+                    ...(isMobile ? { maxTicksLimit: 5 } : {}),
+                  },
+                  pointLabels: {
+                    font: { size: isMobile ? 9 : isTablet ? 10 : 12 },
+                    ...(isMobile ? {
+                      callback: (label: string) => truncateLabel(label, 12),
+                    } : {}),
+                  },
+                },
+              },
+            };
+            return <Radar data={chartProps.data} options={radarMobileOptions as any} />;
+          }
           case 'polararea':
             return <PolarArea {...chartProps} />;
           case 'bubble':
@@ -430,25 +587,33 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
                 backgroundColor: ds.backgroundColor || defaultColors[i % defaultColors.length],
                 borderColor: ds.borderColor || defaultColors[i % defaultColors.length],
                 showLine: false,
-                pointRadius: 4,
+                pointRadius: isMobile ? 3 : 4,
+                hitRadius: isMobile ? 12 : 8,
               }))
             };
             const scatterOptions = {
               ...options,
               scales: {
                 x: {
+                  ...(options as any).scales?.x,
                   type: 'linear' as const,
                   ticks: {
+                    ...(options as any).scales?.x?.ticks,
                     callback: function (val: any, index: number) {
                       // Show label text for integer tick values
                       const labels = data.labels || [];
                       if (typeof val === 'number' && Math.round(val) === val) {
-                        return labels[val] ?? val;
+                        const labelText = labels[val] ?? val;
+                        if (isMobile && typeof labelText === 'string') return truncateLabel(labelText, 10);
+                        return labelText;
                       }
                       return '';
                     }
                   }
-                }
+                },
+                y: {
+                  ...(options as any).scales?.y,
+                },
               }
             };
             return <Scatter data={scatterData as any} options={scatterOptions as any} />;
@@ -524,12 +689,13 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
                   max: 100,
                   ticks: {
                     stepSize: xStep,
+                    font: { size: isMobile ? 9 : 12 },
                     callback: function (val: any) {
                       const labelsArr = labels || [];
                       if (typeof val === 'number') {
-                        // compute index from exact tick position
                         const idx = Math.round((val / 100) * (labelsArr.length - 1));
-                        return labelsArr[idx] ?? '';
+                        const lbl = labelsArr[idx] ?? '';
+                        return isMobile && typeof lbl === 'string' ? truncateLabel(lbl, 8) : lbl;
                       }
                       return '';
                     }
@@ -540,11 +706,13 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
                   max: 100,
                   ticks: {
                     stepSize: yStep,
+                    font: { size: isMobile ? 9 : 12 },
                     callback: function (val: any) {
                       const dArr = dsets || [];
                       if (typeof val === 'number') {
                         const idx = Math.round((val / 100) * (dArr.length - 1));
-                        return dArr[idx]?.label ?? '';
+                        const lbl = dArr[idx]?.label ?? '';
+                        return isMobile && typeof lbl === 'string' ? truncateLabel(lbl, 10) : lbl;
                       }
                       return '';
                     }
@@ -680,7 +848,7 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
                 data: values,
                 backgroundColor: ds.backgroundColor || rgbaColors[i % rgbaColors.length],
                 borderColor: ds.borderColor || defaultColors[i % defaultColors.length],
-                borderWidth: 2,
+                borderWidth: isMobile ? 1.5 : 2,
                 fill: true,
                 tension: 0.2,
               };
@@ -688,15 +856,28 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
             const radarOptions = {
               ...options,
               scales: undefined,
-              elements: { line: { borderWidth: 2 } },
+              elements: { line: { borderWidth: isMobile ? 1.5 : 2 } },
               plugins: {
                 ...(options.plugins || {}),
               }
             } as any;
+            const radarScaleBase = {
+              ticks: {
+                font: { size: isMobile ? 8 : 10 },
+                backdropPadding: isMobile ? 1 : 3,
+                ...(isMobile ? { maxTicksLimit: 5 } : {}),
+              },
+              pointLabels: {
+                font: { size: isMobile ? 9 : isTablet ? 10 : 12 },
+                ...(isMobile ? {
+                  callback: (label: string) => truncateLabel(label, 12),
+                } : {}),
+              },
+            };
             if (normalize) {
-              radarOptions.scales = { r: { min: 0, max: 1, ticks: { stepSize: 0.25 } } };
+              radarOptions.scales = { r: { min: 0, max: 1, ticks: { ...radarScaleBase.ticks, stepSize: 0.25 }, pointLabels: radarScaleBase.pointLabels } };
             } else {
-              radarOptions.scales = { r: { min: 0, max: Math.max(1, maxGlobal) } };
+              radarOptions.scales = { r: { min: 0, max: Math.max(1, maxGlobal), ticks: radarScaleBase.ticks, pointLabels: radarScaleBase.pointLabels } };
             }
             return <Radar data={{ labels, datasets: radarDatasets } as any} options={radarOptions as any} />;
           }

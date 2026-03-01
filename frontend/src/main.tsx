@@ -12,16 +12,33 @@ import './index.css';
 import './styles/tour-tool-tip.css';
 import './styles/mobile-responsive.css';
 
-// Service Worker für PWA registrieren
+// Service Worker Update & Legacy-Cleanup
+// VitePWA registriert /sw.js automatisch via registerSW.js (im index.html injiziert).
+// Hier räumen wir nur alte/Legacy-Service-Worker auf, die unter anderen Pfaden registriert sind.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(registration => {
-        console.info('Service Worker registered:', registration);
-      })
-      .catch(error => {
-        console.error('Service Worker registration failed:', error);
-      });
+  window.addEventListener('load', async () => {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        const swUrl = registration.active?.scriptURL || registration.installing?.scriptURL || '';
+
+        // Legacy-SWs deregistrieren (z.B. /js/service-worker.js aus altem Symfony-Setup)
+        if (swUrl.includes('service-worker.js') || swUrl.includes('/js/sw')) {
+          console.info('Deregistering legacy Service Worker:', swUrl);
+          await registration.unregister();
+
+          // Legacy-Caches löschen
+          const cacheNames = await caches.keys();
+          await Promise.all(
+            cacheNames
+              .filter(name => name.includes('kaderblick-pwa-cache'))
+              .map(name => caches.delete(name)),
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Service Worker cleanup failed:', error);
+    }
   });
 }
 

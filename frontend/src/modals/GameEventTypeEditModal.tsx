@@ -49,8 +49,8 @@ const GameEventTypeEditModal: React.FC<GameEventTypeEditModalProps> = ({ openGam
         setLoading(true);
         setError(null);
         try {
-          const url = gameEventType.id ? `/api/game-event-types/${gameEventType.id}` : '/api/game-event-types';
-          const method = gameEventType.id ? 'PUT' : 'POST';
+          const url = gameEventType!.id ? `/api/game-event-types/${gameEventType!.id}` : '/api/game-event-types';
+          const method = gameEventType!.id ? 'PUT' : 'POST';
           const res = await apiJson(url, {
             method,
             body: gameEventType,

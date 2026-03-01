@@ -169,7 +169,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
         const rides = data.rides || [];
         if (rides.length === 0) {
           setTeamRideStatus('none');
-        } else if (rides.every(r => r.availableSeats === 0)) {
+        } else if (rides.every((r: any) => r.availableSeats === 0)) {
           setTeamRideStatus('full');
         } else {
           setTeamRideStatus('free');
@@ -280,10 +280,11 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                   <>
                     <br />
                     <Location 
-                      name={event.location.name} 
+                      id={0}
+                      name={event.location.name || ''} 
                       latitude={event.location.latitude} 
                       longitude={event.location.longitude}
-                      address={`${event.location.city}, ${event.location.address}`.trim()}
+                      address={`${event.location.city || ''}, ${event.location.address || ''}`.trim()}
                     />
                   </>
                 )}

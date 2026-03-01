@@ -54,19 +54,36 @@ export async function apiRequest(endpoint: string, options: ApiRequestOptions = 
 }
 
 /**
- * Vereinfachte API-Funktion die direkt JSON zurückgibt
+ * API Error class for structured error handling
  */
-export async function apiJson<T = any>(endpoint: string, options: ApiRequestOptions = {}): Promise<T | { error: string }> {
+export class ApiError extends Error {
+  public status?: number;
+  public data?: any;
+  constructor(message: string, status?: number, data?: any) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
+/**
+ * Vereinfachte API-Funktion die direkt JSON zurückgibt.
+ * Wirft ApiError bei HTTP-Fehlern.
+ */
+export async function apiJson<T = any>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
   const response = await apiRequest(endpoint, options);
   let data;
   try {
     data = await response.json();
   } catch {
-    data = { error: 'Unknown error' };
+    throw new ApiError('Unknown error', response.status);
   }
   if (!response.ok) {
-    // Fehlerobjekt direkt zurückgeben
-    return typeof data === 'object' && data.error ? data : { error: data.message || `HTTP ${response.status}` };
+    const errorMsg = typeof data === 'object' && data?.error
+      ? data.error
+      : (data?.message || `HTTP ${response.status}`);
+    throw new ApiError(errorMsg, response.status, data);
   }
-  return data;
+  return data as T;
 }

@@ -44,12 +44,20 @@ class NotificationService
 
         // Send push notification immediately
         try {
+            $url = '/';
+            if (is_array($data) && isset($data['url'])) {
+                $url = (string) $data['url'];
+            }
+
             $this->pushNotificationService->sendNotification(
                 $user,
                 $title,
                 $message ?? '',
-                '/' // TODO: URL based on notification type
+                $url
             );
+
+            $notification->setIsSent(true);
+            $this->entityManager->flush();
         } catch (Exception $e) {
             // Log error but don't fail the notification creation
             $this->logger->critical('Failed to send push notification: ' . $e->getMessage());
@@ -86,6 +94,29 @@ class NotificationService
 
             $this->entityManager->persist($notification);
             $notifications[] = $notification;
+        }
+
+        $this->entityManager->flush();
+
+        // Send push notifications for each user
+        $url = '/';
+        if (is_array($data) && isset($data['url'])) {
+            $url = (string) $data['url'];
+        }
+
+        foreach ($notifications as $notification) {
+            try {
+                $this->pushNotificationService->sendNotification(
+                    $notification->getUser(),
+                    $title,
+                    $message ?? '',
+                    $url
+                );
+
+                $notification->setIsSent(true);
+            } catch (Exception $e) {
+                $this->logger->warning('Failed to send push for user ' . $notification->getUser()->getId() . ': ' . $e->getMessage());
+            }
         }
 
         $this->entityManager->flush();

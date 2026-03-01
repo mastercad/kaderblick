@@ -26,54 +26,34 @@ export interface VideoSegmentInput {
 }
 
 export async function fetchVideoSegments(gameId: number): Promise<VideoSegment[]> {
-  const result = await apiJson<VideoSegment[]>(`/video-segments?gameId=${gameId}`);
-  if ('error' in result) {
-    throw new Error(result.error);
-  }
-  return result;
+  return apiJson<VideoSegment[]>(`/video-segments?gameId=${gameId}`);
 }
 
 export async function fetchVideoSegmentsByVideo(videoId: number): Promise<VideoSegment[]> {
-  const result = await apiJson<VideoSegment[]>(`/video-segments?videoId=${videoId}`);
-  if ('error' in result) {
-    throw new Error(result.error);
-  }
-  return result;
+  return apiJson<VideoSegment[]>(`/video-segments?videoId=${videoId}`);
 }
 
 export async function saveVideoSegment(data: VideoSegmentInput): Promise<VideoSegment> {
-  const result = await apiJson<VideoSegment>('/video-segments/save', {
+  return apiJson<VideoSegment>('/video-segments/save', {
     method: 'POST',
     body: data,
     headers: { 'Content-Type': 'application/json' }
   });
-  if ('error' in result) {
-    throw new Error(result.error);
-  }
-  return result;
 }
 
 export async function updateVideoSegment(id: number, data: Partial<VideoSegmentInput>): Promise<VideoSegment> {
-  const result = await apiJson<VideoSegment>(`/video-segments/update/${id}`, {
+  return apiJson<VideoSegment>(`/video-segments/update/${id}`, {
     method: 'POST',
     body: data,
     headers: { 'Content-Type': 'application/json' }
   });
-  if ('error' in result) {
-    throw new Error(result.error);
-  }
-  return result;
 }
 
 export async function deleteVideoSegment(id: number): Promise<{ success: boolean }> {
-  const result = await apiJson<{ success: boolean }>(`/video-segments/delete/${id}`, {
+  return apiJson<{ success: boolean }>(`/video-segments/delete/${id}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
   });
-  if ('error' in result) {
-    throw new Error(result.error);
-  }
-  return result;
 }
 
 export async function exportVideoSegments(gameId: number): Promise<Blob> {

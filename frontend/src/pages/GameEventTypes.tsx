@@ -24,7 +24,7 @@ import { getGameEventIconByCode } from '../constants/gameEventIcons';
 const GameEventTypes = () => {
   const [gameEventTypes, setGameEventTypes] = useState<GameEventType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [gameEventTypeId, setGameEventTypeId] = useState<number | null>(null);
   const [gameEventTypeEditModalOpen, setGameEventTypeEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -151,7 +151,7 @@ const GameEventTypes = () => {
             open={deleteModalOpen}
             gameEventTypeName={deleteGameEventType?.name}
             onClose={() => setDeleteModalOpen(false)}
-            onConfirm={async () => handleDelete(deleteGameEventType.id) }
+            onConfirm={async () => handleDelete(deleteGameEventType!.id) }
         />
     </Box>
   );

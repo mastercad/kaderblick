@@ -412,7 +412,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                       fontSize={16}
                       titleObj={user?.title && user?.title.hasTitle ? user.title : undefined}
                       svgFrameOffsetY={0}
-                      level={user.level?.level}
+                      level={user?.level?.level}
                     />
                 </IconButton>
               </Box>

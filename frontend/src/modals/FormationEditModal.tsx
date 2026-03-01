@@ -98,7 +98,7 @@ const FormationEditModal: React.FC<FormationEditModalProps> = ({ open, formation
           setPlayers(loadedPlayers);
           setNextPlayerNumber(
             loadedPlayers.length > 0
-              ? Math.max(...loadedPlayers.map(p => typeof p.number === 'number' ? p.number : 0)) + 1
+              ? Math.max(...loadedPlayers.map((p: any) => typeof p.number === 'number' ? p.number : 0)) + 1
               : 1
           );
           if (Array.isArray(data.availablePlayers?.players)) {

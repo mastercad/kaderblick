@@ -25,15 +25,18 @@ jest.mock('@mui/material/Alert', () => ({
   ),
 }));
 
-const filterProps = (props: any) => {
-  const { children } = props;
-  return { children };
-};
+// Mock BaseModal to avoid MUI theme/useMediaQuery issues
+jest.mock('../BaseModal', () => ({
+  __esModule: true,
+  default: ({ open, title, children, actions }: any) => open ? (
+    <div data-testid="Dialog">
+      <div data-testid="DialogTitle">{title}</div>
+      <div data-testid="DialogContent">{children}</div>
+      <div data-testid="DialogActions">{actions}</div>
+    </div>
+  ) : null,
+}));
 
-jest.mock('@mui/material/Dialog', () => (props: any) => <div data-testid="Dialog">{filterProps(props).children}</div>);
-jest.mock('@mui/material/DialogTitle', () => (props: any) => <div data-testid="DialogTitle">{filterProps(props).children}</div>);
-jest.mock('@mui/material/DialogContent', () => (props: any) => <div data-testid="DialogContent">{filterProps(props).children}</div>);
-jest.mock('@mui/material/DialogActions', () => (props: any) => <div data-testid="DialogActions">{filterProps(props).children}</div>);
 jest.mock('@mui/material/Button', () => (props: any) => <button {...props}>{props.children}</button>);
 jest.mock('@mui/material/TextField', () => (props: any) => <input {...props} data-testid={props.label} />);
 jest.mock('@mui/material/Select', () => (props: any) => <select {...props}>{props.children}</select>);
@@ -48,14 +51,7 @@ jest.mock('@mui/material/FormControlLabel', () => (props: any) => (
 ));
 jest.mock('@mui/material/Checkbox', () => (props: any) => <input type="checkbox" {...props} />);
 jest.mock('@mui/material/Box', () => (props: any) => <div>{props.children}</div>);
-jest.mock('@mui/material/Alert', () => (props: any) => (
-  <div data-testid="Alert" role="alert">{props.children}</div>
-));
 jest.mock('@mui/material/CircularProgress', () => () => <span data-testid="CircularProgress" />);
-jest.mock('@mui/material/styles', () => ({
-  ...jest.requireActual('@mui/material/styles'),
-  useTheme: () => ({ palette: { background: { paper: '#fff' } } })
-}));
 
 // html2canvas mocken
 jest.mock('html2canvas', () => () => Promise.resolve({ toDataURL: () => 'data:image/png;base64,screenshot' }));

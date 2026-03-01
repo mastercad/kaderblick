@@ -23,7 +23,7 @@ import { Nationality } from '../types/nationality';
 const Nationalities = () => {
   const [nationalities, setNationalities] = useState<Nationality[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [nationalityId, setNationalityId] = useState<number | null>(null);
   const [nationalityEditModalOpen, setNationalityEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -147,7 +147,7 @@ const Nationalities = () => {
             open={deleteModalOpen}
             nationalityName={deleteNationality?.name}
             onClose={() => setDeleteModalOpen(false)}
-            onConfirm={async () => handleDelete(deleteNationality.id) }
+            onConfirm={async () => handleDelete(deleteNationality!.id) }
         />
     </Box>
   );

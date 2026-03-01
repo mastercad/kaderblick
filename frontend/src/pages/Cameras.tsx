@@ -23,7 +23,7 @@ import { Camera } from '../types/camera';
 const Cameras = () => {
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [cameraId, setCameraId] = useState<number | null>(null);
   const [cameraEditModalOpen, setCameraEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -151,7 +151,7 @@ const Cameras = () => {
             open={deleteModalOpen}
             cameraName={deleteCamera?.name}
             onClose={() => setDeleteModalOpen(false)}
-            onConfirm={async () => handleDelete(deleteCamera.id) }
+            onConfirm={async () => handleDelete(deleteCamera!.id) }
         />
     </Box>
   );

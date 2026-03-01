@@ -3,15 +3,26 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import '@testing-library/jest-dom';
 import { EventModal } from '../EventModal';
 
-// MUI-Komponenten mocken und Props filtern
-const filterProps = (props: any) => {
-  const { children } = props;
-  return { children };
-};
-jest.mock('@mui/material/Dialog', () => (props: any) => <div data-testid="Dialog">{filterProps(props).children}</div>);
-jest.mock('@mui/material/DialogTitle', () => (props: any) => <div data-testid="DialogTitle">{filterProps(props).children}</div>);
-jest.mock('@mui/material/DialogContent', () => (props: any) => <div data-testid="DialogContent">{filterProps(props).children}</div>);
-jest.mock('@mui/material/DialogActions', () => (props: any) => <div data-testid="DialogActions">{filterProps(props).children}</div>);
+// Mock BaseModal to avoid MUI theme/useMediaQuery issues
+jest.mock('../BaseModal', () => ({
+  __esModule: true,
+  default: ({ open, title, children, actions }: any) => open ? (
+    <div data-testid="Dialog">
+      <div data-testid="DialogTitle">{title}</div>
+      <div data-testid="DialogContent">{children}</div>
+      <div data-testid="DialogActions">{actions}</div>
+    </div>
+  ) : null,
+}));
+
+// Mock hooks that make API calls
+jest.mock('../../hooks/useEventData', () => ({
+  useTournamentMatches: () => ({ tournamentMatches: [], setTournamentMatches: jest.fn() }),
+  useLeagues: () => [],
+  useReloadTournamentMatches: () => jest.fn(),
+}));
+
+// MUI-Komponenten mocken
 jest.mock('@mui/material/Button', () => (props: any) => <button {...props}>{props.children}</button>);
 jest.mock('@mui/material/TextField', () => (props: any) => <input {...props} data-testid={props.label} />);
 jest.mock('@mui/material/Select', () => (props: any) => <select {...props}>{props.children}</select>);
@@ -19,6 +30,19 @@ jest.mock('@mui/material/MenuItem', () => (props: any) => <option {...props}>{pr
 jest.mock('@mui/material/InputLabel', () => (props: any) => <label {...props}>{props.children}</label>);
 jest.mock('@mui/material/FormControl', () => (props: any) => <div>{props.children}</div>);
 jest.mock('@mui/material/Autocomplete', () => (props: any) => <div data-testid="Autocomplete">{props.renderInput({})}</div>);
+
+// Mock sub-components that might import problematic dependencies
+jest.mock('../ImportMatchesDialog', () => () => null);
+jest.mock('../ManualMatchesEditor', () => () => null);
+jest.mock('../TournamentMatchGeneratorDialog', () => () => null);
+jest.mock('../../components/EventModal/TaskEventFields', () => ({ TaskEventFields: () => null }));
+jest.mock('../../components/EventModal/PermissionFields', () => ({ PermissionFields: () => null }));
+jest.mock('../../components/EventModal/TournamentFields', () => ({
+  TournamentConfig: () => null,
+  TournamentMatchesManagement: () => null,
+  TournamentSelection: () => null,
+}));
+jest.mock('../../components/EventModal/EventWizard', () => ({ EventWizard: () => null }));
 
 // Logging unterdrücken
 beforeAll(() => {

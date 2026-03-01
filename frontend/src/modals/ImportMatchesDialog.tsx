@@ -159,7 +159,7 @@ export default function ImportMatchesDialog({ open, onClose, tournamentId, onImp
       <DialogContent>
         <div style={{ display: 'flex', gap: 12 }}>
           <div style={{ flex: 1 }}>
-            <Input type="file" inputProps={{ accept: '.csv,.json,text/csv,application/json' }} onChange={e => handleFile(e.target.files?.[0])} />
+            <Input type="file" inputProps={{ accept: '.csv,.json,text/csv,application/json' }} onChange={e => handleFile((e.target as HTMLInputElement).files?.[0])} />
             <div style={{ marginTop: 8 }}>
               <TextField
                 label="Daten einfügen (oder URL/JSON/CSV)"

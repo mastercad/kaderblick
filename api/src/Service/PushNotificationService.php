@@ -85,9 +85,11 @@ class PushNotificationService
                     'title' => $title,
                     'body' => $body,
                     'url' => $url,
-                    'icon' => 'https://example.com/icon.png',
-                    'image' => 'https://example.com/bild.jpg',
-                    'badge' => 'https://example.com/badge.png',
+                    'data' => [
+                        'url' => $url,
+                    ],
+                    'icon' => '/images/icon-192.png',
+                    'badge' => '/images/icon-192.png',
                     'vibrate' => [200, 100, 200],
                     'actions' => [
                         [
@@ -95,8 +97,8 @@ class PushNotificationService
                             'title' => 'Details anzeigen'
                         ]
                     ],
-                    'tag' => 'notification-' . $user->getId(),
-                    'requireInteraction' => true
+                    'tag' => 'notification-' . $user->getId() . '-' . time(),
+                    'requireInteraction' => false
                 ])
             );
         }

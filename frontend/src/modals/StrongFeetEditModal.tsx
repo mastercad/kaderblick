@@ -49,8 +49,8 @@ const StrongFeetEditModal: React.FC<StrongFeetEditModalProps> = ({ openStrongFee
         setLoading(true);
         setError(null);
         try {
-          const url = strongFeet.id ? `/api/strong-feet/${strongFeet.id}` : '/api/strong-feet';
-          const method = strongFeet.id ? 'PUT' : 'POST';
+          const url = strongFeet!.id ? `/api/strong-feet/${strongFeet!.id}` : '/api/strong-feet';
+          const method = strongFeet!.id ? 'PUT' : 'POST';
           const res = await apiJson(url, {
             method,
             body: strongFeet,

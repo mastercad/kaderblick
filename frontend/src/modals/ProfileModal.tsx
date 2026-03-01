@@ -126,6 +126,13 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { BACKEND_URL } from '../../config';
 import { FaTrashAlt } from 'react-icons/fa';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import SendIcon from '@mui/icons-material/Send';
+import Chip from '@mui/material/Chip';
+import { pushHealthMonitor, type PushHealthReport, type PushHealthStatus } from '../services/pushHealthMonitor';
 
 interface ProfileData {
   firstName: string;
@@ -182,13 +189,75 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
   const [relationsOpen, setRelationsOpen] = React.useState(false);
   const [xpModalOpen, setXpModalOpen] = React.useState(false);
 
+  // Push Health State
+  const [pushHealth, setPushHealth] = React.useState<PushHealthReport | null>(null);
+  const [pushChecking, setPushChecking] = React.useState(false);
+  const [pushTestResult, setPushTestResult] = React.useState<{ success: boolean; message: string } | null>(null);
+  const [pushEnabling, setPushEnabling] = React.useState(false);
+
   // Profildaten laden beim Öffnen des Modals
   React.useEffect(() => {
     if (open) {
       loadUserProfile();
       loadUserRelations();
+      checkPushHealth();
     }
   }, [open]);
+
+  // Push Health prüfen
+  const checkPushHealth = async () => {
+    setPushChecking(true);
+    setPushTestResult(null);
+    try {
+      const report = await pushHealthMonitor.check();
+      setPushHealth(report);
+    } catch {
+      // Ignore errors
+    } finally {
+      setPushChecking(false);
+    }
+  };
+
+  const handleTestPush = async () => {
+    setPushTestResult(null);
+    const result = await pushHealthMonitor.sendTestPush();
+    setPushTestResult(result);
+  };
+
+  const handleEnablePush = async () => {
+    setPushEnabling(true);
+    try {
+      await pushHealthMonitor.enablePush();
+      await checkPushHealth();
+    } finally {
+      setPushEnabling(false);
+    }
+  };
+
+  const getPushStatusColor = (status: PushHealthStatus): 'success' | 'warning' | 'error' | 'info' | 'default' => {
+    switch (status) {
+      case 'healthy': return 'success';
+      case 'degraded': return 'warning';
+      case 'broken': return 'error';
+      case 'not_supported': return 'default';
+      case 'permission_denied': return 'error';
+      case 'not_subscribed': return 'info';
+      default: return 'default';
+    }
+  };
+
+  const getPushStatusLabel = (status: PushHealthStatus): string => {
+    switch (status) {
+      case 'healthy': return 'Aktiv';
+      case 'degraded': return 'Eingeschränkt';
+      case 'broken': return 'Nicht funktionsfähig';
+      case 'not_supported': return 'Nicht unterstützt';
+      case 'permission_denied': return 'Blockiert';
+      case 'not_subscribed': return 'Nicht aktiviert';
+      case 'checking': return 'Prüfe...';
+      default: return 'Unbekannt';
+    }
+  };
 
   // Lädt die UserRelation-Verknüpfungen
   const loadUserRelations = async () => {
@@ -536,6 +605,103 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
             }
             label={mode === 'dark' ? 'Dark Mode' : 'Light Mode'}
           />
+        </Box>
+        <Divider sx={{ my: 2 }} />
+        {/* Push-Benachrichtigungen Status */}
+        <Box sx={{ mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            {pushHealth?.status === 'healthy' ? (
+              <NotificationsActiveIcon color="success" />
+            ) : pushHealth?.status === 'broken' || pushHealth?.status === 'permission_denied' ? (
+              <NotificationsOffIcon color="error" />
+            ) : (
+              <WarningAmberIcon color="warning" />
+            )}
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Push-Benachrichtigungen</Typography>
+            {pushHealth && (
+              <Chip
+                label={getPushStatusLabel(pushHealth.status)}
+                color={getPushStatusColor(pushHealth.status)}
+                size="small"
+                variant="outlined"
+              />
+            )}
+            {pushChecking && <CircularProgress size={16} sx={{ ml: 1 }} />}
+          </Box>
+
+          {pushHealth && pushHealth.issues.length > 0 && (
+            <Box sx={{ mb: 1.5 }}>
+              {pushHealth.issues.map((issue, idx) => (
+                <Alert
+                  key={idx}
+                  severity={issue.severity === 'error' ? 'error' : issue.severity === 'warning' ? 'warning' : 'info'}
+                  sx={{ mb: 0.5, py: 0, '& .MuiAlert-message': { py: 0.5 } }}
+                  icon={issue.severity === 'error' ? <NotificationsOffIcon fontSize="small" /> : undefined}
+                >
+                  <Typography variant="body2">{issue.message}</Typography>
+                  {issue.action && (
+                    <Typography variant="caption" color="text.secondary">{issue.action}</Typography>
+                  )}
+                </Alert>
+              ))}
+            </Box>
+          )}
+
+          {pushHealth?.status === 'healthy' && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <CheckCircleOutlineIcon color="success" fontSize="small" />
+              <Typography variant="body2" color="text.secondary">
+                Push-Benachrichtigungen funktionieren einwandfrei.
+                {pushHealth.details.backendSubscriptionCount > 0 && (
+                  <> {pushHealth.details.backendSubscriptionCount} aktive Subscription{pushHealth.details.backendSubscriptionCount > 1 ? 's' : ''}.</>  
+                )}
+                {pushHealth.details.lastSentAt && (
+                  <> Letzte Zustellung: {new Date(pushHealth.details.lastSentAt).toLocaleDateString('de-DE')}.</>  
+                )}
+              </Typography>
+            </Box>
+          )}
+
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {pushHealth && (pushHealth.status === 'not_subscribed' || pushHealth.status === 'broken') && pushHealth.details.permission !== 'denied' && (
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<NotificationsActiveIcon />}
+                onClick={handleEnablePush}
+                disabled={pushEnabling}
+                sx={{ textTransform: 'none' }}
+              >
+                {pushEnabling ? 'Aktiviere...' : 'Push aktivieren'}
+              </Button>
+            )}
+            {pushHealth && pushHealth.status !== 'not_supported' && (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<SendIcon />}
+                onClick={handleTestPush}
+                sx={{ textTransform: 'none' }}
+              >
+                Test-Push senden
+              </Button>
+            )}
+            <Button
+              variant="text"
+              size="small"
+              onClick={checkPushHealth}
+              disabled={pushChecking}
+              sx={{ textTransform: 'none' }}
+            >
+              Erneut prüfen
+            </Button>
+          </Box>
+
+          {pushTestResult && (
+            <Alert severity={pushTestResult.success ? 'success' : 'error'} sx={{ mt: 1 }}>
+              {pushTestResult.message}
+            </Alert>
+          )}
         </Box>
         <Divider sx={{ my: 2 }} />
         <Typography variant="h6" gutterBottom>Passwort ändern</Typography>

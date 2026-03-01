@@ -49,8 +49,8 @@ const VideoTypeEditModal: React.FC<VideoTypeEditModalProps> = ({ openVideoTypeEd
         setSaving(true);
         setError(null);
         try {
-          const url = videoType.id ? `/api/video-types/${videoType.id}` : '/api/video-types';
-          const method = videoType.id ? 'PUT' : 'POST';
+          const url = videoType!.id ? `/api/video-types/${videoType!.id}` : '/api/video-types';
+          const method = videoType!.id ? 'PUT' : 'POST';
           const res = await apiJson(url, {
             method,
             body: videoType,

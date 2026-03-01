@@ -28,7 +28,7 @@ interface ClubResponseProps {
 const Clubs = () => {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [clubId, setClubId] = useState<number | null>(null);
   const [clubDetailsModalOpen, setClubDetailsModalOpen] = useState(false);
   const [clubEditModalOpen, setClubEditModalOpen] = useState(false);
@@ -39,12 +39,11 @@ const Clubs = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiJson<{ clubs: ClubResponseProps[] }>('/clubs');
+      const res = await apiJson<Record<string, any>>('/clubs');
       if (res && typeof res === 'object') {
-        // Die eigentlichen Einträge stehen unter numerischen Keys
         const clubList = Object.keys(res)
           .filter(key => /^\d+$/.test(key))
-          .map(key => res[key].club);
+          .map(key => (res as Record<string, any>)[key].club);
         setClubs(clubList);
       } else {
         setClubs([]);
@@ -161,7 +160,7 @@ const Clubs = () => {
                     open={deleteModalOpen}
                     clubName={deleteClub?.name}
                     onClose={() => setDeleteModalOpen(false)}
-                    onConfirm={async () => handleDelete(deleteClub.id) }
+                    onConfirm={async () => handleDelete(deleteClub!.id) }
                   />
                   )}
                 </TableRow>
