@@ -229,12 +229,14 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
     setPushTestResult(null);
     try {
       const result = await pushHealthMonitor.enablePush();
+      // checkPushHealth ZUERST aufrufen, da es pushTestResult auf null setzt
+      await checkPushHealth();
+      // Diagnose-Ergebnis NACH checkPushHealth setzen, damit es nicht überschrieben wird
       if (!result.success) {
         setPushTestResult({ success: false, message: result.error || 'Push-Aktivierung fehlgeschlagen.' });
       } else {
         setPushTestResult({ success: true, message: 'Push erfolgreich aktiviert!' });
       }
-      await checkPushHealth();
     } finally {
       setPushEnabling(false);
     }
