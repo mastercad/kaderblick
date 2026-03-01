@@ -284,38 +284,76 @@ class PushHealthMonitor {
 
   /**
    * Push-Benachrichtigungen aktivieren (Permission anfragen + Subscribe).
+   * Gibt detaillierte Diagnose-Infos zurück, damit Fehler auch ohne DevTools sichtbar sind.
    */
-  async enablePush(): Promise<boolean> {
+  async enablePush(): Promise<{ success: boolean; error?: string }> {
+    const diag: string[] = [];
     try {
-      if (!('Notification' in window) || !('PushManager' in window)) return false;
+      const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
+      const hasNotification = 'Notification' in window;
+      const hasPushManager = 'PushManager' in window;
+      const hasSW = 'serviceWorker' in navigator;
 
+      diag.push(`Browser: ${navigator.userAgent.substring(0, 120)}`);
+      diag.push(`HTTPS: ${isSecure}, Notification: ${hasNotification}, PushManager: ${hasPushManager}, SW: ${hasSW}`);
+
+      if (!hasNotification) {
+        return { success: false, error: `Notification API fehlt.\n\nDiagnose:\n${diag.join('\n')}` };
+      }
+      if (!hasSW) {
+        return { success: false, error: `Service Worker nicht unterstützt.\n\nDiagnose:\n${diag.join('\n')}` };
+      }
+      if (!hasPushManager) {
+        return { success: false, error: `PushManager fehlt — dieser Browser unterstützt keine Web-Push-Benachrichtigungen.\n\nDiagnose:\n${diag.join('\n')}` };
+      }
+
+      diag.push(`Permission vorher: ${Notification.permission}`);
       const permission = await Notification.requestPermission();
-      if (permission !== 'granted') return false;
+      diag.push(`Permission nachher: ${permission}`);
+
+      if (permission === 'denied') {
+        return { success: false, error: `Berechtigung abgelehnt. Bitte in den Browser-Einstellungen für diese Seite erlauben.\n\nDiagnose:\n${diag.join('\n')}` };
+      }
+      if (permission !== 'granted') {
+        return { success: false, error: `Berechtigung nicht erteilt (${permission}).\n\nDiagnose:\n${diag.join('\n')}` };
+      }
 
       const registration = await navigator.serviceWorker.ready;
+      diag.push(`SW aktiv: ${!!registration.active}, Scope: ${registration.scope}`);
 
-      // VAPID Key vom Server holen
+      if (!registration.pushManager) {
+        return { success: false, error: `PushManager im Service Worker nicht verfügbar.\n\nDiagnose:\n${diag.join('\n')}` };
+      }
+
+      const existingSub = await registration.pushManager.getSubscription();
+      diag.push(`Bestehende Subscription: ${existingSub ? 'ja' : 'nein'}`);
+
       const vapidResponse = await apiJson('/api/push/vapid-key');
       const vapidKey = vapidResponse.key;
+      if (!vapidKey) {
+        return { success: false, error: `VAPID Key vom Server ist leer.\n\nDiagnose:\n${diag.join('\n')}` };
+      }
+      diag.push(`VAPID Key: ${vapidKey.substring(0, 10)}...`);
 
-      // Subscribe
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: this.urlBase64ToUint8Array(vapidKey),
       });
+      diag.push(`Endpoint: ${subscription.endpoint.substring(0, 60)}...`);
 
-      // An Backend senden
       await apiJson('/api/push/subscribe', {
         method: 'POST',
         body: { subscription: subscription.toJSON() },
       });
+      diag.push('Backend: Subscription gespeichert');
 
-      // Sofort neu prüfen
       await this.check();
-      return true;
-    } catch (err) {
+      return { success: true };
+    } catch (err: any) {
       console.error('Failed to enable push:', err);
-      return false;
+      const msg = err?.message || String(err);
+      diag.push(`Fehler: ${msg}`);
+      return { success: false, error: `${msg}\n\nDiagnose:\n${diag.join('\n')}` };
     }
   }
 

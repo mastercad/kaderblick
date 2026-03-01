@@ -226,8 +226,14 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
 
   const handleEnablePush = async () => {
     setPushEnabling(true);
+    setPushTestResult(null);
     try {
-      await pushHealthMonitor.enablePush();
+      const result = await pushHealthMonitor.enablePush();
+      if (!result.success) {
+        setPushTestResult({ success: false, message: result.error || 'Push-Aktivierung fehlgeschlagen.' });
+      } else {
+        setPushTestResult({ success: true, message: 'Push erfolgreich aktiviert!' });
+      }
       await checkPushHealth();
     } finally {
       setPushEnabling(false);
@@ -698,7 +704,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
           </Box>
 
           {pushTestResult && (
-            <Alert severity={pushTestResult.success ? 'success' : 'error'} sx={{ mt: 1 }}>
+            <Alert severity={pushTestResult.success ? 'success' : 'error'} sx={{ mt: 1, whiteSpace: 'pre-line', fontSize: '0.8rem' }}>
               {pushTestResult.message}
             </Alert>
           )}
