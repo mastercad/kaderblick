@@ -37,7 +37,7 @@ const Tasks: React.FC = () => {
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const data = await apiJson<Task[]>('/api/tasks');
+      const data = await apiJson<{ tasks: Task[] }>('/api/tasks');
       setTasks(data.tasks);
     } catch (e) {
       // Fehlerbehandlung

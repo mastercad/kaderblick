@@ -57,6 +57,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import { PullToRefresh } from './components/PullToRefresh';
+import { PushWarningBanner } from './components/PushWarningBanner';
 
 
 function App() {
@@ -67,9 +68,6 @@ function App() {
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [trainerDrawerOpen, setTrainerDrawerOpen] = useState(false);
-  const [adminDrawerOpen, setAdminDrawerOpen] = useState(false);
   const location = useLocation();
   const { isOnHeroSection } = useHomeScroll();
 
@@ -103,21 +101,14 @@ function App() {
             <PullToRefresh
               onRefresh={handleRefresh}
               isEnabled={isMobile}
-              isPullToRefreshEnabled={
-                !mobileMenuOpen && !trainerDrawerOpen && !adminDrawerOpen
-              }
+              isPullToRefreshEnabled={true}
             >
               <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
                 <Navigation
                   onOpenAuth={() => setShowAuth(true)}
                   onOpenProfile={() => setShowProfile(true)}
-                  mobileMenuOpen={mobileMenuOpen}
-                  setMobileMenuOpen={setMobileMenuOpen}
-                  trainerDrawerOpen={trainerDrawerOpen}
-                  setTrainerDrawerOpen={setTrainerDrawerOpen}
-                  adminDrawerOpen={adminDrawerOpen}
-                  setAdminDrawerOpen={setAdminDrawerOpen}
                 />
+                <PushWarningBanner />
               <Box component="main" sx={{ flex: 1, width: '100%', position: 'relative' }}>
                 <Routes>
                   <Route path="/" element={<Home />} />

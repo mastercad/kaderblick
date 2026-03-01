@@ -1,11 +1,11 @@
 import { calculateCumulativeOffset, mapGameEventsToTimelineEvents } from '../videoTimeline';
 
 describe('calculateCumulativeOffset', () => {
-  it('returns negative gameStart for video with explicit gameStart', () => {
+  it('returns 0 for first video with explicit gameStart (no previous videos)', () => {
     const video = { id: 1, gameStart: 359, length: 1550, sort: 1 };
     const allVideos = [video];
     const result = calculateCumulativeOffset(video, allVideos);
-    expect(result).toBe(-359);
+    expect(result).toBe(0);
   });
 
   it('returns 0 for first video with gameStart=null', () => {
@@ -20,7 +20,7 @@ describe('calculateCumulativeOffset', () => {
     const video2 = { id: 2, gameStart: null, length: 1556, sort: 2 };
     const allVideos = [video1, video2];
     const result = calculateCumulativeOffset(video2, allVideos);
-    // video1: starts at -359, has length 1550, so ends at: -359 + 1550 = 1191
+    // video1: netto game time = 1550 - 359 = 1191
     expect(result).toBe(1191);
   });
 
@@ -35,16 +35,16 @@ describe('calculateCumulativeOffset', () => {
     expect(result).toBe(2747);
   });
 
-  it('handles second segment with new gameStart', () => {
+  it('calculates cumulative offset for fourth video (sums all previous netto times)', () => {
     const video1 = { id: 1, gameStart: 359, length: 1550, sort: 1 };
     const video2 = { id: 2, gameStart: null, length: 1556, sort: 2 };
     const video3 = { id: 3, gameStart: null, length: 186, sort: 3 };
     const video4 = { id: 4, gameStart: 133, length: 1560, sort: 4 };
     const allVideos = [video1, video2, video3, video4];
     
-    // For video4, it has explicit gameStart, so it should return -133
+    // video1: 1550-359=1191, video2: 1556, video3: 186 → total = 2933
     const result = calculateCumulativeOffset(video4, allVideos);
-    expect(result).toBe(-133);
+    expect(result).toBe(2933);
   });
 
   it('calculates cumulative offset for video5 continuing from video4', () => {
@@ -52,7 +52,7 @@ describe('calculateCumulativeOffset', () => {
     const video5 = { id: 5, gameStart: null, length: 1551, sort: 5 };
     const allVideos = [video4, video5];
     
-    // video4: starts at -133, has length 1560, so ends at: -133 + 1560 = 1427
+    // video4: netto game time = 1560 - 133 = 1427
     const result = calculateCumulativeOffset(video5, allVideos);
     expect(result).toBe(1427);
   });
@@ -67,23 +67,23 @@ describe('calculateCumulativeOffset', () => {
       { id: 6, gameStart: null, length: 346, sort: 6 },
     ];
 
-    // Video 1: -359
-    expect(calculateCumulativeOffset(videos[0], videos)).toBe(-359);
+    // Video 1: first video, no previous → 0
+    expect(calculateCumulativeOffset(videos[0], videos)).toBe(0);
     
-    // Video 2: -359 + 1550 = 1191
+    // Video 2: v1 netto = 1550-359 = 1191
     expect(calculateCumulativeOffset(videos[1], videos)).toBe(1191);
     
     // Video 3: 1191 + 1556 = 2747
     expect(calculateCumulativeOffset(videos[2], videos)).toBe(2747);
     
-    // Video 4: -133 (new segment)
-    expect(calculateCumulativeOffset(videos[3], videos)).toBe(-133);
+    // Video 4: 2747 + 186 = 2933
+    expect(calculateCumulativeOffset(videos[3], videos)).toBe(2933);
     
-    // Video 5: -133 + 1560 = 1427
-    expect(calculateCumulativeOffset(videos[4], videos)).toBe(1427);
+    // Video 5: 2933 + (1560-133) = 4360
+    expect(calculateCumulativeOffset(videos[4], videos)).toBe(4360);
     
-    // Video 6: 1427 + 1551 = 2978
-    expect(calculateCumulativeOffset(videos[5], videos)).toBe(2978);
+    // Video 6: 4360 + 1551 = 5911
+    expect(calculateCumulativeOffset(videos[5], videos)).toBe(5911);
   });
 });
 
@@ -126,10 +126,11 @@ describe('mapGameEventsToTimelineEvents', () => {
     });
 
     // Event 27 hat youtubeLink für Video 11 (yE4GwJ3zTvE)
-    // Position: 60s - (-359s) = 419s
+    // No cumulativeOffset passed → videoStartInGame=0
+    // Position: 60s - 0 = 60
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe(27);
-    expect(result[0].timestamp).toBe(419);
+    expect(result[0].timestamp).toBe(60);
   });
 
   it('rejects events without youtubeLink for camera', () => {
@@ -335,11 +336,11 @@ describe('mapGameEventsToTimelineEvents', () => {
       cameraId: 1,
     });
 
-    // The timeline position is 419 seconds
-    // When seeking, we need: gameStart + timelinePosition = 359 + 60 = 419
+    // No cumulativeOffset passed → videoStartInGame=0
+    // Timeline position = 60s - 0 = 60
+    // Seek calculation in VideoPlayModal: seekPosition = gameStart + timelinePosition = 359 + 60 = 419
     expect(result).toHaveLength(1);
-    expect(result[0].timestamp).toBe(419);
-    // Seek calculation in VideoPlayModal: seekPosition = gameStart + seconds = 359 + 60 = 419
+    expect(result[0].timestamp).toBe(60);
   });
 
   it('calculates correct seek position for video without gameStart offset', () => {

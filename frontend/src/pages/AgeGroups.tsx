@@ -24,7 +24,7 @@ import { AgeGroup } from '../types/ageGroup';
 const AgeGroups = () => {
   const [ageGroups, setAgeGroups] = useState<AgeGroup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [ageGroupId, setAgeGroupId] = useState<number | null>(null);
   const [ageGroupDetailsModalOpen, setAgeGroupDetailsModalOpen] = useState(false);
   const [ageGroupEditModalOpen, setAgeGroupEditModalOpen] = useState(false);
@@ -183,7 +183,7 @@ const AgeGroups = () => {
             open={deleteModalOpen}
             ageGroupName={deleteAgeGroup?.name}
             onClose={() => setDeleteModalOpen(false)}
-            onConfirm={async () => handleDelete(deleteAgeGroup.id) }
+            onConfirm={async () => handleDelete(deleteAgeGroup!.id) }
         />
     </Box>
   );

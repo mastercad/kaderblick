@@ -49,8 +49,8 @@ const SurfaceTypeEditModal: React.FC<SurfaceTypeEditModalProps> = ({ openSurface
         setLoading(true);
         setError(null);
         try {
-          const url = surfaceType.id ? `/api/surface-types/${surfaceType.id}` : '/api/surface-types';
-          const method = surfaceType.id ? 'PUT' : 'POST';
+          const url = surfaceType!.id ? `/api/surface-types/${surfaceType!.id}` : '/api/surface-types';
+          const method = surfaceType!.id ? 'PUT' : 'POST';
           const res = await apiJson(url, {
             method,
             body: surfaceType,

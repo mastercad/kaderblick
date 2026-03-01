@@ -147,7 +147,6 @@ export const lightTheme = createTheme({
       light: '#02b008', // Hellere, frischere Variante für Hover
       dark: '#015504', // Dunklere Variante
       contrastText: '#ffffff',
-      danger: '#d32f2f', // Kräftiges Rot für Warnungen/Löschen
     },
     secondary: {
       main: '#00c853',

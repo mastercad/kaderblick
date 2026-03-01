@@ -23,7 +23,7 @@ import { VideoType } from '../types/videoType';
 const VideoTypes = () => {
   const [videoTypes, setVideoTypes] = useState<VideoType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [videoTypeId, setVideoTypeId] = useState<number | null>(null);
   const [videoTypeEditModalOpen, setVideoTypeEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -155,7 +155,7 @@ const VideoTypes = () => {
             open={deleteModalOpen}
             videoTypeName={deleteVideoType?.name}
             onClose={() => setDeleteModalOpen(false)}
-            onConfirm={async () => handleDelete(deleteVideoType.id) }
+            onConfirm={async () => handleDelete(deleteVideoType!.id) }
         />
     </Box>
   );

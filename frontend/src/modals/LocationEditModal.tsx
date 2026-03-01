@@ -23,7 +23,7 @@ interface LocationEditModalProps {
   onLocationSaved?: (location: Location) => void;
   initialValues?: Partial<LocationFormValues>;
   isEdit?: boolean;
-  surfaceTypes: { id: number; name: string }[];
+  surfaceTypes?: { id: number; name: string }[];
   onSaved?: (location: Location) => void;
 }
 
@@ -44,7 +44,7 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({ openLocationEditM
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [surfaceTypesLoading, setSurfaceTypesLoading] = useState(false);
-  const [surfaceTypes, setSurfaceTypes] = useState([]);
+  const [surfaceTypes, setSurfaceTypes] = useState<{ id: number; name: string }[]>([]);
   const [osmResults, setOsmResults] = useState<OSMResult[]>([]);
   const [osmLoading, setOsmLoading] = useState(false);
   const [osmError, setOsmError] = useState<string | null>(null);
@@ -89,7 +89,8 @@ const LocationEditModal: React.FC<LocationEditModalProps> = ({ openLocationEditM
   }, [openLocationEditModal, initialValues]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const { name, value, type, checked } = e.target;
+      const { name, value, type } = e.target;
+      const checked = (e.target as HTMLInputElement).checked;
       setValues((prev) => ({
         ...prev,
         [name]:

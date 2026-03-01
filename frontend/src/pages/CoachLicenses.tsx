@@ -23,7 +23,7 @@ import { CoachLicense } from '../types/coachLicense';
 const CoachLicenses = () => {
   const [coachLicenses, setCoachLicenses] = useState<CoachLicense[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [coachLicenseId, setCoachLicenseId] = useState<number | null>(null);
   const [coachLicenseEditModalOpen, setCoachLicenseEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -151,7 +151,7 @@ const CoachLicenses = () => {
             open={deleteModalOpen}
             coachLicenseName={deleteCoachLicense?.name}
             onClose={() => setDeleteModalOpen(false)}
-            onConfirm={async () => handleDelete(deleteCoachLicense.id) }
+            onConfirm={async () => handleDelete(deleteCoachLicense!.id) }
         />
     </Box>
   );

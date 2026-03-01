@@ -1,4 +1,4 @@
-import { License } from './coachLicense';
+import { CoachLicense as License } from './coachLicense';
 import { Coach } from './coach';
 
 export type LicenseAssignment = {

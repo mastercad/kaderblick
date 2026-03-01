@@ -424,8 +424,8 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
           return true;
         });
 
-        function getUniqueValues<T>(iterator: Iterable<T>): T[] {
-          const uniqueValues = new Set<T>();
+        function getUniqueValues(iterator: Iterable<any>): any[] {
+          const uniqueValues = new Set<any>();
           for (const value of iterator) {
             uniqueValues.add(value.homeTeamId);
             uniqueValues.add(value.awayTeamId);
@@ -561,7 +561,6 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       tournamentNumberOfGroups: event.tournament?.settings?.numberOfGroups || 2,
       tournament: event.tournament,
       teamIds: event.teamIds,
-      tournamentMatches: event.tournament?.matches || [],
       pendingTournamentMatches: event.tournament?.matches ? (console.debug("EDIT: ", event.tournament?.matches), fullfillPendingTournamentMatches(event.tournament?.matches)) : [],
       task: event.task ? {
         id: event.task.id,
@@ -1152,14 +1151,14 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
             selectable={true}
             // Custom toolbar for desktop, hidden for mobile
             components={{
-              toolbar: isMobile ? () => null : undefined,
+              toolbar: isMobile ? (() => null) as any : undefined,
               agenda: {
-                date: ({ label }: { label: string }) => (
+                date: (({ label }: { label: string }) => (
                   <span style={{ fontWeight: 'bold', fontSize: '14px' }}>
                     {moment(label).format('dddd, DD.MM.YYYY')}
                   </span>
-                ),
-                time: ({ event }: { event: any }) => (
+                )) as any,
+                time: (({ event }: { event: any }) => (
                   <span style={{ fontSize: '13px' }}>
                     {(() => {
                       const start = moment(event.start);
@@ -1173,8 +1172,8 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
                       }
                     })()}
                   </span>
-                ),
-                event: ({ event }: { event: any }) => (
+                )) as any,
+                event: (({ event }: { event: any }) => (
                   <span style={{ fontWeight: '500' }}>
                     {event.title}
                     {event.eventType?.name && (
@@ -1188,8 +1187,8 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
                       </span>
                     )}
                   </span>
-                )
-              }
+                )) as any
+              } as any
             }}
           />
         </Box>
@@ -1209,8 +1208,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
           location: selectedEvent.location,
           game: selectedEvent.game,
           task: selectedEvent.task,
-          weatherData: selectedEvent.weatherData,
-          tournament: selectedEvent?.tournament
+          weatherData: selectedEvent.weatherData
         } : null}
         onEdit={() => selectedEvent && handleEditEvent(selectedEvent)}
         showEdit={true}

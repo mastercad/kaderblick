@@ -23,7 +23,7 @@ import { StrongFeet } from '../types/strongFeet';
 const StrongFeets = () => {
   const [strongFeets, setStrongFeets] = useState<StrongFeet[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [strongFeetId, setStrongFeetId] = useState<number | null>(null);
   const [strongFeetEditModalOpen, setStrongFeetEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -145,9 +145,9 @@ const StrongFeets = () => {
         />
         <StrongFeetDeleteConfirmationModal
             open={deleteModalOpen}
-            strongFeetName={deleteStrongFeet?.name}
+            positionName={deleteStrongFeet?.name}
             onClose={() => setDeleteModalOpen(false)}
-            onConfirm={async () => handleDelete(deleteStrongFeet.id) }
+            onConfirm={async () => handleDelete(deleteStrongFeet!.id) }
         />
     </Box>
   );

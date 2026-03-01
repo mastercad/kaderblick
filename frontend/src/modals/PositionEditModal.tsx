@@ -49,8 +49,8 @@ const PositionEditModal: React.FC<PositionEditModalProps> = ({ openPositionEditM
         setLoading(true);
         setError(null);
         try {
-          const url = position.id ? `/api/positions/${position.id}` : '/api/positions';
-          const method = position.id ? 'PUT' : 'POST';
+          const url = position!.id ? `/api/positions/${position!.id}` : '/api/positions';
+          const method = position!.id ? 'PUT' : 'POST';
           const res = await apiJson(url, {
             method,
             body: position,

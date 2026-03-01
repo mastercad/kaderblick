@@ -19,7 +19,15 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
+      // Service Worker auch im Dev-Modus aktivieren (für Push-Tests)
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
       manifest: {
         name: 'Kaderblick Fußballverein',
         short_name: 'Kaderblick',
@@ -41,7 +49,8 @@ export default defineConfig({
           }
         ]
       },
-      workbox: {
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB - Hauptbundle ist >2MB
         globPatterns: ['**/*.{js,css,html,png,svg,ico,json}'],
         globIgnores: [
           'uploads/**',

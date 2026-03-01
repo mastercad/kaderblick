@@ -28,7 +28,7 @@ import { PlayerNationalityAssignment } from '../types/playerNationalityAssignmen
 const Players = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState<number | null>(null);
   const [playerDetailsModalOpen, setPlayerDetailsModalOpen] = useState(false);
   const [playerEditModalOpen, setPlayerEditModalOpen] = useState(false);
@@ -186,7 +186,7 @@ const Players = () => {
       )}
       <PlayerDetailsModal
         open={playerDetailsModalOpen}
-        loadPlayers={() => loadPlayers()}
+        loadPlayeres={() => loadPlayers()}
         playerId={playerId}
         onClose={() => setPlayerDetailsModalOpen(false)}
       />
@@ -203,7 +203,7 @@ const Players = () => {
         open={deleteModalOpen}
         playerName={deletePlayer?.firstName + " " + deletePlayer?.lastName}
         onClose={() => setDeleteModalOpen(false)}
-        onConfirm={async () => handleDelete(deletePlayer.id) }
+        onConfirm={async () => handleDelete(deletePlayer!.id) }
       />
     </Box>
   );

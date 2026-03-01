@@ -182,13 +182,13 @@ const ClubEditModal: React.FC<ClubEditModalProps> = ({ openClubEditModal, clubId
                                             renderOption={(props, option) => {
                                                 if ((option as any).id === 'new') {
                                                     return (
-                                                        <li key={option.id} {...props} style={{ display: 'flex', alignItems: 'center', color: '#1976d2', fontWeight: 500 }}>
+                                                        <li {...props} key={option.id} style={{ display: 'flex', alignItems: 'center', color: '#1976d2', fontWeight: 500 }}>
                                                             <AddIcon fontSize="small" style={{ marginRight: 8 }} /> Neue Sportstätte anlegen...
                                                         </li>
                                                     );
                                                 }
                                                 return (
-                                                    <li key={option.id} {...props}>{option.name}</li>
+                                                    <li {...props} key={option.id}>{option.name}</li>
                                                 );
                                             }}
                                             renderInput={(params) => (

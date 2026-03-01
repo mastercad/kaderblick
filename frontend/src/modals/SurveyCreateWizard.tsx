@@ -123,13 +123,13 @@ import BaseModal from './BaseModal';
     apiJson<{teams: {id:number, name:string}[]}>('/api/teams/list')
       .then(data => setAvailableTeams(data.teams))
       .catch(e => setTeamsLoadError('Fehler beim Laden der Teams: ' + (e?.message || 'Unknown error')));
-    apiJson<{clubs: {id:number, name:string}[]}>('/api/clubs/list')
+    apiJson<Record<string, any>>('/api/clubs/list')
       .then((data) => {
         if (data && typeof data === 'object') {
         // Die eigentlichen Einträge stehen unter numerischen Keys
         const clubList = Object.keys(data)
           .filter(key => /^\d+$/.test(key))
-          .map(key => data[key]);
+          .map(key => (data as Record<string, any>)[key]);
         setAvailableClubs(clubList);
       } else {
         setAvailableClubs([]);

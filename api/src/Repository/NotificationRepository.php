@@ -145,4 +145,58 @@ class NotificationRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Get push delivery statistics for a user over the last N days.
+     *
+     * @return array{total: int, sent: int, unsent: int, failRate: float}
+     */
+    public function getPushDeliveryStats(User $user, int $days = 7): array
+    {
+        $since = new DateTimeImmutable('-' . $days . ' days');
+
+        $total = (int) $this->createQueryBuilder('n')
+            ->select('COUNT(n.id)')
+            ->where('n.user = :user')
+            ->andWhere('n.createdAt >= :since')
+            ->setParameter('user', $user)
+            ->setParameter('since', $since)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $sent = (int) $this->createQueryBuilder('n')
+            ->select('COUNT(n.id)')
+            ->where('n.user = :user')
+            ->andWhere('n.createdAt >= :since')
+            ->andWhere('n.isSent = true')
+            ->setParameter('user', $user)
+            ->setParameter('since', $since)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $unsent = $total - $sent;
+        $failRate = $total > 0 ? round(($unsent / $total) * 100, 1) : 0.0;
+
+        return [
+            'total' => $total,
+            'sent' => $sent,
+            'unsent' => $unsent,
+            'failRate' => $failRate,
+        ];
+    }
+
+    /**
+     * Find the last successfully sent notification for a user.
+     */
+    public function findLastSentForUser(User $user): ?Notification
+    {
+        return $this->createQueryBuilder('n')
+            ->where('n.user = :user')
+            ->andWhere('n.isSent = true')
+            ->setParameter('user', $user)
+            ->orderBy('n.createdAt', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }

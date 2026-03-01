@@ -91,6 +91,7 @@ export interface GameEvent {
   relatedPlayerId?: number;
   minute?: number;
   reason?: string;
+  type?: string;
 }
 
 export interface GameWithScore {

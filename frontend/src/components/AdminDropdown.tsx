@@ -101,7 +101,7 @@ export default function AdminDropdown() {
                 onClick={() => {
                   handleClose();
                   if (item.page) {
-                    if (typeof window.setAppPage === 'function') window.setAppPage(item.page);
+                    if (typeof (window as any).setAppPage === 'function') (window as any).setAppPage(item.page);
                   }
                 }}
               >

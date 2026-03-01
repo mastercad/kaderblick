@@ -28,7 +28,7 @@ import { CoachNationalityAssignment } from '../types/coachNationalityAssignment'
 const Coaches = () => {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [coachId, setCoachId] = useState<number | null>(null);
   const [coachDetailsModalOpen, setCoachDetailsModalOpen] = useState(false);
   const [coachEditModalOpen, setCoachEditModalOpen] = useState(false);
@@ -211,7 +211,7 @@ const Coaches = () => {
         open={deleteModalOpen}
         coachName={deleteCoach?.firstName + " " + deleteCoach?.lastName}
         onClose={() => setDeleteModalOpen(false)}
-        onConfirm={async () => handleDelete(deleteCoach.id) }
+        onConfirm={async () => handleDelete(deleteCoach!.id) }
       />
     </Box>
   );

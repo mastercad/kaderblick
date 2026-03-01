@@ -49,8 +49,8 @@ const LeagueEditModal: React.FC<LeagueEditModalProps> = ({ openLeagueEditModal, 
         setLoading(true);
         setError(null);
         try {
-          const url = league.id ? `/api/leagues/${league.id}` : '/api/leagues';
-          const method = league.id ? 'PUT' : 'POST';
+          const url = league!.id ? `/api/leagues/${league!.id}` : '/api/leagues';
+          const method = league!.id ? 'PUT' : 'POST';
           const res = await apiJson(url, {
             method,
             body: league,

@@ -23,7 +23,7 @@ import { League } from '../types/league';
 const Leagues = () => {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [leagueId, setLeagueId] = useState<number | null>(null);
   const [leagueEditModalOpen, setLeagueEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -143,7 +143,7 @@ const Leagues = () => {
             open={deleteModalOpen}
             leagueName={deleteLeague?.name}
             onClose={() => setDeleteModalOpen(false)}
-            onConfirm={async () => handleDelete(deleteLeague.id) }
+            onConfirm={async () => handleDelete(deleteLeague!.id) }
         />
     </Box>
   );
