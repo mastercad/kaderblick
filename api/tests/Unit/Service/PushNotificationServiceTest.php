@@ -64,12 +64,12 @@ class PushNotificationServiceTest extends TestCase
                 $this->callback(function (string $payload) {
                     $data = json_decode($payload, true);
 
-                    return $data['title'] === 'Test Title'
-                        && $data['body'] === 'Test Body'
-                        && $data['url'] === '/test/123'
-                        && $data['data']['url'] === '/test/123'
-                        && $data['icon'] === '/images/icon-192.png'
-                        && $data['badge'] === '/images/icon-192.png'
+                    return 'Test Title' === $data['title']
+                        && 'Test Body' === $data['body']
+                        && '/test/123' === $data['url']
+                        && '/test/123' === $data['data']['url']
+                        && '/images/icon-192.png' === $data['icon']
+                        && '/images/icon-192.png' === $data['badge']
                         && str_starts_with($data['tag'], 'notification-42-')
                         && false === $data['requireInteraction'];
                 })
@@ -123,7 +123,7 @@ class PushNotificationServiceTest extends TestCase
                 $this->callback(function (string $payload) {
                     $data = json_decode($payload, true);
 
-                    return $data['url'] === '/' && $data['data']['url'] === '/';
+                    return '/' === $data['url'] && '/' === $data['data']['url'];
                 })
             );
 
@@ -338,6 +338,7 @@ class PushNotificationServiceTest extends TestCase
     //  HELPERS
     // ======================================================================
 
+    /** @param array<int, PushSubscription&MockObject> $subscriptions */
     private function createUserWithSubscriptions(array $subscriptions): User&MockObject
     {
         $user = $this->createMock(User::class);

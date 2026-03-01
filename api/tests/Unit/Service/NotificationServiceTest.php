@@ -159,7 +159,7 @@ class NotificationServiceTest extends TestCase
         $this->pushService->expects($this->exactly(2))
             ->method('sendNotification')
             ->willReturnCallback(function (User $user) {
-                if ($user->getId() === 2) {
+                if (2 === $user->getId()) {
                     throw new Exception('Push failed for user 2');
                 }
             });

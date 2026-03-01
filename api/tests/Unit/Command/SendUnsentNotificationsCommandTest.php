@@ -12,6 +12,7 @@ use Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use ReflectionProperty;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -133,7 +134,7 @@ class SendUnsentNotificationsCommandTest extends TestCase
         $this->pushService->expects($this->exactly(2))
             ->method('sendNotification')
             ->willReturnCallback(function (User $u, string $title) {
-                if ($title === 'N1') {
+                if ('N1' === $title) {
                     throw new Exception('Network error');
                 }
             });
@@ -166,6 +167,7 @@ class SendUnsentNotificationsCommandTest extends TestCase
 
     private static int $nextId = 1;
 
+    /** @param array<string, mixed>|null $data */
     private function createNotification(User&MockObject $user, string $title, string $body, ?array $data): Notification
     {
         $notification = new Notification();
@@ -176,7 +178,7 @@ class SendUnsentNotificationsCommandTest extends TestCase
         $notification->setIsSent(false);
 
         // Set ID via reflection (normally set by DB auto-increment)
-        $ref = new \ReflectionProperty(Notification::class, 'id');
+        $ref = new ReflectionProperty(Notification::class, 'id');
         $ref->setValue($notification, self::$nextId++);
 
         return $notification;

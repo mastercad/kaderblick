@@ -13,10 +13,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 
 class PushControllerTest extends TestCase
 {
@@ -102,8 +101,8 @@ class PushControllerTest extends TestCase
 
         $this->em->expects($this->once())->method('persist')
             ->with($this->callback(function (PushSubscription $sub) {
-                return $sub->getEndpoint() === 'https://fcm.googleapis.com/test-endpoint'
-                    && $sub->isActive() === true;
+                return 'https://fcm.googleapis.com/test-endpoint' === $sub->getEndpoint()
+                    && true === $sub->isActive();
             }));
         $this->em->expects($this->once())->method('flush');
 

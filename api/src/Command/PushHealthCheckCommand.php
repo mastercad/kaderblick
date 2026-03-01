@@ -5,6 +5,7 @@ namespace App\Command;
 use App\Entity\User;
 use App\Repository\NotificationRepository;
 use App\Repository\PushSubscriptionRepository;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -65,7 +66,7 @@ class PushHealthCheckCommand extends Command
         $totalSubscriptions = count($allActiveSubscriptions);
         $io->info(sprintf('Total active push subscriptions: %d', $totalSubscriptions));
 
-        if ($totalSubscriptions === 0) {
+        if (0 === $totalSubscriptions) {
             $io->warning('No active push subscriptions found! No user can receive push notifications.');
             $this->logger->warning('Push health check: No active subscriptions');
 
@@ -85,16 +86,16 @@ class PushHealthCheckCommand extends Command
         foreach ($enabledUsers as $user) {
             $subs = $this->subscriptionRepo->findBy(['user' => $user, 'isActive' => true]);
 
-            if (count($subs) === 0) {
-                $usersWithoutSubscriptions++;
+            if (0 === count($subs)) {
+                ++$usersWithoutSubscriptions;
                 continue;
             }
 
-            $usersWithSubscriptions++;
+            ++$usersWithSubscriptions;
             $stats = $this->notificationRepo->getPushDeliveryStats($user, $days);
 
             if ($stats['total'] > 0 && $stats['failRate'] > $failThreshold) {
-                $usersWithHighFailRate++;
+                ++$usersWithHighFailRate;
                 $problemUsers[] = [
                     'id' => $user->getId(),
                     'email' => $user->getEmail(),
@@ -109,11 +110,11 @@ class PushHealthCheckCommand extends Command
             // Check for stale subscriptions (> 90 days old)
             foreach ($subs as $sub) {
                 $ageInDays = $sub->getCreatedAt()
-                    ? (new \DateTimeImmutable())->diff($sub->getCreatedAt())->days
+                    ? (new DateTimeImmutable())->diff($sub->getCreatedAt())->days
                     : 0;
 
                 if ($ageInDays > 90) {
-                    $usersWithStaleSubscriptions++;
+                    ++$usersWithStaleSubscriptions;
 
                     if ($cleanupStale) {
                         $sub->setIsActive(false);

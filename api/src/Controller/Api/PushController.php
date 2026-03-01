@@ -175,10 +175,10 @@ class PushController extends AbstractController
         if (!$vapidConfigured) {
             $issues[] = 'vapid_not_configured';
         }
-        if ($subscriptionCount === 0) {
+        if (0 === $subscriptionCount) {
             $issues[] = 'no_subscriptions';
         }
-        if ($recentStats['total'] > 0 && $recentStats['sent'] === 0) {
+        if ($recentStats['total'] > 0 && 0 === $recentStats['sent']) {
             $issues[] = 'all_deliveries_failed';
         }
         if ($unsentCount > 5) {
@@ -188,7 +188,7 @@ class PushController extends AbstractController
             $issues[] = 'high_failure_rate';
         }
 
-        $status = count($issues) === 0 ? 'healthy' : 'degraded';
+        $status = 0 === count($issues) ? 'healthy' : 'degraded';
         if (in_array('vapid_not_configured', $issues, true) || in_array('no_subscriptions', $issues, true)) {
             $status = 'broken';
         }
@@ -218,7 +218,7 @@ class PushController extends AbstractController
             'isActive' => true,
         ]);
 
-        if (count($subscriptions) === 0) {
+        if (0 === count($subscriptions)) {
             return $this->json([
                 'success' => false,
                 'error' => 'no_subscriptions',
