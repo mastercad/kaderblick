@@ -21,6 +21,6 @@ final class Version20260302164026 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $this->addSql('CREATE UNIQUE INDEX uniq_game_name ON videos (game_id, name)');
+        $this->addSql('CREATE UNIQUE INDEX IF NOT EXISTS uniq_game_name ON videos (game_id, name)');
     }
 }
