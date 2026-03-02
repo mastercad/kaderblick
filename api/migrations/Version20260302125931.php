@@ -6,6 +6,7 @@ namespace DoctrineMigrations;
 
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
+use Throwable;
 
 /**
  * Auto-generated Migration: Please modify to your needs!
@@ -78,7 +79,7 @@ final class Version20260302125931 extends AbstractMigration
         foreach ($statements as $sql) {
             try {
                 $this->connection->executeStatement($sql);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $this->write(sprintf('  <comment>Skipped (already applied): %s</comment>', substr($sql, 0, 80)));
             }
         }
