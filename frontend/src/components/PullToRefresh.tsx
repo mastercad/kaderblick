@@ -73,11 +73,14 @@ export const PullToRefresh = ({ onRefresh, children, isEnabled = true, isPullToR
         )}
       </Box>
 
-      {/* Content */}
+      {/* Content — use position:relative + top instead of transform:translateY
+         so we do NOT create a CSS containing block that breaks position:fixed
+         descendants (e.g. dnd-kit DragOverlay). */}
       <Box
         sx={{
-          transform: `translateY(${isPulling ? pullDistance : 0}px)`,
-          transition: isPulling && !isRefreshing ? 'none' : 'transform 0.2s ease',
+          position: 'relative',
+          top: isPulling ? pullDistance : 0,
+          transition: isPulling && !isRefreshing ? 'none' : 'top 0.2s ease',
         }}
       >
         {children}

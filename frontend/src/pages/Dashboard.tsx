@@ -96,15 +96,16 @@ function DashboardContent() {
     setSettingsWidgetId(null);
   };
 
-  const handleSettingsSave = async (newWidth: number | string) => {
+  const handleSettingsSave = async (newWidth: number | string, newConfig?: any) => {
     if (!settingsWidgetId) return;
     const widget = widgets.find(w => w.id === settingsWidgetId);
     if (!widget) return;
+    const mergedConfig = newConfig !== undefined ? newConfig : widget.config;
     await updateWidgetWidth({
       id: widget.id,
       width: newWidth,
       position: widget.position,
-      config: widget.config,
+      config: mergedConfig,
       enabled: true
     });
     setLoading(true);
@@ -204,8 +205,7 @@ function DashboardContent() {
           setWidgets(reordered);
           await reorderWidgets(reordered);
         }}
-      >
-        {(widget, idx, dragProps, isDragging, dragHandle) => (
+        renderWidget={(widget, idx, isDragging, dragHandle) => (
           <DashboardWidget
             id={widget.id}
             type={widget.type}
@@ -220,7 +220,6 @@ function DashboardContent() {
             onDelete={() => handleDelete(widget.id)}
             onSettings={() => handleSettings(widget.id)}
             dragHandle={dragHandle}
-            {...dragProps}
           >
             {widget.type === 'upcoming_events' && <UpcomingEventsWidget widgetId={widget.id} config={widget.config} />}
             {widget.type === 'news' && <NewsWidget widgetId={widget.id} config={widget.config} />}
@@ -240,7 +239,7 @@ function DashboardContent() {
             )}
           </DashboardWidget>
         )}
-      </DashboardDndKitWrapper>
+      />
 
       <DynamicConfirmationModal
         open={deleteModalOpen}
@@ -266,6 +265,16 @@ function DashboardContent() {
           if (!settingsWidgetId) return 6;
           const w = widgets.find(w => w.id === settingsWidgetId);
           return w?.width ?? 6;
+        })()}
+        widgetType={(() => {
+          if (!settingsWidgetId) return undefined;
+          const w = widgets.find(w => w.id === settingsWidgetId);
+          return w?.type;
+        })()}
+        widgetConfig={(() => {
+          if (!settingsWidgetId) return undefined;
+          const w = widgets.find(w => w.id === settingsWidgetId);
+          return w?.config;
         })()}
         onClose={handleSettingsClose}
         onSave={handleSettingsSave}

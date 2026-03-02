@@ -21,7 +21,6 @@ export type DashboardWidgetProps = {
   onSettings?: () => void;
   dragHandle?: React.ReactNode;
   children?: React.ReactNode;
-  style?: React.CSSProperties;
 };
 
 const DashboardWidgetInner = (
@@ -35,7 +34,6 @@ const DashboardWidgetInner = (
     onSettings,
     dragHandle,
     children,
-    style,
     ...rest
   }: DashboardWidgetProps,
   ref: React.Ref<any>
