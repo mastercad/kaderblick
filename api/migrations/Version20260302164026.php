@@ -16,7 +16,7 @@ final class Version20260302164026 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('DROP INDEX uniq_game_name ON videos');
+        $this->addSql('DROP INDEX IF EXISTS uniq_game_name ON videos');
     }
 
     public function down(Schema $schema): void
