@@ -26,16 +26,7 @@ final class Version20260302125931 extends AbstractMigration
         );
 
         $this->addSql(<<<'SQL'
-            ALTER TABLE goals DROP FOREIGN KEY fk_goals_players_scorer_id
-        SQL);
-        $this->addSql(<<<'SQL'
-            ALTER TABLE goals DROP FOREIGN KEY fk_goals_games
-        SQL);
-        $this->addSql(<<<'SQL'
-            ALTER TABLE goals DROP FOREIGN KEY fk_goals_players
-        SQL);
-        $this->addSql(<<<'SQL'
-            DROP TABLE goals
+            DROP TABLE IF EXISTS goals
         SQL);
         $this->addSql(<<<'SQL'
             CREATE UNIQUE INDEX uniq_age_groups_name ON age_groups (name)
