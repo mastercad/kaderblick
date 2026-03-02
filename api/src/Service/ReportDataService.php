@@ -124,7 +124,18 @@ class ReportDataService
                     $metricCodeMap = [
                         'goals' => ['goal', 'penalty_goal', 'freekick_goal', 'header_goal', 'corner_goal', 'cross_goal', 'counter_goal', 'pressing_goal'],
                         'assists' => ['assist'],
-                        'shots' => ['shot_on_target', 'shot_off_target', 'shot_blocked', 'header_on_target', 'header_off_target', 'long_shot', 'volley', 'bicycle_kick', 'shot_post', 'shot_bar'],
+                        'shots' => [
+                            'shot_on_target',
+                            'shot_off_target',
+                            'shot_blocked',
+                            'header_on_target',
+                            'header_off_target',
+                            'long_shot',
+                            'volley',
+                            'bicycle_kick',
+                            'shot_post',
+                            'shot_bar'
+                        ],
                         'yellowCards' => ['yellow_card'],
                         'redCards' => ['red_card', 'yellow_red_card'],
                         'fouls' => ['foul', 'foul_holding', 'foul_push', 'foul_shove', 'foul_bump', 'foul_trip', 'foul_kick', 'foul_elbow'],

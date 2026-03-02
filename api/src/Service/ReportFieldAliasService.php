@@ -400,15 +400,55 @@ class ReportFieldAliasService
                 'label' => 'Schüsse',
                 'category' => 'metric',
                 'aggregate' => static function (array $events) use ($countByCodes) {
-                    return $countByCodes($events, ['shot_on_target', 'shot_off_target', 'shot_blocked', 'header_on_target', 'header_off_target', 'long_shot', 'volley', 'bicycle_kick', 'shot_post', 'shot_bar']);
+                    return $countByCodes(
+                        $events,
+                        [
+                            'shot_on_target',
+                            'shot_off_target',
+                            'shot_blocked',
+                            'header_on_target',
+                            'header_off_target',
+                            'long_shot',
+                            'volley',
+                            'bicycle_kick',
+                            'shot_post',
+                            'shot_bar'
+                        ]
+                    );
                 },
             ],
             'shotAccuracy' => [
                 'label' => 'Torschussquote %',
                 'category' => 'metric',
                 'aggregate' => static function (array $events) use ($countByCodes) {
-                    $allShots = $countByCodes($events, ['shot_on_target', 'shot_off_target', 'shot_blocked', 'header_on_target', 'header_off_target', 'long_shot', 'volley', 'bicycle_kick', 'shot_post', 'shot_bar']);
-                    $goals = $countByCodes($events, ['goal', 'penalty_goal', 'freekick_goal', 'header_goal', 'corner_goal', 'cross_goal', 'counter_goal', 'pressing_goal']);
+                    $allShots = $countByCodes(
+                        $events,
+                        [
+                            'shot_on_target',
+                            'shot_off_target',
+                            'shot_blocked',
+                            'header_on_target',
+                            'header_off_target',
+                            'long_shot',
+                            'volley',
+                            'bicycle_kick',
+                            'shot_post',
+                            'shot_bar'
+                        ]
+                    );
+                    $goals = $countByCodes(
+                        $events,
+                        [
+                            'goal',
+                            'penalty_goal',
+                            'freekick_goal',
+                            'header_goal',
+                            'corner_goal',
+                            'cross_goal',
+                            'counter_goal',
+                            'pressing_goal'
+                        ]
+                    );
                     if (0 === $allShots) {
                         return 0;
                     }
@@ -434,7 +474,19 @@ class ReportFieldAliasService
                 'label' => 'Fouls',
                 'category' => 'metric',
                 'aggregate' => static function (array $events) use ($countByCodes) {
-                    return $countByCodes($events, ['foul', 'foul_holding', 'foul_push', 'foul_shove', 'foul_bump', 'foul_trip', 'foul_kick', 'foul_elbow']);
+                    return $countByCodes(
+                        $events,
+                        [
+                            'foul',
+                            'foul_holding',
+                            'foul_push',
+                            'foul_shove',
+                            'foul_bump',
+                            'foul_trip',
+                            'foul_kick',
+                            'foul_elbow'
+                        ]
+                    );
                 },
             ],
             'dribbles' => [
@@ -484,7 +536,21 @@ class ReportFieldAliasService
                 'label' => 'Pässe',
                 'category' => 'metric',
                 'aggregate' => static function (array $events) use ($countByCodes) {
-                    return $countByCodes($events, ['pass_normal', 'pass_through', 'cross', 'pass_back', 'pass_sideways', 'chip_ball', 'pass_cut', 'long_ball', 'switch_play', 'header_pass']);
+                    return $countByCodes(
+                        $events,
+                        [
+                            'pass_normal',
+                            'pass_through',
+                            'cross',
+                            'pass_back',
+                            'pass_sideways',
+                            'chip_ball',
+                            'pass_cut',
+                            'long_ball',
+                            'switch_play',
+                            'header_pass'
+                        ]
+                    );
                 },
             ],
             'tackles' => [
@@ -542,9 +608,7 @@ class ReportFieldAliasService
                 // Weather dimensions are resolved via callable (JSON data), no simple join
                 $v['joinHint'] = null;
             } else {
-                if (!array_key_exists('joinHint', $v)) {
-                    $v['joinHint'] = null;
-                }
+                $v['joinHint'] = null;
             }
         }
         unset($v);
