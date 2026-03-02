@@ -46,8 +46,16 @@ class TaskDeletionTest extends WebTestCase
             $connection->executeStatement("DELETE FROM calendar_events WHERE title LIKE 'Test Game%'");
 
             // Relationen/Spieler nur für Test-User
-            $connection->executeStatement("DELETE FROM user_relation WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test-deletion-%' OR email LIKE 'test-task-delete-%')");
-            $connection->executeStatement("DELETE FROM player_team_assignments WHERE player_id IN (SELECT id FROM players WHERE email LIKE 'test-deletion-%' OR email LIKE 'test-task-delete-%')");
+            $connection->executeStatement(
+                "DELETE FROM user_relation WHERE user_id IN 
+                    (SELECT id FROM users WHERE email LIKE 'test-deletion-%' OR email LIKE 'test-task-delete-%')
+                "
+            );
+            $connection->executeStatement(
+                "DELETE FROM player_team_assignments WHERE player_id IN 
+                    (SELECT id FROM players WHERE email LIKE 'test-deletion-%' OR email LIKE 'test-task-delete-%')
+                "
+            );
             $connection->executeStatement("DELETE FROM players WHERE email LIKE 'test-deletion-%' OR email LIKE 'test-task-delete-%'");
             $connection->executeStatement("DELETE FROM users WHERE email LIKE 'test-deletion-%' OR email LIKE 'test-task-delete-%'");
             $connection->executeStatement("DELETE FROM teams WHERE name LIKE 'Test Team Delete%'");
