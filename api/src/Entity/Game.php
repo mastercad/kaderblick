@@ -61,11 +61,6 @@ class Game
     )]
     private GameType $gameType;
 
-    /** @var Collection<int, Goal> */
-    #[Groups(['game:read', 'game:write'])]
-    #[ORM\OneToMany(targetEntity: Goal::class, mappedBy: 'game')]
-    private Collection $goals;
-
     /** @var Collection<int, GameEvent> */
     #[Groups(['game:read', 'game:write'])]
     #[ORM\OneToMany(targetEntity: GameEvent::class, mappedBy: 'game')]
@@ -122,7 +117,6 @@ class Game
 
     public function __construct()
     {
-        $this->goals = new ArrayCollection();
         $this->gameEvents = new ArrayCollection();
         $this->substitutions = new ArrayCollection();
         $this->videos = new ArrayCollection();
@@ -238,34 +232,6 @@ class Game
             // set the owning side to null (unless already changed)
             if ($gameEvent->getGame() === $this) {
                 $gameEvent->setGame(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /** @return Collection<int, Goal> */
-    public function getGoals(): Collection
-    {
-        return $this->goals;
-    }
-
-    public function addGoal(Goal $goal): self
-    {
-        if (!$this->goals->contains($goal)) {
-            $this->goals[] = $goal;
-            $goal->setGame($this);
-        }
-
-        return $this;
-    }
-
-    public function removeGoal(Goal $goal): self
-    {
-        if ($this->goals->removeElement($goal)) {
-            // set the owning side to null (unless already changed)
-            if ($goal->getGame() === $this) {
-                $goal->setGame(null);
             }
         }
 
