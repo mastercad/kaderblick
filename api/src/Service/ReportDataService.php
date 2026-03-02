@@ -53,15 +53,19 @@ class ReportDataService
             // Determine whether the requested yField can be computed in DB
             $yAlias = $fieldAliases[$yField] ?? null;
             $supportedMetric = false;
+            // All named aggregate metrics can be computed via simple event-code counting in DB
+            $dbSupportedMetrics = ['goals', 'assists', 'shots', 'yellowCards', 'redCards', 'fouls',
+                'dribbles', 'saves', 'passes', 'tackles', 'interceptions'];
             if ($yAlias && isset($yAlias['aggregate']) && is_callable($yAlias['aggregate'])) {
-                if (in_array($yField, ['goals', 'shots'], true)) {
+                if (in_array($yField, $dbSupportedMetrics, true)) {
                     $supportedMetric = true;
                 } else {
+                    // Percentage metrics (shotAccuracy, duelsWonPercent) require PHP post-processing
                     $supportedMetric = false;
                     $metaLocal['suggestions'][] = "DB-Aggregate: metric '{$yField}' not supported for DB aggregation (complex PHP aggregate).";
                 }
             } else {
-                // tokens like eventType:ID or surfaceType:ID or generic count are supported
+                // tokens like eventType:ID or generic count are supported
                 $supportedMetric = true;
             }
 
@@ -116,16 +120,33 @@ class ReportDataService
                 }
 
                 if ($canUseDb && !empty($groupByIdExprs)) {
-                    // Metric-specific WHEREs
-                    if ('goals' === $yField) {
-                        $qb->leftJoin('e.gameEventType', 'et')->andWhere('et.code = :goalCode')->setParameter('goalCode', 'goal');
-                    } elseif ('shots' === $yField) {
-                        $qb->leftJoin('e.gameEventType', 'et')->andWhere("et.code IN ('shot','shot_on_target','shot_off_target')");
+                    // Metric-specific WHEREs — map metric key to GameEventType codes
+                    $metricCodeMap = [
+                        'goals' => ['goal', 'penalty_goal', 'freekick_goal', 'header_goal', 'corner_goal', 'cross_goal', 'counter_goal', 'pressing_goal'],
+                        'assists' => ['assist'],
+                        'shots' => ['shot_on_target', 'shot_off_target', 'shot_blocked', 'header_on_target', 'header_off_target', 'long_shot', 'volley', 'bicycle_kick', 'shot_post', 'shot_bar'],
+                        'yellowCards' => ['yellow_card'],
+                        'redCards' => ['red_card', 'yellow_red_card'],
+                        'fouls' => ['foul', 'foul_holding', 'foul_push', 'foul_shove', 'foul_bump', 'foul_trip', 'foul_kick', 'foul_elbow'],
+                        'dribbles' => ['dribble_success'],
+                        'saves' => ['save', 'keeper_hold', 'keeper_punch', 'penalty_save'],
+                        'passes' => ['pass_normal', 'pass_through', 'cross', 'pass_back', 'pass_sideways', 'chip_ball', 'pass_cut', 'long_ball', 'switch_play', 'header_pass'],
+                        'tackles' => ['tackle_success'],
+                        'interceptions' => ['interception', 'intercept_cross', 'ball_win'],
+                    ];
+
+                    if (isset($metricCodeMap[$yField])) {
+                        $codes = $metricCodeMap[$yField];
+                        $qb->leftJoin('e.gameEventType', 'et');
+                        $placeholders = [];
+                        foreach ($codes as $ci => $code) {
+                            $param = 'mc_' . $ci;
+                            $placeholders[] = ':' . $param;
+                            $qb->setParameter($param, $code);
+                        }
+                        $qb->andWhere('et.code IN (' . implode(',', $placeholders) . ')');
                     } elseif (preg_match('/^eventType:(\d+)$/', $yField, $m)) {
                         $qb->andWhere('e.gameEventType = :evtype')->setParameter('evtype', (int) $m[1]);
-                    } elseif (preg_match('/^surfaceType:(\d+)$/', $yField, $m)) {
-                        // join through game -> location -> surfaceType
-                        $qb->leftJoin('e.game', 'g')->leftJoin('g.location', 'loc')->andWhere('loc.surfaceType = :surfaceType')->setParameter('surfaceType', (int) $m[1]);
                     }
 
                     // Apply standard filters (same as non-DB path)
@@ -141,6 +162,9 @@ class ReportDataService
                     if (isset($filters['surfaceType'])) {
                         $qb->leftJoin('e.game', 'g2')->leftJoin('g2.location', 'loc2')
                             ->andWhere('loc2.surfaceType = :surfaceType')->setParameter('surfaceType', (int) $filters['surfaceType']);
+                    }
+                    if (isset($filters['gameType'])) {
+                        $qb->leftJoin('e.game', 'ggt')->andWhere('ggt.gameType = :gameType')->setParameter('gameType', (int) $filters['gameType']);
                     }
                     if (isset($filters['dateFrom'])) {
                         $qb->andWhere('DATE(e.timestamp) >= DATE(:dateFrom)')->setParameter('dateFrom', new DateTimeImmutable($filters['dateFrom']));
@@ -197,6 +221,9 @@ class ReportDataService
         if (isset($filters['surfaceType'])) {
             // join through game -> location -> surfaceType
             $qb->join('e.game', 'g')->join('g.location', 'loc')->andWhere('loc.surfaceType = :surfaceType')->setParameter('surfaceType', (int) $filters['surfaceType']);
+        }
+        if (isset($filters['gameType'])) {
+            $qb->join('e.game', 'ggt2')->andWhere('ggt2.gameType = :gameType')->setParameter('gameType', (int) $filters['gameType']);
         }
         if (isset($filters['dateFrom'])) {
             $qb->andWhere('DATE(e.timestamp) >= DATE(:dateFrom)')->setParameter('dateFrom', new DateTimeImmutable($filters['dateFrom']));
@@ -295,7 +322,7 @@ class ReportDataService
         // Radar chart handling: expects `metrics` array in config and a `groupBy` (e.g. player/team)
         $diagramType = $config['diagramType'] ?? '';
         $metrics = $config['metrics'] ?? [];
-        if ('radar' === $diagramType && is_array($metrics) && !empty($metrics)) {
+        if (in_array($diagramType, ['radar', 'radaroverlay'], true) && is_array($metrics) && !empty($metrics)) {
             $radarResult = $this->generateReportDataForRadar($events, $metrics, $groupBy);
             // attach meta (eventsCount) for the UI
             $radarResult['meta'] = $radarResult['meta'] ?? [];

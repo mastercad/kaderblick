@@ -12,9 +12,6 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
-#[ORM\Index(name: 'idx_users_player_id', columns: ['player_id'])]
-#[ORM\Index(name: 'idx_users_coach_id', columns: ['coach_id'])]
-#[ORM\Index(name: 'idx_users_club_id', columns: ['club_id'])]
 #[ORM\UniqueConstraint(name: 'uniq_users_email', columns: ['email'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {

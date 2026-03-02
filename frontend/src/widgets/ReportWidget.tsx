@@ -232,18 +232,7 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
       .finally(() => setLoading(false));
   }, [reportId, refreshTrigger, config]);
 
-  if (!reportId && !config) {
-    return <Typography color="text.secondary">Kein Report ausgewählt.</Typography>;
-  }
-  if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}><CircularProgress size={28} /></Box>;
-  }
-  if (error) {
-    return <Typography color="error">{error}</Typography>;
-  }
-  if (!data || !data.labels || !data.datasets || !data.datasets.length) {
-    return <Typography color="text.secondary">Keine Daten für diesen Report.</Typography>;
-  }
+  // ── Derived values (computed before early returns to keep hook order stable) ──
 
   const defaultColors = [
     '#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6', '#DD4477', '#66AA00', '#B82E2E', '#316395',
@@ -256,44 +245,10 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
     'rgba(184,46,46,0.35)', 'rgba(49,99,149,0.35)'
   ];
 
-  // Determine effective diagram type (support preview objects where diagramType may be under config)
-  const effectiveType = ((data.diagramType as string) || (data as any).config?.diagramType || '').toLowerCase();
-
-  const chartData = {
-    labels: data.labels,
-    datasets: data.datasets.map((ds, i) => {
-      // Für Pie/PolarArea: backgroundColor als Array, sonst als String
-      const isPie = ["pie", "doughnut", "polararea"].includes(effectiveType);
-      const isArea = effectiveType === 'area';
-
-      // compute sensible colors
-      const computedBackground = ds.backgroundColor || (isPie
-        ? data.labels.map((_, idx) => defaultColors[idx % defaultColors.length])
-        : (isArea ? rgbaColors[i % rgbaColors.length] : defaultColors[i % defaultColors.length]));
-      const computedBorder = ds.borderColor || (isPie
-        ? data.labels.map((_, idx) => defaultColors[idx % defaultColors.length])
-        : defaultColors[i % defaultColors.length]);
-
-      // For area charts, explicitly enforce filling and a semi-transparent background
-      const enforcedProps: any = {};
-      if (isArea) {
-        enforcedProps.fill = ds.fill === false ? false : true; // allow explicit opt-out
-        enforcedProps.tension = ds.tension ?? 0.3;
-        // if background is a single hex (no alpha), prefer rgbaColors to ensure visible fill
-        if (!ds.backgroundColor) {
-          enforcedProps.backgroundColor = computedBackground;
-        }
-      }
-
-      return {
-        ...ds,
-        backgroundColor: ds.backgroundColor || computedBackground,
-        borderColor: ds.borderColor || computedBorder,
-        borderWidth: ds.borderWidth ?? 2,
-        ...enforcedProps,
-      };
-    })
-  };
+  // Determine effective diagram type (null-safe — data may not be loaded yet)
+  const effectiveType = data
+    ? ((data.diagramType as string) || (data as any).config?.diagramType || '').toLowerCase()
+    : '';
 
   const type = effectiveType;
 
@@ -303,15 +258,21 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
     return label.substring(0, maxLen - 1) + '…';
   };
 
-  // Anzahl Labels und Datasets für dynamische Anpassungen
-  const labelCount = data.labels?.length || 0;
-  const datasetCount = data.datasets?.length || 0;
+  // Anzahl Labels und Datasets für dynamische Anpassungen (null-safe)
+  const labelCount = data?.labels?.length || 0;
+  const datasetCount = data?.datasets?.length || 0;
   const isPieType = ['pie', 'doughnut', 'polararea'].includes(type);
   const isRadarType = ['radar', 'radaroverlay'].includes(type);
   const hasManylabels = labelCount > 6;
   const hasManyDatasets = datasetCount > 3;
+  const safeLabels = data?.labels || [];
+
+  // Config-based display options (showLegend / showLabels)
+  const cfgShowLegend = (data as any)?.config?.showLegend ?? true;
+  const cfgShowLabels = (data as any)?.config?.showLabels ?? false;
 
   // Chart.js Optionen – responsiv angepasst je nach Gerät
+  // IMPORTANT: This useMemo MUST be called unconditionally (before early returns)
   const options = useMemo(() => {
     // Schriftgrößen
     const legendFontSize = isMobile ? 10 : isTablet ? 11 : 12;
@@ -339,7 +300,7 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
       },
       plugins: {
         legend: {
-          display: true,
+          display: cfgShowLegend,
           position: isPieType ? pieLegendPosition : legendPosition,
           maxWidth: isMobile && isPieType ? undefined : undefined,
           labels: {
@@ -393,7 +354,7 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
               ...(maxTicksLimit ? { maxTicksLimit } : {}),
               // Lange Labels kürzen
               callback: function(this: any, value: any, index: number) {
-                const label = this.getLabelForValue ? this.getLabelForValue(value) : (data.labels?.[index] || value);
+                const label = this.getLabelForValue ? this.getLabelForValue(value) : (safeLabels[index] || value);
                 if (typeof label !== 'string') return label;
                 const maxLen = isMobile ? 10 : (isTablet ? 16 : 30);
                 return truncateLabel(label, maxLen);
@@ -429,7 +390,97 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
         },
       },
     };
-  }, [isMobile, isTablet, isPieType, isRadarType, hasManylabels, labelCount, datasetCount, data.labels, type]);
+  }, [isMobile, isTablet, isPieType, isRadarType, hasManylabels, labelCount, datasetCount, safeLabels, type, cfgShowLegend, cfgShowLabels]);
+
+  // Dynamische Container-Höhe: auf Mobile mehr Platz, besonders für Pie-Charts mit Bottom-Legende
+  // IMPORTANT: This useMemo MUST be called unconditionally (before early returns)
+  const chartHeight = useMemo(() => {
+    if (isMobile) {
+      if (isPieType) return Math.max(320, 280 + Math.min(datasetCount, labelCount) * 5);
+      if (isRadarType) return 320;
+      return 300;
+    }
+    if (isTablet) return 340;
+    return 400;
+  }, [isMobile, isTablet, isPieType, isRadarType, datasetCount, labelCount]);
+
+  // Inline plugin: draw data labels on bars/points when showLabels is enabled
+  // IMPORTANT: This useMemo MUST be called unconditionally (before early returns)
+  const dataLabelsPlugin = useMemo(() => ({
+    id: 'inlineDataLabels',
+    afterDatasetsDraw(chart: any) {
+      if (!cfgShowLabels) return;
+      const ctx = chart.ctx;
+      ctx.save();
+      chart.data.datasets.forEach((dataset: any, dsIdx: number) => {
+        const meta = chart.getDatasetMeta(dsIdx);
+        if (meta.hidden) return;
+        meta.data.forEach((element: any, idx: number) => {
+          const raw = dataset.data[idx];
+          if (raw == null || (Array.isArray(raw) && raw.length === 0)) return;
+          const value = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? (raw.y ?? raw.r ?? '') : raw;
+          if (value === '' || value === undefined) return;
+          const label = typeof value === 'number' ? (Number.isInteger(value) ? String(value) : value.toFixed(1)) : String(value);
+          ctx.fillStyle = chart.options?.color || '#666';
+          ctx.font = `${isMobile ? 9 : 11}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          const { x, y } = element.tooltipPosition();
+          ctx.fillText(label, x, y - 4);
+        });
+      });
+      ctx.restore();
+    },
+  }), [cfgShowLabels, isMobile]);
+
+  // ── Early returns (AFTER all hooks) ──
+
+  if (!reportId && !config) {
+    return <Typography color="text.secondary">Kein Report ausgewählt.</Typography>;
+  }
+  if (loading) {
+    return <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}><CircularProgress size={28} /></Box>;
+  }
+  if (error) {
+    return <Typography color="error">{error}</Typography>;
+  }
+  if (!data || !data.labels || !data.datasets || !data.datasets.length) {
+    return <Typography color="text.secondary">Keine Daten für diesen Report.</Typography>;
+  }
+
+  // ── Chart data (safe to compute after early returns — data is guaranteed non-null) ──
+
+  const chartData = {
+    labels: data.labels,
+    datasets: data.datasets.map((ds, i) => {
+      const isPie = ["pie", "doughnut", "polararea"].includes(effectiveType);
+      const isArea = effectiveType === 'area';
+
+      const computedBackground = ds.backgroundColor || (isPie
+        ? data.labels.map((_, idx) => defaultColors[idx % defaultColors.length])
+        : (isArea ? rgbaColors[i % rgbaColors.length] : defaultColors[i % defaultColors.length]));
+      const computedBorder = ds.borderColor || (isPie
+        ? data.labels.map((_, idx) => defaultColors[idx % defaultColors.length])
+        : defaultColors[i % defaultColors.length]);
+
+      const enforcedProps: any = {};
+      if (isArea) {
+        enforcedProps.fill = ds.fill === false ? false : true;
+        enforcedProps.tension = ds.tension ?? 0.3;
+        if (!ds.backgroundColor) {
+          enforcedProps.backgroundColor = computedBackground;
+        }
+      }
+
+      return {
+        ...ds,
+        backgroundColor: ds.backgroundColor || computedBackground,
+        borderColor: ds.borderColor || computedBorder,
+        borderWidth: ds.borderWidth ?? 2,
+        ...enforcedProps,
+      };
+    })
+  };
 
   // If config requests moving average, compute overlay datasets (non-stacked) from raw datasets
   const applyMovingAverage = (datasets: any[], windowSize: number) => {
@@ -474,7 +525,7 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
   };
 
   // Responsive Chart: Container-Box steuert die Größe
-  const chartProps = { data: chartData, options };
+  const chartProps = { data: chartData, options, plugins: [dataLabelsPlugin] };
 
   // If config requests moving average for simple chart types (line/area/bar),
   // compute MA overlay datasets and append them to the chart data. We skip
@@ -495,19 +546,7 @@ export const ReportWidget: React.FC<{ config?: any; reportId?: number; widgetId?
     // console.debug('MA overlay skipped', e);
   }
 
-  // Dynamische Container-Höhe: auf Mobile mehr Platz, besonders für Pie-Charts mit Bottom-Legende
-  const chartHeight = useMemo(() => {
-    if (isMobile) {
-      // Pie/Doughnut brauchen extra Platz für die Legende unten
-      if (isPieType) return Math.max(320, 280 + Math.min(datasetCount, labelCount) * 5);
-      // Radar etwas mehr Platz
-      if (isRadarType) return 320;
-      // Standard-Charts
-      return 300;
-    }
-    if (isTablet) return 340;
-    return 400;
-  }, [isMobile, isTablet, isPieType, isRadarType, datasetCount, labelCount]);
+  // chartHeight already computed above (before early returns)
 
   return (
     <Box sx={{

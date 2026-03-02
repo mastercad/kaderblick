@@ -1,85 +1,184 @@
 # Turniere
 
-Ob Hallenturnier, Kreispokal oder internes Vereinsturnier – in Kaderblick lässt sich jedes Turnierformat vollständig planen und dokumentieren.
+Kaderblick bietet eine vollständige **Turnierverwaltung** — von der Planung über die Gruppeneinteilung bis zum Endspiel. Turniere können verschiedene Formate haben und werden visuell übersichtlich dargestellt.
 
 ---
 
-## Was kann Kaderblick bei Turnieren?
+## Turnier-Übersicht
 
-- Turnier anlegen mit Datum, Ort und Format
-- Teilnehmende Teams eintragen
-- Spielplan automatisch erstellen lassen
-- Ergebnisse aller Turnierspiele erfassen
-- Alles auch im Vereinskalender sichtbar machen
+Auf der **Turniere-Seite** seht ihr alle angelegten Turniere. Pro Turnier wird angezeigt:
+
+- **Name** des Turniers
+- **Typ** (z. B. Hallenturnier, Vereinsturnier)
+- **Zeitraum** (Startdatum und Enddatum)
+- **Anzahl der Teams**
+
+Klickt auf ein Turnier, um die **Detail-Seite** zu öffnen.
 
 ---
 
-## Ein Turnier anlegen
+## Turnier-Details
 
-1. Im Menü auf **„Kalender"** oder in der Spielübersicht navigieren
-2. Über das „+"-Symbol einen neuen Termin anlegen und als Typ **„Turnier"** auswählen
-3. Die Turnierdaten eingeben:
+Die Detail-Seite eines Turniers ist in mehrere Bereiche aufgeteilt:
+
+### Kopfbereich
+
+- **Turniername** als Überschrift
+- **Typ**, **Zeitraum** und **Austragungsort**
+- **Turnier-Einstellungen** (falls vorhanden):
+  - **Rundendauer** — Dauer pro Spiel (z. B. 15 Minuten)
+  - **Spielmodus** — z. B. „Round Robin" (Jeder gegen Jeden), „K.O.-System"
+  - Weitere turnierspezifische Einstellungen
+
+---
+
+### Teilnehmende Teams
+
+Alle am Turnier teilnehmenden Teams werden aufgelistet. Jedes Team hat:
 
 | Feld | Beschreibung |
-|---|---|
-| **Name** | z. B. „Frühjahrsturnier 2026" |
-| **Format** | Jeder gegen jeden, K.O.-System, Gruppenphase, … |
-| **Startdatum** | Wann beginnt das Turnier? |
-| **Enddatum** | Wann endet es? |
-| **Spielort** | Wo findet es statt? |
+|------|-------------|
+| **Teamname** | Name des Teams |
+| **Setzplatz** (Seed) | Falls gesetzt — als Badge neben dem Namen (z. B. „#1") |
+| **Gruppenkennung** | Falls in Gruppen eingeteilt — Badge mit Gruppenbuchstabe (z. B. „Gruppe A") |
 
-4. Speichern
+> 💡 **Eigene Teams hervorgehoben**: Teams, die zu eurem Verein gehören, werden visuell hervorgehoben — so findet ihr eure Mannschaft sofort.
 
 ---
 
-## Teams zum Turnier hinzufügen
+### Spiel-Übersicht (Matches)
 
-Nachdem das Turnier angelegt wurde:
+Die Turnierspiele werden **nach Runde/Phase gruppiert** angezeigt. Typische Phasen:
 
-1. Turnier öffnen
-2. Im Bereich „Teilnehmer" auf **„Team hinzufügen"** klicken
-3. Teams auswählen – egal ob eigene Vereinsteams oder externe Mannschaften
-4. Wiederholen, bis alle Teilnehmer eingetragen sind
+- **Gruppenphase** — Alle Gruppenspiele
+- **Viertelfinale**
+- **Halbfinale**
+- **Finale** / **Spiel um Platz 3**
+
+Jedes Spiel wird als Karte dargestellt:
+
+| Element | Beschreibung |
+|---------|-------------|
+| **Heim-Team** | Links — mit Teamname |
+| **Gast-Team** | Rechts — mit Teamname |
+| **Ergebnis** | In der Mitte, sobald das Spiel abgeschlossen ist |
+| **Status** | Badge: „Geplant", „Laufend" oder „Beendet" |
+| **Geplante Zeit** | Wann das Spiel stattfinden soll |
+| **Spielort** | Falls abweichend vom Turnierort |
+
+#### Match-Filter
+
+Oben gibt es einen **Filter-Toggle**:
+
+- **Alle Spiele** — zeigt sämtliche Turnierspiele
+- **Meine Teams** — zeigt nur Spiele, an denen ein Team eures Vereins beteiligt ist
+
+Das ist besonders bei großen Turnieren mit vielen Gruppen praktisch — ihr seht sofort, welche Spiele euch betreffen.
 
 ---
 
-## Spielplan automatisch erstellen
+### Turnierbaum / Bracket
 
-Kaderblick kann aus den eingetragenen Teams automatisch einen kompletten Spielplan generieren:
+Bei K.O.-Turnieren ergibt sich ein **Turnierbaum**: 
 
-1. Alle Teams eingetragen
-2. Auf **„Spielplan erstellen"** klicken
-3. Das System berechnet alle nötigen Paarungen und legt sie an
-4. Gespielt wird dann wie bei normalen Spielen – mit Ergebnissen, Toren und Spielereignissen
-
-Jede Turnierpaarung wird zu einem vollwertigen Spiel in Kaderblick – mit all den Möglichkeiten der Spielereignis-Erfassung, Statistiken und auch Videoanalyse.
+- Spiele der nächsten Runde sind mit denen der aktuellen Runde verknüpft
+- Der **Sieger** rückt automatisch in die nächste Runde vor (sobald das Spiel als beendet markiert wird)
+- So könnt ihr den kompletten Turnierverlauf nachverfolgen — vom ersten Spiel bis zum Finale
 
 ---
 
-## Die Turnier-Detailseite
+## Turnier anlegen
 
-Öffnet ein Turnier über den Kalender oder die Spielliste, seht ihr:
+> ℹ️ Das Anlegen und Bearbeiten von Turnieren ist in der Regel Trainern und Administratoren vorbehalten.
 
-- Die Liste aller Turnierspiele mit aktuellem Stand
-- Klickbare Links zu den einzelnen Spielen (Ergebnisse, Ereignisse)
-- Gesamtübersicht: Wer hat wie viele Spiele gewonnen?
+### Grunddaten
+
+1. **Name** — z. B. „Nikolaus-Hallenturnier 2025"
+2. **Typ** — Turnierart auswählen
+3. **Startdatum** und **Enddatum**
+4. **Einstellungen** (optional):
+   - Rundendauer (Minuten pro Spiel)
+   - Spielmodus (z. B. round_robin)
+   - Weitere turnierspezifische Optionen
+
+### Teams hinzufügen
+
+1. Klickt auf **„Team hinzufügen"**
+2. Wählt ein Team aus der Liste (alle bereits in Kaderblick angelegten Teams)
+3. Optional: **Setzplatz** vergeben (1, 2, 3, ...)
+4. Optional: **Gruppe** zuweisen (A, B, C, ...)
+5. Wiederholt für alle teilnehmenden Teams
+
+> 💡 Ihr könnt auch Teams von **anderen Vereinen** eintragen (wenn diese in Kaderblick angelegt sind) — perfekt für Turniere mit Gastmannschaften.
+
+### Spiele generieren
+
+Turnierspiele können **manuell** angelegt werden:
+
+1. Klickt auf **„Spiel hinzufügen"**
+2. Wählt **Heim-Team** und **Gast-Team**
+3. Legt die **Runde** und **Phase** (Stage) fest (z. B. Gruppenphase, Halbfinale)
+4. Optional: **Geplante Zeit** und **Spielort**
+5. Optional: **Nächstes Spiel** verknüpfen (für den Turnierbaum)
+
+Die Spiele werden dann in der Detail-Ansicht nach Phase sortiert angezeigt.
+
+---
+
+## Turnier mit Kalender verknüpfen
+
+Ein Turnier kann mit einem **Kalender-Termin** verknüpft werden:
+
+- Im Turnier wird ein Kalender-Termin erstellt, der den gesamten Turnierzeitraum abdeckt
+- Dieser Termin erscheint im **Kalender** aller berechtigten Nutzer
+- Die **Teilnahme** am Turnier kann über die Kalender-Teilnahme bestätigt werden (Zu-/Absage)
+
+---
+
+## Spiel-Details innerhalb des Turniers
+
+Klickt auf ein Turnierspiel, um die **Spiel-Detail-Seite** zu öffnen. Dort findet ihr:
+
+- Vollständige **Spiel-Informationen** (wie bei einem regulären Spiel)
+- **Spielereignisse** (Tore, Karten, Auswechslungen)
+- **Ergebnis** eintragen
+- Verknüpfte **Videos**
+
+> Das Turnierspiel verhält sich wie ein normales Spiel in Kaderblick — mit allen Funktionen (Ereignisse, Videos, Wetter usw.). Mehr dazu in [06-spielverwaltung.md](06-spielverwaltung.md).
+
+---
+
+## Tipps für Turniere
+
+### Vorbereitung
+- **Alle Teams vorher anlegen**: Legt Gastmannschaften rechtzeitig an — so könnt ihr sie beim Turnier einfach auswählen
+- **Gruppen planen**: Überlegt euch die Gruppeneinteilung vorher und tragt Setzplätze und Gruppenkennung direkt beim Hinzufügen ein
+- **Kalender-Termin erstellen**: Verknüpft das Turnier mit einem Kalender-Termin, damit alle den Termin sehen und zu-/absagen können
+
+### Während des Turniers
+- **Ergebnisse sofort eintragen**: Tragt Ergebnisse direkt nach jedem Spiel ein — so ist die Übersicht immer aktuell
+- **Filter nutzen**: Bei großen Turnieren den „Meine Teams"-Filter verwenden, um den Überblick zu behalten
+- **Spielereignisse dokumentieren**: Tragt Tore, Karten und Auswechslungen ein — die Statistik wird automatisch aktualisiert
+
+### Nach dem Turnier
+- **Komplette Übersicht**: Alle Ergebnisse bleiben erhalten und können jederzeit nachgeschaut werden
+- **Videos verknüpfen**: Ladet Turniervideos hoch und verknüpft sie mit den einzelnen Spielen
 
 ---
 
 ## Häufige Fragen
 
-**Muss ich den Spielplan manuell korrigieren, wenn sich was ändert?**
-→ Einzelne Paarungen können jederzeit manuell angepasst werden (Zeit, Platz, Gegner).
+### Was ist ein Setzplatz?
+Der Setzplatz bestimmt die **Startposition** eines Teams im Turnierbaum. Team #1 (höchster Setzplatz) spielt in der Regel gegen das am niedrigsten gesetzte Team. Das verhindert, dass starke Teams in der ersten Runde aufeinandertreffen.
 
-**Kann ich ein Turnier auch nach dem Start noch ändern?**
-→ Ja, Termine und Paarungen sind auch nachträglich editierbar.
+### Können Turnierspiele wie normale Spiele bearbeitet werden?
+Ja! Ein Turnierspiel hat alle Funktionen eines normalen Spiels — Spielereignisse, Videos, Wetter. Es ist zusätzlich mit dem Turnier verknüpft.
 
-**Werden Turnierstatistiken in die Spielerstatistiken übernommen?**
-→ Ja! Da jedes Turnierspiel ein normales Spiel in Kaderblick ist, fließen Tore und Ereignisse automatisch in die Statistiken ein.
+### Was passiert, wenn ich ein Turnier lösche?
+Das Turnier wird mit allen Turnier-Teams und Turnier-Spielzuordnungen gelöscht. Die zugehörigen Spiele selbst bleiben je nach Einstellung bestehen.
 
----
+### Kann ich ein Turnier nachträglich bearbeiten?
+Ja — ihr könnt jederzeit Teams hinzufügen/entfernen, Spiele anlegen und Einstellungen anpassen, solange das Turnier nicht abgeschlossen ist.
 
-## Überblick
-
-Ein Turnier in Kaderblick ist ein zeitlich begrenztes Event mit mehreren teilnehmenden Teams und einer festgelegten Wettkampfstruktur. Es ist stets mit einem **Kalender-Ereignis** verknüpft – damit erscheint das Turnier automatisch im Kalender und Teilnehmer können darauf reagieren.
-
+### Wie erkenne ich auf einen Blick, ob mein Team spielt?
+Nutzt den **„Meine Teams"**-Filter oben in der Spielübersicht. Außerdem werden eure Vereinsteams in der Teamliste visuell hervorgehoben.

@@ -34,7 +34,6 @@ class ReportController extends AbstractController
         $players = $playerRepo->findAll();
         $eventTypes = $eventTypeRepo->findAll();
 
-        // Convert to simple arrays to avoid circular references
         $teamsData = array_map(fn ($team) => [
             'id' => $team->getId(),
             'name' => $team->getName()
@@ -52,7 +51,7 @@ class ReportController extends AbstractController
             'name' => $eventType->getName()
         ], $eventTypes);
 
-        // Surface types for filter + metrics
+        // Surface types for filter
         $surfaceTypeRepo = $em->getRepository(\App\Entity\SurfaceType::class);
         $surfaceTypes = $surfaceTypeRepo->findAll();
         $surfaceTypesData = array_map(fn ($s) => [
@@ -60,6 +59,15 @@ class ReportController extends AbstractController
             'name' => $s->getName()
         ], $surfaceTypes);
 
+        // Game types for filter
+        $gameTypeRepo = $em->getRepository(\App\Entity\GameType::class);
+        $gameTypes = $gameTypeRepo->findAll();
+        $gameTypesData = array_map(fn ($gt) => [
+            'id' => $gt->getId(),
+            'name' => $gt->getName()
+        ], $gameTypes);
+
+        // Available dates from events
         $dateRows = $gameEventRepo->createQueryBuilder('e')
             ->select('e.timestamp')
             ->orderBy('e.timestamp', 'ASC')
@@ -72,9 +80,11 @@ class ReportController extends AbstractController
         $minDate = $availableDates[0] ?? null;
         $maxDate = $availableDates[count($availableDates) - 1] ?? null;
 
-        $fields = [];
-        $advancedFields = [];
+        // Separate aliases into dimensions and metrics for the frontend
+        $dimensions = [];
+        $metrics = [];
         foreach ($fieldAliases as $key => $data) {
+            $category = $data['category'] ?? 'dimension';
             $item = [
                 'key' => $key,
                 'label' => $data['label'],
@@ -83,44 +93,43 @@ class ReportController extends AbstractController
                 'isMetricCandidate' => isset($data['aggregate']) && is_callable($data['aggregate']),
             ];
 
-            if (isset($data['accessibleFromEvent']) && $data['accessibleFromEvent']) {
-                $fields[] = $item;
+            if ('metric' === $category) {
+                $metrics[] = $item;
             } else {
-                $advancedFields[] = $item;
+                $dimensions[] = $item;
             }
         }
 
-        // Expose metrics (alias-based aggregates) to the frontend as selectable metrics
-        $metrics = [];
+        // Fields = dimensions (for X-Axis, GroupBy) + metrics (for Y-Axis)
+        // Both are shown to the user as selectable options
+        $fields = array_merge($dimensions, $metrics);
+
+        // Metric tokens for radar charts
+        $radarMetrics = [];
         foreach ($fieldAliases as $key => $data) {
             if (isset($data['aggregate']) && is_callable($data['aggregate'])) {
-                $metrics[] = [
+                $radarMetrics[] = [
                     'key' => $key,
                     'label' => $data['label'],
                 ];
             }
         }
-        // Also expose event types as metric tokens (eventType:{id})
-        foreach ($eventTypes as $et) {
-            $metrics[] = [
-                'key' => 'eventType:' . $et->getId(),
-                'label' => 'Ereignis: ' . $et->getName(),
-            ];
-        }
-        // Expose surface types as metric tokens (surfaceType:{id})
-        foreach ($surfaceTypes as $st) {
-            $metrics[] = [
-                'key' => 'surfaceType:' . $st->getId(),
-                'label' => 'Platztyp: ' . $st->getName(),
-            ];
-        }
-        // Weather-based metrics (simple tokens)
-        $metrics[] = [
+
+        // Weather metric for radar
+        $radarMetrics[] = [
             'key' => 'weather:precipitation',
-            'label' => 'Regen / Niederschlag (Spieltag)'
+            'label' => 'Regen / Niederschlag (Spieltag)',
         ];
 
-        // Preset templates for common reports (frontend can offer these as one-click configs)
+        // Surface type metrics for radar (per surface type)
+        foreach ($surfaceTypes as $st) {
+            $radarMetrics[] = [
+                'key' => 'surfaceType:' . $st->getId(),
+                'label' => $st->getName() . ' (Spielfeld)',
+            ];
+        }
+
+        // Presets: common report templates for non-technical users
         $presets = [
             [
                 'key' => 'goals_per_player',
@@ -145,6 +154,61 @@ class ReportController extends AbstractController
                 ],
             ],
             [
+                'key' => 'assists_per_player',
+                'label' => 'Torvorlagen pro Spieler',
+                'config' => [
+                    'diagramType' => 'bar',
+                    'xField' => 'player',
+                    'yField' => 'assists',
+                    'groupBy' => ['player'],
+                    'showLegend' => false,
+                ],
+            ],
+            [
+                'key' => 'cards_per_player',
+                'label' => 'Karten pro Spieler',
+                'config' => [
+                    'diagramType' => 'bar',
+                    'xField' => 'player',
+                    'yField' => 'yellowCards',
+                    'groupBy' => ['player'],
+                    'showLegend' => false,
+                ],
+            ],
+            [
+                'key' => 'goals_home_away',
+                'label' => 'Tore: Heim vs. Auswärts',
+                'config' => [
+                    'diagramType' => 'bar',
+                    'xField' => 'homeAway',
+                    'yField' => 'goals',
+                    'groupBy' => ['homeAway'],
+                    'showLegend' => false,
+                ],
+            ],
+            [
+                'key' => 'goals_per_position',
+                'label' => 'Tore nach Position',
+                'config' => [
+                    'diagramType' => 'pie',
+                    'xField' => 'position',
+                    'yField' => 'goals',
+                    'groupBy' => ['position'],
+                    'showLegend' => true,
+                ],
+            ],
+            [
+                'key' => 'goals_per_month',
+                'label' => 'Tore pro Monat',
+                'config' => [
+                    'diagramType' => 'line',
+                    'xField' => 'month',
+                    'yField' => 'goals',
+                    'groupBy' => ['month'],
+                    'showLegend' => false,
+                ],
+            ],
+            [
                 'key' => 'events_per_type',
                 'label' => 'Ereignisse pro Typ',
                 'config' => [
@@ -155,17 +219,114 @@ class ReportController extends AbstractController
                     'showLegend' => false,
                 ],
             ],
+            [
+                'key' => 'goals_per_game_type',
+                'label' => 'Tore nach Spieltyp',
+                'config' => [
+                    'diagramType' => 'bar',
+                    'xField' => 'gameType',
+                    'yField' => 'goals',
+                    'groupBy' => ['gameType'],
+                    'showLegend' => false,
+                ],
+            ],
+            [
+                'key' => 'player_radar',
+                'label' => 'Spieler-Profil (Radar)',
+                'config' => [
+                    'diagramType' => 'radar',
+                    'xField' => 'player',
+                    'yField' => 'goals',
+                    'groupBy' => ['player'],
+                    'metrics' => ['goals', 'assists', 'shots', 'dribbles', 'duelsWonPercent', 'passes'],
+                    'radarNormalize' => true,
+                    'showLegend' => true,
+                ],
+            ],
+            [
+                'key' => 'performance_by_surface',
+                'label' => 'Leistung nach Spielfeldtyp',
+                'config' => [
+                    'diagramType' => 'radaroverlay',
+                    'xField' => 'surfaceType',
+                    'yField' => 'goals',
+                    'groupBy' => ['surfaceType'],
+                    'metrics' => ['goals', 'assists', 'shots', 'yellowCards', 'fouls'],
+                    'radarNormalize' => false,
+                    'showLegend' => true,
+                ],
+            ],
+            [
+                'key' => 'performance_by_weather',
+                'label' => 'Leistung nach Wetterlage',
+                'config' => [
+                    'diagramType' => 'radaroverlay',
+                    'xField' => 'weatherCondition',
+                    'yField' => 'goals',
+                    'groupBy' => ['weatherCondition'],
+                    'metrics' => ['goals', 'assists', 'shots', 'yellowCards', 'fouls'],
+                    'radarNormalize' => false,
+                    'showLegend' => true,
+                ],
+            ],
+            [
+                'key' => 'performance_by_temperature',
+                'label' => 'Leistung nach Temperatur',
+                'config' => [
+                    'diagramType' => 'bar',
+                    'xField' => 'temperatureRange',
+                    'yField' => 'goals',
+                    'groupBy' => ['temperatureRange'],
+                    'showLegend' => false,
+                ],
+            ],
+            [
+                'key' => 'goals_by_surface_bar',
+                'label' => 'Tore pro Spielfeldtyp',
+                'config' => [
+                    'diagramType' => 'bar',
+                    'xField' => 'surfaceType',
+                    'yField' => 'goals',
+                    'groupBy' => ['surfaceType'],
+                    'showLegend' => false,
+                ],
+            ],
+            [
+                'key' => 'surface_weather_matrix',
+                'label' => 'Spielfeld × Wetter (Vergleich)',
+                'config' => [
+                    'diagramType' => 'stackedarea',
+                    'xField' => 'surfaceType',
+                    'yField' => 'goals',
+                    'groupBy' => ['weatherCondition'],
+                    'showLegend' => true,
+                ],
+            ],
+            [
+                'key' => 'wind_performance',
+                'label' => 'Leistung bei Wind',
+                'config' => [
+                    'diagramType' => 'radaroverlay',
+                    'xField' => 'windStrength',
+                    'yField' => 'goals',
+                    'groupBy' => ['windStrength'],
+                    'metrics' => ['goals', 'assists', 'shots', 'yellowCards', 'fouls', 'passes'],
+                    'radarNormalize' => false,
+                    'showLegend' => true,
+                ],
+            ],
         ];
 
         return $this->json([
             'fields' => $fields,
-            'advancedFields' => $advancedFields,
+            'advancedFields' => [],
             'presets' => $presets,
             'teams' => $teamsData,
             'players' => $playersData,
             'eventTypes' => $eventTypesData,
             'surfaceTypes' => $surfaceTypesData,
-            'metrics' => $metrics,
+            'gameTypes' => $gameTypesData,
+            'metrics' => $radarMetrics,
             'availableDates' => $availableDates,
             'minDate' => $minDate,
             'maxDate' => $maxDate,
