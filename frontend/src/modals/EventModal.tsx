@@ -9,6 +9,7 @@ import TournamentMatchGeneratorDialog from './TournamentMatchGeneratorDialog';
 import { EventBaseForm } from '../components/EventModal/EventBaseForm';
 import { GameEventFields } from '../components/EventModal/GameEventFields';
 import { TaskEventFields } from '../components/EventModal/TaskEventFields';
+import { TrainingEventFields } from '../components/EventModal/TrainingEventFields';
 import { PermissionFields } from '../components/EventModal/PermissionFields';
 import {
   TournamentConfig,
@@ -136,7 +137,7 @@ export const EventModal: React.FC<EventModalProps> = ({
   }, [open, event?.pendingTournamentMatches?.length, event?.tournament?.matches?.length, teams]);
 
   // Single source of truth for event type classification
-  const { isMatchEvent, isTournament, isTournamentEventType, isTask, isGenericEvent } = useEventTypeFlags(
+  const { isMatchEvent, isTournament, isTournamentEventType, isTask, isTraining, isGenericEvent } = useEventTypeFlags(
     event.eventType, event.gameType, eventTypes, gameTypes,
   );
 
@@ -402,6 +403,10 @@ export const EventModal: React.FC<EventModalProps> = ({
 
             {isTask && (
               <TaskEventFields formData={event} users={users} handleChange={handleChange} />
+            )}
+
+            {isTraining && (
+              <TrainingEventFields formData={event} teams={teams} handleChange={handleChange} />
             )}
 
             {isGenericEvent && (

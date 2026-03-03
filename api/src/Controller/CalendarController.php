@@ -3,18 +3,28 @@
 namespace App\Controller;
 
 use App\Entity\CalendarEvent;
+use App\Entity\CalendarEventPermission;
 use App\Entity\CalendarEventType;
+use App\Entity\CoachClubAssignment;
+use App\Entity\CoachTeamAssignment;
 use App\Entity\GameType;
 use App\Entity\Location;
+use App\Entity\PlayerClubAssignment;
+use App\Entity\PlayerTeamAssignment;
 use App\Entity\TaskAssignment;
+use App\Entity\Team;
+use App\Entity\TeamRide;
 use App\Entity\User;
 use App\Entity\WeatherData;
+use App\Enum\CalendarEventPermissionType;
 use App\Repository\CalendarEventRepository;
 use App\Repository\ParticipationRepository;
 use App\Security\Voter\CalendarEventVoter;
 use App\Service\CalendarEventService;
 use App\Service\EmailNotificationService;
+use App\Service\NotificationService;
 use DateTime;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -29,7 +39,8 @@ class CalendarController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly EmailNotificationService $emailService,
         private readonly ParticipationRepository $participationRepository,
-        private readonly CalendarEventService $calendarEventService
+        private readonly CalendarEventService $calendarEventService,
+        private readonly NotificationService $notificationService
     ) {
     }
 
@@ -141,7 +152,11 @@ class CalendarController extends AbstractController
                     'canCreate' => $this->isGranted(CalendarEventVoter::CREATE, $calendarEvent->getGame() ?? null),
                     'canEdit' => $this->isGranted(CalendarEventVoter::EDIT, $calendarEvent),
                     'canDelete' => $this->isGranted(CalendarEventVoter::DELETE, $calendarEvent),
+                    'canCancel' => $this->isGranted(CalendarEventVoter::CANCEL, $calendarEvent),
                 ],
+                'cancelled' => $calendarEvent->isCancelled(),
+                'cancelReason' => $calendarEvent->getCancelReason(),
+                'cancelledBy' => $calendarEvent->getCancelledBy()?->getFullName(),
                 'participation_status' => $participationStatus,
             ];
 
@@ -211,6 +226,105 @@ class CalendarController extends AbstractController
     }
 
     /**
+     * Creates a recurring training series: one CalendarEvent per occurrence.
+     */
+    #[Route('/training-series', name: 'training_series_create', methods: ['POST'])]
+    public function createTrainingSeries(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        // Validate required fields
+        $title = $data['title'] ?? '';
+        $startDate = $data['startDate'] ?? null;
+        $endDate = $data['seriesEndDate'] ?? null;
+        $weekdays = $data['weekdays'] ?? [];
+        $eventTypeId = $data['eventTypeId'] ?? null;
+        $teamId = $data['teamId'] ?? null;
+        $time = $data['time'] ?? null;
+        $endTime = $data['endTime'] ?? null;
+        $duration = isset($data['duration']) ? (int) $data['duration'] : 90;
+        $locationId = $data['locationId'] ?? null;
+        $description = $data['description'] ?? '';
+
+        if (!$title || !$startDate || !$endDate || empty($weekdays) || !$eventTypeId) {
+            return $this->json(['error' => 'Pflichtfelder fehlen (Titel, Startdatum, Enddatum, Wochentage, Event-Typ).', 'success' => false], 400);
+        }
+
+        /** @var User $currentUser */
+        $currentUser = $this->getUser();
+
+        $eventType = $this->entityManager->getReference(CalendarEventType::class, (int) $eventTypeId);
+        $location = $locationId ? $this->entityManager->getReference(Location::class, (int) $locationId) : null;
+        $team = $teamId ? $this->entityManager->getReference(Team::class, (int) $teamId) : null;
+
+        $cursor = new DateTimeImmutable($startDate);
+        $end = new DateTimeImmutable($endDate);
+        $createdCount = 0;
+
+        while ($cursor <= $end) {
+            $dayOfWeek = (int) $cursor->format('w'); // 0=Sunday, 6=Saturday
+            if (in_array($dayOfWeek, $weekdays, true)) {
+                $event = new CalendarEvent();
+                $event->setTitle($title);
+                $event->setDescription($description ?: null);
+                $event->setCalendarEventType($eventType);
+                $event->setCreatedBy($currentUser);
+
+                if ($location) {
+                    $event->setLocation($location);
+                }
+
+                // Build start datetime
+                $startDt = $time
+                    ? new DateTime($cursor->format('Y-m-d') . 'T' . $time . ':00')
+                    : new DateTime($cursor->format('Y-m-d') . 'T00:00:00');
+                $event->setStartDate($startDt);
+
+                // Build end datetime
+                if ($endTime) {
+                    $endDt = new DateTime($cursor->format('Y-m-d') . 'T' . $endTime . ':00');
+                    $event->setEndDate($endDt);
+                } elseif ($time && $duration > 0) {
+                    $endDt = clone $startDt;
+                    $endDt->modify('+' . $duration . ' minutes');
+                    $event->setEndDate($endDt);
+                } else {
+                    $event->setEndDate($startDt);
+                }
+
+                // Check permission to create
+                if (!$this->isGranted(CalendarEventVoter::CREATE, $event)) {
+                    continue;
+                }
+
+                $this->entityManager->persist($event);
+                $this->entityManager->flush();
+
+                // Set team permission if team selected
+                if ($team) {
+                    $permission = new CalendarEventPermission();
+                    $permission->setCalendarEvent($event);
+                    $permission->setPermissionType(CalendarEventPermissionType::TEAM);
+                    $permission->setTeam($team);
+                    $this->entityManager->persist($permission);
+                } else {
+                    // Default: public
+                    $permission = new CalendarEventPermission();
+                    $permission->setCalendarEvent($event);
+                    $permission->setPermissionType(CalendarEventPermissionType::PUBLIC);
+                    $this->entityManager->persist($permission);
+                }
+
+                $this->entityManager->flush();
+                ++$createdCount;
+            }
+            $cursor = $cursor->modify('+1 day');
+        }
+
+        return $this->json(['success' => true, 'createdCount' => $createdCount]);
+    }
+
+    /**
      * Drag & Drop endpunkt für die Aktualisierung von Kalendereinträgen.
      */
     #[Route('/event/{id}', name: 'event_update', methods: ['PUT'])]
@@ -263,6 +377,227 @@ class CalendarController extends AbstractController
         }
 
         return $this->json(['success' => true]);
+    }
+
+    #[Route('/event/{id}/cancel', name: 'event_cancel', methods: ['PATCH'])]
+    public function cancelEvent(CalendarEvent $calendarEvent, Request $request): JsonResponse
+    {
+        if (!$this->isGranted(CalendarEventVoter::CANCEL, $calendarEvent)) {
+            return $this->json(['error' => 'Forbidden — nur Admins und Trainer können absagen.'], 403);
+        }
+
+        if ($calendarEvent->isCancelled()) {
+            return $this->json(['error' => 'Event ist bereits abgesagt.'], 400);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $reason = trim($data['reason'] ?? '');
+
+        if ('' === $reason) {
+            return $this->json(['error' => 'Bitte gib einen Grund für die Absage an.'], 400);
+        }
+
+        /** @var User $currentUser */
+        $currentUser = $this->getUser();
+
+        $calendarEvent->setCancelled(true);
+        $calendarEvent->setCancelReason($reason);
+        $calendarEvent->setCancelledBy($currentUser);
+        $this->entityManager->flush();
+
+        // Resolve recipients and send push notifications
+        $recipients = $this->resolveEventRecipients($calendarEvent, $currentUser);
+
+        if (count($recipients) > 0) {
+            $eventTitle = $calendarEvent->getTitle();
+            $startDate = $calendarEvent->getStartDate()?->format('d.m.Y H:i') ?? '';
+            $notificationTitle = 'Absage: ' . $eventTitle;
+            $notificationMessage = 'Das Event "' . $eventTitle . '" am ' . $startDate . ' wurde abgesagt. Grund: ' . $reason;
+
+            $this->notificationService->createNotificationForUsers(
+                $recipients,
+                'event_cancelled',
+                $notificationTitle,
+                $notificationMessage,
+                [
+                    'eventTitle' => $eventTitle,
+                    'reason' => $reason,
+                    'cancelledBy' => $currentUser->getFullName(),
+                    'url' => '/calendar?eventId=' . $calendarEvent->getId(),
+                ]
+            );
+        }
+
+        return $this->json([
+            'success' => true,
+            'recipientCount' => count($recipients),
+        ]);
+    }
+
+    /**
+     * Resolves all users that should receive a notification when an event is cancelled.
+     *
+     * - For games/tournaments: members of home + away teams
+     * - For events with team permissions: all team members
+     * - For events with club permissions: all club members
+     * - For events with user permissions: those specific users
+     * - For public events: all verified users
+     * - Additionally: all TeamRide drivers + passengers for this event
+     *
+     * @return User[]
+     */
+    private function resolveEventRecipients(CalendarEvent $calendarEvent, User $excludeUser): array
+    {
+        /** @var array<int, User> $usersById */
+        $usersById = [];
+
+        // 1) Game teams: home + away
+        if ($calendarEvent->getGame()) {
+            $game = $calendarEvent->getGame();
+            if ($game->getHomeTeam()) {
+                $usersById += $this->getTeamMembers($game->getHomeTeam());
+            }
+            if ($game->getAwayTeam()) {
+                $usersById += $this->getTeamMembers($game->getAwayTeam());
+            }
+        }
+
+        // 2) Permissions-based recipients
+        foreach ($calendarEvent->getPermissions() as $permission) {
+            switch ($permission->getPermissionType()) {
+                case CalendarEventPermissionType::TEAM:
+                    if ($permission->getTeam()) {
+                        $usersById += $this->getTeamMembers($permission->getTeam());
+                    }
+                    break;
+
+                case CalendarEventPermissionType::CLUB:
+                    if ($permission->getClub()) {
+                        $usersById += $this->getClubMembers($permission->getClub());
+                    }
+                    break;
+
+                case CalendarEventPermissionType::USER:
+                    if ($permission->getUser()) {
+                        $usersById[$permission->getUser()->getId()] = $permission->getUser();
+                    }
+                    break;
+
+                case CalendarEventPermissionType::PUBLIC:
+                    // Public events: notify all verified users
+                    $allUsers = $this->entityManager->getRepository(User::class)
+                        ->createQueryBuilder('u')
+                        ->where('u.isVerified = true')
+                        ->getQuery()
+                        ->getResult();
+                    foreach ($allUsers as $u) {
+                        $usersById[$u->getId()] = $u;
+                    }
+                    break;
+            }
+        }
+
+        // 3) TeamRide drivers + passengers
+        $teamRides = $this->entityManager->getRepository(TeamRide::class)->findBy(['event' => $calendarEvent]);
+        foreach ($teamRides as $ride) {
+            if ($ride->getDriver()) {
+                $usersById[$ride->getDriver()->getId()] = $ride->getDriver();
+            }
+            foreach ($ride->getPassengers() as $passenger) {
+                if ($passenger->getUser()) {
+                    $usersById[$passenger->getUser()->getId()] = $passenger->getUser();
+                }
+            }
+        }
+
+        // Exclude the user who cancelled
+        unset($usersById[$excludeUser->getId()]);
+
+        return array_values($usersById);
+    }
+
+    /**
+     * Returns all player + coach users for a team.
+     *
+     * @return User[]
+     */
+    private function getTeamMembers(Team $team): array
+    {
+        $users = [];
+
+        // Players
+        $players = $this->entityManager->getRepository(PlayerTeamAssignment::class)
+            ->createQueryBuilder('pta')
+            ->innerJoin('pta.player', 'p')
+            ->innerJoin('p.userRelations', 'ur')
+            ->innerJoin('ur.user', 'u')
+            ->where('pta.team = :team')
+            ->setParameter('team', $team)
+            ->select('u')
+            ->getQuery()
+            ->getResult();
+        foreach ($players as $u) {
+            $users[$u->getId()] = $u;
+        }
+
+        // Coaches
+        $coaches = $this->entityManager->getRepository(CoachTeamAssignment::class)
+            ->createQueryBuilder('cta')
+            ->innerJoin('cta.coach', 'c')
+            ->innerJoin('c.userRelations', 'ur')
+            ->innerJoin('ur.user', 'u')
+            ->where('cta.team = :team')
+            ->setParameter('team', $team)
+            ->select('u')
+            ->getQuery()
+            ->getResult();
+        foreach ($coaches as $u) {
+            $users[$u->getId()] = $u;
+        }
+
+        return $users;
+    }
+
+    /**
+     * Returns all player + coach users for a club.
+     *
+     * @return User[]
+     */
+    private function getClubMembers(\App\Entity\Club $club): array
+    {
+        $users = [];
+
+        // Players
+        $players = $this->entityManager->getRepository(PlayerClubAssignment::class)
+            ->createQueryBuilder('pca')
+            ->innerJoin('pca.player', 'p')
+            ->innerJoin('p.userRelations', 'ur')
+            ->innerJoin('ur.user', 'u')
+            ->where('pca.club = :club')
+            ->setParameter('club', $club)
+            ->select('u')
+            ->getQuery()
+            ->getResult();
+        foreach ($players as $u) {
+            $users[$u->getId()] = $u;
+        }
+
+        // Coaches
+        $coaches = $this->entityManager->getRepository(CoachClubAssignment::class)
+            ->createQueryBuilder('cca')
+            ->innerJoin('cca.coach', 'c')
+            ->innerJoin('c.userRelations', 'ur')
+            ->innerJoin('ur.user', 'u')
+            ->where('cca.club = :club')
+            ->setParameter('club', $club)
+            ->select('u')
+            ->getQuery()
+            ->getResult();
+        foreach ($coaches as $u) {
+            $users[$u->getId()] = $u;
+        }
+
+        return $users;
     }
 
     #[Route('/event/{id}/weather-data', name: 'event_weather_data', methods: ['GET'])]

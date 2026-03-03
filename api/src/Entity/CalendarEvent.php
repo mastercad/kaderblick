@@ -73,6 +73,16 @@ class CalendarEvent
     #[ORM\Column]
     private bool $notificationSent = false;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $cancelled = false;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $cancelReason = null;
+
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'cancelled_by_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    private ?User $cancelledBy = null;
+
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'created_by_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
     private ?User $createdBy = null;
@@ -259,6 +269,42 @@ class CalendarEvent
     public function setTournament(?Tournament $tournament): self
     {
         $this->tournament = $tournament;
+
+        return $this;
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->cancelled;
+    }
+
+    public function setCancelled(bool $cancelled): self
+    {
+        $this->cancelled = $cancelled;
+
+        return $this;
+    }
+
+    public function getCancelReason(): ?string
+    {
+        return $this->cancelReason;
+    }
+
+    public function setCancelReason(?string $cancelReason): self
+    {
+        $this->cancelReason = $cancelReason;
+
+        return $this;
+    }
+
+    public function getCancelledBy(): ?User
+    {
+        return $this->cancelledBy;
+    }
+
+    public function setCancelledBy(?User $cancelledBy): self
+    {
+        $this->cancelledBy = $cancelledBy;
 
         return $this;
     }
