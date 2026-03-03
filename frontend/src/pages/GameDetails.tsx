@@ -35,12 +35,15 @@ import {
   ContentCut as ContentCutIcon,
   PlayArrow as LiveIcon,
   AccessTime as TimeIcon,
+  CheckCircle as CheckCircleIcon,
+  SportsScore as SportsScoreIcon,
 } from '@mui/icons-material';
 import { 
   fetchGameDetails, 
   fetchGameEvents,
   deleteGameEvent, 
-  syncFussballDe 
+  syncFussballDe,
+  finishGame,
 } from '../services/games';
 import { fetchVideos, saveVideo, deleteVideo, Video, YoutubeLink, Camera } from '../services/videos';
 import VideoModal from '../modals/VideoModal';
@@ -161,6 +164,9 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
   const [weatherModalOpen, setWeatherModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [videoSegmentModalOpen, setVideoSegmentModalOpen] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+  const [confirmFinishOpen, setConfirmFinishOpen] = useState(false);
 
   useEffect(() => {
     if (!gameId) {
@@ -267,6 +273,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       setHomeScore(result.homeScore);
       setAwayScore(result.awayScore);
       setGameStartDate(result.game?.calendarEvent?.startDate ?? null);
+      setIsFinished(result.game?.isFinished ?? false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Laden der Spieldetails');
     } finally {
@@ -367,6 +374,34 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
     return game?.permissions?.can_create_game_events ?? false;
   };
 
+  const handleFinishGame = async () => {
+    if (!gameId) return;
+    try {
+      setFinishing(true);
+      const result = await finishGame(gameId);
+      setIsFinished(true);
+      setConfirmFinishOpen(false);
+      if (result.advanced) {
+        const adv = result.advanced;
+        const msg = adv.gameCreated
+          ? `Gewinner weitergeleitet! Nächstes Match: ${adv.homeTeam ?? 'TBD'} vs ${adv.awayTeam ?? 'TBD'} (Spiel erstellt)`
+          : `Gewinner weitergeleitet! Nächstes Match: ${adv.homeTeam ?? 'TBD'} vs ${adv.awayTeam ?? 'TBD'}`;
+        showToast(msg, 'success');
+      } else {
+        showToast('Spiel wurde als beendet markiert.', 'success');
+      }
+      // Reload game details to get updated state
+      await loadGameDetails();
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'Fehler beim Beenden des Spiels',
+        'error'
+      );
+    } finally {
+      setFinishing(false);
+    }
+  };
+
   const canCreateVideos = () => {
     return game?.permissions?.can_create_videos ?? false;
   }
@@ -405,14 +440,22 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       {/* ── Back Navigation ── */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <IconButton
-          onClick={() => onBack ? onBack() : navigate('/games')}
+          onClick={() => {
+            if (onBack) {
+              onBack();
+            } else if (game?.tournamentId) {
+              navigate(`/tournaments/${game.tournamentId}`);
+            } else {
+              navigate('/games');
+            }
+          }}
           sx={{ mr: 1 }}
           size="small"
         >
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-          Zurück zur Übersicht
+          {game?.tournamentId ? 'Zurück zum Turnier' : 'Zurück zur Übersicht'}
         </Typography>
       </Box>
 
@@ -611,6 +654,30 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
               >
                 {syncing ? 'Synchronisiere...' : 'Mit Fussball.de synchronisieren'}
               </Button>
+            </Box>
+          )}
+
+          {/* Spiel beenden Button */}
+          {canCreateEvents() && !isFinished && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Button
+                variant="contained"
+                color="success"
+                startIcon={<SportsScoreIcon />}
+                onClick={() => setConfirmFinishOpen(true)}
+                disabled={finishing}
+                size="small"
+              >
+                {finishing ? 'Wird beendet...' : 'Spiel beenden'}
+              </Button>
+            </Box>
+          )}
+          {isFinished && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5, mt: 2 }}>
+              <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
+              <Typography variant="body2" sx={{ color: 'success.main', fontWeight: 600 }}>
+                Spiel beendet
+              </Typography>
             </Box>
           )}
         </CardContent>
@@ -1161,6 +1228,17 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
         message={`Soll das Ereignis "${eventToDelete?.gameEventType?.name || eventToDelete?.type || 'Unbekannt'}" wirklich gelöscht werden?`}
         confirmText="Löschen"
         confirmColor="error"
+      />
+
+      {/* Confirmation Modal for Finishing Game */}
+      <ConfirmationModal
+        open={confirmFinishOpen}
+        onClose={() => setConfirmFinishOpen(false)}
+        onConfirm={handleFinishGame}
+        title="Spiel beenden"
+        message="Soll das Spiel als beendet markiert werden? Falls es ein Turnierspiel ist, wird der Gewinner automatisch in die nächste Runde weitergeleitet."
+        confirmText="Spiel beenden"
+        confirmColor="success"
       />
 
       {/* Game Event Modal außerhalb für andere Fälle (z.B. FAB) */}

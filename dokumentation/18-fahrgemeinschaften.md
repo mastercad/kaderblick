@@ -72,6 +72,8 @@ Falls sich eure Pläne ändern:
 2. Klickt auf **„Abmelden"** (oder das Entfernen-Symbol neben eurem Namen)
 3. Der Platz wird wieder als frei angezeigt
 
+Der **Fahrer wird automatisch benachrichtigt**, dass ihr eure Buchung storniert habt. Ihr selbst bekommt ebenfalls eine **Bestätigung** als Benachrichtigung.
+
 > ⚠️ Bitte meldet euch **rechtzeitig** ab, wenn ihr doch nicht mitfahrt — damit der Fahrer Bescheid weiß und der Platz für jemand anderen frei wird.
 
 ---
@@ -82,9 +84,26 @@ Als Fahrer könnt ihr eure Fahrgemeinschaft jederzeit anpassen:
 
 - **Plätze ändern** — z. B. wenn doch nur 2 statt 3 Plätze frei sind
 - **Notiz aktualisieren** — z. B. wenn sich die Abfahrtszeit ändert
+- **Mitfahrer entfernen** — falls ihr z. B. einen Platz für jemand anderen freihalten müsst (der entfernte Mitfahrer wird darüber benachrichtigt)
 - **Fahrgemeinschaft löschen** — falls ihr doch nicht fahren könnt
 
-> ⚠️ Wenn ihr eine Fahrgemeinschaft löscht, werden alle eingetragenen Mitfahrer entfernt. Sie müssen sich dann bei einer anderen Fahrgemeinschaft eintragen.
+> ⚠️ Wenn ihr eine Fahrgemeinschaft löscht, werden **alle eingetragenen Mitfahrer automatisch benachrichtigt**, dass die Fahrt nicht mehr stattfindet. Sie müssen sich dann bei einer anderen Fahrgemeinschaft eintragen. Auch die übrigen Teammitglieder bekommen eine Benachrichtigung, dass die Mitfahrgelegenheit weggefallen ist.
+
+---
+
+## Benachrichtigungen bei Fahrgemeinschaften
+
+Kaderblick informiert euch automatisch per **Push-Benachrichtigung** (und in der Benachrichtigungsglocke) über alles Wichtige rund um Fahrgemeinschaften:
+
+| Was passiert? | Wer wird benachrichtigt? |
+|--------------|------------------------|
+| **Neue Fahrgemeinschaft** erstellt | Alle Teammitglieder des Termins |
+| **Jemand bucht einen Platz** | Der Fahrer (+ Bestätigung an den Mitfahrer) |
+| **Mitfahrer storniert** seine Buchung | Der Fahrer (+ Bestätigung an den Mitfahrer) |
+| **Fahrer entfernt** einen Mitfahrer | Der entfernte Mitfahrer (+ Bestätigung an den Fahrer) |
+| **Fahrgemeinschaft gelöscht** | Alle eingetragenen Mitfahrer + Teammitglieder |
+
+> 💡 Die Benachrichtigungen erscheinen mit einem **Auto-Symbol** 🚗 in der Benachrichtigungsliste — so erkennt ihr sofort, dass es um eine Fahrgemeinschaft geht. Bei Stornierungen und Löschungen ist das Symbol rot eingefärbt.
 
 ---
 
@@ -118,7 +137,10 @@ Nein — pro Termin könnt ihr nur bei **einer** Fahrgemeinschaft als Mitfahrer 
 Ja — die Mitfahrer-Liste ist für alle Teilnehmer des Termins sichtbar. So könnt ihr auch sehen, wer noch keine Mitfahrgelegenheit hat.
 
 ### Bekomme ich eine Benachrichtigung, wenn jemand mitfährt?
-Aktuell gibt es keine automatische Benachrichtigung für Fahrer. Schaut regelmäßig in die Fahrgemeinschaft, um zu sehen, ob sich neue Mitfahrer eingetragen haben.
+Ja! Wenn jemand einen Platz in eurer Fahrgemeinschaft bucht, bekommt ihr als Fahrer eine **Push-Benachrichtigung**. Genauso werdet ihr informiert, wenn jemand seine Buchung storniert. Auch der Mitfahrer selbst bekommt eine Bestätigung.
+
+### Bekomme ich eine Benachrichtigung, wenn eine Fahrgemeinschaft wegfällt?
+Ja — wenn ein Fahrer seine Fahrgemeinschaft löscht, werden alle eingetragenen Mitfahrer und die übrigen Teammitglieder automatisch benachrichtigt.
 
 ### Was passiert mit der Fahrgemeinschaft, wenn der Termin abgesagt wird?
 Wenn der Kalender-Termin gelöscht wird, werden auch die zugehörigen Fahrgemeinschaften entfernt.

@@ -85,6 +85,35 @@ Bei K.O.-Turnieren ergibt sich ein **Turnierbaum**:
 - Der **Sieger** rückt automatisch in die nächste Runde vor (sobald das Spiel als beendet markiert wird)
 - So könnt ihr den kompletten Turnierverlauf nachverfolgen — vom ersten Spiel bis zum Finale
 
+#### Was passiert nach einem beendeten Spiel?
+
+Wenn ihr ein K.O.-Spiel als **beendet** markiert (siehe [Spiel beenden](#spiel-beenden)), kümmert sich Kaderblick automatisch um den Turnierbaum:
+
+1. Kaderblick schaut sich das Ergebnis an — also die eingetragenen **Tore** und **Eigentore**
+2. Das **Gewinnerteam** wird automatisch in die **nächste Runde** eingetragen
+3. Sobald für eine nächste Runde **beide Gegner** feststehen, wird das nächste Spiel für euch **automatisch angelegt**
+4. Ihr bekommt eine **Erfolgsmeldung**, die zeigt, welches Team weiterkommt
+
+> ⚠️ **Unentschieden?** Bei einem Gleichstand kann Kaderblick den Gewinner nicht automatisch bestimmen. In diesem Fall müsst ihr die Entscheidung selbst eintragen — z. B. nach einem Elfmeterschießen das entscheidende Tor nachtragen und das Spiel dann beenden.
+
+> 💡 So müsst ihr euch am Turniertag nicht um die Verwaltung des Turnierbaums kümmern — einfach Tore eintragen, Spiel beenden, und der Rest passiert von allein!
+
+---
+
+### Turnierplan drucken (PDF-Export)
+
+Auf der Turnier-Detailseite findet ihr einen **PDF-Button**. Damit könnt ihr den kompletten Turnierplan als **druckfertiges PDF** erstellen. Das PDF enthält übersichtlich:
+
+- **Turniername**, Datum, Ort und aktueller Status
+- Die **Turnier-Einstellungen** (z. B. Spieldauer, Spielmodus)
+- Alle **teilnehmenden Teams** mit Setzplatz und Gruppenkennung
+- Sämtliche **Spiele** — sortiert nach Runde — mit Ergebnis (soweit bereits gespielt)
+- Eure **eigenen Vereinsteams** werden hervorgehoben, damit ihr sie sofort findet
+
+Das PDF öffnet sich in einem **neuen Browser-Tab**. Von dort könnt ihr es **ausdrucken** oder als Datei speichern.
+
+> 💡 **Tipp**: Druckt den Turnierplan aus und hängt ihn am Spielfeldrand oder im Vereinsheim auf — so haben auch Eltern und Zuschauer ohne App-Zugang den Überblick. Auch praktisch zur Weitergabe an Gastmannschaften!
+
 ---
 
 ## Turnier anlegen
@@ -143,8 +172,24 @@ Klickt auf ein Turnierspiel, um die **Spiel-Detail-Seite** zu öffnen. Dort find
 - **Spielereignisse** (Tore, Karten, Auswechslungen)
 - **Ergebnis** eintragen
 - Verknüpfte **Videos**
+- Die Möglichkeit, das Spiel als **beendet zu markieren** (siehe unten)
 
 > Das Turnierspiel verhält sich wie ein normales Spiel in Kaderblick — mit allen Funktionen (Ereignisse, Videos, Wetter usw.). Mehr dazu in [06-spielverwaltung.md](06-spielverwaltung.md).
+
+### Spiel beenden
+
+Wenn alle Tore, Karten und Auswechslungen eingetragen sind, könnt ihr das Spiel offiziell als beendet markieren:
+
+1. Scrollt unterhalb des Ergebnisses zum grünen Button **„Spiel beenden"**
+2. Es erscheint eine **Sicherheitsabfrage** — damit ihr nicht versehentlich ein Spiel zu früh beendet
+3. Bestätigt — das Spiel wird als **beendet** angezeigt (ihr seht ein grünes Häkchen mit dem Text „Spiel beendet")
+4. Bei **Turnierspielen** passiert noch mehr: Der Gewinner wird automatisch in die nächste Runde übertragen (siehe [Turnierbaum](#turnierbaum--bracket))
+
+> 💡 Den „Spiel beenden"-Button gibt es bei **allen Spielen** — nicht nur bei Turnierspielen. Bei normalen Liga- oder Freundschaftsspielen markiert er einfach, dass das Spiel abgeschlossen ist.
+
+### Zurück zum Turnier
+
+Wenn ihr von der Turnier-Detailseite aus ein Spiel öffnet, zeigt der **Zurück-Button** oben links den Text **„Zurück zum Turnier"** und bringt euch direkt zurück zur Turnierseite. So müsst ihr euch nicht erst durch die allgemeine Spielübersicht navigieren.
 
 ---
 
@@ -156,13 +201,16 @@ Klickt auf ein Turnierspiel, um die **Spiel-Detail-Seite** zu öffnen. Dort find
 - **Kalender-Termin erstellen**: Verknüpft das Turnier mit einem Kalender-Termin, damit alle den Termin sehen und zu-/absagen können
 
 ### Während des Turniers
-- **Ergebnisse sofort eintragen**: Tragt Ergebnisse direkt nach jedem Spiel ein — so ist die Übersicht immer aktuell
+- **Ergebnisse sofort eintragen**: Tragt Tore direkt nach jedem Spiel ein — so ist die Übersicht immer aktuell
+- **Spiele beenden**: Markiert Spiele nach Abpfiff als beendet — bei K.O.-Turnieren wird der Gewinner dann automatisch in die nächste Runde übertragen
 - **Filter nutzen**: Bei großen Turnieren den „Meine Teams"-Filter verwenden, um den Überblick zu behalten
 - **Spielereignisse dokumentieren**: Tragt Tore, Karten und Auswechslungen ein — die Statistik wird automatisch aktualisiert
+- **Turnierplan ausdrucken**: Druckt den aktuellen Spielplan als PDF aus und hängt ihn z. B. am Spielfeldrand oder im Vereinsheim auf
 
 ### Nach dem Turnier
 - **Komplette Übersicht**: Alle Ergebnisse bleiben erhalten und können jederzeit nachgeschaut werden
 - **Videos verknüpfen**: Ladet Turniervideos hoch und verknüpft sie mit den einzelnen Spielen
+- **Turnierplan archivieren**: Erstellt ein PDF mit dem finalen Spielplan und allen Ergebnissen — perfekt als Erinnerung oder für die Vereinschronik
 
 ---
 
@@ -173,6 +221,12 @@ Der Setzplatz bestimmt die **Startposition** eines Teams im Turnierbaum. Team #1
 
 ### Können Turnierspiele wie normale Spiele bearbeitet werden?
 Ja! Ein Turnierspiel hat alle Funktionen eines normalen Spiels — Spielereignisse, Videos, Wetter. Es ist zusätzlich mit dem Turnier verknüpft.
+
+### Was passiert bei einem Unentschieden im K.O.-Spiel?
+Bei einem Gleichstand kann Kaderblick den Gewinner nicht automatisch bestimmen — es findet keine Weiterleitung statt. Tragt die Entscheidung nach (z. B. das entscheidende Tor aus dem Elfmeterschießen) und beendet das Spiel dann erneut.
+
+### Kann ich den Turnierplan ausdrucken?
+Ja — klickt auf den **PDF-Button** oben auf der Turnier-Detailseite. Der komplette Spielplan öffnet sich in einem neuen Tab und kann von dort gedruckt oder als Datei gespeichert werden.
 
 ### Was passiert, wenn ich ein Turnier lösche?
 Das Turnier wird mit allen Turnier-Teams und Turnier-Spielzuordnungen gelöscht. Die zugehörigen Spiele selbst bleiben je nach Einstellung bestehen.

@@ -39,14 +39,41 @@ Klickt auf die **Glocke** — es öffnet sich ein **Benachrichtigungs-Fenster** 
 
 ## Welche Benachrichtigungen gibt es?
 
-Kaderblick unterscheidet **vier Typen**, jeweils mit eigenem Symbol:
+Kaderblick unterscheidet verschiedene **Benachrichtigungstypen**, jeweils mit eigenem Symbol:
 
 | Typ | Symbol | Beschreibung | Beispiele |
 |-----|--------|-------------|-----------|
-| **Neuigkeiten** (news) | 📰 Artikel-Symbol | Wenn eine neue News für euch veröffentlicht wird | „Neue News: Saisonabschlussfeier am 30. Juni", „Trainingsplan Winterpause" |
-| **Nachrichten** (message) | 💬 Sprechblasen-Symbol | Wenn jemand euch eine Nachricht schickt | „Max hat dir eine Nachricht geschickt", „Neue Gruppennachricht in U15-Chat" |
-| **Teilnahme** (participation) | 📅 Kalender-Symbol | Wenn sich der Teilnahme-Status bei einem Termin ändert | „Spieler X hat für das Training am Freitag zugesagt", „3 neue Absagen für das Spiel am Samstag" |
-| **System** (system) | ⚙️ Info-Symbol | Wichtige Systemmeldungen | „Dein Profil ist noch nicht vollständig", „Neue Funktion verfügbar" |
+| **Neuigkeiten** | 📰 Artikel-Symbol | Wenn eine neue News für euch veröffentlicht wird | „Neue News: Saisonabschlussfeier am 30. Juni", „Trainingsplan Winterpause" |
+| **Nachrichten** | 💬 Sprechblasen-Symbol | Wenn jemand euch eine Nachricht schickt | „Max hat dir eine Nachricht geschickt", „Neue Gruppennachricht in U15-Chat" |
+| **Teilnahme** | 📅 Kalender-Symbol | Wenn sich der Teilnahme-Status bei einem Termin ändert | „Spieler X hat für das Training am Freitag zugesagt", „3 neue Absagen für das Spiel am Samstag" |
+| **System** | ⚙️ Info-Symbol | Wichtige Systemmeldungen | „Dein Profil ist noch nicht vollständig", „Neue Funktion verfügbar" |
+| **Fahrgemeinschaft** | 🚗 Auto-Symbol | Rund um Mitfahrgelegenheiten — neue Fahrgemeinschaften, Buchungen, Stornierungen | „Max bietet eine Mitfahrgelegenheit an (3 Plätze)", „Anna hat einen Platz gebucht" |
+| **Termin abgesagt** | ❌ Kalender-Absage-Symbol | Wenn ein Termin (Training, Spiel, Turnier) vom Trainer oder Admin abgesagt wird | „Training am Freitag wurde abgesagt — Grund: Platzsperre" |
+
+### Fahrgemeinschaft-Benachrichtigungen im Detail
+
+Bei Fahrgemeinschaften gibt es mehrere Anlässe für Benachrichtigungen:
+
+| Was passiert? | Wer wird benachrichtigt? |
+|--------------|-------------------------|
+| Neue Mitfahrgelegenheit erstellt | Alle Teammitglieder des Termins |
+| Jemand bucht einen Platz | Der Fahrer + Buchungsbestätigung an den Mitfahrer |
+| Mitfahrer storniert seine Buchung | Der Fahrer + Stornierungsbestätigung an den Mitfahrer |
+| Fahrer entfernt einen Mitfahrer | Der entfernte Mitfahrer + Bestätigung an den Fahrer |
+| Fahrgemeinschaft wird gelöscht | Alle Mitfahrer + übrige Teammitglieder |
+
+> 💡 Mehr zur Fahrgemeinschaft-Funktion findet ihr in [18-fahrgemeinschaften.md](18-fahrgemeinschaften.md).
+
+### Termin-Absage-Benachrichtigungen
+
+Wenn ein Trainer oder Administrator einen Termin absagt, werden **alle betroffenen Teammitglieder** automatisch benachrichtigt. Die Benachrichtigung enthält:
+
+- Den **Namen des Termins** (z. B. „Training U15")
+- Den **Grund für die Absage** (falls vom Trainer angegeben)
+- Wer den **Termin abgesagt** hat
+- Einen **Link zum Termin** im Kalender
+
+Die Absage-Benachrichtigung erscheint mit einem eigenen **rot-orangenen Symbol** — so fällt sie sofort ins Auge.
 
 Jede Benachrichtigung kann zusätzliche **Daten** enthalten (z. B. eine Verlinkung zum betreffenden Termin, zur News oder zum Chat), sodass ihr mit einem Klick direkt zum richtigen Inhalt springt.
 
@@ -99,12 +126,14 @@ Die Benachrichtigungen kommen dann auf **allen aktivierten Geräten** gleichzeit
 
 ### Wann kommen Push-Benachrichtigungen?
 
-Push-Benachrichtigungen werden bei jedem der vier Benachrichtigungstypen gesendet:
+Push-Benachrichtigungen werden bei allen Benachrichtigungstypen gesendet:
 
 - 📰 Neue News veröffentlicht → Push
 - 💬 Neue Nachricht erhalten → Push
 - 📅 Teilnahme-Änderung bei einem Termin → Push
 - ⚙️ Wichtige Systemmeldung → Push
+- 🚗 Neue Fahrgemeinschaft / Buchung / Stornierung → Push
+- ❌ Termin abgesagt → Push
 
 ---
 
@@ -127,7 +156,16 @@ Die Benachrichtigungsglocke ist immer sichtbar — egal auf welcher Seite ihr eu
 
 Auch das **Nachrichten-Symbol** (✉️ Briefumschlag) in der Navigation zeigt eine eigene Zähler-Badge, wenn ungelesene Nachrichten vorhanden sind — unabhängig von den Benachrichtigungen in der Glocke. So habt ihr zwei Anlaufstellen:
 
-- **Glocke** = Alle Benachrichtigungen (News, Nachrichten, Teilnahme, System)
+- **Glocke** = Alle Benachrichtigungen (News, Nachrichten, Teilnahme, Fahrgemeinschaften, Termin-Absagen, System)
+- **Briefumschlag** = Direkt zum Posteingang (nur Nachrichten/Chat)
+
+### Direkt zum betreffenden Inhalt springen
+
+Viele Benachrichtigungen enthalten einen **Link zum betreffenden Inhalt**. Klickt auf die Benachrichtigung — im Detail-Dialog findet ihr einen Button, der euch direkt dorthin bringt. Beispiele:
+
+- Fahrgemeinschaft-Benachrichtigung → öffnet den Kalender-Termin mit den Fahrgemeinschaften
+- Termin-Absage → öffnet den abgesagten Termin im Kalender
+- Neue News → öffnet die betreffende News
 - **Briefumschlag** = Direkt zum Posteingang (nur Nachrichten/Chat)
 
 ---
@@ -143,7 +181,7 @@ Auch das **Nachrichten-Symbol** (✉️ Briefumschlag) in der Navigation zeigt e
 6. Auf iPhones muss Kaderblick als App auf dem **Homescreen** installiert sein, damit Push funktioniert
 
 ### Kann ich bestimmte Benachrichtigungstypen abschalten?
-Aktuell werden alle Benachrichtigungstypen gesendet. Die farbliche Unterscheidung durch die Symbole hilft euch aber, schnell zu erkennen, welcher Typ es ist.
+Aktuell werden alle Benachrichtigungstypen gesendet. Die farbliche Unterscheidung und die unterschiedlichen Symbole helfen euch aber, schnell zu erkennen, welcher Typ es ist — Fahrgemeinschaften haben z. B. ein Auto-Symbol, Termin-Absagen ein eigenes Absage-Symbol.
 
 ### Wie lösche ich nur einzelne Benachrichtigungen?
 Einzelne Benachrichtigungen können aktuell nicht gelöscht werden — nur alle auf einmal über das Papierkorb-Symbol. Einzelne auf „gelesen" setzen geht aber über Anklicken.

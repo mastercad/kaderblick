@@ -5,9 +5,10 @@ namespace App\Service;
 use App\Entity\GameEventType;
 use App\Entity\Tournament;
 use DateTimeImmutable;
+use DateTimeInterface;
+use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
-use Doctrine\ORM\EntityManagerInterface;
 use Twig\Environment;
 
 class TournamentPdfService
@@ -47,6 +48,7 @@ class TournamentPdfService
      * Build all data needed for the Twig template.
      *
      * @param int[] $userTeamIds
+     *
      * @return array<string, mixed>
      */
     private function buildTemplateData(Tournament $tournament, array $userTeamIds): array
@@ -214,7 +216,7 @@ class TournamentPdfService
 
         return [
             'tournament' => $tournament,
-            'status_label' => $statusLabels[$status] ?? $status,
+            'status_label' => $statusLabels[$status],
             'date_string' => $dateString,
             'location_name' => $location?->getName() ?? '',
             'settings_parts' => $settingsParts,
@@ -229,7 +231,7 @@ class TournamentPdfService
         ];
     }
 
-    private function formatDateNice(\DateTimeInterface $date): string
+    private function formatDateNice(DateTimeInterface $date): string
     {
         $days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
         $months = [

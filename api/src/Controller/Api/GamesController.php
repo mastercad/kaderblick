@@ -14,6 +14,7 @@ use App\Repository\GameRepository;
 use App\Security\Voter\GameEventVoter;
 use App\Security\Voter\GameVoter;
 use App\Security\Voter\VideoVoter;
+use App\Service\TournamentAdvancementService;
 use App\Service\UserTitleService;
 use App\Service\VideoTimelineService;
 use DateTimeImmutable;
@@ -69,9 +70,54 @@ class GamesController extends ApiController
 
     public function __construct(
         EntityManagerInterface $entityManager,
-        private readonly VideoTimelineService $videoTimelineService
+        private readonly VideoTimelineService $videoTimelineService,
+        private readonly TournamentAdvancementService $advancementService,
     ) {
         $this->entityManager = $entityManager;
+    }
+
+    /**
+     * Mark a game as finished. If the game belongs to a tournament match,
+     * automatically advance the winner to the next round.
+     */
+    #[Route('/{id}/finish', name: 'finish', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function finish(Game $game): JsonResponse
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        if ($game->isFinished()) {
+            return $this->json(['error' => 'Spiel ist bereits beendet.'], 400);
+        }
+
+        $game->setIsFinished(true);
+        $this->entityManager->persist($game);
+        $this->entityManager->flush();
+
+        $advanced = null;
+        $tournamentMatch = $game->getTournamentMatch();
+        if ($tournamentMatch) {
+            $tournamentMatch->setStatus('finished');
+            $this->entityManager->persist($tournamentMatch);
+            $this->entityManager->flush();
+
+            $nextMatch = $this->advancementService->advanceWinner($tournamentMatch);
+            if ($nextMatch) {
+                $advanced = [
+                    'nextMatchId' => $nextMatch->getId(),
+                    'round' => $nextMatch->getRound(),
+                    'slot' => $nextMatch->getSlot(),
+                    'homeTeam' => $nextMatch->getHomeTeam()?->getName(),
+                    'awayTeam' => $nextMatch->getAwayTeam()?->getName(),
+                    'gameCreated' => null !== $nextMatch->getGame(),
+                ];
+            }
+        }
+
+        return $this->json([
+            'success' => true,
+            'isFinished' => true,
+            'advanced' => $advanced,
+        ]);
     }
 
     #[Route('/{id}/details', name: 'details', requirements: ['id' => '\d+'], methods: ['GET'])]
@@ -124,6 +170,8 @@ class GamesController extends ApiController
                     ] : [],
                 ] : null,
                 'fussballDeUrl' => method_exists($game, 'getFussballDeUrl') ? $game->getFussballDeUrl() : null,
+                'isFinished' => $game->isFinished(),
+                'tournamentId' => $game->getTournamentMatch()?->getTournament()?->getId(),
                 'permissions' => [
                     'can_create_videos' => $this->isGranted(VideoVoter::CREATE, $game->getHomeTeam()) || $this->isGranted(VideoVoter::CREATE, $game->getAwayTeam()),
                     'can_create_game_events' => $this->isGranted(GameEventVoter::CREATE, $game)

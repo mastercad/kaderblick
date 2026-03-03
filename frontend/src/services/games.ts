@@ -95,3 +95,21 @@ export async function syncFussballDe(gameId: number): Promise<{ success: boolean
     method: 'POST'
   });
 }
+
+// Spiel als beendet markieren (löst ggf. Turnier-Weiterleitung aus)
+export async function finishGame(gameId: number): Promise<{
+  success: boolean;
+  isFinished: boolean;
+  advanced: {
+    nextMatchId: number;
+    round: number;
+    slot: number;
+    homeTeam: string | null;
+    awayTeam: string | null;
+    gameCreated: boolean;
+  } | null;
+}> {
+  return apiJson(`/api/games/${gameId}/finish`, {
+    method: 'POST'
+  });
+}
