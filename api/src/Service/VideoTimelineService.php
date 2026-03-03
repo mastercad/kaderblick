@@ -95,7 +95,11 @@ class VideoTimelineService
         $cameras = [];
 
         foreach ($videosEntries as $videoEntry) {
-            $cameras[(int) $videoEntry->getCamera()->getId()][(int) $videoEntry->getSort()] = $videoEntry;
+            $camera = $videoEntry->getCamera();
+            if (!$camera) {
+                continue;
+            }
+            $cameras[(int) $camera->getId()][(int) $videoEntry->getSort()] = $videoEntry;
         }
 
         foreach ($cameras as $cameraId => $currentVideos) {

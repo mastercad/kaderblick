@@ -44,6 +44,8 @@ export interface Game {
     hourlyWeatherData?: Record<string, any>;
   };
   fussballDeUrl?: string;
+  isFinished?: boolean;
+  tournamentId?: number | null;
   permissions?: {
     can_create_videos?: boolean;
     can_view_videos?: boolean;
