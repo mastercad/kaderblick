@@ -36,6 +36,7 @@ jest.mock('../ImportMatchesDialog', () => () => null);
 jest.mock('../ManualMatchesEditor', () => () => null);
 jest.mock('../TournamentMatchGeneratorDialog', () => () => null);
 jest.mock('../../components/EventModal/TaskEventFields', () => ({ TaskEventFields: () => null }));
+jest.mock('../../components/EventModal/TrainingEventFields', () => ({ TrainingEventFields: () => null }));
 jest.mock('../../components/EventModal/PermissionFields', () => ({ PermissionFields: () => null }));
 jest.mock('../../components/EventModal/TournamentFields', () => ({
   TournamentConfig: () => null,
