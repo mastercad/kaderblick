@@ -21,6 +21,8 @@ import NewsIcon from '@mui/icons-material/Article';
 import MessageIcon from '@mui/icons-material/Message';
 import EventIcon from '@mui/icons-material/Event';
 import SystemIcon from '@mui/icons-material/Info';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import EventBusyIcon from '@mui/icons-material/EventBusy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MarkAsReadIcon from '@mui/icons-material/DoneAll';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -34,6 +36,13 @@ const getNotificationIcon = (type: AppNotification['type']) => {
     case 'message': return <MessageIcon fontSize="small" />;
     case 'participation': return <EventIcon fontSize="small" />;
     case 'system': return <SystemIcon fontSize="small" />;
+    case 'team_ride':
+    case 'team_ride_booking':
+    case 'team_ride_cancel':
+    case 'team_ride_deleted':
+      return <DirectionsCarIcon fontSize="small" />;
+    case 'event_cancelled':
+      return <EventBusyIcon fontSize="small" />;
     default: return <SystemIcon fontSize="small" />;
   }
 };

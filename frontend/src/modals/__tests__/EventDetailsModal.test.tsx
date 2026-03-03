@@ -111,7 +111,8 @@ describe('EventDetailsModal', () => {
     expect(screen.getByText('Beschreibung des Events')).toBeInTheDocument();
     expect(screen.getByTestId('WeatherDisplay')).toBeInTheDocument();
     expect(screen.getByTestId('Location')).toBeInTheDocument();
-    expect(screen.getByText('FC Test vs. SC Gegner (Freundschaftsspiel)')).toBeInTheDocument();
+    expect(screen.getByText('FC Test')).toBeInTheDocument();
+    expect(screen.getByText('SC Gegner')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText('Teilnahme')).toBeInTheDocument();
       expect(screen.getByText('Zusage')).toBeInTheDocument();
@@ -191,5 +192,127 @@ describe('EventDetailsModal', () => {
       render(<EventDetailsModal {...defaultProps} event={null} />);
     });
     expect(screen.queryByTestId('Dialog')).not.toBeInTheDocument();
+  });
+
+  // ─── Cancellation Tests ───
+
+  it('shows cancelled banner when event is cancelled', async () => {
+    const cancelledEvent = {
+      ...baseEvent,
+      cancelled: true,
+      cancelReason: 'Platzsperrung',
+      cancelledBy: 'Max Mustermann',
+    };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={cancelledEvent} />);
+    });
+    expect(screen.getByText('Abgesagt')).toBeInTheDocument();
+    expect(screen.getByText('Platzsperrung')).toBeInTheDocument();
+    expect(screen.getByText(/Abgesagt von Max Mustermann/)).toBeInTheDocument();
+  });
+
+  it('hides participation buttons when event is cancelled', async () => {
+    const cancelledEvent = {
+      ...baseEvent,
+      cancelled: true,
+      cancelReason: 'Regen',
+    };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={cancelledEvent} />);
+    });
+    await waitFor(() => {
+      // Participation action buttons should not be shown
+      expect(screen.queryByText('Zusage')).not.toBeInTheDocument();
+      expect(screen.queryByText('Absage')).not.toBeInTheDocument();
+    });
+  });
+
+  it('hides note field when event is cancelled', async () => {
+    const cancelledEvent = {
+      ...baseEvent,
+      cancelled: true,
+      cancelReason: 'Regen',
+    };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={cancelledEvent} />);
+    });
+    expect(screen.queryByLabelText('Notiz (optional)')).not.toBeInTheDocument();
+  });
+
+  it('shows Absagen button when user has canCancel permission and event is not cancelled', async () => {
+    const eventWithCancel = {
+      ...baseEvent,
+      permissions: { canEdit: true, canDelete: true, canCancel: true },
+      cancelled: false,
+    };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={eventWithCancel} />);
+    });
+    expect(screen.getByText('Absagen')).toBeInTheDocument();
+  });
+
+  it('hides Absagen button when event is already cancelled', async () => {
+    const cancelledWithPermission = {
+      ...baseEvent,
+      permissions: { canEdit: true, canDelete: true, canCancel: true },
+      cancelled: true,
+      cancelReason: 'Grund',
+    };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={cancelledWithPermission} />);
+    });
+    expect(screen.queryByText('Absagen')).not.toBeInTheDocument();
+  });
+
+  it('does not show Absagen button when user lacks canCancel permission', async () => {
+    const eventWithoutCancel = {
+      ...baseEvent,
+      permissions: { canEdit: true, canDelete: true, canCancel: false },
+      cancelled: false,
+    };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={eventWithoutCancel} />);
+    });
+    expect(screen.queryByText('Absagen')).not.toBeInTheDocument();
+  });
+
+  it('applies line-through style to title when cancelled', async () => {
+    const cancelledEvent = {
+      ...baseEvent,
+      cancelled: true,
+      cancelReason: 'Grund',
+    };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={cancelledEvent} />);
+    });
+    const title = screen.getByText('Test Event');
+    expect(title).toHaveStyle({ textDecoration: 'line-through' });
+  });
+
+  // ─── Game Matchup Display ───
+
+  it('renders game matchup with team names', async () => {
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} />);
+    });
+    expect(screen.getByText('FC Test')).toBeInTheDocument();
+    expect(screen.getByText('SC Gegner')).toBeInTheDocument();
+  });
+
+  // ─── Description Section ───
+
+  it('renders description when provided', async () => {
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} />);
+    });
+    expect(screen.getByText('Beschreibung des Events')).toBeInTheDocument();
+  });
+
+  it('does not render description section when no description', async () => {
+    const eventWithoutDescription = { ...baseEvent, description: undefined };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={eventWithoutDescription} />);
+    });
+    expect(screen.queryByText('Beschreibung des Events')).not.toBeInTheDocument();
   });
 });

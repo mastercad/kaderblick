@@ -25,6 +25,7 @@ final class CalendarEventVoter extends Voter
     public const EDIT = 'CALENDAR_EVENT_EDIT';
     public const VIEW = 'CALENDAR_EVENT_VIEW';
     public const DELETE = 'CALENDAR_EVENT_DELETE';
+    public const CANCEL = 'CALENDAR_EVENT_CANCEL';
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager
@@ -33,7 +34,7 @@ final class CalendarEventVoter extends Voter
 
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return in_array($attribute, [self::CREATE, self::EDIT, self::VIEW, self::DELETE]);
+        return in_array($attribute, [self::CREATE, self::EDIT, self::VIEW, self::DELETE, self::CANCEL]);
     }
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
@@ -58,6 +59,8 @@ final class CalendarEventVoter extends Voter
                 }
 
                 break;
+            case self::CANCEL:
+                return $this->canCancelCalendarEvent($subject, $user);
             case self::VIEW:
                 return $this->canViewCalendarEvent($subject, $user);
         }
@@ -173,5 +176,86 @@ final class CalendarEventVoter extends Voter
             ->getOneOrNullResult();
 
         return null !== $coachTeamAssignment;
+    }
+
+    /**
+     * Only admins, superadmins, and coaches of related teams can cancel events.
+     */
+    private function canCancelCalendarEvent(CalendarEvent $calendarEvent, User $user): bool
+    {
+        // Global admins can always cancel
+        if (
+            in_array('ROLE_ADMIN', $user->getRoles())
+            || in_array('ROLE_SUPERADMIN', $user->getRoles())
+        ) {
+            return true;
+        }
+
+        // Creator can cancel
+        if ($calendarEvent->getCreatedBy()?->getId() === $user->getId()) {
+            return true;
+        }
+
+        // For games: coach of home or away team
+        if ($calendarEvent->getGame()) {
+            $game = $calendarEvent->getGame();
+            $homeTeam = $game->getHomeTeam();
+            $awayTeam = $game->getAwayTeam();
+
+            if ($homeTeam && $this->isCoachOfTeam($user, $homeTeam)) {
+                return true;
+            }
+            if ($awayTeam && $this->isCoachOfTeam($user, $awayTeam)) {
+                return true;
+            }
+        }
+
+        // For events with team permissions: coach of any associated team
+        foreach ($calendarEvent->getPermissions() as $permission) {
+            if (CalendarEventPermissionType::TEAM === $permission->getPermissionType() && $permission->getTeam()) {
+                if ($this->isCoachOfTeam($user, $permission->getTeam())) {
+                    return true;
+                }
+            }
+            if (CalendarEventPermissionType::CLUB === $permission->getPermissionType() && $permission->getClub()) {
+                if ($this->isCoachInClub($user, $permission->getClub())) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function isCoachOfTeam(User $user, Team $team): bool
+    {
+        $coachTeamAssignment = $this->entityManager->getRepository(CoachTeamAssignment::class)
+            ->createQueryBuilder('cta')
+            ->innerJoin('cta.coach', 'c')
+            ->innerJoin('c.userRelations', 'ur')
+            ->where('ur.user = :user')
+            ->andWhere('cta.team = :team')
+            ->setParameter('user', $user)
+            ->setParameter('team', $team)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return null !== $coachTeamAssignment;
+    }
+
+    private function isCoachInClub(User $user, Club $club): bool
+    {
+        $coachClubAssignment = $this->entityManager->getRepository(CoachClubAssignment::class)
+            ->createQueryBuilder('cca')
+            ->innerJoin('cca.coach', 'c')
+            ->innerJoin('c.userRelations', 'ur')
+            ->where('ur.user = :user')
+            ->andWhere('cca.club = :club')
+            ->setParameter('user', $user)
+            ->setParameter('club', $club)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return null !== $coachClubAssignment;
     }
 }
