@@ -8,11 +8,15 @@ RUN apt-get update && apt-get install -yqq \
     libicu-dev \
     libonig-dev \
     libzip-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
     ca-certificates \
     openssl libssl-dev \
     cron \
     && update-ca-certificates \
-    && docker-php-ext-install intl pdo pdo_mysql zip opcache bcmath
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install intl pdo pdo_mysql zip opcache bcmath gd
 
 RUN a2enmod rewrite
 

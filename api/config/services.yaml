@@ -22,6 +22,7 @@ services:
         autowire: true      # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
         bind:
+            $projectDir: '%kernel.project_dir%'
             $vapidPublicKey: '%env(resolve:VAPID_PUBLIC_KEY)%'
             $vapidPrivateKey: '%env(resolve:VAPID_PRIVATE_KEY)%'
             $githubToken: '%env(resolve:GITHUB_TOKEN)%'
