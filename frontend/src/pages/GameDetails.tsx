@@ -796,17 +796,18 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: { xs: 1, sm: 2 },
-                      py: 1.5,
+                      py: { xs: 1.25, sm: 1.5 },
                       '&:hover': { bgcolor: alpha(theme.palette.action.hover, 0.5) },
                       borderRadius: 1,
                       px: { xs: 0.5, sm: 1 },
                     }}
                   >
-                    {/* Minute Badge */}
+                    {/* Minute Badge + Icon stacked on mobile */}
                     <Box sx={{
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
+                      gap: 0.5,
                       minWidth: { xs: 44, sm: 56 },
                       flexShrink: 0,
                       pt: 0.25,
@@ -824,11 +825,25 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                           fontVariantNumeric: 'tabular-nums',
                         }}
                       />
+                      {/* Event Icon — inline on desktop, under badge on mobile */}
+                      <Box sx={{
+                        display: { xs: 'flex', sm: 'none' },
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 28,
+                        height: 28,
+                        borderRadius: '50%',
+                        bgcolor: alpha(color || '#999', 0.12),
+                      }}>
+                        <Box sx={{ color: color || 'text.secondary', display: 'flex', alignItems: 'center', fontSize: '0.9rem' }}>
+                          {getGameEventIconByCode(icon)}
+                        </Box>
+                      </Box>
                     </Box>
 
-                    {/* Event Icon */}
+                    {/* Event Icon — separate column on desktop */}
                     <Box sx={{
-                      display: 'flex',
+                      display: { xs: 'none', sm: 'flex' },
                       alignItems: 'center',
                       justifyContent: 'center',
                       width: 32,
@@ -848,7 +863,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                       {/* Event type name */}
                       <Typography sx={{
                         fontWeight: 700,
-                        fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                        fontSize: { xs: '0.88rem', sm: '0.95rem' },
                         lineHeight: 1.3,
                       }}>
                         {e.type ?? e?.gameEventType?.name ?? 'Unbekannt'}
@@ -907,6 +922,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                     {user && (
                       <Box sx={{
                         display: 'flex',
+                        flexDirection: 'column',
                         gap: 0.25,
                         flexShrink: 0,
                         opacity: { xs: 1, sm: 0.4 },
@@ -965,9 +981,9 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
           flexWrap: 'wrap',
           gap: 1,
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <VideoIcon sx={{ fontSize: 20, color: 'primary.main' }} />
-            <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.05rem' } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+            <VideoIcon sx={{ fontSize: 20, color: 'primary.main', flexShrink: 0 }} />
+            <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.05rem' } }} noWrap>
               Videos
             </Typography>
             {videos.length > 0 && (
@@ -1019,10 +1035,11 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                   key={video.id}
                   sx={{
                     display: 'flex',
-                    gap: { xs: 1.5, sm: 2 },
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: { xs: 1, sm: 2 },
                     py: 1.5,
                     px: { xs: 0.5, sm: 1 },
-                    alignItems: 'flex-start',
+                    alignItems: { xs: 'stretch', sm: 'flex-start' },
                     '&:hover': { bgcolor: alpha(theme.palette.action.hover, 0.5) },
                     borderRadius: 1,
                   }}
@@ -1032,11 +1049,13 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                     <Box
                       sx={{
                         flexShrink: 0,
-                        width: { xs: 100, sm: 140 },
+                        width: { xs: '100%', sm: 140 },
+                        maxWidth: { xs: '100%', sm: 140 },
                         borderRadius: 1.5,
                         overflow: 'hidden',
                         position: 'relative',
                         cursor: 'pointer',
+                        aspectRatio: '16/9',
                         '&:hover': { opacity: 0.9 },
                       }}
                       onClick={() => handleOpenPlayVideo(video)}
@@ -1046,9 +1065,8 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                         alt={video.name}
                         style={{
                           width: '100%',
-                          height: 'auto',
+                          height: '100%',
                           display: 'block',
-                          aspectRatio: '16/9',
                           objectFit: 'cover',
                         }}
                       />
@@ -1063,68 +1081,71 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                         transition: 'background-color 0.2s',
                         '&:hover': { bgcolor: 'rgba(0,0,0,0.4)' },
                       }}>
-                        <YouTubeIcon sx={{ fontSize: 32, color: '#fff', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.5))' }} />
+                        <YouTubeIcon sx={{ fontSize: { xs: 44, sm: 32 }, color: '#fff', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.5))' }} />
                       </Box>
                     </Box>
                   )}
 
-                  {/* Info */}
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                        lineHeight: 1.3,
-                        cursor: 'pointer',
-                        color: 'primary.main',
-                        '&:hover': { textDecoration: 'underline' },
-                      }}
-                      onClick={() => handleOpenPlayVideo(video)}
-                    >
-                      {video.name}
-                    </Typography>
+                  {/* Info + Actions row */}
+                  <Box sx={{ display: 'flex', flex: 1, minWidth: 0, gap: 1, alignItems: 'flex-start' }}>
+                    {/* Info */}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        sx={{
+                          fontWeight: 700,
+                          fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                          lineHeight: 1.3,
+                          cursor: 'pointer',
+                          color: 'primary.main',
+                          '&:hover': { textDecoration: 'underline' },
+                        }}
+                        onClick={() => handleOpenPlayVideo(video)}
+                      >
+                        {video.name}
+                      </Typography>
 
-                    <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mt: 0.75 }}>
-                      {video.videoType?.name && (
-                        <Chip label={video.videoType.name} size="small" sx={{ height: 22, fontSize: '0.72rem' }} />
-                      )}
-                      {video.length != null && video.length > 0 && (
-                        <Chip label={formatVideoLength(video.length)} size="small" variant="outlined" sx={{ height: 22, fontSize: '0.72rem' }} />
-                      )}
-                      {video.camera?.name && (
-                        <Chip label={video.camera.name} size="small" variant="outlined" sx={{ height: 22, fontSize: '0.72rem' }} />
+                      <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mt: 0.75 }}>
+                        {video.videoType?.name && (
+                          <Chip label={video.videoType.name} size="small" sx={{ height: 22, fontSize: '0.72rem' }} />
+                        )}
+                        {video.length != null && video.length > 0 && (
+                          <Chip label={formatVideoLength(video.length)} size="small" variant="outlined" sx={{ height: 22, fontSize: '0.72rem' }} />
+                        )}
+                        {video.camera?.name && (
+                          <Chip label={video.camera.name} size="small" variant="outlined" sx={{ height: 22, fontSize: '0.72rem' }} />
+                        )}
+                      </Box>
+
+                      {video.filePath && (
+                        <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5, fontSize: '0.75rem' }}>
+                          {video.filePath}
+                        </Typography>
                       )}
                     </Box>
 
-                    {video.filePath && (
-                      <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5, fontSize: '0.75rem' }}>
-                        {video.filePath}
-                      </Typography>
+                    {/* Actions */}
+                    {user && (
+                      <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 0.25,
+                        flexShrink: 0,
+                        opacity: { xs: 1, sm: 0.4 },
+                        transition: 'opacity 0.2s',
+                        'div:hover > &': { opacity: 1 },
+                      }}>
+                        <IconButton size="small" onClick={() => handleOpenPlayVideo(video)} sx={{ p: 0.5 }}>
+                          <YouTubeIcon sx={{ fontSize: 18, color: 'error.main' }} />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => handleOpenEditVideo(video)} sx={{ p: 0.5 }}>
+                          <EditIcon sx={{ fontSize: 18 }} />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => setVideoToDelete(video)} sx={{ p: 0.5 }}>
+                          <DeleteIcon sx={{ fontSize: 18, color: 'error.main' }} />
+                        </IconButton>
+                      </Box>
                     )}
                   </Box>
-
-                  {/* Actions */}
-                  {user && (
-                    <Box sx={{
-                      display: 'flex',
-                      flexDirection: { xs: 'row', sm: 'column' },
-                      gap: 0.25,
-                      flexShrink: 0,
-                      opacity: { xs: 1, sm: 0.4 },
-                      transition: 'opacity 0.2s',
-                      'div:hover > &': { opacity: 1 },
-                    }}>
-                      <IconButton size="small" onClick={() => handleOpenPlayVideo(video)} sx={{ p: 0.5 }}>
-                        <YouTubeIcon sx={{ fontSize: 18, color: 'error.main' }} />
-                      </IconButton>
-                      <IconButton size="small" onClick={() => handleOpenEditVideo(video)} sx={{ p: 0.5 }}>
-                        <EditIcon sx={{ fontSize: 18 }} />
-                      </IconButton>
-                      <IconButton size="small" onClick={() => setVideoToDelete(video)} sx={{ p: 0.5 }}>
-                        <DeleteIcon sx={{ fontSize: 18, color: 'error.main' }} />
-                      </IconButton>
-                    </Box>
-                  )}
                 </Box>
               ))}
             </Stack>
