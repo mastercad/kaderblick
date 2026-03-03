@@ -19,6 +19,7 @@ import Alert from '@mui/material/Alert';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import CancelIcon from '@mui/icons-material/EventBusy';
+import RestoreIcon from '@mui/icons-material/EventAvailable';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -157,6 +158,28 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
+
+  const handleReactivateEvent = async () => {
+    if (!event) return;
+    setReactivating(true);
+    try {
+      const res = await apiRequest(`/api/calendar/event/${event.id}/reactivate`, {
+        method: 'PATCH',
+      });
+      if (res.ok) {
+        onCancelled?.();
+        onClose();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Fehler beim Reaktivieren.');
+      }
+    } catch {
+      alert('Fehler beim Reaktivieren.');
+    } finally {
+      setReactivating(false);
+    }
+  };
 
   const handleCancelEvent = async () => {
     if (!event || !cancelReason.trim()) return;
@@ -387,6 +410,19 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                 Absagen
               </Button>
             )}
+            {event.permissions?.canCancel && event.cancelled && (
+              <Button
+                onClick={handleReactivateEvent}
+                color="success"
+                variant="outlined"
+                size={isMobile ? 'small' : 'medium'}
+                startIcon={<RestoreIcon />}
+                disabled={reactivating}
+                sx={{ borderRadius: 2 }}
+              >
+                {reactivating ? 'Wird reaktiviert...' : 'Reaktivieren'}
+              </Button>
+            )}
             {event.permissions?.canDelete && onDelete && (
               <Button
                 onClick={onDelete}
@@ -446,6 +482,24 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                 <Typography variant="caption" sx={{ opacity: 0.75 }}>
                   Abgesagt von {event.cancelledBy}
                 </Typography>
+              )}
+              {event.permissions?.canCancel && (
+                <Button
+                  onClick={handleReactivateEvent}
+                  variant="contained"
+                  size="small"
+                  startIcon={<RestoreIcon />}
+                  disabled={reactivating}
+                  sx={{
+                    mt: 1,
+                    borderRadius: 2,
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: '#fff',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.35)' },
+                  }}
+                >
+                  {reactivating ? 'Wird reaktiviert...' : 'Event reaktivieren'}
+                </Button>
               )}
             </Box>
           </Paper>

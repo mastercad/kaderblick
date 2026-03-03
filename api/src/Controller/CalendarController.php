@@ -434,6 +434,53 @@ class CalendarController extends AbstractController
         ]);
     }
 
+    #[Route('/event/{id}/reactivate', name: 'event_reactivate', methods: ['PATCH'])]
+    public function reactivateEvent(CalendarEvent $calendarEvent): JsonResponse
+    {
+        if (!$this->isGranted(CalendarEventVoter::CANCEL, $calendarEvent)) {
+            return $this->json(['error' => 'Forbidden — nur Admins und Trainer können Events reaktivieren.'], 403);
+        }
+
+        if (!$calendarEvent->isCancelled()) {
+            return $this->json(['error' => 'Event ist nicht abgesagt.'], 400);
+        }
+
+        /** @var User $currentUser */
+        $currentUser = $this->getUser();
+
+        $calendarEvent->setCancelled(false);
+        $calendarEvent->setCancelReason(null);
+        $calendarEvent->setCancelledBy(null);
+        $this->entityManager->flush();
+
+        // Benachrichtige alle Betroffenen, dass das Event wieder stattfindet
+        $recipients = $this->resolveEventRecipients($calendarEvent, $currentUser);
+
+        if (count($recipients) > 0) {
+            $eventTitle = $calendarEvent->getTitle();
+            $startDate = $calendarEvent->getStartDate()?->format('d.m.Y H:i') ?? '';
+            $notificationTitle = 'Reaktiviert: ' . $eventTitle;
+            $notificationMessage = 'Das Event "' . $eventTitle . '" am ' . $startDate . ' findet doch statt!';
+
+            $this->notificationService->createNotificationForUsers(
+                $recipients,
+                'event_reactivated',
+                $notificationTitle,
+                $notificationMessage,
+                [
+                    'eventTitle' => $eventTitle,
+                    'reactivatedBy' => $currentUser->getFullName(),
+                    'url' => '/calendar?eventId=' . $calendarEvent->getId(),
+                ]
+            );
+        }
+
+        return $this->json([
+            'success' => true,
+            'recipientCount' => count($recipients),
+        ]);
+    }
+
     /**
      * Resolves all users that should receive a notification when an event is cancelled.
      *
@@ -455,10 +502,10 @@ class CalendarController extends AbstractController
         if ($calendarEvent->getGame()) {
             $game = $calendarEvent->getGame();
             if ($game->getHomeTeam()) {
-                $usersById += $this->getTeamMembers($game->getHomeTeam());
+                $usersById += $this->resolveTeamMembers($game->getHomeTeam());
             }
             if ($game->getAwayTeam()) {
-                $usersById += $this->getTeamMembers($game->getAwayTeam());
+                $usersById += $this->resolveTeamMembers($game->getAwayTeam());
             }
         }
 
@@ -467,13 +514,13 @@ class CalendarController extends AbstractController
             switch ($permission->getPermissionType()) {
                 case CalendarEventPermissionType::TEAM:
                     if ($permission->getTeam()) {
-                        $usersById += $this->getTeamMembers($permission->getTeam());
+                        $usersById += $this->resolveTeamMembers($permission->getTeam());
                     }
                     break;
 
                 case CalendarEventPermissionType::CLUB:
                     if ($permission->getClub()) {
-                        $usersById += $this->getClubMembers($permission->getClub());
+                        $usersById += $this->resolveClubMembers($permission->getClub());
                     }
                     break;
 
@@ -521,38 +568,46 @@ class CalendarController extends AbstractController
      *
      * @return User[]
      */
-    private function getTeamMembers(Team $team): array
+    private function resolveTeamMembers(Team $team): array
     {
         $users = [];
 
         // Players
-        $players = $this->entityManager->getRepository(PlayerTeamAssignment::class)
+        $playerAssignments = $this->entityManager->getRepository(PlayerTeamAssignment::class)
             ->createQueryBuilder('pta')
             ->innerJoin('pta.player', 'p')
             ->innerJoin('p.userRelations', 'ur')
             ->innerJoin('ur.user', 'u')
             ->where('pta.team = :team')
             ->setParameter('team', $team)
-            ->select('u')
             ->getQuery()
             ->getResult();
-        foreach ($players as $u) {
-            $users[$u->getId()] = $u;
+        foreach ($playerAssignments as $pta) {
+            foreach ($pta->getPlayer()->getUserRelations() as $ur) {
+                $u = $ur->getUser();
+                if ($u) {
+                    $users[$u->getId()] = $u;
+                }
+            }
         }
 
         // Coaches
-        $coaches = $this->entityManager->getRepository(CoachTeamAssignment::class)
+        $coachAssignments = $this->entityManager->getRepository(CoachTeamAssignment::class)
             ->createQueryBuilder('cta')
             ->innerJoin('cta.coach', 'c')
             ->innerJoin('c.userRelations', 'ur')
             ->innerJoin('ur.user', 'u')
             ->where('cta.team = :team')
             ->setParameter('team', $team)
-            ->select('u')
             ->getQuery()
             ->getResult();
-        foreach ($coaches as $u) {
-            $users[$u->getId()] = $u;
+        foreach ($coachAssignments as $cta) {
+            foreach ($cta->getCoach()->getUserRelations() as $ur) {
+                $u = $ur->getUser();
+                if ($u) {
+                    $users[$u->getId()] = $u;
+                }
+            }
         }
 
         return $users;
@@ -563,38 +618,46 @@ class CalendarController extends AbstractController
      *
      * @return User[]
      */
-    private function getClubMembers(\App\Entity\Club $club): array
+    private function resolveClubMembers(\App\Entity\Club $club): array
     {
         $users = [];
 
         // Players
-        $players = $this->entityManager->getRepository(PlayerClubAssignment::class)
+        $playerAssignments = $this->entityManager->getRepository(PlayerClubAssignment::class)
             ->createQueryBuilder('pca')
             ->innerJoin('pca.player', 'p')
             ->innerJoin('p.userRelations', 'ur')
             ->innerJoin('ur.user', 'u')
             ->where('pca.club = :club')
             ->setParameter('club', $club)
-            ->select('u')
             ->getQuery()
             ->getResult();
-        foreach ($players as $u) {
-            $users[$u->getId()] = $u;
+        foreach ($playerAssignments as $pca) {
+            foreach ($pca->getPlayer()->getUserRelations() as $ur) {
+                $u = $ur->getUser();
+                if ($u) {
+                    $users[$u->getId()] = $u;
+                }
+            }
         }
 
         // Coaches
-        $coaches = $this->entityManager->getRepository(CoachClubAssignment::class)
+        $coachAssignments = $this->entityManager->getRepository(CoachClubAssignment::class)
             ->createQueryBuilder('cca')
             ->innerJoin('cca.coach', 'c')
             ->innerJoin('c.userRelations', 'ur')
             ->innerJoin('ur.user', 'u')
             ->where('cca.club = :club')
             ->setParameter('club', $club)
-            ->select('u')
             ->getQuery()
             ->getResult();
-        foreach ($coaches as $u) {
-            $users[$u->getId()] = $u;
+        foreach ($coachAssignments as $cca) {
+            foreach ($cca->getCoach()->getUserRelations() as $ur) {
+                $u = $ur->getUser();
+                if ($u) {
+                    $users[$u->getId()] = $u;
+                }
+            }
         }
 
         return $users;
