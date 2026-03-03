@@ -116,6 +116,19 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
     setVideoEventInitialMinute(seconds);
     setVideoEventFormOpen(true);
   };
+
+  // Handler für Mobile-Steuerung: Video-Position wird direkt übergeben
+  const handleCreateEventFromVideoAtPosition = (videoPositionSeconds: number) => {
+    const gameStartOffset = videoToPlay?.gameStart ?? 0;
+    const cumOffset = videoToPlay ? calculateCumulativeOffset(
+      videoToPlay as any,
+      videos as any
+    ) : 0;
+    const gameTimeSeconds = Math.round(videoPositionSeconds - gameStartOffset + cumOffset);
+    setVideoEventInitialMinute(gameTimeSeconds);
+    setVideoEventFormOpen(true);
+  };
+
     // State für Play-Modal
     const [playVideoModalOpen, setPlayVideoModalOpen] = useState(false);
     const [videoToPlay, setVideoToPlay] = useState<Video | null>(null);
@@ -1146,6 +1159,8 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
         onEventUpdated={handleEventUpdated}
         allVideos={videos}
         youtubeLinks={youtubeLinks}
+        onCreateEventAtPosition={handleCreateEventFromVideoAtPosition}
+        canCreateEvents={canCreateEvents()}
       >
         {canCreateEvents() && (
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
