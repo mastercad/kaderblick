@@ -3,7 +3,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { Box } from '@mui/material';
 import HeroSection from '../components/HeroSection';
 import LandingSection from '../components/LandingSection';
-import FooterWithContact from '../components/FooterWithContact';
+import Footer from '../components/Footer';
 import SectionNavigation from '../components/SectionNavigation';
 import AuthModal from '../modals/AuthModal';
 import { useHomeScroll } from '../context/HomeScrollContext';
@@ -236,7 +236,7 @@ export default function Home() {
               />
               {isLastSection && (
                 <Box sx={{ width: '100%', marginTop: 'auto' }}>
-                  <FooterWithContact />
+                  <Footer />
                 </Box>
               )}
             </Box>
