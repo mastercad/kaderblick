@@ -10,7 +10,6 @@ use App\Entity\Player;
 use App\Entity\Team;
 use App\Entity\WeatherData;
 use App\Service\ReportDataService;
-use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Query;
@@ -551,8 +550,10 @@ class ReportDataServiceTest extends TestCase
 
         $playerA = $this->createMock(Player::class);
         $playerA->method('getFullName')->willReturn('Alice');
+        $playerA->method('__toString')->willReturn('Alice');
         $playerB = $this->createMock(Player::class);
         $playerB->method('getFullName')->willReturn('Bob');
+        $playerB->method('__toString')->willReturn('Bob');
 
         $ev1 = $this->createMock(GameEvent::class);
         $ev1->method('getPlayer')->willReturn($playerA);
@@ -583,6 +584,7 @@ class ReportDataServiceTest extends TestCase
 
         $playerA = $this->createMock(Player::class);
         $playerA->method('getFullName')->willReturn('Alice');
+        $playerA->method('__toString')->willReturn('Alice');
 
         $ev1 = $this->createMock(GameEvent::class);
         $ev1->method('getPlayer')->willReturn($playerA);
@@ -608,8 +610,10 @@ class ReportDataServiceTest extends TestCase
 
         $playerA = $this->createMock(Player::class);
         $playerA->method('getFullName')->willReturn('Alice');
+        $playerA->method('__toString')->willReturn('Alice');
         $teamX = $this->createMock(Team::class);
         $teamX->method('getName')->willReturn('TeamX');
+        $teamX->method('__toString')->willReturn('TeamX');
 
         $ev1 = $this->createMock(GameEvent::class);
         $ev1->method('getPlayer')->willReturn($playerA);
@@ -697,30 +701,18 @@ class ReportDataServiceTest extends TestCase
         $svc = new ReportDataService($em);
 
         // Create events with different teams (facetBy=team) and players (xField=player)
-        $teamX = new class extends Team {
-            public function getName(): string
-            {
-                return 'TeamX';
-            }
-        };
-        $teamY = new class extends Team {
-            public function getName(): string
-            {
-                return 'TeamY';
-            }
-        };
-        $playerA = new class extends Player {
-            public function getFullName(): string
-            {
-                return 'Alice';
-            }
-        };
-        $playerB = new class extends Player {
-            public function getFullName(): string
-            {
-                return 'Bob';
-            }
-        };
+        $teamX = $this->createMock(Team::class);
+        $teamX->method('getName')->willReturn('TeamX');
+        $teamX->method('__toString')->willReturn('TeamX');
+        $teamY = $this->createMock(Team::class);
+        $teamY->method('getName')->willReturn('TeamY');
+        $teamY->method('__toString')->willReturn('TeamY');
+        $playerA = $this->createMock(Player::class);
+        $playerA->method('getFullName')->willReturn('Alice');
+        $playerA->method('__toString')->willReturn('Alice');
+        $playerB = $this->createMock(Player::class);
+        $playerB->method('getFullName')->willReturn('Bob');
+        $playerB->method('__toString')->willReturn('Bob');
 
         $ev1 = $this->createMock(GameEvent::class);
         $ev1->method('getTeam')->willReturn($teamX);
@@ -765,25 +757,15 @@ class ReportDataServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $svc = new ReportDataService($em);
 
-        $teamX = new class extends Team {
-            public function getName(): string
-            {
-                return 'TeamX';
-            }
-        };
-        $playerA = new class extends Player {
-            public function getFullName(): string
-            {
-                return 'Alice';
-            }
-        };
+        $teamX = $this->createMock(Team::class);
+        $teamX->method('getName')->willReturn('TeamX');
+        $teamX->method('__toString')->willReturn('TeamX');
+        $playerA = $this->createMock(Player::class);
+        $playerA->method('getFullName')->willReturn('Alice');
+        $playerA->method('__toString')->willReturn('Alice');
 
-        $eventType = new class {
-            public function getName(): string
-            {
-                return 'Tor';
-            }
-        };
+        $eventType = $this->createMock(GameEventType::class);
+        $eventType->method('getName')->willReturn('Tor');
 
         $ev1 = $this->createMock(GameEvent::class);
         $ev1->method('getTeam')->willReturn($teamX);
@@ -817,31 +799,18 @@ class ReportDataServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $svc = new ReportDataService($em);
 
-        $teamX = new class extends Team {
-            public function getName(): string
-            {
-                return 'TeamX';
-            }
-        };
-        $playerA = new class extends Player {
-            public function getFullName(): string
-            {
-                return 'Alice';
-            }
-        };
-        $playerB = new class extends Player {
-            public function getFullName(): string
-            {
-                return 'Bob';
-            }
-        };
+        $teamX = $this->createMock(Team::class);
+        $teamX->method('getName')->willReturn('TeamX');
+        $teamX->method('__toString')->willReturn('TeamX');
+        $playerA = $this->createMock(Player::class);
+        $playerA->method('getFullName')->willReturn('Alice');
+        $playerA->method('__toString')->willReturn('Alice');
+        $playerB = $this->createMock(Player::class);
+        $playerB->method('getFullName')->willReturn('Bob');
+        $playerB->method('__toString')->willReturn('Bob');
 
-        $eventType = new class {
-            public function getName(): string
-            {
-                return 'Tor';
-            }
-        };
+        $eventType = $this->createMock(GameEventType::class);
+        $eventType->method('getName')->willReturn('Tor');
 
         $ev1 = $this->createMock(GameEvent::class);
         $ev1->method('getTeam')->willReturn($teamX);
@@ -883,25 +852,15 @@ class ReportDataServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $svc = new ReportDataService($em);
 
-        $playerA = new class extends Player {
-            public function getFullName(): string
-            {
-                return 'Alice';
-            }
-        };
-        $teamX = new class extends Team {
-            public function getName(): string
-            {
-                return 'TeamX';
-            }
-        };
+        $playerA = $this->createMock(Player::class);
+        $playerA->method('getFullName')->willReturn('Alice');
+        $playerA->method('__toString')->willReturn('Alice');
+        $teamX = $this->createMock(Team::class);
+        $teamX->method('getName')->willReturn('TeamX');
+        $teamX->method('__toString')->willReturn('TeamX');
 
-        $eventType = new class {
-            public function getName(): string
-            {
-                return 'Tor';
-            }
-        };
+        $eventType = $this->createMock(GameEventType::class);
+        $eventType->method('getName')->willReturn('Tor');
 
         $ev1 = $this->createMock(GameEvent::class);
         $ev1->method('getPlayer')->willReturn($playerA);
@@ -1027,18 +986,12 @@ class ReportDataServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $svc = new ReportDataService($em);
 
-        $playerA = new class extends Player {
-            public function getFullName(): string
-            {
-                return 'Alice';
-            }
-        };
-        $playerB = new class extends Player {
-            public function getFullName(): string
-            {
-                return 'Bob';
-            }
-        };
+        $playerA = $this->createMock(Player::class);
+        $playerA->method('getFullName')->willReturn('Alice');
+        $playerA->method('__toString')->willReturn('Alice');
+        $playerB = $this->createMock(Player::class);
+        $playerB->method('getFullName')->willReturn('Bob');
+        $playerB->method('__toString')->willReturn('Bob');
 
         // Events: A has eventType goal, B has eventType goal
         $ev1 = $this->createMock(GameEvent::class);
@@ -1126,21 +1079,21 @@ class ReportDataServiceTest extends TestCase
 
     public function testGenerateReportDataReturnsMetaAndChart(): void
     {
-        $playerA = new class extends Player {
-            public function getFullName(): string
-            {
-                return 'Alice';
-            }
-        };
+        $playerA = $this->createMock(Player::class);
+        $playerA->method('getFullName')->willReturn('Alice');
+        $playerA->method('__toString')->willReturn('Alice');
+
+        $gameMock = $this->createMock(Game::class);
+        $teamMock = $this->createMock(Team::class);
 
         $ev = $this->createMock(GameEvent::class);
         $ev->method('getPlayer')->willReturn($playerA);
-        $ev->method('getGame')->willReturn(null);
+        $ev->method('getGame')->willReturn($gameMock);
         $ev->method('getGameEventType')->willReturn(null);
-        $ev->method('getTeam')->willReturn(null);
+        $ev->method('getTeam')->willReturn($teamMock);
 
         // Build query chain
-        $query = $this->createMock(AbstractQuery::class);
+        $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([$ev]);
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -1166,7 +1119,8 @@ class ReportDataServiceTest extends TestCase
         $this->assertArrayHasKey('labels', $result);
         $this->assertArrayHasKey('datasets', $result);
         $this->assertArrayHasKey('meta', $result);
-        $this->assertSame('bar', $result['diagramType']);
+        // diagramType is only set in result for special types (radar, faceted, pitchheatmap)
+        $this->assertArrayNotHasKey('diagramType', $result);
         $this->assertSame(1, $result['meta']['eventsCount']);
     }
 
@@ -1184,7 +1138,7 @@ class ReportDataServiceTest extends TestCase
             }
         };
 
-        $query = $this->createMock(AbstractQuery::class);
+        $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([$ev]);
 
         $qb = $this->createMock(QueryBuilder::class);
