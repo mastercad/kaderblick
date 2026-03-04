@@ -218,7 +218,7 @@ export default function Home() {
             <Box
               key={index}
               sx={{
-                minHeight: '100vh',
+                height: '100vh',
                 scrollSnapAlign: 'start',
                 display: 'flex',
                 flexDirection: 'column',

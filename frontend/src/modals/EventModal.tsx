@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import BaseModal from './BaseModal';
 import ImportMatchesDialog from './ImportMatchesDialog';
 import ManualMatchesEditor from './ManualMatchesEditor';
@@ -60,6 +62,8 @@ export const EventModal: React.FC<EventModalProps> = ({
   const [importOpen, setImportOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const [generatorOpen, setGeneratorOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Turnier-Settings aus der API in Event-Felder übernehmen
   useEffect(() => {
@@ -312,14 +316,13 @@ export const EventModal: React.FC<EventModalProps> = ({
               onClick={() => setWizardOpen(true)}
               color="info"
               variant="outlined"
-              style={{ marginLeft: 12 }}
             >
               Wizard starten
             </Button>
           </>
         }
       >
-        <div style={{ display: 'flex', gap: 24 }}>
+        <div style={{ display: 'flex', gap: 24, flexDirection: isMobile ? 'column' : 'row' }}>
           <div style={{ flex: 1 }}>
             <EventBaseForm
               formData={event}
