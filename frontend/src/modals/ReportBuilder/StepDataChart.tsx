@@ -3,6 +3,7 @@ import {
   Box,
   TextField,
   FormControl,
+  FormControlLabel,
   InputLabel,
   Select,
   MenuItem,
@@ -10,6 +11,7 @@ import {
   Paper,
   Chip,
   ListSubheader,
+  Switch,
 } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
 import type { ReportBuilderState, FieldOption } from './types';
@@ -157,6 +159,81 @@ export const StepDataChart: React.FC<StepDataChartProps> = ({ state }) => {
           ))}
         </Select>
       </FormControl>
+
+      {/* Facet-By selector for faceted charts */}
+      {diag === 'faceted' && (
+      <>
+        <FormControl fullWidth>
+          <InputLabel>Facette (Panel-Aufteilung) *</InputLabel>
+          <Select
+            value={currentReport.config.facetBy || ''}
+            onChange={(e) => handleConfigChange('facetBy', e.target.value)}
+            label="Facette (Panel-Aufteilung) *"
+          >
+            <MenuItem value="">
+              <em>— Feld wählen —</em>
+            </MenuItem>
+            {dimensions
+              .filter(f => f.key !== currentReport.config.xField && f.key !== currentReport.config.groupBy)
+              .map(f => (
+                <MenuItem key={f.key} value={f.key}>{f.label}</MenuItem>
+            ))}
+          </Select>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+            Pro Wert dieses Feldes wird ein eigenes Panel/Diagramm erstellt.
+          </Typography>
+        </FormControl>
+
+        {/* Sub-chart type for faceted panels */}
+        <FormControl fullWidth>
+          <InputLabel>Panel-Diagrammtyp</InputLabel>
+          <Select
+            value={currentReport.config.facetSubType || 'bar'}
+            onChange={(e) => handleConfigChange('facetSubType', e.target.value)}
+            label="Panel-Diagrammtyp"
+          >
+            <MenuItem value="bar">Balken</MenuItem>
+            <MenuItem value="radar">Radar</MenuItem>
+            <MenuItem value="area">Fläche (Area)</MenuItem>
+            <MenuItem value="line">Linie</MenuItem>
+          </Select>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+            Bestimmt den Chart-Typ innerhalb jedes Panels.
+          </Typography>
+        </FormControl>
+
+        {/* Transpose toggle: swap axes ↔ datasets */}
+        <FormControlLabel
+          control={
+            <Switch
+              checked={currentReport.config.facetTranspose ?? (currentReport.config.facetSubType === 'radar')}
+              onChange={(e) => handleConfigChange('facetTranspose', e.target.checked)}
+            />
+          }
+          label="Achsen tauschen (Spieler ↔ Ereignistypen)"
+        />
+        <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
+          An: Spieler als Overlay-Layers, Ereignistypen als Achsen. Aus: umgekehrt.
+        </Typography>
+
+        {/* Layout selector for faceted panels */}
+        <FormControl fullWidth>
+          <InputLabel>Darstellung / Layout</InputLabel>
+          <Select
+            value={currentReport.config.facetLayout || 'grid'}
+            onChange={(e) => handleConfigChange('facetLayout', e.target.value)}
+            label="Darstellung / Layout"
+          >
+            <MenuItem value="grid">Raster (Panels nebeneinander)</MenuItem>
+            <MenuItem value="vertical">Untereinander (volle Breite)</MenuItem>
+            <MenuItem value="interactive">Interaktiv (Umschalten per Klick)</MenuItem>
+          </Select>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+            Raster: kompakter Überblick. Untereinander: größere Panels. Interaktiv: ein Panel mit Umschalter.
+          </Typography>
+        </FormControl>
+      </>
+      )}
 
       {/* Metrics selector for Radar charts */}
       {(diag === 'radar' || diag === 'radaroverlay') && (

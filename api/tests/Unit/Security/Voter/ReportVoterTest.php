@@ -6,6 +6,7 @@ use App\Entity\ReportDefinition;
 use App\Entity\User;
 use App\Security\Voter\ReportVoter;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
 
@@ -197,7 +198,7 @@ class ReportVoterTest extends TestCase
         $user = $this->createUser(1);
         $token = $this->createToken($user);
 
-        $result = $this->voter->vote($token, new \stdClass(), [ReportVoter::VIEW]);
+        $result = $this->voter->vote($token, new stdClass(), [ReportVoter::VIEW]);
 
         $this->assertSame(VoterInterface::ACCESS_ABSTAIN, $result);
     }

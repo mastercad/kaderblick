@@ -6,6 +6,8 @@ use App\Entity\Game;
 use App\Entity\GameEvent;
 use App\Entity\Player;
 use App\Service\ReportVirtualFieldService;
+use DateTimeImmutable;
+use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
@@ -20,7 +22,7 @@ class ReportVirtualFieldServiceTest extends TestCase
         $qb->method('where')->willReturnSelf();
         $qb->method('setParameter')->willReturnSelf();
 
-        $query = $this->createMock(\Doctrine\ORM\AbstractQuery::class);
+        $query = $this->createMock(AbstractQuery::class);
         $query->method('getResult')->willReturn([]);
         $qb->method('getQuery')->willReturn($query);
 
@@ -42,8 +44,8 @@ class ReportVirtualFieldServiceTest extends TestCase
     {
         $player = $this->createMock(Player::class);
 
-        $startTime = new \DateTimeImmutable('2025-01-01 15:00:00');
-        $endTime = new \DateTimeImmutable('2025-01-01 16:30:00');
+        $startTime = new DateTimeImmutable('2025-01-01 15:00:00');
+        $endTime = new DateTimeImmutable('2025-01-01 16:30:00');
 
         $game = $this->createMock(Game::class);
         $game->method('getStartTime')->willReturn($startTime);
@@ -61,7 +63,7 @@ class ReportVirtualFieldServiceTest extends TestCase
         $gameQb->method('where')->willReturnSelf();
         $gameQb->method('setParameter')->willReturnSelf();
 
-        $gameQuery = $this->createMock(\Doctrine\ORM\AbstractQuery::class);
+        $gameQuery = $this->createMock(AbstractQuery::class);
         $gameQuery->method('getResult')->willReturn([$game]);
         $gameQb->method('getQuery')->willReturn($gameQuery);
 
@@ -74,7 +76,7 @@ class ReportVirtualFieldServiceTest extends TestCase
 
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('getRepository')->willReturnCallback(function (string $className) use ($gameRepo, $eventRepo) {
-            if ($className === Game::class) {
+            if (Game::class === $className) {
                 return $gameRepo;
             }
 
@@ -105,7 +107,7 @@ class ReportVirtualFieldServiceTest extends TestCase
         $gameQb->method('where')->willReturnSelf();
         $gameQb->method('setParameter')->willReturnSelf();
 
-        $gameQuery = $this->createMock(\Doctrine\ORM\AbstractQuery::class);
+        $gameQuery = $this->createMock(AbstractQuery::class);
         $gameQuery->method('getResult')->willReturn([$game]);
         $gameQb->method('getQuery')->willReturn($gameQuery);
 
@@ -117,7 +119,7 @@ class ReportVirtualFieldServiceTest extends TestCase
 
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('getRepository')->willReturnCallback(function (string $className) use ($gameRepo, $eventRepo) {
-            if ($className === Game::class) {
+            if (Game::class === $className) {
                 return $gameRepo;
             }
 
@@ -134,7 +136,7 @@ class ReportVirtualFieldServiceTest extends TestCase
     {
         $player = $this->createMock(Player::class);
 
-        $startTime = new \DateTimeImmutable('2025-01-01 15:00:00');
+        $startTime = new DateTimeImmutable('2025-01-01 15:00:00');
 
         $game = $this->createMock(Game::class);
         $game->method('getStartTime')->willReturn($startTime);
@@ -150,7 +152,7 @@ class ReportVirtualFieldServiceTest extends TestCase
         $gameQb->method('where')->willReturnSelf();
         $gameQb->method('setParameter')->willReturnSelf();
 
-        $gameQuery = $this->createMock(\Doctrine\ORM\AbstractQuery::class);
+        $gameQuery = $this->createMock(AbstractQuery::class);
         $gameQuery->method('getResult')->willReturn([$game]);
         $gameQb->method('getQuery')->willReturn($gameQuery);
 
@@ -162,7 +164,7 @@ class ReportVirtualFieldServiceTest extends TestCase
 
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('getRepository')->willReturnCallback(function (string $className) use ($gameRepo, $eventRepo) {
-            if ($className === Game::class) {
+            if (Game::class === $className) {
                 return $gameRepo;
             }
 

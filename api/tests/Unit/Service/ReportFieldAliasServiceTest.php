@@ -11,7 +11,6 @@ class ReportFieldAliasServiceTest extends TestCase
     {
         $aliases = ReportFieldAliasService::fieldAliases(null);
 
-        $this->assertIsArray($aliases);
         $this->assertNotEmpty($aliases);
     }
 

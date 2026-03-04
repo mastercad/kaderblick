@@ -315,6 +315,36 @@ class ReportController extends AbstractController
                     'showLegend' => true,
                 ],
             ],
+            [
+                'key' => 'player_events_by_surface',
+                'label' => 'Spieler-Events nach Spielfeldtyp (Radar)',
+                'config' => [
+                    'diagramType' => 'faceted',
+                    'facetSubType' => 'radar',
+                    'facetLayout' => 'interactive',
+                    'facetBy' => 'surfaceType',
+                    'xField' => 'player',
+                    'yField' => 'eventType',
+                    'groupBy' => ['eventType'],
+                    'showLegend' => true,
+                    'showLabels' => false,
+                ],
+            ],
+            [
+                'key' => 'player_events_by_game_type',
+                'label' => 'Spieler-Events nach Spieltyp (Area)',
+                'config' => [
+                    'diagramType' => 'faceted',
+                    'facetSubType' => 'area',
+                    'facetLayout' => 'vertical',
+                    'facetBy' => 'gameType',
+                    'xField' => 'player',
+                    'yField' => 'eventType',
+                    'groupBy' => ['eventType'],
+                    'showLegend' => true,
+                    'showLabels' => false,
+                ],
+            ],
         ];
 
         return $this->json([
@@ -362,12 +392,25 @@ class ReportController extends AbstractController
 
         $reportData = $reportDataService->generateReportData($configData);
 
-        return $this->json([
+        $response = [
             'labels' => $reportData['labels'],
             'datasets' => $reportData['datasets'],
             'diagramType' => $configData['diagramType'] ?? 'bar',
             'meta' => $reportData['meta'] ?? null,
-        ]);
+        ];
+
+        // For faceted charts, include the panels array and sub-type
+        if (isset($reportData['panels'])) {
+            $response['panels'] = $reportData['panels'];
+        }
+        if (isset($reportData['facetSubType'])) {
+            $response['facetSubType'] = $reportData['facetSubType'];
+        }
+        if (isset($reportData['facetLayout'])) {
+            $response['facetLayout'] = $reportData['facetLayout'];
+        }
+
+        return $this->json($response);
     }
 
     #[Route('/available', name: 'api_report_available', methods: ['GET'])]
@@ -419,7 +462,7 @@ class ReportController extends AbstractController
 
         $reportData = $reportDataService->generateReportData($config);
 
-        return $this->json([
+        $response = [
             'name' => $report->getName(),
             'description' => $report->getDescription(),
             'config' => $config,
@@ -427,7 +470,20 @@ class ReportController extends AbstractController
             'datasets' => $reportData['datasets'],
             'diagramType' => $config['diagramType'] ?? 'bar',
             'meta' => $reportData['meta'] ?? null,
-        ]);
+        ];
+
+        // For faceted charts, include the panels array and sub-type
+        if (isset($reportData['panels'])) {
+            $response['panels'] = $reportData['panels'];
+        }
+        if (isset($reportData['facetSubType'])) {
+            $response['facetSubType'] = $reportData['facetSubType'];
+        }
+        if (isset($reportData['facetLayout'])) {
+            $response['facetLayout'] = $reportData['facetLayout'];
+        }
+
+        return $this->json($response);
     }
 
     #[Route('/definitions', name: 'api_report_definitions', methods: ['GET'])]
