@@ -157,9 +157,10 @@
     padding-right: 0;
   }
   
-  /* Scroll Indikator in Mobile */
+  /* Scroll Indikator in Mobile – über dem Footer positionieren */
   .hero-scroll-indicator {
-    bottom: 2rem;
+    bottom: 5rem;
+    z-index: 25;
   }
   
   .hero-scroll-text {

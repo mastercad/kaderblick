@@ -10,6 +10,7 @@ Im Bereich **Berichte** erstellt ihr aussagekräftige Diagramme und Auswertungen
 - [Der Report-Assistent Schritt für Schritt](#der-report-assistent-schritt-für-schritt)
 - [Vorlagen (Presets) — Berichte mit einem Klick](#vorlagen-presets--berichte-mit-einem-klick)
 - [Alle Diagrammtypen erklärt](#alle-diagrammtypen-erklärt)
+- [Facettierte Berichte: Vergleich über mehrere Panels](#facettierte-berichte-vergleich-über-mehrere-panels)
 - [Datenfelder verstehen](#datenfelder-verstehen)
 - [Filter gezielt einsetzen](#filter-gezielt-einsetzen)
 - [Erweiterte Optionen](#erweiterte-optionen)
@@ -57,9 +58,13 @@ Hier bestimmt ihr, **welche Daten** dargestellt werden und **wie das Diagramm** 
 |-------------|----------------|---------|
 | **X-Achse (Gruppierung)** | Die Einteilung auf der waagerechten Achse | „Spieler", „Monat", „Spielfeldtyp" |
 | **Y-Achse (Wert)** | Was gezählt oder gemessen wird | „Tore", „Schüsse", „Gelbe Karten" |
-| **Chart-Typ** | Die Art des Diagramms (Balken, Linie, Radar...) | „Balkendiagramm" |
+| **Chart-Typ** | Die Art des Diagramms (Balken, Linie, Radar, Facettiert...) | „Balkendiagramm" |
 | **Gruppierung** | Optional: Daten zusätzlich nach einem Merkmal aufteilen | „Nach Mannschaft" oder „Nach Wetterlage" |
 | **Metriken** (nur bei Radar) | Welche Werte auf den Radar-Achsen dargestellt werden | Tore, Assists, Schüsse, Pässe |
+| **Facette** (nur bei Facettiert) | Nach welchem Feld die Daten in Panels aufgeteilt werden | „Spielfeldtyp" → ein Panel pro Untergrund |
+| **Panel-Diagrammtyp** (nur bei Facettiert) | Welcher Chart-Typ innerhalb der Panels verwendet wird | Radar, Fläche, Linie oder Balken |
+| **Achsen tauschen** (nur bei Facettiert) | Tauscht Spieler ↔ Ereignistypen auf den Achsen | An = Spieler als Overlay-Netze |
+| **Darstellung** (nur bei Facettiert) | Wie die Panels angeordnet werden | Raster, Untereinander oder Interaktiv |
 
 > **So funktioniert es:** Die X-Achse bestimmt, *wonach* aufgeteilt wird. Die Y-Achse bestimmt, *was* gezählt wird. Beispiel: X = Spieler, Y = Tore → zeigt die Tore pro Spieler.
 
@@ -127,6 +132,13 @@ Vorlagen sind **vorkonfigurierte Berichte**, die mit einem Klick fertig eingeste
 | **Tore pro Spielfeldtyp** | Einfacher Torvergleich nach Untergrund | Balkendiagramm |
 | **Spielfeld × Wetter (Vergleich)** | Kombinierte Auswertung: Spielfeldtyp und Wetterlage zusammen | Gestapeltes Flächendiagramm |
 | **Leistung bei Wind** | Wie beeinflusst Wind die Leistung? Alle Metriken im Windvergleich | Radar (Overlay) |
+
+### Facettierte Vergleiche (mehrere Panels)
+
+| Vorlage | Was sie zeigt | Chart-Typ |
+|---------|-------------|-----------|
+| **Spieler-Events nach Spielfeldtyp (Radar)** | Für jeden Spielfeldtyp (Rasen, Kunstrasen, Asche...) ein Radar-Panel — Spieler als farbige Netze, Ereignistypen als Achsen | Facettiert (Radar) |
+| **Spieler-Events nach Spieltyp (Area)** | Für jeden Spieltyp (Liga, Pokal...) ein Flächen-Panel — Spieler aufgelistet, Ereignistypen als farbige Flächen | Facettiert (Fläche) |
 
 > **Tipp:** Nach dem Anklicken einer Vorlage könnt ihr alle Einstellungen noch frei anpassen — die Vorlage ist nur ein Startpunkt.
 
@@ -237,6 +249,112 @@ Zeigt eine Farbkarte auf einem Spielfeldschema. Je intensiver die Farbe, desto m
 **Beispiel:** Wie stark schwanken die Torwerte der Spieler?
 
 Zeigt Median, Quartile und Ausreißer — für fortgeschrittene statistische Auswertungen.
+
+---
+
+## Facettierte Berichte: Vergleich über mehrere Panels
+
+Facettierte Berichte sind die **mächtigste Vergleichs-Funktion** im Berichtssystem. Sie erstellen automatisch **mehrere kleine Diagramme nebeneinander** — ein eigenes Panel für jede Ausprägung eines Feldes.
+
+### Wofür ist das gut?
+
+Stellt euch vor, ihr wollt wissen: *„Wie performen unsere Spieler auf Rasen im Vergleich zu Kunstrasen und Asche?"* Statt drei einzelne Berichte zu erstellen, macht ihr **einen** facettierten Bericht — und seht alles nebeneinander.
+
+**Beispiel-Ergebnis:**
+
+```
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│   Rasen      │  │  Kunstrasen  │  │    Asche     │
+│              │  │              │  │              │
+│  🕸️ Radar    │  │  🕸️ Radar    │  │  🕸️ Radar    │
+│  mit allen   │  │  mit allen   │  │  mit allen   │
+│  Spielern    │  │  Spielern    │  │  Spielern    │
+└──────────────┘  └──────────────┘  └──────────────┘
+```
+
+Jedes Panel zeigt genau dieselbe Auswertung, aber nur mit den Daten des jeweiligen Spielfeldtyps.
+
+### Die vier Einstellungen im Detail
+
+#### 1. Facette (Panel-Aufteilung)
+
+Bestimmt, **wonach** die Daten in Panels aufgeteilt werden:
+
+| Facette wählen als... | Ergebnis |
+|---|---|
+| **Spielfeldtyp** | Ein Panel pro Untergrund (Rasen, Kunstrasen, Asche...) |
+| **Spieltyp** | Ein Panel pro Spielart (Liga, Pokal, Freundschaftsspiel...) |
+| **Wetterlage** | Ein Panel pro Wetterbedingung (Sonnig, Regen, Schnee...) |
+| **Monat** | Ein Panel pro Monat |
+
+#### 2. Panel-Diagrammtyp
+
+Bestimmt, **wie** das Diagramm in jedem Panel aussieht:
+
+| Diagrammtyp | Aussehen | Am besten für... |
+|---|---|---|
+| **Radar** | Spinnennetz — jede Achse ist ein Ereignistyp, jeder Spieler ein farbiges Netz | Rundumvergleich: Wer ist wo besser? |
+| **Fläche (Area)** | Farbig gefüllte Linien | Muster und Gewichte erkennen |
+| **Linie** | Einfache Linien | Trends und Unterschiede |
+| **Balken** | Klassische Balken nebeneinander | Direkte Wertvergleiche |
+
+#### 3. Achsen tauschen (Spieler ↔ Ereignistypen)
+
+Diese Option **dreht die Darstellung um** — sie bestimmt, was auf den Achsen steht und was als farbige Overlay-Ebene dargestellt wird:
+
+| Schalter | Achsen/Labels des Panels | Overlay-Layers (Farben) |
+|---|---|---|
+| **An** (empfohlen für Radar) | Ereignistypen (Tore, Assists, Karten...) | Spieler (Max, Anna, ...) — jeder als eigenes Netz |
+| **Aus** (Standard für Balken) | Spieler (Max, Anna, ...) | Ereignistypen — jeder Typ als eigener Balken |
+
+> **Empfehlung für Radar:** Schalter **an** lassen — so seht ihr pro Spielfeldtyp ein Radar, in dem jeder Spieler ein eigenes farbiges Netz hat und ihr direkt vergleichen könnt: „Max hat auf Kunstrasen mehr Tore, aber Anna hat mehr Assists."
+
+> **Empfehlung für Balken:** Schalter **aus** lassen — so seht ihr pro Spielfeldtyp die Spieler als Beschriftung und jeden Ereignistyp als eigene Farbe nebeneinander.
+
+#### 4. Darstellung / Layout
+
+Bestimmt, **wie die Panels angeordnet** werden:
+
+| Layout | Aussehen | Am besten für... |
+|---|---|---|
+| **Raster** | Panels nebeneinander (2–3 pro Zeile) | Schneller Überblick bei wenigen Panels (2–3 Spielfeldtypen) |
+| **Untereinander** | Panels volle Breite untereinander | Detaillierter Vergleich, jedes Panel gut lesbar |
+| **Interaktiv** | Ein einzelnes großes Diagramm + Umschalter-Buttons | Beste Lesbarkeit — besonders bei vielen Spielern oder komplexen Daten |
+
+**Beispiel interaktiv:**
+
+```
+  [ Rasen ]  [ Kunstrasen ]  [ Asche ]     ← Umschalter
+  ┌──────────────────────────────────────┐
+  │                                      │
+  │     🕸️ Großes Radar-Diagramm         │
+  │     (nur die Daten des gewählten     │
+  │      Spielfeldtyps)                  │
+  │                                      │
+  └──────────────────────────────────────┘
+```
+
+> **Empfehlung:** Nutzt **Interaktiv** für komplexe Auswertungen mit vielen Spielern — das Diagramm ist groß und gut lesbar. Nutzt **Raster** oder **Untereinander** für den schnellen Überblick bei wenigen Kategorien.
+
+### Schritt-für-Schritt: Facettierten Bericht erstellen
+
+1. Im Menü auf **„Berichte"** → **„Neuen Bericht erstellen"**
+2. **Name eingeben** — z. B. „Spieler-Vergleich pro Spielfeldtyp"
+3. Im Schritt **Daten & Chart**:
+   - **X-Achse:** Spieler
+   - **Y-Achse:** Ereignistyp
+   - **Chart-Typ:** Facettiert (Mehrere Panels)
+   - **Gruppierung:** Ereignistyp
+4. Es erscheinen die neuen Felder:
+   - **Facette:** Spielfeldtyp wählen
+   - **Panel-Diagrammtyp:** Radar wählen
+   - **Achsen tauschen:** An
+   - **Darstellung:** Interaktiv (für volle Größe) oder Raster (für Überblick)
+5. Optional: **Filter** setzen (z. B. nur ein bestimmtes Team)
+6. **Vorschau** prüfen
+7. **Speichern** — fertig!
+
+> **Tipp:** Ihr könnt auch die Vorlage **„Spieler-Events nach Spielfeldtyp (Radar)"** verwenden — die füllt alle Einstellungen mit einem Klick!
 
 ---
 
@@ -458,6 +576,53 @@ Manuell:
    - Spieltyp: **Pokal**
 5. Speichern als „Fouls U17 Pokal"
 
+### Rezept 11: „Wie performen unsere Spieler auf verschiedenen Spielfeldtypen?" ⭐
+
+> Vorlage: **Spieler-Events nach Spielfeldtyp (Radar)**
+
+Dieser Bericht ist besonders beliebt für Team-Meetings! Er zeigt für jeden Spielfeldtyp (Rasen, Kunstrasen, Asche) ein eigenes Radar-Panel. In jedem Panel:
+- Jeder **Spieler** ist ein farbiges Netz
+- Die **Achsen** sind die Ereignistypen (Tore, Assists, Gelbe Karten usw.)
+- Auf einen Blick seht ihr: „Max schießt auf Kunstrasen mehr Tore, aber auf Rasen weniger Fouls"
+
+Manuell:
+1. Chart-Typ: **Facettiert (Mehrere Panels)**
+2. X-Achse: **Spieler**
+3. Y-Achse: **Ereignistyp**
+4. Gruppierung: **Ereignistyp**
+5. Facette: **Spielfeldtyp**
+6. Panel-Diagrammtyp: **Radar**
+7. Achsen tauschen: **An**
+8. Darstellung: **Interaktiv** (oder Raster für den schnellen Überblick)
+
+### Rezept 12: „Spieler-Vergleich nach Spieltyp als Flächendiagramm"
+
+> Vorlage: **Spieler-Events nach Spieltyp (Area)**
+
+Für jeden Spieltyp (Liga, Pokal, Freundschaftsspiel) ein eigenes Flächen-Panel. Jeder Ereignistyp wird als farbig gefüllte Fläche dargestellt — so erkennt ihr auf einen Blick, wo die Schwerpunkte liegen.
+
+Manuell:
+1. Chart-Typ: **Facettiert (Mehrere Panels)**
+2. X-Achse: **Spieler**
+3. Y-Achse: **Ereignistyp**
+4. Gruppierung: **Ereignistyp**
+5. Facette: **Spieltyp**
+6. Panel-Diagrammtyp: **Fläche (Area)**
+7. Achsen tauschen: **Aus** (Spieler auf der X-Achse, Ereignisse als Flächen)
+
+### Rezept 13: „Wetterlage-Vergleich mit Balken nebeneinander"
+
+Kein Preset — einfach selbst bauen:
+1. Chart-Typ: **Facettiert (Mehrere Panels)**
+2. X-Achse: **Spieler**
+3. Y-Achse: **Tore**
+4. Gruppierung: **Ereignistyp**
+5. Facette: **Wetterlage**
+6. Panel-Diagrammtyp: **Balken**
+7. Achsen tauschen: **Aus**
+
+Ergebnis: Für jede Wetterlage (Sonnig, Regen, Schnee...) ein eigenes Balkendiagramm. Ihr seht direkt, wer bei welchem Wetter die meisten Tore schießt.
+
 ---
 
 ## Berichte auf dem Dashboard
@@ -496,6 +661,19 @@ Aktuell könnt ihr die Ansicht über den Browser drucken (Strg+P / Cmd+P). Ein d
 - **Radar** zeigt ein einzelnes Spinnennetz (z. B. ein Spieler)
 - **Radar (Overlay)** legt **mehrere Netze übereinander** — ideal für Vergleiche (z. B. Rasen vs. Kunstrasen)
 
+### Was ist der Unterschied zwischen Radar (Overlay) und Facettiert (Radar)?
+- **Radar (Overlay)** zeigt **ein einziges** großes Radar, in dem z. B. Spielfeldtypen als übereinandergelegte Netze erscheinen
+- **Facettiert (Radar)** zeigt **mehrere kleine Radars nebeneinander** — pro Spielfeldtyp ein eigenes Panel mit allen Spielern als Netze
+
+Beide sind nützlich! Overlay eignet sich gut, wenn ihr **wenige Kategorien** vergleichen wollt (z. B. 3 Spielfeldtypen). Facettiert ist besser, wenn ihr innerhalb jeder Kategorie **viele Details** sehen wollt (z. B. 10 Spieler pro Spielfeldtyp).
+
+### Was bedeutet „Achsen tauschen" bei facettierten Berichten?
+Diese Option dreht die Achsen innerhalb der Panels:
+- **An:** Spieler werden als farbige Overlay-Netze/Linien dargestellt, Ereignistypen stehen auf den Achsen → „Wer ist wo besser?"
+- **Aus:** Ereignistypen werden als Overlay-Farben dargestellt, Spieler stehen auf den Achsen → „Welche Events hat jeder Spieler?"
+
+Für Radar-Panels empfehlen wir **An**, für Balken-Panels **Aus**.
+
 ### Was bedeutet „Pro Dataset normalisieren"?
 Wenn ein Spieler 50 Pässe aber nur 3 Tore hat, wäre das Netz bei den Pässen riesig und bei den Toren winzig. Mit Normalisierung werden alle Werte auf einen einheitlichen Maßstab (0–1) gebracht, sodass die Form des Netzes vergleichbar wird.
 
@@ -518,4 +696,8 @@ Wenn ein Spieler 50 Pässe aber nur 3 Tore hat, wäre das Netz bei den Pässen r
 7. **Dashboard nutzen:** Die wichtigsten Berichte direkt aufs Dashboard legen — so habt ihr die Kennzahlen beim Login im Blick.
 
 8. **Berichte benennen:** Gebt euren Berichten aussagekräftige Namen mit Kontext, z. B. „Tore U19 Rückrunde 2025" statt nur „Tore".
+
+9. **Facettierte Berichte für Vergleiche:** Wenn ihr denselben Bericht für verschiedene Bedingungen sehen wollt (z. B. pro Spielfeldtyp), nutzt den facettierten Chart-Typ — so habt ihr alles auf einen Blick nebeneinander.
+
+10. **Radar + Facettiert = Profi-Ansicht:** Die Kombination „Facettiert mit Radar-Panels" ist ideal für Team-Meetings — zeigt für jede Bedingung (Spielfeld, Wetter, Spieltyp) ein Spinnennetz mit allen Spielern.
 

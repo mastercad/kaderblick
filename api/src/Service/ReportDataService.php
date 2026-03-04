@@ -342,6 +342,17 @@ class ReportDataService
             return $radarResult;
         }
 
+        // Faceted chart handling: split events by a facet dimension (e.g. surfaceType) and generate
+        // a separate sub-chart (panel) per facet value. Within each panel, the standard xField/groupBy
+        // logic applies, so you get e.g. players × eventTypes per surface type.
+        if ('faceted' === $diagramType && !empty($config['facetBy'])) {
+            $facetResult = $this->generateReportDataForFaceted($events, $config);
+            $facetResult['meta'] = $facetResult['meta'] ?? [];
+            $facetResult['meta']['eventsCount'] = $meta['eventsCount'];
+
+            return $facetResult;
+        }
+
         $result = $this->considerGroup($events, $diagramType, $xField, $yField, $groupBy);
 
         // Ensure a concise, user-facing message is available for the preview UI.
@@ -531,6 +542,166 @@ class ReportDataService
             'datasets' => $datasets,
             'diagramType' => 'radar',
             'meta' => ['radarHasData' => $hasNonZero],
+        ];
+    }
+
+    /**
+     * Generiert die Datenstruktur für ein facettiertes Diagramm (Small Multiples).
+     *
+     * Splittet alle Events nach dem `facetBy`-Feld (z.B. surfaceType) in Panels auf.
+     * Innerhalb jedes Panels wird nach xField (z.B. player) gruppiert und die groupBy-Dimension
+     * (z.B. eventType) erzeugt separate Datasets (Balken/Linien pro Panel).
+     *
+     * `facetSubType` steuert den Chart-Typ pro Panel:
+     *   - 'bar' (default): Balkendiagramm — labels = xField, datasets = groupBy layers
+     *   - 'radar': Radar — labels = groupBy layers (Ereignistypen), datasets = xField (Spieler)
+     *   - 'area'/'line': Linien/Flächen — labels = xField, datasets = groupBy layers
+     *
+     * Ergebnis-Struktur:
+     *   { diagramType: 'faceted', facetSubType, panels: [ { title, labels, datasets }, ... ], meta }
+     *
+     * @param array<int, GameEvent> $events
+     * @param array<string, mixed>  $config
+     *
+     * @return array<string, mixed>
+     */
+    private function generateReportDataForFaceted(array $events, array $config): array
+    {
+        $facetBy = $config['facetBy'];
+        $xField = $config['xField'] ?? 'player';
+        $groupBy = $config['groupBy'] ?? [];
+        if (!is_array($groupBy)) {
+            $groupBy = $groupBy ? [$groupBy] : [];
+        }
+        $facetSubType = $config['facetSubType'] ?? 'bar';
+        $facetTranspose = (bool) ($config['facetTranspose'] ?? ('radar' === $facetSubType));
+        $facetLayout = $config['facetLayout'] ?? 'grid';
+
+        // 1) Split events into buckets keyed by facet value
+        $facetBuckets = [];
+        foreach ($events as $event) {
+            $facetVal = $this->stringifyValue($this->retrieveFieldValue($event, $facetBy));
+            $facetBuckets[$facetVal][] = $event;
+        }
+        ksort($facetBuckets);
+
+        // 2) Collect ALL possible x-labels and layer keys across all facets
+        //    so every panel has the same structure (consistent comparison)
+        $allXLabels = [];
+        $allLayerKeys = [];
+        foreach ($facetBuckets as $facetEvents) {
+            foreach ($facetEvents as $event) {
+                $x = $this->stringifyValue($this->retrieveFieldValue($event, $xField));
+                $allXLabels[$x] = true;
+
+                if (!empty($groupBy)) {
+                    $parts = [];
+                    foreach ($groupBy as $gField) {
+                        $parts[] = $this->stringifyValue($this->retrieveFieldValue($event, $gField));
+                    }
+                    $layerKey = implode(' | ', $parts);
+                    $allLayerKeys[$layerKey] = true;
+                }
+            }
+        }
+        $xLabels = array_keys($allXLabels);
+        sort($xLabels);
+        $layers = array_keys($allLayerKeys);
+        sort($layers);
+
+        // 3) Build panels
+        $panels = [];
+        foreach ($facetBuckets as $facetLabel => $facetEvents) {
+            if (!empty($groupBy)) {
+                // Build matrix: layer -> x -> count
+                $matrix = [];
+                foreach ($facetEvents as $event) {
+                    $x = $this->stringifyValue($this->retrieveFieldValue($event, $xField));
+                    $parts = [];
+                    foreach ($groupBy as $gField) {
+                        $parts[] = $this->stringifyValue($this->retrieveFieldValue($event, $gField));
+                    }
+                    $layerKey = implode(' | ', $parts);
+                    if (!isset($matrix[$layerKey][$x])) {
+                        $matrix[$layerKey][$x] = 0;
+                    }
+                    ++$matrix[$layerKey][$x];
+                }
+
+                // Transpose: labels = layers (e.g. event types) and datasets = x-values (e.g. players)
+                // Default for radar, configurable via facetTranspose
+                if ($facetTranspose) {
+                    $datasets = [];
+                    foreach ($xLabels as $xVal) {
+                        $data = [];
+                        foreach ($layers as $layerKey) {
+                            $data[] = $matrix[$layerKey][$xVal] ?? 0;
+                        }
+                        $datasets[] = [
+                            'label' => $xVal,
+                            'data' => $data,
+                        ];
+                    }
+                    $panels[] = [
+                        'title' => $facetLabel,
+                        'labels' => $layers,   // event types as radar axes
+                        'datasets' => $datasets, // players as overlay layers
+                    ];
+                } else {
+                    // bar / line / area: labels = x-values, datasets = layers
+                    $datasets = [];
+                    foreach ($layers as $layerKey) {
+                        $data = [];
+                        foreach ($xLabels as $xVal) {
+                            $data[] = $matrix[$layerKey][$xVal] ?? 0;
+                        }
+                        $datasets[] = [
+                            'label' => $layerKey,
+                            'data' => $data,
+                        ];
+                    }
+                    $panels[] = [
+                        'title' => $facetLabel,
+                        'labels' => $xLabels,
+                        'datasets' => $datasets,
+                    ];
+                }
+            } else {
+                // No groupBy: single dataset counting events per x-value
+                $counts = [];
+                foreach ($facetEvents as $event) {
+                    $x = $this->stringifyValue($this->retrieveFieldValue($event, $xField));
+                    $counts[$x] = ($counts[$x] ?? 0) + 1;
+                }
+                $data = [];
+                foreach ($xLabels as $xVal) {
+                    $data[] = $counts[$xVal] ?? 0;
+                }
+                $datasets = [
+                    ['label' => 'Anzahl', 'data' => $data],
+                ];
+                $panels[] = [
+                    'title' => $facetLabel,
+                    'labels' => $xLabels,
+                    'datasets' => $datasets,
+                ];
+            }
+        }
+
+        return [
+            'labels' => [],
+            'datasets' => [],
+            'diagramType' => 'faceted',
+            'facetSubType' => $facetSubType,
+            'facetLayout' => $facetLayout,
+            'panels' => $panels,
+            'meta' => [
+                'facetBy' => $facetBy,
+                'facetSubType' => $facetSubType,
+                'facetTranspose' => $facetTranspose,
+                'facetLayout' => $facetLayout,
+                'panelCount' => count($panels),
+            ],
         ];
     }
 

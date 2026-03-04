@@ -44,6 +44,10 @@ export interface ReportConfig {
   xField: string;
   yField: string;
   groupBy?: string;
+  facetBy?: string;
+  facetSubType?: 'bar' | 'radar' | 'area' | 'line';
+  facetTranspose?: boolean;
+  facetLayout?: 'grid' | 'vertical' | 'interactive';
   metrics?: string[];
   movingAverage?: { enabled: boolean; window: number; method?: 'mean' | 'median' };
   heatmapStyle?: string;
@@ -154,6 +158,7 @@ export const DIAGRAM_TYPES = [
   { value: 'line', label: 'Liniendiagramm' },
   { value: 'area', label: 'Flächendiagramm' },
   { value: 'stackedarea', label: 'Gestapeltes Flächendiagramm' },
+  { value: 'faceted', label: 'Facettiert (Mehrere Panels)' },
   { value: 'scatter', label: 'Scatter (Punkte)' },
   { value: 'pitchheatmap', label: 'Pitch Heatmap' },
   { value: 'boxplot', label: 'Boxplot' },
