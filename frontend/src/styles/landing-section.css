@@ -212,9 +212,30 @@
 
   .landing-section {
     padding: 5rem 4% 2rem 4%;
-    height: auto;
+    height: 100vh;
     min-height: 100vh;
-    justify-content: space-between;
+    max-height: 100vh;
+    overflow: hidden;
+    justify-content: flex-start;
+  }
+
+  /* Content muss in 100vh passen – flex-shrink erlaubt Komprimierung */
+  .landing-section > .landing-section-content {
+    flex-shrink: 1;
+    min-height: 0;
+  }
+
+  /* Text kürzen falls nötig */
+  .landing-section-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Branding kleiner auf Mobile */
+  .landing-section-branding {
+    flex-shrink: 0;
   }
   
   .landing-section-title {
