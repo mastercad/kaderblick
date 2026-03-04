@@ -13,6 +13,14 @@
   left: 0;
 }
 
+/* Mobile: background-attachment: fixed funktioniert auf iOS nicht,
+   scroll stattdessen verwenden */
+@media (max-width: 960px) {
+  .hero-section {
+    background-attachment: scroll;
+  }
+}
+
 .hero-outer {
   height: 100%;
   display: flex;

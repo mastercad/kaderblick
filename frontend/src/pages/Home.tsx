@@ -3,7 +3,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { Box } from '@mui/material';
 import HeroSection from '../components/HeroSection';
 import LandingSection from '../components/LandingSection';
-import FooterWithContact from '../components/FooterWithContact';
+import Footer from '../components/Footer';
 import SectionNavigation from '../components/SectionNavigation';
 import AuthModal from '../modals/AuthModal';
 import { useHomeScroll } from '../context/HomeScrollContext';
@@ -117,8 +117,31 @@ export default function Home() {
     };
   }, []);
 
+  // Scroll-Tracking: isOnHeroSection für alle Viewports
   useEffect(() => {
-    if (isMobile) return; // Kein Scroll-Handling auf Mobile
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const heroSection = heroRef.current;
+      if (!heroSection) return;
+
+      const heroRect = heroSection.getBoundingClientRect();
+      const isOnHero = heroRect.top >= -heroRect.height / 2 && heroRect.top <= heroRect.height / 2;
+      setIsOnHeroSection(isOnHero);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    handleScroll();
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, [setIsOnHeroSection]);
+
+  // Desktop: Custom Wheel-Handler für Hero → erste Sektion
+  useEffect(() => {
+    if (isMobile) return;
     const container = containerRef.current;
     if (!container) return;
 
@@ -145,27 +168,13 @@ export default function Home() {
       }
     };
 
-    const handleScroll = () => {
-      const heroSection = heroRef.current;
-      if (!heroSection) return;
-
-      const heroRect = heroSection.getBoundingClientRect();
-      const isOnHero = heroRect.top >= -heroRect.height / 2 && heroRect.top <= heroRect.height / 2;
-      setIsOnHeroSection(isOnHero);
-    };
-
     container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('scroll', handleScroll);
-
-    // Initial check
-    handleScroll();
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('scroll', handleScroll);
       if (scrollTimeout) clearTimeout(scrollTimeout);
     };
-  }, [setIsOnHeroSection, isMobile]);
+  }, [isMobile]);
 
   const handleStartClick = () => {
     setAuthModalOpen(true);
@@ -227,7 +236,7 @@ export default function Home() {
               />
               {isLastSection && (
                 <Box sx={{ width: '100%', marginTop: 'auto' }}>
-                  <FooterWithContact />
+                  <Footer />
                 </Box>
               )}
             </Box>
