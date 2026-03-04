@@ -22,9 +22,10 @@ const mockUseMediaQuery = jest.fn((query: any) => {
   return mockIsTablet;
 });
 
-jest.mock('@mui/material/useMediaQuery', () =>
-  (...args: any[]) => mockUseMediaQuery(...args),
-);
+jest.mock('@mui/material/useMediaQuery', () => ({
+  __esModule: true,
+  default: (query: string) => mockUseMediaQuery(query),
+}));
 
 jest.mock('@mui/material/styles', () => ({
   useTheme: () => ({
