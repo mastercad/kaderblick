@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, Typography, Box, CircularProgress, Alert, Button, Dialog, IconButton, Stack, Tooltip } from '@mui/material';
+import { Card, CardContent, Typography, Box, CircularProgress, Alert, Button, Dialog, IconButton, Stack, Tooltip, Chip } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import LinkIcon from '@mui/icons-material/Link';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import SurveyCreateWizard from '../modals/SurveyCreateWizard';
 import SurveyStatusDialog from './SurveyStatusDialog';
 import { ConfirmationModal } from '../modals/ConfirmationModal';
@@ -14,6 +15,7 @@ interface Survey {
   id: number;
   title: string;
   description?: string;
+  canViewStats?: boolean;
 }
 
 const SurveyList: React.FC = () => {
@@ -138,7 +140,7 @@ const SurveyList: React.FC = () => {
                   {survey.description}
                 </Typography>
               )}
-              <Stack direction="row" spacing={1} mt={2}>
+              <Stack direction="row" spacing={1} mt={2} alignItems="center">
                 <Button
                   variant="outlined"
                   size="small"
@@ -149,6 +151,20 @@ const SurveyList: React.FC = () => {
                 >
                   Ausfüllen
                 </Button>
+                {survey.canViewStats && (
+                  <Chip
+                    icon={<BarChartIcon />}
+                    label="Statistik"
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setSelectedSurveyId(survey.id);
+                      setStatusDialogOpen(true);
+                    }}
+                  />
+                )}
               </Stack>
             </CardContent>
           </Card>
@@ -181,6 +197,7 @@ const SurveyList: React.FC = () => {
         surveyId={selectedSurveyId}
         open={statusDialogOpen}
         onClose={() => setStatusDialogOpen(false)}
+        canViewStats={surveys.find(s => s.id === selectedSurveyId)?.canViewStats}
       />
       <SurveyCreateWizard
         open={wizardOpen}

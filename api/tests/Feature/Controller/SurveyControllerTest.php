@@ -380,4 +380,282 @@ final class SurveyControllerTest extends ApiWebTestCase
         $client->request('DELETE', '/api/surveys/' . $data['id']);
         self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
     }
+
+    // ========== STATS ==========
+
+    public function testStatsAsAdminReturnsFullPayload(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com');
+
+        // Erstelle Umfrage
+        $client->request('POST', '/api/surveys', [], [], [], json_encode([
+            'title' => 'Stats-Test',
+            'description' => 'Umfrage für Statistiktest',
+            'platform' => true,
+            'questions' => [
+                ['questionText' => 'Freitext-Frage', 'type' => 'text'],
+            ],
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
+        $data = json_decode($client->getResponse()->getContent(), true);
+
+        $client->request('GET', '/api/surveys/' . $data['id'] . '/stats');
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+
+        $stats = json_decode($client->getResponse()->getContent(), true);
+
+        // Prüfe Struktur
+        self::assertArrayHasKey('surveyId', $stats);
+        self::assertArrayHasKey('title', $stats);
+        self::assertArrayHasKey('description', $stats);
+        self::assertArrayHasKey('totalTargeted', $stats);
+        self::assertArrayHasKey('totalResponded', $stats);
+        self::assertArrayHasKey('totalNotResponded', $stats);
+        self::assertArrayHasKey('participationRate', $stats);
+        self::assertArrayHasKey('participants', $stats);
+        self::assertArrayHasKey('nonParticipants', $stats);
+        self::assertArrayHasKey('timeline', $stats);
+        self::assertArrayHasKey('questionStats', $stats);
+        self::assertArrayHasKey('targetGroup', $stats);
+        self::assertArrayHasKey('remindersSent', $stats);
+        self::assertArrayHasKey('initialNotificationSent', $stats);
+
+        self::assertEquals('Stats-Test', $stats['title']);
+        self::assertEquals('Umfrage für Statistiktest', $stats['description']);
+        self::assertIsArray($stats['participants']);
+        self::assertIsArray($stats['nonParticipants']);
+        self::assertIsArray($stats['questionStats']);
+    }
+
+    public function testStatsAsSuperAdminReturnsOk(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com');
+
+        $client->request('POST', '/api/surveys', [], [], [], json_encode([
+            'title' => 'Stats-SuperAdmin-Test',
+            'platform' => true,
+            'questions' => [['questionText' => 'Frage?', 'type' => 'text']],
+        ]));
+        $data = json_decode($client->getResponse()->getContent(), true);
+
+        $this->authenticateUser($client, 'user21@example.com');
+        $client->request('GET', '/api/surveys/' . $data['id'] . '/stats');
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+    }
+
+    public function testStatsAsRegularUserReturnsForbidden(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com');
+
+        $client->request('POST', '/api/surveys', [], [], [], json_encode([
+            'title' => 'Stats-Forbidden-Test',
+            'platform' => true,
+            'questions' => [['questionText' => 'Frage?', 'type' => 'text']],
+        ]));
+        $data = json_decode($client->getResponse()->getContent(), true);
+
+        $this->authenticateUser($client, 'user6@example.com');
+        $client->request('GET', '/api/surveys/' . $data['id'] . '/stats');
+        self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+    }
+
+    public function testStatsIncludesParticipantsAfterSubmit(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com');
+
+        // Erstelle Umfrage
+        $client->request('POST', '/api/surveys', [], [], [], json_encode([
+            'title' => 'Stats-Teilnahme-Test',
+            'platform' => true,
+            'questions' => [['questionText' => 'Was denkst du?', 'type' => 'text']],
+        ]));
+        $surveyData = json_decode($client->getResponse()->getContent(), true);
+
+        // Question-ID laden
+        $client->request('GET', '/api/surveys/' . $surveyData['id']);
+        $survey = json_decode($client->getResponse()->getContent(), true);
+        $questionId = $survey['questions'][0]['id'];
+
+        // User antwortet
+        $this->authenticateUser($client, 'user6@example.com');
+        $client->request('POST', '/api/surveys/' . $surveyData['id'] . '/submit', [], [], [], json_encode([
+            'answers' => [$questionId => 'Meine Antwort'],
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
+
+        // Stats prüfen
+        $this->authenticateUser($client, 'user16@example.com');
+        $client->request('GET', '/api/surveys/' . $surveyData['id'] . '/stats');
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+
+        $stats = json_decode($client->getResponse()->getContent(), true);
+        self::assertGreaterThanOrEqual(1, $stats['totalResponded']);
+        self::assertNotEmpty($stats['participants']);
+
+        // Prüfe Teilnehmer-Struktur
+        $participant = $stats['participants'][0];
+        self::assertArrayHasKey('userId', $participant);
+        self::assertArrayHasKey('firstName', $participant);
+        self::assertArrayHasKey('lastName', $participant);
+        self::assertArrayHasKey('respondedAt', $participant);
+    }
+
+    public function testStatsQuestionStatsStructure(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com');
+
+        // Erstelle Umfrage mit verschiedenen Fragentypen
+        $client->request('POST', '/api/surveys', [], [], [], json_encode([
+            'title' => 'Stats-Fragen-Test',
+            'platform' => true,
+            'questions' => [
+                ['questionText' => 'Freitext', 'type' => 'text'],
+                ['questionText' => 'Bewertung', 'type' => 'scale_1_5'],
+                [
+                    'questionText' => 'Auswahl',
+                    'type' => 'single_choice',
+                    'options' => ['Option A', 'Option B'],
+                ],
+            ],
+        ]));
+        $data = json_decode($client->getResponse()->getContent(), true);
+
+        $client->request('GET', '/api/surveys/' . $data['id'] . '/stats');
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+
+        $stats = json_decode($client->getResponse()->getContent(), true);
+        self::assertCount(3, $stats['questionStats']);
+
+        // Prüfe Struktur jeder Frage
+        foreach ($stats['questionStats'] as $qs) {
+            self::assertArrayHasKey('id', $qs);
+            self::assertArrayHasKey('questionText', $qs);
+            self::assertArrayHasKey('type', $qs);
+            self::assertArrayHasKey('options', $qs);
+        }
+
+        // Choice-Frage hat Optionen mit percentage
+        $choiceQ = $stats['questionStats'][2];
+        self::assertEquals('single_choice', $choiceQ['type']);
+        self::assertCount(2, $choiceQ['options']);
+        self::assertArrayHasKey('percentage', $choiceQ['options'][0]);
+    }
+
+    public function testStatsParticipationRateCalculation(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com');
+
+        $client->request('POST', '/api/surveys', [], [], [], json_encode([
+            'title' => 'Stats-Rate-Test',
+            'platform' => true,
+            'questions' => [['questionText' => 'Frage?', 'type' => 'text']],
+        ]));
+        $data = json_decode($client->getResponse()->getContent(), true);
+
+        $client->request('GET', '/api/surveys/' . $data['id'] . '/stats');
+        $stats = json_decode($client->getResponse()->getContent(), true);
+
+        // Participation rate muss numerisch sein
+        self::assertIsNumeric($stats['participationRate']);
+        self::assertGreaterThanOrEqual(0, $stats['participationRate']);
+        self::assertLessThanOrEqual(100, $stats['participationRate']);
+
+        // Konsistenz
+        self::assertEquals(
+            $stats['totalTargeted'] - $stats['totalResponded'],
+            $stats['totalNotResponded']
+        );
+    }
+
+    public function testListSurveysIncludesCanViewStats(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com');
+
+        // Erstelle eine Umfrage
+        $client->request('POST', '/api/surveys', [], [], [], json_encode([
+            'title' => 'CanViewStats-Test',
+            'platform' => true,
+            'questions' => [['questionText' => 'Frage?', 'type' => 'text']],
+        ]));
+
+        // Liste laden
+        $client->request('GET', '/api/surveys');
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+
+        $data = json_decode($client->getResponse()->getContent(), true);
+        self::assertNotEmpty($data);
+
+        // Jede Umfrage muss canViewStats enthalten
+        foreach ($data as $survey) {
+            self::assertArrayHasKey('canViewStats', $survey);
+            self::assertIsBool($survey['canViewStats']);
+        }
+    }
+
+    public function testListSurveysCanViewStatsIsTrueForAdmin(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com');
+
+        $client->request('POST', '/api/surveys', [], [], [], json_encode([
+            'title' => 'Admin-Stats-Sichtbar',
+            'platform' => true,
+            'questions' => [['questionText' => 'Frage?', 'type' => 'text']],
+        ]));
+        $created = json_decode($client->getResponse()->getContent(), true);
+
+        $client->request('GET', '/api/surveys');
+        $surveys = json_decode($client->getResponse()->getContent(), true);
+
+        $found = array_filter($surveys, fn ($s) => $s['id'] === $created['id']);
+        self::assertNotEmpty($found);
+        self::assertTrue(array_values($found)[0]['canViewStats']);
+    }
+
+    public function testListSurveysCanViewStatsIsFalseForRegularUser(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com');
+
+        $client->request('POST', '/api/surveys', [], [], [], json_encode([
+            'title' => 'User-Stats-Unsichtbar',
+            'platform' => true,
+            'questions' => [['questionText' => 'Frage?', 'type' => 'text']],
+        ]));
+        $created = json_decode($client->getResponse()->getContent(), true);
+
+        $this->authenticateUser($client, 'user6@example.com');
+        $client->request('GET', '/api/surveys');
+        $surveys = json_decode($client->getResponse()->getContent(), true);
+
+        $found = array_filter($surveys, fn ($s) => $s['id'] === $created['id']);
+        self::assertNotEmpty($found);
+        self::assertFalse(array_values($found)[0]['canViewStats']);
+    }
+
+    public function testStatsTargetGroupForPlatformSurvey(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com');
+
+        $client->request('POST', '/api/surveys', [], [], [], json_encode([
+            'title' => 'Plattform-Zielgruppe-Test',
+            'platform' => true,
+            'questions' => [['questionText' => 'Frage?', 'type' => 'text']],
+        ]));
+        $data = json_decode($client->getResponse()->getContent(), true);
+
+        $client->request('GET', '/api/surveys/' . $data['id'] . '/stats');
+        $stats = json_decode($client->getResponse()->getContent(), true);
+
+        self::assertEquals('platform', $stats['targetGroup']['type']);
+        self::assertEquals('Gesamte Plattform', $stats['targetGroup']['label']);
+    }
 }
