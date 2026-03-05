@@ -205,8 +205,8 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
 
   return (
     <>
-      {/* Platzhalter für festen Header, damit der Seiteninhalt nicht überlappt */}
-      <Box sx={{ height: { xs: 56, md: 64 } }} />
+      {/* Platzhalter für festen Header, damit der Seiteninhalt nicht überlappt – nicht auf der Home-Seite (transparente Nav) */}
+      {!isHome && <Box sx={{ height: { xs: 56, md: 64 } }} />}
       
       <AppBar
         position="fixed"

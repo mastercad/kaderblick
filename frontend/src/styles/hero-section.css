@@ -122,6 +122,19 @@
   }
 }
 
+@media (max-width: 960px) {
+  .hero-outer {
+    justify-content: center;
+    align-items: center;
+    padding-right: 0;
+  }
+
+  .hero-content {
+    align-items: center;
+    text-align: center;
+  }
+}
+
 @media (max-width: 600px) {
   .hero-outer {
     justify-content: center;
