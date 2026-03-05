@@ -26,7 +26,7 @@ export const PullToRefresh = ({ onRefresh, children, isEnabled = true, isPullToR
       sx={{
         position: 'relative',
         width: '100%',
-        minHeight: '100vh',
+        minHeight: '100dvh',
       }}
     >
       {/* Pull-to-Refresh Indikator */}

@@ -34,7 +34,7 @@ export default defineConfig({
         start_url: '.',
         display: 'standalone',
         background_color: '#4e4e4e',
-        theme_color: '#018606',
+        theme_color: '#B5AD9D',
         description: 'Die Vereinsapp für Mitglieder, Teams und Fans.',
         icons: [
           {

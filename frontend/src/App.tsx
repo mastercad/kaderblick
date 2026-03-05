@@ -74,6 +74,26 @@ function App() {
   const isHome = location.pathname === '/' || location.pathname === '';
   const showLoginButton = !isHome || (isHome && isOnHeroSection);
 
+  // Dynamische theme-color für die Statusleiste im mobilen Browser
+  // Reguläre Browser unterstützen NUR Farben (kein Bild möglich).
+  // Home (Hero-Bereich): #B5AD9D = exakte Durchschnittsfarbe vom oberen Bildrand des Hero-Hintergrunds
+  // Home (Landing-Sections): #4e4e4e passend zum Section-Hintergrund
+  // Alle anderen Seiten: AppBar-Grün #018606 passend zum Gradient-Start
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+
+    let color: string;
+    if (isHome && isOnHeroSection) {
+      color = '#B5AD9D'; // Matches top edge of /images/landing_page/background.jpg
+    } else if (isHome) {
+      color = '#4e4e4e'; // Landing sections background
+    } else {
+      color = '#018606'; // AppBar green
+    }
+    meta.setAttribute('content', color);
+  }, [isHome, isOnHeroSection]);
+
   // Refresh-Funktion
   const handleRefresh = async () => {
     await new Promise(resolve => setTimeout(resolve, 500)); // Kurze Verzögerung für UX

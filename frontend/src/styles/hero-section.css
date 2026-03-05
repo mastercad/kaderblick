@@ -1,6 +1,7 @@
 .hero-section {
   width: 100%;
   height: 100vh;
+  height: 100dvh;
   scroll-snap-align: start;
   background-size: cover;
   background-position: center center;
