@@ -128,8 +128,10 @@ class SurveyController extends AbstractController
 
             // Optionen zuordnen (immer für Auswahlfragen, egal ob single_choice oder multiple_choice)
             if (in_array($q['type'], ['single_choice', 'multiple_choice'], true) && isset($q['options']) && is_array($q['options']) && count($q['options']) > 0) {
-                foreach ($q['options'] as $optionId) {
-                    $option = $this->em->getRepository(SurveyOption::class)->find($optionId);
+                /** @var User $currentUser */
+                $currentUser = $this->getUser();
+                foreach ($q['options'] as $optionItem) {
+                    $option = $this->resolveOrCreateOption($optionItem, $currentUser);
                     if ($option) {
                         $question->addOption($option);
                     }
@@ -222,8 +224,10 @@ class SurveyController extends AbstractController
             }
             $question->setType($type);
             if (in_array($q['type'], ['single_choice', 'multiple_choice'], true) && isset($q['options']) && is_array($q['options']) && count($q['options']) > 0) {
-                foreach ($q['options'] as $optionId) {
-                    $option = $this->em->getRepository(SurveyOption::class)->find($optionId);
+                /** @var User $currentUser */
+                $currentUser = $this->getUser();
+                foreach ($q['options'] as $optionItem) {
+                    $option = $this->resolveOrCreateOption($optionItem, $currentUser);
                     if ($option) {
                         $question->addOption($option);
                     }
@@ -354,5 +358,29 @@ class SurveyController extends AbstractController
         $answers['answers_total'] = count($rawAnswers);
 
         return $answers;
+    }
+
+    /**
+     * Löst eine Option auf: Wenn $optionItem eine Zahl (ID) ist, wird die vorhandene Option geladen.
+     * Wenn es ein String ist, wird eine neue benutzerdefinierte Option erstellt.
+     */
+    private function resolveOrCreateOption(mixed $optionItem, User $user): ?SurveyOption
+    {
+        if (is_int($optionItem) || (is_string($optionItem) && ctype_digit($optionItem))) {
+            // Existierende Option anhand ID laden
+            return $this->em->getRepository(SurveyOption::class)->find((int) $optionItem);
+        }
+
+        if (is_string($optionItem) && '' !== trim($optionItem)) {
+            // Neue benutzerdefinierte Option erstellen
+            $option = new SurveyOption();
+            $option->setOptionText(trim($optionItem));
+            $option->setCreatedBy($user);
+            $this->em->persist($option);
+
+            return $option;
+        }
+
+        return null;
     }
 }

@@ -1,167 +1,286 @@
 # Umfragen
 
-Mit der Umfragen-Funktion könnt ihr schnell Abstimmungen und Fragebögen an euer Team, euren Verein oder alle Nutzer schicken — von der Terminabstimmung bis zur Meinungsumfrage zum neuen Trainingsplan.
+Ob Terminabstimmung fürs Trainingslager, Feedback zur vergangenen Saison oder die Wahl des neuen Trikotdesigns – mit der **Umfragen-Funktion** in Kaderblick lassen sich schnell und unkompliziert Meinungsbilder einholen. Umfragen können gezielt an einzelne Teams, ganze Vereine oder alle Kaderblick-Nutzer gerichtet werden.
 
 ---
 
 ## An einer Umfrage teilnehmen
 
-Wenn eine Umfrage für euch erstellt wurde, findet ihr sie unter **„Umfragen"** im Hauptmenü.
+Wurde eine Umfrage erstellt, die für die eigene Zielgruppe bestimmt ist, erscheint sie unter dem Menüpunkt **„Umfragen"**.
 
-### So füllt ihr eine Umfrage aus
+1. Im Hauptmenü **„Umfragen"** öffnen
+2. Die gewünschte Umfrage in der Übersicht auswählen
+3. Auf **„Ausfüllen"** klicken
 
-1. Auf die Umfrage klicken — es öffnet sich eine eigene Seite mit dem Kaderblick-Logo oben
-2. Ihr seht den **Titel** und die **Beschreibung** der Umfrage
-3. Darunter folgen die **Fragen** — je nach Fragetyp antwortet ihr unterschiedlich:
+### Die Ausfüll-Seite
 
-| Fragetyp | So sieht es aus | So antwortet ihr |
-|----------|----------------|-----------------|
-| **Einfachauswahl** | Runde Auswahlkreise (Radiobuttons) | Genau **eine** Antwort anklicken |
-| **Mehrfachauswahl** | Eckige Kästchen (Checkboxen) nebeneinander | **Mehrere** Antworten ankreuzen |
-| **Freitext** | Ein großes Textfeld | Eure eigene Antwort eintippen |
-| **Skala 1–5** | Ein Schieberegler von 1 bis 5 mit Markierungen | Den Regler auf euren Wert ziehen |
-| **Skala 1–10** | Ein Schieberegler von 1 bis 10 mit Markierungen | Den Regler auf euren Wert ziehen |
+Es öffnet sich eine eigene Seite mit dem Kaderblick-Logo. Im oberen Bereich werden **Titel** und **Beschreibung** der Umfrage angezeigt, darunter folgen die einzelnen **Fragen**.
 
-4. Wenn alle Fragen beantwortet sind, klickt auf **„Absenden"**
-5. Ihr seht eine Bestätigung: **„Vielen Dank für Ihre Teilnahme!"**
+Je nach Fragetyp wird die Antwort auf unterschiedliche Weise eingegeben:
 
-Das System merkt sich, dass ihr teilgenommen habt. Jede Umfrage kann nur **einmal** ausgefüllt werden — eure Antworten können danach nicht mehr geändert werden.
+| Darstellung | Bedienung |
+|------------|-----------|
+| **Runde Auswahlkreise** (Einzelauswahl) | Genau **eine** Antwort auswählen |
+| **Eckige Kästchen** (Mehrfachauswahl) | **Mehrere** Antworten ankreuzen |
+| **Textfeld** (Freitext) | Eigene Antwort frei eintippen |
+| **Schieberegler 1–5** (Skala) | Den Regler auf den gewünschten Wert schieben |
+| **Schieberegler 1–10** (Skala) | Wie oben, mit feineren Abstufungen |
 
-### Umfrage über Link ausfüllen
+Nach dem Beantworten aller Fragen auf **„Absenden"** klicken. Es erscheint die Bestätigung: **„Vielen Dank für Ihre Teilnahme!"**
 
-Jede Umfrage hat eine eigene **URL**, die z. B. per Messenger oder E-Mail geteilt werden kann. Klickt ihr auf den Link, öffnet sich direkt die Ausfüll-Seite — ihr müsst nicht erst durch die Navigation klicken.
+> **Hinweis:** Jede Umfrage kann nur **einmal** ausgefüllt werden. Nach dem Absenden lassen sich die Antworten nicht mehr ändern.
 
-### Wie lange habt ihr Zeit?
+### Umfrage über einen geteilten Link öffnen
 
-Jede Umfrage hat ein **Fälligkeitsdatum**. Danach ist sie geschlossen und es können keine Antworten mehr abgegeben werden. Die verbleibende Zeit wird in der Übersicht angezeigt.
+Jede Umfrage verfügt über einen eigenen Link, der z. B. per WhatsApp, E-Mail oder als Kaderblick-Nachricht weitergegeben werden kann. Ein Klick auf den Link führt direkt zur Ausfüll-Seite – ohne Umwege über die Navigation.
 
 ---
 
 ## Die Umfragen-Übersicht
 
-Unter **„Umfragen"** seht ihr alle Umfragen als **Karten**:
+Unter **„Umfragen"** im Hauptmenü werden alle verfügbaren Umfragen als **Karten** dargestellt, jeweils mit **Titel** und **Beschreibung**.
 
-- **Titel** und **Beschreibung** jeder Umfrage
-- Aktionsbuttons:
-  - 📋 **Link kopieren** — kopiert die Umfrage-URL in die Zwischenablage (es erscheint „Link kopiert!" als Bestätigung)
-  - ✏️ **Bearbeiten** — Umfrage nachträglich ändern (nur Ersteller)
-  - 🗑️ **Löschen** — Umfrage entfernen (mit Bestätigungsdialog)
-  - 📝 **Ausfüllen** — direkt die Umfrage öffnen und teilnehmen
+### Aktionen pro Umfrage
 
-Wenn noch keine Umfragen existieren, wird eine leere Übersicht angezeigt.
+Auf jeder Karte stehen oben rechts drei Symbole und unten ein Button zur Verfügung:
+
+| Symbol / Button | Funktion |
+|----------------|----------|
+| 🔗 **Link-Symbol** | Kopiert den Umfrage-Link in die Zwischenablage. Es erscheint kurz **„Link kopiert!"** als Bestätigung. |
+| ✏️ **Stift-Symbol** | Öffnet die Umfrage zum **Bearbeiten** (nur für den Ersteller sichtbar). |
+| 🗑️ **Papierkorb-Symbol** | **Löscht** die Umfrage – nach einer Sicherheitsabfrage. |
+| **„Ausfüllen"** | Öffnet die Umfrage zum Beantworten. |
+
+Ein Klick auf die **Karte selbst** (Titel- oder Beschreibungsbereich) öffnet den **Umfrage-Status** mit den bisherigen Ergebnissen und Auswertungen.
+
+### Leere Übersicht
+
+Sind noch keine Umfragen vorhanden, wird der Hinweis **„Keine Umfragen verfügbar"** angezeigt, zusammen mit dem Button **„Erste Umfrage erstellen"**.
 
 ---
 
 ## Eine Umfrage erstellen
 
-Trainer und Administratoren können Umfragen anlegen. Die Erstellung erfolgt in einem **3-Schritte-Assistenten** (Wizard):
+Die Erstellung einer Umfrage erfolgt in **drei Schritten** über einen geführten Assistenten.
+
+### So geht's los
+
+In der Umfragen-Übersicht oben rechts auf **„Neue Umfrage erstellen"** (Plus-Symbol) klicken. Es öffnet sich ein Fenster mit der Schrittanzeige: **Allgemein → Fragen → Zusammenfassung**.
+
+---
 
 ### Schritt 1: Allgemeine Informationen
 
-1. Klickt auf **„Neue Umfrage erstellen"**
-2. **Titel** eingeben — kurz und aussagekräftig (z. B. „Abstimmung Trainingslager Juli")
-3. **Beschreibung** eingeben — erklärt den Teilnehmern, worum es geht
-4. **Fälligkeitsdatum** wählen — wann soll die Umfrage schließen?
-5. **Zielgruppe** festlegen:
+Hier werden die Grunddaten der Umfrage festgelegt.
 
-| Zielgruppe | Wer erhält die Umfrage? | Wie auswählen? |
-|------------|------------------------|----------------|
-| **Team(s)** | Nur Mitglieder bestimmter Teams | Teams aus Dropdown-Liste wählen (Mehrfachauswahl) |
-| **Verein(e)** | Alle Mitglieder bestimmter Vereine | Vereine aus Dropdown-Liste wählen (Mehrfachauswahl) |
-| **Plattformweit** | Alle angemeldeten Kaderblick-Nutzer | Häkchen bei „Plattformweit" setzen |
+#### Titel der Umfrage
+Ein **kurzer, aussagekräftiger Titel**, der den Inhalt der Umfrage auf einen Blick vermittelt.
 
-> 💡 Die Zielgruppen schließen sich gegenseitig aus — ihr könnt entweder Teams ODER Vereine ODER Plattformweit wählen.
+> Beispiele: „Trainingslager – welcher Termin passt?", „Trikotfarbe Abstimmung", „Feedback zur Saison 2025/26"
 
-6. Klickt auf **„Weiter"**
+#### Beschreibung
+Optionales Feld für ergänzende Informationen – etwa den Hintergrund der Umfrage oder Hinweise für die Teilnehmer. Eine gute Beschreibung führt in der Regel zu aussagekräftigeren Antworten.
+
+#### Fälligkeitsdatum
+Über den Kalender-Picker kann ein Stichtag festgelegt werden, nach dem keine Antworten mehr möglich sind. Das Feld ist optional – ohne Angabe bleibt die Umfrage unbegrenzt geöffnet.
+
+#### Zielgruppe
+
+Hier wird festgelegt, **wer** die Umfrage erhalten soll. Es stehen drei sich gegenseitig ausschließende Optionen zur Verfügung:
+
+| Zielgruppe | Empfänger | Auswahl |
+|------------|----------|---------|
+| **Team(s)** | Mitglieder der ausgewählten Teams | Dropdown-Liste „Teams zuordnen" (Mehrfachauswahl) |
+| **Verein(e)** | Alle Mitglieder der ausgewählten Vereine | Dropdown-Liste „Vereine zuordnen" (Mehrfachauswahl) |
+| **Gesamte Plattform** | Alle angemeldeten Kaderblick-Nutzer | Häkchen bei „Umfrage für gesamte Plattform" |
+
+> **Wichtig:** Sobald eine Option gewählt wird (z. B. ein Team), werden die übrigen Optionen automatisch deaktiviert. Um die Zielgruppe zu wechseln, muss zuerst die bestehende Auswahl entfernt werden.
+
+Anschließend auf **„Weiter"** klicken.
+
+> Falls Pflichtangaben fehlen (z. B. Titel oder Zielgruppe), erscheint eine entsprechende Hinweismeldung.
+
+---
 
 ### Schritt 2: Fragen hinzufügen
 
-Jetzt erstellt ihr die eigentlichen Fragen:
+In diesem Schritt werden die eigentlichen **Fragen** der Umfrage erstellt.
 
-1. **Fragentext** formulieren (z. B. „Welcher Wochentag passt euch am besten?")
-2. **Fragetyp** auswählen:
+#### Eine neue Frage anlegen
 
-| Fragetyp | Beschreibung | Wann verwenden? |
-|----------|-------------|-----------------|
-| **Einfachauswahl** | Genau eine Antwort auswählen | „Welche Farbe soll das Trikot haben?" |
-| **Mehrfachauswahl** | Mehrere Antworten auswählen | „Welche Termine würden dir passen?" |
-| **Freitext** | Offene Antwort schreiben | „Was wünscht ihr euch beim Sommerfest?" |
-| **Skala 1–5** | Bewertung auf einer 5er-Skala | „Wie zufrieden seid ihr mit dem Training?" |
-| **Skala 1–10** | Bewertung auf einer 10er-Skala | „Wie wichtig ist euch ein neuer Torwart?" |
+Im oberen Bereich stehen zwei Felder zur Verfügung:
 
-3. Bei Einzel- und Mehrfachauswahl: **Antwortoptionen** hinzufügen (z. B. „Montag", „Mittwoch", „Freitag"). Bei Skala-Typen werden die Optionen automatisch generiert.
-4. Auf **„Frage hinzufügen"** klicken — die Frage erscheint in der Liste
-5. Wiederholt die Schritte für weitere Fragen
-6. Bestehende Fragen könnt ihr **bearbeiten** oder **löschen**
-7. Klickt auf **„Weiter"**
+1. **Fragetext** – Die Frage formulieren, z. B. „Welcher Wochentag passt am besten für das Trainingslager?"
 
-### Schritt 3: Zusammenfassung & Veröffentlichen
+2. **Fragetyp** – Aus der Dropdown-Liste den passenden Typ wählen:
 
-Hier seht ihr nochmal alles auf einen Blick:
-- Alle eingegebenen Daten
-- Alle Fragen mit Typen und Optionen
-- Die gewählte Zielgruppe
+| Fragetyp | Funktionsweise | Anwendungsbeispiel |
+|----------|---------------|-------------------|
+| **Einzelauswahl** | Genau **eine** Antwort aus einer Liste | „Welche Farbe soll das Trikot haben?" |
+| **Mehrfachauswahl** | **Mehrere** Antworten möglich | „Welche Wochentage passen für das Training?" |
+| **Freitext** | Offene Antwort im Textfeld | „Welche Wünsche gibt es für die nächste Saison?" |
+| **Skala 1–5** | Bewertung auf einer 5er-Skala | „Wie zufrieden sind Sie mit dem Trainingsangebot?" |
+| **Skala 1–10** | Bewertung auf einer feineren 10er-Skala | „Wie bewerten Sie das Vereinsfest?" |
 
-Wenn alles stimmt, klickt auf **„Fertigstellen"** — die Umfrage wird sofort veröffentlicht und ist für die Zielgruppe sichtbar.
+#### Antwortoptionen bei Auswahlfragen
 
-Bei Fehlern springt ihr einfach mit **„Zurück"** zu den vorherigen Schritten.
+Bei den Fragetypen **Einzelauswahl** und **Mehrfachauswahl** erscheint ein zusätzliches Feld: **„Antwortoptionen"**. Hier wird festgelegt, welche Antworten zur Auswahl stehen.
+
+**Vorhandene Optionen auswählen:**
+
+- Das Feld **„Antwortoptionen"** anklicken – es öffnet sich eine Dropdown-Liste
+- In der Liste sind **bereits vorhandene Optionen** aufgeführt (z. B. „Ja", „Nein", „Vielleicht" und weitere Standardantworten)
+- Gewünschte Optionen durch Anklicken auswählen – jede ausgewählte Option erhält ein Häkchen und erscheint im Feld als kompaktes **Label** (Chip)
+- Um eine ausgewählte Option wieder zu entfernen, genügt ein Klick auf das **×** des jeweiligen Labels
+
+**Eigene Antwortoptionen erstellen:**
+
+Am Ende der Dropdown-Liste befindet sich ein Eingabefeld mit dem Platzhalter **„Neue Option erstellen…"**:
+
+1. Den gewünschten Text eingeben (z. B. „Donnerstag")
+2. Auf das **Plus-Symbol** rechts daneben klicken oder die **Enter-Taste** drücken
+3. Die neue Option wird sofort erstellt und automatisch für die aktuelle Frage übernommen
+
+> Selbst erstellte Optionen stehen auch bei **zukünftigen Umfragen** wieder zur Verfügung und müssen nicht erneut angelegt werden.
+
+**Eigene Optionen löschen:**
+
+Neben selbst erstellten Optionen wird in der Dropdown-Liste ein **Papierkorb-Symbol** angezeigt. Beim Klick darauf wird die Option unwiderruflich gelöscht – auch aus allen Fragen, in denen sie bisher zugewiesen war.
+
+> Standardoptionen (z. B. „Ja", „Nein") sind mit dem Hinweis **„System"** gekennzeichnet und können nicht gelöscht werden.
+
+**Skala-Fragen** (1–5 oder 1–10): Die Antwortoptionen werden **automatisch** erzeugt.
+
+**Freitext-Fragen**: Es gibt keine Antwortoptionen – die Teilnehmer formulieren ihre Antwort frei.
+
+#### Frage zur Umfrage hinzufügen
+
+Wenn Fragetext, Typ und ggf. Optionen festgelegt sind, auf **„Frage hinzufügen"** klicken. Die Frage erscheint daraufhin in einer Liste mit Nummer, Fragetext und Typ.
+
+> Bei Auswahlfragen werden zusätzlich die gewählten **Optionen** angezeigt.
+
+#### Mehrere Fragen anlegen
+
+Die obigen Schritte lassen sich beliebig oft wiederholen – die Anzahl der Fragen ist nicht begrenzt.
+
+#### Fragen bearbeiten oder löschen
+
+Jede Frage in der Liste bietet zwei Aktionen:
+
+- **„Bearbeiten"** – Lädt die Frage in die Eingabefelder zurück, sodass Fragetext, Typ oder Optionen angepasst werden können. Der Button wechselt zu **„Frage aktualisieren"**. Mit **„Abbrechen"** werden die Änderungen verworfen.
+- **„Löschen"** – Entfernt die Frage aus der Umfrage.
+
+Sobald mindestens eine Frage vorhanden ist, kann mit **„Weiter"** fortgefahren werden.
+
+> Wurde noch keine Frage hinzugefügt, erscheint der Hinweis: **„Noch keine Fragen hinzugefügt."**
 
 ---
 
-## Ergebnisse auswerten
+### Schritt 3: Zusammenfassung und Fertigstellen
 
-Trainer und Administratoren können die **Ergebnisse** jederzeit einsehen:
+Vor der Veröffentlichung wird eine **Zusammenfassung** aller Angaben angezeigt:
 
-- **Einzel- und Mehrfachauswahl**: Zeigt die Verteilung der Antworten — wie viele Teilnehmer welche Option gewählt haben
-- **Freitext**: Listet alle geschriebenen Antworten zum Durchlesen auf
-- **Skala**: Zeigt die Durchschnittsbewertung und Verteilung
-- **Teilnehmerzahl**: Wie viele Personen haben insgesamt abgestimmt?
+- **Titel** und **Beschreibung** der Umfrage
+- Alle **Fragen** mit Fragetyp und (bei Auswahlfragen) den gewählten Antwortoptionen
+
+Bei Korrekturbedarf einfach über **„Zurück"** zu den vorherigen Schritten navigieren.
+
+Wenn alles passt, auf **„Fertigstellen"** klicken. Die Umfrage wird gespeichert und veröffentlicht. Es erscheint kurz die Bestätigung **„Umfrage erfolgreich erstellt!"**, anschließend schließt sich das Fenster automatisch.
+
+Die Umfrage ist sofort in der Übersicht sichtbar und kann von der Zielgruppe ausgefüllt werden.
 
 ---
 
-## Praxisbeispiele
+## Eine Umfrage nachträglich bearbeiten
 
-| Umfrage | Fragetypen | Zielgruppe |
-|---------|-----------|------------|
-| „Welchen Tag wollt ihr für das Trainingslager?" | Einfachauswahl: Di/Mi/Do | Team U15 |
-| „Welche Getränke sollen bestellt werden?" | Mehrfachauswahl: Wasser/Apfelschorle/Iso | Verein |
-| „Wie bewertet ihr die Saison?" | Skala 1–10 | Team U13 |
-| „Was hat euch am Turnier am besten gefallen?" | Freitext | Team U13 |
-| „Wie zufrieden seid ihr mit dem neuen Trikot?" | Skala 1–5 + Freitext-Kommentar | Plattformweit |
+Bereits erstellte Umfragen können jederzeit angepasst werden:
+
+1. In der **Umfragen-Übersicht** das **Stift-Symbol** (✏️) oben rechts auf der gewünschten Karte anklicken
+2. Es öffnet sich der gleiche 3-Schritte-Assistent – alle bisherigen Daten sind bereits eingetragen
+3. Die gewünschten Änderungen vornehmen und bis **„Fertigstellen"** durchklicken
+
+> Bereits abgegebene Antworten bleiben dabei erhalten.
+
+---
+
+## Ergebnisse und Auswertung
+
+Um die bisherigen Ergebnisse einer Umfrage einzusehen, in der Übersicht auf die **Karte** der Umfrage klicken (Titel- oder Beschreibungsbereich). Es öffnet sich der **Umfrage-Status** mit folgenden Informationen:
+
+- **Titel** und **Beschreibung** der Umfrage
+- **Auswertung** pro Frage:
+
+| Fragetyp | Darstellung |
+|----------|------------|
+| **Einzelauswahl / Mehrfachauswahl** | Jede Antwortoption mit der **Anzahl** der abgegebenen Stimmen |
+| **Freitext** | Hinweis auf Freitext-Frage |
+| **Skala 1–5 / 1–10** | Die abgegebenen Bewertungen |
+
+Liegen noch keine Antworten vor, wird **„Keine Auswertungsdaten vorhanden."** angezeigt.
 
 ---
 
 ## Umfragen-Link teilen
 
-Jede Umfrage hat eine eigene URL, die ihr auf verschiedene Wege teilen könnt:
+Jede Umfrage verfügt über einen eigenen Link, der einfach weitergegeben werden kann:
 
-1. In der Umfragen-Übersicht auf das **Kopier-Symbol** (📋) neben der Umfrage klicken
-2. Es erscheint **„Link kopiert!"** als Bestätigung
-3. Den Link z. B. per WhatsApp, E-Mail oder in eine Kaderblick-Nachricht einfügen
+1. In der **Umfragen-Übersicht** das **Link-Symbol** (🔗) oben rechts auf der Karte anklicken
+2. Es erscheint kurz **„Link kopiert!"** als Bestätigung
+3. Den Link an gewünschter Stelle einfügen – z. B. per WhatsApp, E-Mail oder als Kaderblick-Nachricht
 
-So können Teilnehmer die Umfrage direkt öffnen, ohne erst durch die App navigieren zu müssen.
+Empfänger, die in Kaderblick angemeldet sind und zur Zielgruppe gehören, können die Umfrage über den Link direkt öffnen und ausfüllen.
+
+---
+
+## Umfrage löschen
+
+Wird eine Umfrage nicht mehr benötigt:
+
+1. Das **Papierkorb-Symbol** (🗑️) oben rechts auf der Umfrage-Karte anklicken
+2. Die Sicherheitsabfrage **„Möchtest du diese Umfrage wirklich löschen?"** bestätigen oder mit **„Abbrechen"** abbrechen
+
+> **Achtung:** Gelöschte Umfragen und alle zugehörigen Antworten werden unwiderruflich entfernt.
+
+---
+
+## Praxisbeispiele
+
+| Thema | Beispiel-Frage | Empfohlener Fragetyp |
+|-------|---------------|---------------------|
+| **Terminabstimmung** | „Welcher Tag passt für das Trainingslager?" | Einzelauswahl mit Tagen als Optionen |
+| **Getränkebestellung** | „Welche Getränke sollen beim Turnier bereitstehen?" | Mehrfachauswahl (Wasser, Apfelschorle, Iso…) |
+| **Saison-Feedback** | „Wie bewerten Sie die vergangene Saison?" | Skala 1–10 |
+| **Wünsche und Ideen** | „Was hat Ihnen am Turnier am besten gefallen?" | Freitext |
+| **Trikotdesign** | „Welche Farbe soll das neue Trikot haben?" | Einzelauswahl mit Farben |
+| **Zufriedenheit** | „Wie zufrieden sind Sie mit dem Trainingsangebot?" | Skala 1–5 |
+| **Veranstaltungsplanung** | „Was wünschen Sie sich beim Sommerfest?" + „Wer bringt einen Kuchen mit?" | Freitext + Einzelauswahl (Ja/Nein) |
+
+> **Tipp:** Verschiedene Fragetypen lassen sich innerhalb einer Umfrage kombinieren – so entstehen sowohl schnelle Abstimmungen als auch Raum für ausführliches Feedback.
 
 ---
 
 ## Häufige Fragen
 
-### Ich sehe eine Umfrage nicht — warum?
-Die Umfrage wurde möglicherweise nur für ein bestimmtes Team oder einen Verein erstellt, dem ihr nicht angehört. Prüft bei eurem Trainer, ob ihr zur Zielgruppe gehört. Oder die Umfrage ist bereits abgelaufen.
+### Eine Umfrage ist nicht sichtbar – woran liegt das?
+Die Umfrage wurde vermutlich für ein bestimmtes Team oder einen Verein erstellt, dem man selbst nicht angehört. Bei Unsicherheit am besten beim Ersteller der Umfrage nachfragen. Eine weitere Möglichkeit: Die Umfrage ist bereits abgelaufen.
 
-### Kann ich meine Antwort nach dem Absenden ändern?
-Nein — nach dem Absenden sind die Antworten gespeichert und können nicht mehr geändert werden. Überlegt also gut, bevor ihr „Absenden" klickt.
+### Können Antworten nachträglich geändert werden?
+Nein – nach dem Absenden sind die Antworten endgültig gespeichert und nicht mehr änderbar.
 
 ### Was passiert nach dem Fälligkeitsdatum?
-Die Umfrage kann dann nicht mehr ausgefüllt werden. Die bisherigen Ergebnisse bleiben aber erhalten und können weiterhin eingesehen werden.
-
-### Kann ich eine Umfrage nachträglich bearbeiten?
-Ja, als Ersteller könnt ihr Titel, Beschreibung und Fragen nachträglich bearbeiten. Bereits abgegebene Antworten bleiben dabei erhalten.
-
-### Bekomme ich eine Benachrichtigung, wenn eine neue Umfrage erstellt wird?
-Wenn Push-Benachrichtigungen aktiviert sind, werdet ihr informiert.
+Nach dem Stichtag können keine Antworten mehr abgegeben werden. Die bisherigen Ergebnisse bleiben gespeichert und können weiterhin eingesehen werden.
 
 ### Was ist der Unterschied zwischen Skala 1–5 und 1–10?
-Beide zeigen einen Schieberegler. Die 5er-Skala eignet sich für schnelle Bewertungen (schlecht–gut), die 10er-Skala erlaubt feinere Abstufungen (z. B. bei Zufriedenheitsbefragungen).
+Beide zeigen einen Schieberegler. Die **5er-Skala** eignet sich für schnelle, übersichtliche Bewertungen. Die **10er-Skala** bietet feinere Abstufungen für differenziertere Meinungsbilder.
 
-### Kann ich den Umfragen-Link auch an Nicht-Mitglieder schicken?
-Der Link funktioniert nur für angemeldete Kaderblick-Nutzer, die zur Zielgruppe der Umfrage gehören.
+### Funktioniert der Umfragen-Link auch für Personen ohne Kaderblick-Konto?
+Nein – der Link ist nur für angemeldete Nutzer nutzbar, die zur Zielgruppe der Umfrage gehören.
+
+### Was sind Systemoptionen und eigene Optionen?
+**Systemoptionen** (z. B. „Ja", „Nein", „Vielleicht") sind für alle Nutzer vorinstalliert und können nicht gelöscht werden. **Eigene Optionen** werden selbst erstellt und sind beim Erstellen von Umfragen nur für den jeweiligen Ersteller sichtbar. Werden sie in einer Frage verwendet, stehen sie allen Teilnehmern zur Verfügung. Eigene Optionen bleiben gespeichert und können bei zukünftigen Umfragen wiederverwendet werden.
+
+### Ist ersichtlich, wer welche Antwort abgegeben hat?
+Nein – die Ergebnisse werden zusammengefasst dargestellt (z. B. „Option A: 5 Stimmen"). Einzelne Antworten sind nicht personenbezogen zugeordnet.
+
+### Müssen alle Fragen beantwortet werden?
+Die Umfrage kann auch abgesendet werden, wenn nicht alle Fragen ausgefüllt sind. Vollständige Antworten liefern allerdings ein aussagekräftigeres Ergebnis.
