@@ -22,7 +22,7 @@ export default function HeroSection({ onStartClick, heroRef, onScrollDown }: Her
       className="hero-section"
       sx={{
         backgroundImage: 'url(/images/landing_page/background.jpg)',
-        minHeight: '100vh',
+        minHeight: '100dvh',
         position: 'relative',
       }}
     >

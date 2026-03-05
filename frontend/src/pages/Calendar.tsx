@@ -1006,7 +1006,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   };
 
   const calendarStyle = useMemo(() => ({
-    height: isMobile ? 'calc(100vh - 200px)' : 'calc(100vh - 200px)',
+    height: isMobile ? 'calc(100dvh - 200px)' : 'calc(100dvh - 200px)',
     minHeight: isMobile ? '400px' : '500px',
     backgroundColor: theme.palette.background.paper,
     '& .rbc-calendar': {
