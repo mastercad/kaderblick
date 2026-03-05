@@ -108,7 +108,7 @@ function App() {
                   onOpenAuth={() => setShowAuth(true)}
                   onOpenProfile={() => setShowProfile(true)}
                 />
-                <PushWarningBanner />
+                {!isHome && <PushWarningBanner />}
               <Box component="main" sx={{ flex: 1, width: '100%', position: 'relative' }}>
                 <Routes>
                   <Route path="/" element={<Home />} />
