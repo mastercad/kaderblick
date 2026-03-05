@@ -154,7 +154,7 @@ function App() {
               </Box>
               <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
               <ProfileModal open={showProfile} onClose={() => setShowProfile(false)} />
-              { user ? (<FooterWithContact />) : (<Footer />) }
+              {!isHome && (user ? (<FooterWithContact />) : (<Footer />))}
             </Box>
             </PullToRefresh>
           </FabStackRoot>
