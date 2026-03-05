@@ -22,6 +22,7 @@ const Footer: React.FC = () => {
       sx={{
         mt: 'auto',
         py: 1.5,
+        pb: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
         background: isHome
           ? 'transparent'
           : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,

@@ -103,7 +103,7 @@ function App() {
               isEnabled={isMobile}
               isPullToRefreshEnabled={true}
             >
-              <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
                 <Navigation
                   onOpenAuth={() => setShowAuth(true)}
                   onOpenProfile={() => setShowProfile(true)}
