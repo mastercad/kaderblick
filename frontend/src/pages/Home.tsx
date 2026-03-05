@@ -112,6 +112,7 @@ export default function Home() {
   useEffect(() => {
     const original = document.body.style.background;
     document.body.style.background = 'none';
+
     return () => {
       document.body.style.background = original;
     };
@@ -196,15 +197,6 @@ export default function Home() {
       <Box 
         ref={containerRef}
         className="scroll-snap-container"
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          margin: 0,
-          padding: 0,
-        }}
       >
         <HeroSection 
           onStartClick={handleStartClick} 
