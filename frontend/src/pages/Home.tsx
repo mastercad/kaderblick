@@ -231,14 +231,12 @@ export default function Home() {
                 onAuthClick={!user ? () => setAuthModalOpen(true) : undefined}
                 ctaText={shuffledCtaTexts[index % shuffledCtaTexts.length]}
               />
-              {isLastSection && (
-                <Box sx={{ width: '100%', marginTop: 'auto' }}>
-                  <Footer />
-                </Box>
-              )}
             </Box>
           );
         })}
+        <Box sx={{ backgroundColor: '#4e4e4e', scrollSnapAlign: 'end' }}>
+          <Footer />
+        </Box>
       </Box>
       
       <SectionNavigation sections={sections} containerRef={containerRef} />

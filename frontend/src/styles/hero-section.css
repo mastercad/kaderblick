@@ -180,7 +180,7 @@
   
   /* Scroll Indikator in Mobile – über dem Footer positionieren */
   .hero-scroll-indicator {
-    bottom: 5rem;
+    bottom: 3.5rem;
     z-index: 25;
   }
   
