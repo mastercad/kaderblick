@@ -189,6 +189,8 @@ Wenn alles passt, auf **„Fertigstellen"** klicken. Die Umfrage wird gespeicher
 
 Die Umfrage ist sofort in der Übersicht sichtbar und kann von der Zielgruppe ausgefüllt werden.
 
+> **Push-Benachrichtigung:** Beim Erstellen einer Umfrage erhalten alle Mitglieder der gewählten Zielgruppe automatisch eine **Push-Benachrichtigung** auf ihren Geräten. Die Benachrichtigung enthält den Umfrage-Titel sowie ggf. das Fälligkeitsdatum.
+
 ---
 
 ## Eine Umfrage nachträglich bearbeiten
@@ -217,6 +219,23 @@ Um die bisherigen Ergebnisse einer Umfrage einzusehen, in der Übersicht auf die
 | **Skala 1–5 / 1–10** | Die abgegebenen Bewertungen |
 
 Liegen noch keine Antworten vor, wird **„Keine Auswertungsdaten vorhanden."** angezeigt.
+
+---
+
+## Erinnerungen bei Fälligkeitsdatum
+
+Wurde ein **Fälligkeitsdatum** festgelegt, erhalten Mitglieder der Zielgruppe, die noch **nicht teilgenommen** haben, automatisch Erinnerungen per Push-Benachrichtigung. Die Intervalle sind so gewählt, dass sie anfangs dezent bleiben und erst kurz vor dem Stichtag häufiger werden:
+
+| Zeitpunkt | Benachrichtigung |
+|-----------|-----------------|
+| **7 Tage** vor Ablauf | Erste Erinnerung |
+| **3 Tage** vor Ablauf | Zweite Erinnerung |
+| **1 Tag** vor Ablauf | Dringende Erinnerung |
+| **3 Stunden** vor Ablauf | Letzte Erinnerung |
+
+- Wer die Umfrage **bereits ausgefüllt** hat, erhält **keine** Erinnerungen mehr.
+- Umfragen **ohne Fälligkeitsdatum** lösen keine Erinnerungen aus.
+- Die Erinnerungen werden automatisch im Hintergrund verschickt – es ist kein manuelles Nachfassen erforderlich.
 
 ---
 
@@ -268,7 +287,7 @@ Die Umfrage wurde vermutlich für ein bestimmtes Team oder einen Verein erstellt
 Nein – nach dem Absenden sind die Antworten endgültig gespeichert und nicht mehr änderbar.
 
 ### Was passiert nach dem Fälligkeitsdatum?
-Nach dem Stichtag können keine Antworten mehr abgegeben werden. Die bisherigen Ergebnisse bleiben gespeichert und können weiterhin eingesehen werden.
+Nach dem Stichtag können keine Antworten mehr abgegeben werden. Die bisherigen Ergebnisse bleiben gespeichert und können weiterhin eingesehen werden. Vor dem Stichtag werden Mitglieder, die noch nicht teilgenommen haben, automatisch per Push-Benachrichtigung erinnert (siehe Abschnitt „Erinnerungen bei Fälligkeitsdatum").
 
 ### Was ist der Unterschied zwischen Skala 1–5 und 1–10?
 Beide zeigen einen Schieberegler. Die **5er-Skala** eignet sich für schnelle, übersichtliche Bewertungen. Die **10er-Skala** bietet feinere Abstufungen für differenziertere Meinungsbilder.

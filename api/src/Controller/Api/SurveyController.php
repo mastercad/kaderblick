@@ -13,6 +13,7 @@ use App\Repository\SurveyOptionTypeRepository;
 use App\Repository\SurveyRepository;
 use App\Repository\SurveyResponseRepository;
 use App\Security\Voter\SurveyVoter;
+use App\Service\SurveyNotificationService;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,8 +25,10 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/api/surveys', name: 'api_surveys_')]
 class SurveyController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $em)
-    {
+    public function __construct(
+        private EntityManagerInterface $em,
+        private SurveyNotificationService $surveyNotificationService
+    ) {
     }
 
     #[Route('', name: 'list', methods: ['GET'])]
@@ -143,6 +146,9 @@ class SurveyController extends AbstractController
 
         $this->em->persist($survey);
         $this->em->flush();
+
+        // Send push notification to all targeted users
+        $this->surveyNotificationService->sendSurveyCreatedNotification($survey);
 
         return $this->json(['id' => $survey->getId()], 201);
     }
