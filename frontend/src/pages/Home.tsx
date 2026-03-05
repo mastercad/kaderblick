@@ -130,11 +130,6 @@ export default function Home() {
       const heroRect = heroSection.getBoundingClientRect();
       const isOnHero = heroRect.top >= -heroRect.height / 2 && heroRect.top <= heroRect.height / 2;
       setIsOnHeroSection(isOnHero);
-
-      // Allow native pull-to-refresh when at top, contain overscroll otherwise
-      if (isMobile) {
-        container.style.overscrollBehaviorY = container.scrollTop <= 0 ? 'auto' : 'contain';
-      }
     };
 
     container.addEventListener('scroll', handleScroll);
@@ -143,7 +138,7 @@ export default function Home() {
     return () => {
       container.removeEventListener('scroll', handleScroll);
     };
-  }, [setIsOnHeroSection, isMobile]);
+  }, [setIsOnHeroSection]);
 
   // Desktop: Custom Wheel-Handler für Hero → erste Sektion
   useEffect(() => {
