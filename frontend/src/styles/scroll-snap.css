@@ -5,7 +5,6 @@
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
