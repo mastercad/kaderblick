@@ -5,6 +5,8 @@
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  /* Prevent native overscroll bounce — custom PullToRefresh handles the gesture */
+  overscroll-behavior-y: none;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
