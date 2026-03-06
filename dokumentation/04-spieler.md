@@ -6,7 +6,18 @@ Die Spielerverwaltung ist das Herzstück von Kaderblick. Hier sind alle Spieleri
 
 ## Spieler-Übersicht
 
-Auf der **Spieler-Seite** seht ihr alle Spieler eures Teams (oder Vereins, je nach Berechtigung) als Tabelle oder Kartenliste.
+Auf der **Spieler-Seite** seht ihr alle Spieler eures Teams (oder Vereins, je nach Berechtigung) als übersichtliche Tabelle.
+
+### Spieler suchen und filtern
+
+Auch bei vielen Spielern findet ihr schnell den richtigen:
+
+- **Nach Namen suchen**: Gebt einen Namen ein und die Liste zeigt euch sofort nur passende Spieler. Über das Kreuz könnt ihr die Suche wieder zurücksetzen.
+- **Nach Team filtern**: Wählt ein bestimmtes Team aus, um nur dessen Spieler zu sehen — oder lasst „Alle Teams" stehen, um alle zu sehen.
+- **Durch die Liste blättern**: Bei vielen Spielern könnt ihr bequem durch die Seiten blättern und selbst einstellen, wie viele auf einmal angezeigt werden.
+- **Gesamtzahl**: Ihr seht jederzeit, wie viele Spieler insgesamt gefunden wurden.
+
+> 💡 Suche und Filter arbeiten zusammen: Ihr könnt z. B. nach „Max" suchen UND gleichzeitig nur das Team „U15" anzeigen lassen.
 
 ### Angezeigte Informationen pro Spieler
 

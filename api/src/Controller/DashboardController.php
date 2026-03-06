@@ -26,7 +26,7 @@ class DashboardController extends AbstractController
     }
 
     #[Route('/', name: 'index')]
-    public function index(DashboardWidgetRepository $widgetRepo): JsonResponse
+    public function index(DashboardWidgetRepository $widgetRepo, EntityManagerInterface $em): JsonResponse
     {
         $user = $this->getUser();
 
@@ -53,18 +53,32 @@ class DashboardController extends AbstractController
             );
         }
 
+        // Verwaiste Report-Widgets entfernen (ReportDefinition gelöscht → SET NULL)
+        $widgets = array_values(array_filter($widgets, function ($widget) use ($em) {
+            if ('report' === $widget->getType() && null === $widget->getReportDefinition()) {
+                $em->remove($widget);
+
+                return false;
+            }
+
+            return true;
+        }));
+        $em->flush();
+
         $result = array_map(function ($widget) use ($hasDefaultDashboardWidget) {
+            $report = $widget->getReportDefinition();
+
             return [
                 'id' => $widget->getId(),
                 'type' => $widget->getType(),
-                'name' => 'report' === $widget->getType() ? $widget->getReportDefinition()->getName() : null,
-                'description' => 'report' === $widget->getType() ? $widget->getReportDefinition()->getDescription() : null,
+                'name' => 'report' === $widget->getType() && $report ? $report->getName() : null,
+                'description' => 'report' === $widget->getType() && $report ? $report->getDescription() : null,
                 'width' => $widget->getWidth(),
                 'position' => $widget->getPosition(),
                 'config' => $widget->getConfig(),
                 'isDefault' => $widget->isDefault(),
                 'isEnabled' => $widget->isEnabled(),
-                'reportId' => $widget->getReportDefinition() ? $widget->getReportDefinition()->getId() : null,
+                'reportId' => $report?->getId(),
                 'hasDefaultDashboardWidget' => $hasDefaultDashboardWidget
             ];
         }, $widgets);

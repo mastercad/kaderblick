@@ -28,7 +28,7 @@ Je nach Fragetyp wird die Antwort auf unterschiedliche Weise eingegeben:
 
 Nach dem Beantworten aller Fragen auf **„Absenden"** klicken. Es erscheint die Bestätigung: **„Vielen Dank für Ihre Teilnahme!"**
 
-> **Hinweis:** Jede Umfrage kann nur **einmal** ausgefüllt werden. Nach dem Absenden lassen sich die Antworten nicht mehr ändern.
+> **Hinweis:** Nachdem ihr eine Umfrage ausgefüllt habt, könnt ihr sie erneut ausfüllen — klickt dazu in der Übersicht auf **„Erneut ausfüllen"**. Eure vorherige Antwort wird dabei überschrieben.
 
 ### Umfrage über einen geteilten Link öffnen
 
@@ -38,24 +38,28 @@ Jede Umfrage verfügt über einen eigenen Link, der z. B. per WhatsApp, E-Mail o
 
 ## Die Umfragen-Übersicht
 
-Unter **„Umfragen"** im Hauptmenü werden alle verfügbaren Umfragen als **Karten** dargestellt, jeweils mit **Titel** und **Beschreibung**.
+Unter **„Umfragen"** im Hauptmenü seht ihr alle verfügbaren Umfragen. Ganz oben wird angezeigt, wie viele Umfragen es **insgesamt** gibt, wie viele davon noch **offen** sind und wie viele ihr bereits **beantwortet** habt.
 
-### Aktionen pro Umfrage
+### Status auf einen Blick
 
-Auf jeder Karte stehen oben rechts drei Symbole und unten ein Button zur Verfügung:
+Jede Umfrage zeigt euch sofort, wo ihr steht:
 
-| Symbol / Button | Funktion |
-|----------------|----------|
-| 🔗 **Link-Symbol** | Kopiert den Umfrage-Link in die Zwischenablage. Es erscheint kurz **„Link kopiert!"** als Bestätigung. |
-| ✏️ **Stift-Symbol** | Öffnet die Umfrage zum **Bearbeiten** (nur für den Ersteller sichtbar). |
-| 🗑️ **Papierkorb-Symbol** | **Löscht** die Umfrage – nach einer Sicherheitsabfrage. |
-| **„Ausfüllen"** | Öffnet die Umfrage zum Beantworten. |
+- **Bereits beantwortet** — markiert mit einem grünen Häkchen und dem Hinweis „Beantwortet"
+- **Noch offen** — ihr könnt auf **„Jetzt ausfüllen"** klicken
+- **Abgelaufen** — die Frist ist vorbei; falls ihr noch nicht teilgenommen habt, könnt ihr über **„Nachträglich ausfüllen"** trotzdem noch antworten
+- **Bereits beantwortet, aber Meinung geändert?** — über **„Erneut ausfüllen"** könnt ihr eure Antworten aktualisieren
 
-Ein Klick auf die **Karte selbst** (Titel- oder Beschreibungsbereich) öffnet den **Umfrage-Status** mit den bisherigen Ergebnissen und Auswertungen.
+Außerdem seht ihr pro Umfrage, wie viele **Fragen** sie enthält, wie viele **Teilnehmer** bereits mitgemacht haben, und bis wann sie **fällig** ist (falls ein Stichtag gesetzt wurde).
 
-### Leere Übersicht
+### Was ihr mit jeder Umfrage tun könnt
 
-Sind noch keine Umfragen vorhanden, wird der Hinweis **„Keine Umfragen verfügbar"** angezeigt, zusammen mit dem Button **„Erste Umfrage erstellen"**.
+| Aktion | Beschreibung |
+|--------|----------|
+| **Ausfüllen** | Die Umfrage beantworten (oder erneut ausfüllen, falls bereits beantwortet) |
+| **Ergebnisse ansehen** | Die bisherigen Auswertungen und Antworten einsehen |
+| **Link teilen** | Den Umfrage-Link kopieren, um ihn z. B. per WhatsApp weiterzugeben |
+| **Bearbeiten** | Die Umfrage nachträglich anpassen (nur für den Ersteller) |
+| **Löschen** | Die Umfrage und alle zugehörigen Antworten dauerhaft entfernen |
 
 ---
 
@@ -284,7 +288,7 @@ Wird eine Umfrage nicht mehr benötigt:
 Die Umfrage wurde vermutlich für ein bestimmtes Team oder einen Verein erstellt, dem man selbst nicht angehört. Bei Unsicherheit am besten beim Ersteller der Umfrage nachfragen. Eine weitere Möglichkeit: Die Umfrage ist bereits abgelaufen.
 
 ### Können Antworten nachträglich geändert werden?
-Nein – nach dem Absenden sind die Antworten endgültig gespeichert und nicht mehr änderbar.
+Ja — ihr könnt eine Umfrage über **„Erneut ausfüllen"** nochmal beantworten. Eure bisherigen Antworten werden dabei durch die neuen ersetzt.
 
 ### Was passiert nach dem Fälligkeitsdatum?
 Nach dem Stichtag können keine Antworten mehr abgegeben werden. Die bisherigen Ergebnisse bleiben gespeichert und können weiterhin eingesehen werden. Vor dem Stichtag werden Mitglieder, die noch nicht teilgenommen haben, automatisch per Push-Benachrichtigung erinnert (siehe Abschnitt „Erinnerungen bei Fälligkeitsdatum").

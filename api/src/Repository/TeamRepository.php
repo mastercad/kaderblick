@@ -64,24 +64,74 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
      */
     public function fetchOptimizedList(?UserInterface $user = null): array
     {
-        $qb = $this->createQueryBuilder('t')
-            ->select('t.id, t.name')
+        $qb = $this->buildOptimizedListQueryBuilder($user);
+
+        $qb->select('t.id, t.name')
             ->addSelect('ag.id as age_group_id, ag.name as age_group_name')
             ->addSelect('l.id as league_id, l.name as league_name')
             ->addSelect('COUNT(DISTINCT pta.id) as player_count')
             ->addSelect('COUNT(DISTINCT cta.id) as coach_count')
             ->addSelect("GROUP_CONCAT(DISTINCT CONCAT(c.firstName, ' ', c.lastName) SEPARATOR ', ') AS coach_names")
             ->addSelect("GROUP_CONCAT(DISTINCT cl.name SEPARATOR ', ') AS club_names")
+            ->groupBy('t.id, ag.id, l.id')
+            ->orderBy('t.name', 'ASC');
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @return array{data: array<int, array<string, mixed>>, total: int}
+     */
+    public function fetchPaginatedList(?UserInterface $user = null, string $search = '', int $page = 1, int $limit = 25): array
+    {
+        $qb = $this->buildOptimizedListQueryBuilder($user, $search);
+
+        // Count total matching results
+        $countQb = clone $qb;
+        $countQb->select('COUNT(DISTINCT t.id)');
+        $total = (int) $countQb->getQuery()->getSingleScalarResult();
+
+        // Paginated data with aggregates
+        $offset = ($page - 1) * $limit;
+        $qb->select('t.id, t.name')
+            ->addSelect('ag.id as age_group_id, ag.name as age_group_name')
+            ->addSelect('l.id as league_id, l.name as league_name')
+            ->addSelect('COUNT(DISTINCT pta.id) as player_count')
+            ->addSelect('COUNT(DISTINCT cta.id) as coach_count')
+            ->addSelect("GROUP_CONCAT(DISTINCT CONCAT(c.firstName, ' ', c.lastName) SEPARATOR ', ') AS coach_names")
+            ->addSelect("GROUP_CONCAT(DISTINCT cl.name SEPARATOR ', ') AS club_names")
+            ->groupBy('t.id, ag.id, l.id')
+            ->orderBy('t.name', 'ASC')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit);
+
+        return [
+            'data' => $qb->getQuery()->getResult(),
+            'total' => $total,
+        ];
+    }
+
+    /**
+     * Build the base query builder with joins and permission filters.
+     */
+    private function buildOptimizedListQueryBuilder(?UserInterface $user = null, ?string $search = null): \Doctrine\ORM\QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('t')
             ->leftJoin('t.ageGroup', 'ag')
             ->leftJoin('t.league', 'l')
             ->leftJoin('t.playerTeamAssignments', 'pta')
             ->leftJoin('t.coachTeamAssignments', 'cta')
             ->leftJoin('cta.coach', 'c')
-            ->leftJoin('t.clubs', 'cl')
-            ->groupBy('t.id, ag.id, l.id')
-            ->orderBy('t.name', 'ASC');
+            ->leftJoin('t.clubs', 'cl');
 
-        if (!in_array('ROLE_ADMIN', $user->getRoles(), true) && !in_array('ROLE_SUPERADMIN', $user->getRoles(), true)) {
+        // Search filter
+        if (null !== $search && '' !== $search) {
+            $qb->andWhere('LOWER(t.name) LIKE :search OR LOWER(ag.name) LIKE :search OR LOWER(l.name) LIKE :search')
+               ->setParameter('search', '%' . strtolower($search) . '%');
+        }
+
+        // Permission-based filters for non-admin users
+        if ($user && !in_array('ROLE_ADMIN', $user->getRoles(), true) && !in_array('ROLE_SUPERADMIN', $user->getRoles(), true)) {
             $playerIds = [];
             $coachIds = [];
             if ($user instanceof User) {
@@ -105,12 +155,11 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
                 $qb->andWhere('cta.coach IN (:coachIds)')
                    ->setParameter('coachIds', $coachIds);
             } else {
-                // User hat keine Spieler- oder Trainerrelation, keine Teams anzeigen
                 $qb->andWhere('1 = 0');
             }
         }
 
-        return $qb->getQuery()->getResult();
+        return $qb;
     }
 
     /**

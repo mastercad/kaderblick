@@ -38,6 +38,12 @@ Auf Kaderblick können auch **mehrere Vereine** gleichzeitig verwaltet werden �
 
 Im Menü unter **„Vereine"** (Admin-Bereich) findet ihr die Vereinsübersicht. Dort stehen die wichtigsten Infos:
 
+### Vereine suchen
+
+Ihr könnt nach Vereinen suchen — es wird gleichzeitig nach Vereinsname, Kurzname und Stadionname gesucht. So findet ihr einen Verein auch über seinen Stadionnamen. Bei vielen Vereinen könnt ihr bequem durch die Seiten blättern.
+
+> 💡 **Beispiel:** Gebt „Waldstadion" ein, um den Verein zu finden, der dort seine Heimspiele austrägt.
+
 | Feld | Beispiel |
 |------|---------|
 | **Name** | FC Musterstadt 1920 e.V. |
@@ -56,6 +62,10 @@ Im Menü unter **„Vereine"** (Admin-Bereich) findet ihr die Vereinsübersicht.
 ---
 
 ## Teams verwalten
+
+### Teams suchen
+
+Gebt einfach einen Teamnamen in die Suche ein, um das gewünschte Team schnell zu finden. Bei vielen Teams könnt ihr durch die Seiten blättern.
 
 ### Ein neues Team anlegen
 

@@ -74,20 +74,20 @@ Trainer und Administratoren können Neuigkeiten veröffentlichen:
 
 ## Eine News bearbeiten
 
-Nur der **Autor** einer News kann sie nachträglich bearbeiten:
+Der **Autor** einer News sowie **Administratoren** können sie nachträglich bearbeiten:
 
-1. Geht zur **News-Detailseite** (auf die Karte klicken)
+1. Geht zur **News-Detailseite** (auf die News klicken)
 2. Klickt auf das **Bearbeiten-Symbol** (✏️)
 3. Ändert Titel, Inhalt oder Sichtbarkeit
 4. **Speichern** — die Änderungen sind sofort sichtbar
 
-Oder direkt in der News-Übersicht: Neben jeder eigenen News gibt es ein **Bearbeiten-Symbol**.
+Oder direkt in der News-Übersicht: Neben jeder News, die ihr bearbeiten dürft, gibt es ein **Bearbeiten-Symbol**.
 
 ---
 
 ## Eine News löschen
 
-Nur der **Autor** einer News kann sie löschen:
+Der **Autor** einer News sowie **Administratoren** können sie löschen:
 
 1. Klickt auf das **Löschen-Symbol** (🗑️) in der Übersicht oder auf der Detailseite
 2. Es erscheint ein **Bestätigungsdialog** — damit nicht versehentlich gelöscht wird

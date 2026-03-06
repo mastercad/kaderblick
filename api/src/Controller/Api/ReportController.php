@@ -654,6 +654,12 @@ class ReportController extends AbstractController
         if ($report->getUser()?->getId() !== $user->getId()) {
             return $this->json(['error' => 'Access denied'], 403);
         }
+
+        // Zugehörige Dashboard-Widgets entfernen, damit keine verwaisten Einträge bleiben
+        foreach ($report->getWidgets() as $widget) {
+            $em->remove($widget);
+        }
+
         $em->remove($report);
         $em->flush();
 

@@ -36,7 +36,7 @@ const PermissionFieldsComponent: React.FC<PermissionFieldsProps> = ({
           onChange={e => handleChange('permissionType', e.target.value as string)}
         >
           <MenuItem value="public">Öffentlich</MenuItem>
-          <MenuItem value="club">Spezifische Clubs</MenuItem>
+          <MenuItem value="club">Spezifische Vereine</MenuItem>
           <MenuItem value="team">Spezifische Teams</MenuItem>
           <MenuItem value="user">Spezifische Nutzer</MenuItem>
         </Select>
@@ -62,16 +62,16 @@ const PermissionFieldsComponent: React.FC<PermissionFieldsProps> = ({
       {formData.permissionType === 'club' && (
         <Autocomplete
           multiple
-          options={teams.map(t => ({ value: t.value, label: `Club ${t.label}` }))}
+          options={teams.map(t => ({ value: t.value, label: `Verein ${t.label}` }))}
           getOptionLabel={(option) => option.label}
           value={teams
             .filter(t => formData.permissionClubs?.includes(t.value))
-            .map(t => ({ value: t.value, label: `Club ${t.label}` }))}
+            .map(t => ({ value: t.value, label: `Verein ${t.label}` }))}
           onChange={(_, newValue) => handleChange('permissionClubs', newValue.map(c => c.value))}
           renderInput={(params) => (
             <TextField
               {...params}
-              label="Clubs auswählen"
+              label="Vereine auswählen"
               margin="normal"
             />
           )}

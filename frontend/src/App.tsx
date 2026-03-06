@@ -44,6 +44,7 @@ import StrongFeets from './pages/StrongFeets';
 import SurfaceTypes from './pages/SurfaceTypes';
 import GameEventTypes from './pages/GameEventTypes';
 import Tasks from './pages/Tasks';
+import MyTeam from './pages/MyTeam';
 import Nationalities from './pages/Nationalities';
 import CoachLicenses from './pages/CoachLicenses';
 import Leagues from './pages/Leagues';
@@ -136,6 +137,7 @@ function App() {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password/:token" element={<ResetPassword />} />
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/my-team" element={<ProtectedRoute><MyTeam /></ProtectedRoute>} />
                   <Route path="/surveys" element={<ProtectedRoute><SurveyList /></ProtectedRoute>} />
                   <Route path="/team-size-guide" element={<ProtectedRoute><SizeGuide /></ProtectedRoute>} />
                   <Route path="/games" element={<ProtectedRoute><GamesContainer /></ProtectedRoute>} />

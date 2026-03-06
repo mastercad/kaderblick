@@ -29,7 +29,7 @@ class TaskController extends AbstractController
     {
         $tasks = $taskRepository->findAll();
 
-        $tasks = array_filter($tasks, fn ($task) => $this->isGranted(TaskVoter::VIEW, $task));
+        $tasks = array_values(array_filter($tasks, fn ($task) => $this->isGranted(TaskVoter::VIEW, $task)));
 
         return $this->json([
             'tasks' => array_map(fn ($task) => [
@@ -39,6 +39,13 @@ class TaskController extends AbstractController
                 'isRecurring' => $task->isRecurring(),
                 'recurrenceMode' => $task->getRecurrenceMode(),
                 'recurrenceRule' => $task->getRecurrenceRule(),
+                'createdBy' => [
+                    'id' => $task->getCreatedBy()->getId(),
+                    'firstName' => $task->getCreatedBy()->getFirstName(),
+                    'lastName' => $task->getCreatedBy()->getLastName(),
+                    'fullName' => $task->getCreatedBy()->getFullName(),
+                ],
+                'createdAt' => $task->getCreatedAt()->format('Y-m-d H:i:s'),
                 'rotationUsers' => array_map(fn ($user) => [
                     'id' => $user->getId(),
                     'firstName' => $user->getFirstName(),
@@ -46,7 +53,22 @@ class TaskController extends AbstractController
                     'fullName' => $user->getFullName(),
                 ], $task->getRotationUsers()->toArray()),
                 'rotationCount' => $task->getRotationCount(),
-            ], $tasks)
+                'assignments' => array_map(fn ($a) => [
+                    'id' => $a->getId(),
+                    'user' => [
+                        'id' => $a->getUser()->getId(),
+                        'firstName' => $a->getUser()->getFirstName(),
+                        'lastName' => $a->getUser()->getLastName(),
+                        'fullName' => $a->getUser()->getFullName(),
+                    ],
+                    'assignedDate' => $a->getAssignedDate()->format('Y-m-d'),
+                    'status' => $a->getStatus(),
+                    'substituteUser' => $a->getSubstituteUser() ? [
+                        'id' => $a->getSubstituteUser()->getId(),
+                        'fullName' => $a->getSubstituteUser()->getFullName(),
+                    ] : null,
+                ], $task->getAssignments()->toArray()),
+            ], $tasks),
         ]);
     }
 

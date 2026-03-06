@@ -6,16 +6,32 @@ Das Aufgaben-System in Kaderblick hilft dabei, wiederkehrende Pflichten im Team 
 
 ## Aufgaben-Übersicht
 
-Auf der **Aufgaben-Seite** seht ihr alle Aufgaben eures Teams. Jede Aufgabe wird als Karte angezeigt:
+Auf der **Aufgaben-Seite** seht ihr eure Aufgaben in **drei Ansichten**:
 
-| Element | Beschreibung |
+| Ansicht | Was sie zeigt |
+|---------|-------------|
+| **Meine Aufgaben** | Alle Aufgaben, bei denen ihr selbst zugewiesen seid — so seht ihr sofort, was ihr noch erledigen müsst |
+| **Von mir erstellt** | Aufgaben, die ihr selbst angelegt habt — praktisch für Trainer, um den Überblick zu behalten |
+| **Alle** | Sämtliche Aufgaben des Teams — für den Gesamtüberblick |
+
+Ganz oben seht ihr auf einen Blick, wie viele Aufgaben **offen**, **erledigt** und **insgesamt** vorhanden sind.
+
+### Was ihr zu jeder Aufgabe seht
+
+| Information | Beschreibung |
 |---------|-------------|
 | **Titel** | Name der Aufgabe (z. B. „Trikots waschen") |
 | **Beschreibung** | Genauere Erklärung, was zu tun ist |
-| **Status** | „Offen" oder „Erledigt" |
-| **Zugewiesener Spieler** | Wer ist gerade dran? |
-| **Datum** | Für welchen Termin/Tag gilt die Aufgabe? |
-| **Wiederkehrend** | Symbol, falls die Aufgabe sich automatisch wiederholt |
+| **Fortschritt** | Wie viele Zuweisungen bereits erledigt sind (z. B. „3/5 erledigt") |
+| **Nächster Termin** | Das nächste Datum, an dem die Aufgabe fällig ist |
+| **Erstellt von** | Wer hat die Aufgabe angelegt? |
+| **Wiederkehrend** | Falls die Aufgabe sich automatisch wiederholt (z. B. „Wöchentlich" oder „Pro Spiel") |
+
+### Aufgaben direkt abhaken
+
+Bei euren eigenen Zuweisungen könnt ihr den Status **direkt in der Übersicht ändern** — einfach auf den Kreis neben dem Datum klicken, um die Aufgabe als **erledigt** zu markieren. Genau so könnt ihr sie auch wieder auf **offen** setzen, falls nötig.
+
+Offene Aufgaben werden immer **oben** angezeigt und nach dem nächsten Fälligkeitsdatum sortiert — so seht ihr das Dringendste zuerst.
 
 ---
 
