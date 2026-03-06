@@ -157,6 +157,7 @@ export const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
 // AdminEmptyState — Empty state placeholder
 // ============================================================
 
+interface AdminEmptyStateProps {
   icon: React.ReactElement<any>;
   title?: string;
   description?: string;
