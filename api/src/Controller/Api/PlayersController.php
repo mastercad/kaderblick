@@ -24,8 +24,10 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/players', name: 'api_players_')]
+#[IsGranted('IS_AUTHENTICATED')]
 class PlayersController extends AbstractController
 {
     public function __construct(private EntityManagerInterface $entityManager)
@@ -33,12 +35,47 @@ class PlayersController extends AbstractController
     }
 
     #[Route('', methods: ['GET'], name: 'index')]
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $players = $this->entityManager->getRepository(Player::class)->findAll();
+        $page = max(1, (int) $request->query->get('page', 1));
+        $limit = min(100, max(1, (int) $request->query->get('limit', 25)));
+        $search = trim((string) $request->query->get('search', ''));
+        $teamId = $request->query->get('teamId');
 
-        // Filtere Spieler basierend auf VIEW-Berechtigung
-        $players = array_filter($players, fn ($player) => $this->isGranted(PlayerVoter::VIEW, $player));
+        $repo = $this->entityManager->getRepository(Player::class);
+        $qb = $repo->createQueryBuilder('p');
+
+        // Filter by team
+        if ($teamId) {
+            $qb->innerJoin('p.playerTeamAssignments', 'pta')
+               ->andWhere('pta.team = :teamId')
+               ->setParameter('teamId', (int) $teamId);
+        }
+
+        // Filter by search (firstName / lastName)
+        if ('' !== $search) {
+            $qb->andWhere('LOWER(p.firstName) LIKE :search OR LOWER(p.lastName) LIKE :search')
+               ->setParameter('search', '%' . strtolower($search) . '%');
+        }
+
+        // Count total matching results
+        $countQb = clone $qb;
+        $countQb->select('COUNT(DISTINCT p.id)');
+        $total = (int) $countQb->getQuery()->getSingleScalarResult();
+
+        // Fetch paginated results
+        $offset = ($page - 1) * $limit;
+        $qb->select('p')
+           ->groupBy('p.id')
+           ->orderBy('p.lastName', 'ASC')
+           ->addOrderBy('p.firstName', 'ASC')
+           ->setFirstResult($offset)
+           ->setMaxResults($limit);
+
+        $players = $qb->getQuery()->getResult();
+
+        // Permissions: VIEW always true for logged-in users, CREATE/EDIT/DELETE require ROLE_ADMIN
+        $isAdmin = $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPERADMIN');
 
         return $this->json([
             'players' => array_map(fn ($player) => [
@@ -100,12 +137,15 @@ class PlayersController extends AbstractController
                 'fussballDeUrl' => $player->getFussballDeUrl(),
                 'fussballDeId' => $player->getFussballDeId(),
                 'permissions' => [
-                    'canView' => $this->isGranted(PlayerVoter::VIEW, $player),
-                    'canEdit' => $this->isGranted(PlayerVoter::EDIT, $player),
-                    'canCreate' => $this->isGranted(PlayerVoter::CREATE, $player),
-                    'canDelete' => $this->isGranted(PlayerVoter::DELETE, $player)
+                    'canView' => true,
+                    'canEdit' => $isAdmin,
+                    'canCreate' => $isAdmin,
+                    'canDelete' => $isAdmin,
                 ]
-            ], $players)
+            ], $players),
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
         ]);
     }
 

@@ -34,19 +34,31 @@ class SurveyController extends AbstractController
     }
 
     #[Route('', name: 'list', methods: ['GET'])]
-    public function list(SurveyRepository $surveyRepository): JsonResponse
+    public function list(SurveyRepository $surveyRepository, SurveyResponseRepository $responseRepo): JsonResponse
     {
+        /** @var User $user */
+        $user = $this->getUser();
         $surveys = $surveyRepository->findAll();
 
         // Filtere basierend auf VIEW-Berechtigung
-        $surveys = array_filter($surveys, fn ($survey) => $this->isGranted(SurveyVoter::VIEW, $survey));
+        $surveys = array_values(array_filter($surveys, fn ($survey) => $this->isGranted(SurveyVoter::VIEW, $survey)));
 
-        $data = array_map(fn ($survey) => [
-            'id' => $survey->getId(),
-            'title' => $survey->getTitle(),
-            'description' => $survey->getDescription(),
-            'canViewStats' => $this->isGranted(SurveyVoter::VIEW_STATS, $survey),
-        ], $surveys);
+        $data = array_map(function ($survey) use ($responseRepo, $user) {
+            $responseCount = $responseRepo->count(['survey' => $survey]);
+            $hasAnswered = $responseRepo->count(['survey' => $survey, 'userId' => $user->getId()]) > 0;
+
+            return [
+                'id' => $survey->getId(),
+                'title' => $survey->getTitle(),
+                'description' => $survey->getDescription(),
+                'questionCount' => $survey->getQuestions()->count(),
+                'responseCount' => $responseCount,
+                'dueDate' => $survey->getDueDate()?->format('c'),
+                'hasAnswered' => $hasAnswered,
+                'isPlatform' => $survey->isPlatform(),
+                'canViewStats' => $this->isGranted(SurveyVoter::VIEW_STATS, $survey),
+            ];
+        }, $surveys);
 
         return $this->json($data);
     }

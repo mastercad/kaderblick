@@ -6,7 +6,18 @@ In der Trainerverwaltung werden alle Trainerinnen und Trainer mit ihren Profilda
 
 ## Trainer-Übersicht
 
-Auf der **Trainer-Seite** seht ihr alle Trainer als Tabelle oder Kartenliste.
+Auf der **Trainer-Seite** seht ihr alle Trainer als übersichtliche Tabelle.
+
+### Trainer suchen und filtern
+
+Auch bei vielen Trainern findet ihr schnell den richtigen:
+
+- **Nach Namen suchen**: Gebt einen Namen ein und die Liste zeigt euch sofort nur passende Trainer. Über das Kreuz könnt ihr die Suche wieder zurücksetzen.
+- **Nach Team filtern**: Wählt ein bestimmtes Team aus, um nur dessen Trainer zu sehen — oder lasst „Alle Teams" stehen, um alle zu sehen.
+- **Durch die Liste blättern**: Bei vielen Trainern könnt ihr bequem durch die Seiten blättern und selbst einstellen, wie viele auf einmal angezeigt werden.
+- **Gesamtzahl**: Ihr seht jederzeit, wie viele Trainer insgesamt gefunden wurden.
+
+> 💡 Suche und Filter lassen sich kombinieren: Sucht z. B. nach „Schmidt" und filtert gleichzeitig nach dem Team „U17".
 
 ### Angezeigte Informationen pro Trainer
 

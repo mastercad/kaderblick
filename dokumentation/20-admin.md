@@ -4,6 +4,22 @@ Der Admin-Bereich ist für Administratoren und berechtigte Trainer gedacht. Hier
 
 ---
 
+## So funktioniert der Admin-Bereich
+
+Alle Verwaltungsseiten (Spieler, Trainer, Teams, Vereine und Stammdaten) sind **gleich aufgebaut** — wer sich auf einer Seite zurechtfindet, findet sich sofort auf allen anderen zurecht.
+
+### Auf jeder Verwaltungsseite könnt ihr:
+
+- **Suchen**: Gebt einen Namen oder Begriff ein, um die Liste sofort zu filtern. Bei Spielern und Trainern könnt ihr zusätzlich nach einem bestimmten **Team** filtern.
+- **Blättern**: Bei vielen Einträgen blättert ihr bequem durch die Seiten und stellt ein, wie viele Einträge auf einmal angezeigt werden sollen.
+- **Neue Einträge anlegen**: Über den Erstellen-Button (z. B. „Spieler hinzufügen") legt ihr neue Einträge an.
+- **Einträge bearbeiten oder löschen**: Jeder Eintrag kann bearbeitet oder gelöscht werden.
+- **Gesamtzahl sehen**: Ihr seht jederzeit, wie viele Einträge insgesamt vorhanden sind — auch wenn ihr gerade nach etwas sucht.
+
+> 💡 Diese einheitliche Bedienung macht es einfach, sich im Admin-Bereich zurechtzufinden — wer einmal eine Seite kennt, kommt sofort überall klar.
+
+---
+
 ## Nutzer-Verknüpfungen verwalten
 
 Unter **Admin → Nutzer-Verknüpfungen** könnt ihr sehen und verwalten, welche Nutzer-Accounts mit welchen Spielern/Trainern verknüpft sind.

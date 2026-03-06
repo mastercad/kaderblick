@@ -46,7 +46,10 @@ import VideocamIcon from '@mui/icons-material/Videocam';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import PublicIcon from '@mui/icons-material/Public';
 import SchoolIcon from '@mui/icons-material/School';
-import React, { useState } from 'react';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import PollIcon from '@mui/icons-material/Poll';
+import React, { useState, useMemo } from 'react';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
@@ -75,18 +78,52 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '';
 
+  // Helper: prüfe ob ein Nav-Key aktiv ist (auch bei Sub-Routen)
+  const isNavItemActive = (key: string): boolean => {
+    const path = location.pathname;
+    if (key === 'home') return path === '/' || path === '';
+    // "surveys" deckt auch /survey/fill/:id ab
+    if (key === 'surveys') return path === '/surveys' || path.startsWith('/surveys/') || path.startsWith('/survey/');
+    return path === `/${key}` || path.startsWith(`/${key}/`);
+  };
+
   // Show button: either not on home page, OR on home page but on hero section
   const showLoginButton = !isHome || (isHome && isOnHeroSection);
 
-  // Navigation items configuration
-  const navigationItems = [
-    { key: 'home', label: 'Home', disabled: false },
-    { key: 'dashboard', label: 'Dashboard', disabled: false },
-    { key: 'surveys', label: 'Umfragen', disabled: false },
-    { key: 'games', label: 'Spiele', disabled: false },
-    { key: 'reports', label: 'Reports', disabled: false },
-    { key: 'calendar', label: 'Kalender', disabled: false },
-  ];
+  // Rollen-Flags
+  const rolesArrayEarly = Object.values(user?.roles || {});
+  const isAdminEarly = rolesArrayEarly.includes('ROLE_ADMIN') || rolesArrayEarly.includes('ROLE_SUPERADMIN');
+  const isCoach = user?.isCoach || false;
+  const isPlayer = user?.isPlayer || false;
+
+  // Rollenbasierte Navigation:
+  // Spieler:  Home · Mein Team · Kalender · Spiele · Aufgaben · Auswertungen
+  // Eltern:   Home · Mein Team · Kalender · Neuigkeiten · Nachrichten
+  // Trainer:  Home · Mein Team · Kalender · Spiele · Aufstellungen · Auswertungen
+  // Admin:    + Administration Dropdown
+  const navigationItems = useMemo(() => {
+    const items: Array<{ key: string; label: string; disabled: boolean; icon?: React.ReactNode }> = [
+      { key: 'home', label: 'Home', disabled: false },
+      { key: 'dashboard', label: 'Dashboard', disabled: false },
+      { key: 'my-team', label: 'Mein Team', disabled: false },
+      { key: 'calendar', label: 'Kalender', disabled: false },
+      { key: 'games', label: 'Spiele', disabled: false },
+    ];
+
+    // Aufgaben für Spieler (und alle Nicht-Trainer/Nicht-Admin als Basis-Nutzer)
+    if (isPlayer || (!isCoach && !isAdminEarly)) {
+      items.push({ key: 'tasks', label: 'Aufgaben', disabled: false, icon: <AssignmentIcon fontSize="small" /> });
+    }
+
+    // Auswertungen (für Trainer/Spieler/Admin)
+    items.push({ key: 'reports', label: 'Auswertungen', disabled: false, icon: <BarChartIcon fontSize="small" /> });
+
+    // Neuigkeiten & Umfragen als "Mehr"-Bereich im Menü oder direkt
+    items.push({ key: 'news', label: 'Neuigkeiten', disabled: false, icon: <NewspaperIcon fontSize="small" /> });
+    items.push({ key: 'surveys', label: 'Umfragen', disabled: false, icon: <PollIcon fontSize="small" /> });
+
+    return items;
+  }, [isPlayer, isCoach, isAdminEarly]);
 
   const trainerMenuItems = [
     { key: 'team-size-guide', label: 'Team Size Guide', icon: <CheckroomIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
@@ -159,6 +196,20 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
     handleMobileMenuClose();
   };
 
+  // "Mehr"-Dropdown für Desktop (sekundäre Items)
+  const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(null);
+  const handleMoreMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setMoreMenuAnchor(event.currentTarget);
+  };
+  const handleMoreMenuClose = () => {
+    setMoreMenuAnchor(null);
+  };
+
+  // Desktop: Primäre Items direkt sichtbar, sekundäre im "Mehr"-Dropdown
+  const primaryDesktopKeys = ['home', 'dashboard', 'my-team', 'calendar', 'games', 'tasks', 'reports'];
+  const primaryNavItems = navigationItems.filter(item => primaryDesktopKeys.includes(item.key));
+  const secondaryNavItems = navigationItems.filter(item => !primaryDesktopKeys.includes(item.key));
+
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -200,8 +251,18 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
     handleMobileMenuClose();
   };
 
-  const rolesArray = Object.values(user?.roles || {});
-  const isAdmin = rolesArray.includes('ROLE_ADMIN') || rolesArray.includes('ROLE_SUPERADMIN');
+  // Verwende die oben bereits berechneten Rollen-Flags
+  const isAdmin = isAdminEarly;
+
+  // Aktiv-Status für Dropdown-Menüs (Sub-Routen-aware)
+  const isAnySecondaryActive = secondaryNavItems.some(item => isNavItemActive(item.key));
+  const isAnyTrainerActive = trainerMenuItems.some(item => isNavItemActive(item.key));
+  const isAnyAdminActive = adminMenuSections.some(section =>
+    section.items.some(item => {
+      const p = item.page || item.href || '';
+      return location.pathname === `/${p}` || location.pathname.startsWith(`/${p}/`);
+    })
+  );
 
   return (
     <>
@@ -246,29 +307,78 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
             <>
               {/* Desktop Navigation */}
               {!isMobile && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  {navigationItems.map((item) => (
-                    item.key === 'trainer' ? null : (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {/* Primäre Navi-Punkte */}
+                  {primaryNavItems.map((item) => (
+                    <Button
+                      key={item.key}
+                      disabled={item.disabled}
+                      onClick={() => !item.disabled && navigate(`/${item.key === 'home' ? '' : item.key}`)}
+                      className="navigation-transparent-btn"
+                      sx={{
+                        color: isHome
+                          ? '#fff'
+                          : theme.palette.primary.contrastText,
+                        fontWeight: isNavItemActive(item.key) ? 700 : 500,
+                        borderRadius: 2,
+                        minWidth: 'auto',
+                        px: 1.5,
+                        py: 1,
+                        fontSize: '0.85rem',
+                        borderBottom: isNavItemActive(item.key)
+                          ? '2px solid currentColor'
+                          : '2px solid transparent',
+                      }}
+                    >
+                      {item.label}
+                    </Button>
+                  ))}
+
+                  {/* "Mehr" Dropdown für sekundäre Items (Neuigkeiten, Umfragen) */}
+                  {secondaryNavItems.length > 0 && (
+                    <>
                       <Button
-                        key={item.key}
-                        disabled={item.disabled}
-                        onClick={() => !item.disabled && navigate(`/${item.key}`)}
+                        onClick={handleMoreMenuOpen}
                         className="navigation-transparent-btn"
                         sx={{
                           color: isHome
                             ? '#fff'
                             : theme.palette.primary.contrastText,
-                          fontWeight: 500,
+                          fontWeight: isAnySecondaryActive ? 700 : 500,
                           borderRadius: 2,
                           minWidth: 'auto',
-                          px: 2,
+                          px: 1.5,
                           py: 1,
+                          fontSize: '0.85rem',
+                          borderBottom: isAnySecondaryActive
+                            ? '2px solid currentColor'
+                            : '2px solid transparent',
                         }}
+                        endIcon={<ArrowDropDownIcon />}
                       >
-                        {item.label}
+                        Mehr
                       </Button>
-                    )
-                  ))}
+                      <Menu
+                        anchorEl={moreMenuAnchor}
+                        open={Boolean(moreMenuAnchor)}
+                        onClose={handleMoreMenuClose}
+                      >
+                        {secondaryNavItems.map((item) => (
+                          <MenuItem
+                            key={item.key}
+                            selected={isNavItemActive(item.key)}
+                            onClick={() => {
+                              handleMoreMenuClose();
+                              navigate(`/${item.key}`);
+                            }}
+                          >
+                            {item.icon && <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>{item.icon}</Box>}
+                            {item.label}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>
+                  )}
                   {/* Trainer Dropdown */}
                   {user?.isCoach && (
                     <>
@@ -279,11 +389,14 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                           color: isHome
                             ? '#fff'
                             : theme.palette.primary.contrastText,
-                          fontWeight: 500,
+                          fontWeight: isAnyTrainerActive ? 700 : 500,
                           borderRadius: 2,
                           minWidth: 'auto',
                           px: 2,
                           py: 1,
+                          borderBottom: isAnyTrainerActive
+                            ? '2px solid currentColor'
+                            : '2px solid transparent',
                         }}
                         endIcon={<ArrowDropDownIcon />}
                       >
@@ -297,7 +410,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                         {trainerMenuItems.map((item) => (
                           <MenuItem
                             key={item.key}
-                            selected={location.pathname === `/${item.key}`}
+                            selected={isNavItemActive(item.key)}
                             onClick={() => handleTrainerMenuClick(item.key)}
                           >
                             {item.icon}
@@ -317,11 +430,14 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                           color: isHome
                             ? '#fff'
                             : theme.palette.primary.contrastText,
-                          fontWeight: 500,
+                          fontWeight: isAnyAdminActive ? 700 : 500,
                           borderRadius: 2,
                           minWidth: 'auto',
                           px: 2,
                           py: 1,
+                          borderBottom: isAnyAdminActive
+                            ? '2px solid currentColor'
+                            : '2px solid transparent',
                         }}
                         endIcon={<ArrowDropDownIcon />}
                       >
@@ -349,6 +465,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                             {section.items.map((item) => (
                               <MenuItem
                                 key={item.label}
+                                selected={location.pathname === `/${item.page || item.href}`}
                                 sx={{
                                   pl: 3,
                                   display: 'flex',
@@ -464,24 +581,25 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
           <Divider />
           <List>
             {navigationItems.map((item) => (
-              item.key === 'trainer' ? null : (
                 <ListItem key={item.key} disablePadding>
                   <ListItemButton
-                    selected={location.pathname === `/${item.key}`}
+                    selected={isNavItemActive(item.key)}
                     disabled={item.disabled}
-                    onClick={() => !item.disabled && handlePageChangeAndClose(item.key as any)}
+                    onClick={() => !item.disabled && handlePageChangeAndClose(item.key === 'home' ? '' : item.key)}
                   >
+                    {item.icon && (
+                      <Box sx={{ mr: 1.5, display: 'flex', alignItems: 'center', color: 'text.secondary' }}>{item.icon}</Box>
+                    )}
                     <ListItemText primary={item.label} />
                   </ListItemButton>
                 </ListItem>
-              )
             ))}
             {/* Trainer Untermenü im Drawer (Accordion) */}
             {user?.isCoach && (
               <>
                 <ListItem disablePadding>
                   <ListItemButton
-                    selected={location.pathname?.startsWith('/trainer-')}
+                    selected={isAnyTrainerActive}
                     onClick={() => setTrainerDrawerOpen((prev: boolean) => !prev)}
                   >
                     <ListItemText primary="Trainer" />
@@ -492,7 +610,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                   {trainerMenuItems.map((item) => (
                     <ListItem key={item.key} disablePadding sx={{ pl: 3 }}>
                       <ListItemButton
-                        selected={location.pathname === `/${item.key}`}
+                        selected={isNavItemActive(item.key)}
                         onClick={() => handleTrainerMenuClick(item.key)}
                       >
                         <ListItemText primary={item.label} />

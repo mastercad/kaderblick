@@ -23,14 +23,34 @@ Im Bereich **Berichte** erstellt ihr aussagekräftige Diagramme und Auswertungen
 
 ## Schnelleinstieg: Der erste Bericht in 30 Sekunden
 
+Es gibt **zwei Wege**, einen Bericht zu erstellen:
+
+### Weg 1: Vorlage direkt übernehmen (am schnellsten)
+
 1. Im Menü auf **„Berichte"** klicken
-2. **„Neuen Bericht erstellen"** wählen
-3. Im ersten Schritt **einen Namen** eingeben (z. B. „Torschützenliste")
-4. Eine **Vorlage** anklicken, z. B. *„Tore pro Spieler"*
-5. Fertig — die Vorschau zeigt sofort ein Balkendiagramm mit den Toren eurer Spieler!
-6. Optional: Auf **„Speichern"** klicken, um den Bericht dauerhaft zu speichern
+2. Unter **„Fertige Vorlagen"** die gewünschte Vorlage aussuchen, z. B. *„Tore pro Spieler"*
+3. Auf **„Übernehmen & speichern"** klicken
+4. **Fertig** — der Bericht wird automatisch erstellt und direkt auf eurem Dashboard angezeigt!
+
+### Weg 2: Eigenen Bericht zusammenstellen
+
+1. Auf **„Neue Auswertung"** klicken
+2. Einen **Namen** eingeben (z. B. „Gelbe Karten Rückrunde")
+3. Die gewünschten Einstellungen wählen (oder eine Vorlage als Ausgangspunkt nehmen)
+4. **Speichern** — der Bericht ist ab sofort unter „Meine Auswertungen" verfügbar
 
 > **Tipp:** Vorlagen füllen automatisch alle Einstellungen. Ihr müsst nur noch den Namen eingeben und speichern.
+
+---
+
+## Was ihr mit gespeicherten Berichten machen könnt
+
+Alle eure Berichte werden unter **„Meine Auswertungen"** gesammelt. Für jeden Bericht stehen euch folgende Möglichkeiten zur Verfügung:
+
+- **Vorschau anzeigen**: Direkt in der Übersicht könnt ihr eine Live-Vorschau des Diagramms ein- und ausblenden — ohne den Bericht extra öffnen zu müssen
+- **Zum Dashboard hinzufügen**: Mit einem Klick legt ihr den Bericht als Kachel auf eurer Startseite ab, damit ihr die Zahlen bei jedem Login sofort im Blick habt
+- **Bearbeiten**: Alle Einstellungen nachträglich ändern — Diagrammtyp, Filter, Zeitraum usw.
+- **Löschen**: Einen Bericht dauerhaft entfernen
 
 ---
 

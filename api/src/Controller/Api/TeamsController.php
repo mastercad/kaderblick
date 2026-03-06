@@ -14,8 +14,10 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route(path: '/api/teams', name: 'api_teams_')]
+#[IsGranted('IS_AUTHENTICATED')]
 class TeamsController extends AbstractController
 {
     public function __construct(private EntityManagerInterface $entityManager)
@@ -61,14 +63,19 @@ class TeamsController extends AbstractController
     }
 
     #[Route('', name: 'api_teams_index', methods: ['GET'])]
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $page = max(1, (int) $request->query->get('page', 1));
+        $limit = min(100, max(1, (int) $request->query->get('limit', 25)));
+        $search = trim((string) $request->query->get('search', ''));
+
         /** @var User $user */
         $user = $this->getUser();
         /** @var TeamRepository $teamsRepository */
         $teamsRepository = $this->entityManager->getRepository(Team::class);
-        /** @var Team[] $teams */
-        $teams = $teamsRepository->fetchOptimizedList($user);
+        $result = $teamsRepository->fetchPaginatedList($user, $search, $page, $limit);
+
+        $isAdmin = $this->isGranted('ROLE_ADMIN', $user) || $this->isGranted('ROLE_SUPERADMIN', $user);
 
         return $this->json([
             'teams' => array_map(fn ($team) => [
@@ -84,11 +91,14 @@ class TeamsController extends AbstractController
                 ],
                 'permissions' => [
                     'canView' => true,
-                    'canEdit' => $this->isGranted('ROLE_ADMIN', $user) || $this->isGranted('ROLE_SUPERADMIN', $user),
-                    'canDelete' => $this->isGranted('ROLE_ADMIN', $user) || $this->isGranted('ROLE_SUPERADMIN', $user),
-                    'canCreate' => $this->isGranted('ROLE_ADMIN', $user) || $this->isGranted('ROLE_SUPERADMIN', $user),
+                    'canEdit' => $isAdmin,
+                    'canDelete' => $isAdmin,
+                    'canCreate' => $isAdmin,
                 ]
-            ], $teams)
+            ], $result['data']),
+            'total' => $result['total'],
+            'page' => $page,
+            'limit' => $limit,
         ]);
     }
 

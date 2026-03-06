@@ -32,6 +32,9 @@ services:
             $frontendUrl: '%env(resolve:FRONTEND_URL)%'
             $mailerFrom: '%env(resolve:MAILER_FROM)%'
 
+    App\Security\Json401EntryPoint:
+        public: true
+
     # Monolog channel bindings for custom loggers
     Psr\Log\LoggerInterface $xpProcessingLogger: '@monolog.logger.xp_processing'
     Psr\Log\LoggerInterface $cronLogger: '@monolog.logger.cron'

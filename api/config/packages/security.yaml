@@ -28,7 +28,7 @@ security:
         api:
             pattern: ^/api
             stateless: true
-#            entry_point: App\Security\JwtEntryPoint
+            entry_point: App\Security\Json401EntryPoint
             jwt: ~
 
         # kein jwt, kein authenticator
@@ -47,6 +47,7 @@ security:
 #            logout:
 #                path: /api/logout
 #                invalidate_session: true
+            entry_point: App\Security\Json401EntryPoint
 
     role_hierarchy:
         ROLE_GUEST:       []
