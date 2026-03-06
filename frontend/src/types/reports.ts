@@ -46,6 +46,12 @@ export interface Report {
   config: ReportConfig;
 }
 
+export interface Preset {
+  key: string;
+  label: string;
+  config: Partial<ReportConfig>;
+}
+
 export interface ReportBuilderData {
   teams: Team[];
   players: Player[];
@@ -54,4 +60,5 @@ export interface ReportBuilderData {
   availableDates: string[];
   minDate: string;
   maxDate: string;
+  presets?: Preset[];
 }

@@ -24,7 +24,7 @@ export interface AdminSnackbar {
 
 interface AdminPageLayoutProps {
   /** Page icon (MUI icon element) */
-  icon: React.ReactElement;
+  icon: React.ReactElement<any>;
   /** Page title */
   title: string;
   /** Item count displayed as chip */
@@ -86,7 +86,7 @@ export const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
       {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5} flexWrap="wrap" gap={1}>
         <Stack direction="row" alignItems="center" spacing={1.5}>
-          {React.cloneElement(icon, { sx: { fontSize: 32, color: 'primary.main', ...(icon.props.sx || {}) } })}
+          {React.cloneElement(icon, { sx: { fontSize: 32, color: 'primary.main', ...((icon as any).props?.sx || {}) } })}
           <Typography variant="h4" sx={{ fontWeight: 700 }}>{title}</Typography>
           {!loading && itemCount != null && (
             <Chip label={itemCount} size="small" color="primary" variant="outlined" />
@@ -157,8 +157,7 @@ export const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
 // AdminEmptyState — Empty state placeholder
 // ============================================================
 
-interface AdminEmptyStateProps {
-  icon: React.ReactElement;
+  icon: React.ReactElement<any>;
   title?: string;
   description?: string;
   createLabel?: string;
@@ -173,7 +172,7 @@ export const AdminEmptyState: React.FC<AdminEmptyStateProps> = ({
   onCreate,
 }) => (
   <Paper sx={{ p: 5, textAlign: 'center' }} elevation={0}>
-    {React.cloneElement(icon, { sx: { fontSize: 56, color: 'grey.400', mb: 1, ...(icon.props.sx || {}) } })}
+    {React.cloneElement(icon, { sx: { fontSize: 56, color: 'grey.400', mb: 1, ...((icon as any).props?.sx || {}) } })}
     <Typography variant="h6" color="text.secondary">{title}</Typography>
     {description && (
       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>{description}</Typography>
