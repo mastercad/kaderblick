@@ -595,7 +595,7 @@ const ReportsOverviewInner = () => {
           <Collapse in={presetsExpanded}>
             <Grid container spacing={2}>
               {presets.map((preset) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={preset.key}>
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={preset.key}>
                   <PresetCard
                     preset={preset}
                     onUse={handleUsePreset}
@@ -622,7 +622,7 @@ const ReportsOverviewInner = () => {
               </Box>
               <Grid container spacing={2}>
                 {reports.map((report) => (
-                  <Grid item xs={12} sm={6} md={4} lg={3} key={report.id}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={report.id}>
                     <ReportCard
                       report={report}
                       onEdit={handleEditReport}
