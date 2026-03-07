@@ -27,19 +27,20 @@ class CalendarControllerCancelTest extends TestCase
     private CalendarController $controller;
     private User&MockObject $user;
     private AuthorizationCheckerInterface&MockObject $authChecker;
+    private ParticipationRepository&MockObject $participationRepo;
 
     protected function setUp(): void
     {
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $emailService = $this->createMock(EmailNotificationService::class);
-        $participationRepo = $this->createMock(ParticipationRepository::class);
+        $this->participationRepo = $this->createMock(ParticipationRepository::class);
         $calendarEventService = $this->createMock(CalendarEventService::class);
         $this->notificationService = $this->createMock(NotificationService::class);
 
         $this->controller = new CalendarController(
             $this->entityManager,
             $emailService,
-            $participationRepo,
+            $this->participationRepo,
             $calendarEventService,
             $this->notificationService,
         );
@@ -243,6 +244,232 @@ class CalendarControllerCancelTest extends TestCase
 
         $request = new Request(content: json_encode(['reason' => 'Grund']));
 
+        $response = $this->controller->cancelEvent($event, $request);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(0, $data['recipientCount']);
+    }
+
+    // =========================================================================
+    // reactivateEvent tests
+    // =========================================================================
+
+    public function testReactivateEventForbiddenReturns403(): void
+    {
+        $event = new CalendarEvent();
+        $event->setTitle('Training');
+        $event->setCancelled(true);
+
+        $this->authChecker->method('isGranted')
+            ->with(CalendarEventVoter::CANCEL, $event)
+            ->willReturn(false);
+
+        $response = $this->controller->reactivateEvent($event);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertSame(403, $response->getStatusCode());
+        $this->assertArrayHasKey('error', $data);
+    }
+
+    public function testReactivateEventNotCancelledReturns400(): void
+    {
+        $event = new CalendarEvent();
+        $event->setTitle('Training');
+        // NOT cancelled
+
+        $this->authChecker->method('isGranted')->willReturn(true);
+
+        $response = $this->controller->reactivateEvent($event);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertSame(400, $response->getStatusCode());
+        $this->assertStringContainsString('nicht abgesagt', $data['error']);
+    }
+
+    public function testReactivateEventSuccessResetsEntityState(): void
+    {
+        $event = new CalendarEvent();
+        $event->setTitle('Training');
+        $event->setStartDate(new DateTime('2026-06-15 18:00'));
+        $event->setCancelled(true);
+        $event->setCancelReason('Regen');
+        $event->setCancelledBy($this->user);
+
+        $this->authChecker->method('isGranted')->willReturn(true);
+        $this->entityManager->expects($this->once())->method('flush');
+
+        // No permissions, no TeamRides → 0 recipients
+        $response = $this->controller->reactivateEvent($event);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertTrue($data['success']);
+        $this->assertSame(0, $data['recipientCount']);
+
+        // Entity state must be reset
+        $this->assertFalse($event->isCancelled());
+        $this->assertNull($event->getCancelReason());
+        $this->assertNull($event->getCancelledBy());
+    }
+
+    public function testReactivateEventSendsNotificationToRecipients(): void
+    {
+        $event = new CalendarEvent();
+        $event->setTitle('Spiel');
+        $event->setStartDate(new DateTime('2026-06-15 18:00'));
+        $event->setCancelled(true);
+
+        $recipientUser = $this->createMock(User::class);
+        $recipientUser->method('getId')->willReturn(99);
+
+        $permission = new \App\Entity\CalendarEventPermission();
+        $permission->setPermissionType(\App\Enum\CalendarEventPermissionType::USER);
+        $permission->setUser($recipientUser);
+        $event->addPermission($permission);
+
+        $this->authChecker->method('isGranted')->willReturn(true);
+        $this->entityManager->method('flush');
+
+        $teamRideRepo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
+        $teamRideRepo->method('findBy')->willReturn([]);
+        $this->entityManager->method('getRepository')->willReturn($teamRideRepo);
+
+        $this->notificationService->expects($this->once())
+            ->method('createNotificationForUsers')
+            ->with(
+                $this->callback(fn ($users) => 1 === count($users) && 99 === $users[0]->getId()),
+                'event_reactivated',
+                $this->stringContains('Reaktiviert'),
+                $this->stringContains('findet'),
+                $this->isArray(),
+            );
+
+        $response = $this->controller->reactivateEvent($event);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(1, $data['recipientCount']);
+    }
+
+    public function testReactivateEventExcludesCancellerFromRecipients(): void
+    {
+        $event = new CalendarEvent();
+        $event->setTitle('Training');
+        $event->setStartDate(new DateTime('2026-06-15 18:00'));
+        $event->setCancelled(true);
+
+        // Only the reactivating user has a permission
+        $permission = new \App\Entity\CalendarEventPermission();
+        $permission->setPermissionType(\App\Enum\CalendarEventPermissionType::USER);
+        $permission->setUser($this->user);
+        $event->addPermission($permission);
+
+        $this->authChecker->method('isGranted')->willReturn(true);
+        $this->entityManager->method('flush');
+
+        $teamRideRepo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
+        $teamRideRepo->method('findBy')->willReturn([]);
+        $this->entityManager->method('getRepository')->willReturn($teamRideRepo);
+
+        $this->notificationService->expects($this->never())
+            ->method('createNotificationForUsers');
+
+        $response = $this->controller->reactivateEvent($event);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertSame(0, $data['recipientCount']);
+    }
+
+    // =========================================================================
+    // PUBLIC event: only participation-registered users notified
+    // =========================================================================
+
+    public function testCancelPublicEventOnlyNotifiesRegisteredParticipants(): void
+    {
+        $event = new CalendarEvent();
+        $event->setTitle('Öffentliches Event');
+        $event->setStartDate(new DateTime('2026-06-15 18:00'));
+
+        $permission = new \App\Entity\CalendarEventPermission();
+        $permission->setPermissionType(\App\Enum\CalendarEventPermissionType::PUBLIC);
+        $event->addPermission($permission);
+
+        // One registered participant
+        $participantUser = $this->createMock(User::class);
+        $participantUser->method('getId')->willReturn(77);
+
+        $mockParticipation = $this->createMock(\App\Entity\Participation::class);
+        $mockParticipation->method('getUser')->willReturn($participantUser);
+
+        // Mock the QueryBuilder chain on participationRepo
+        $qb = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $qb->method('innerJoin')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('andWhere')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+        $query->method('getResult')->willReturn([$mockParticipation]);
+        $this->participationRepo->method('createQueryBuilder')->willReturn($qb);
+
+        $this->authChecker->method('isGranted')->willReturn(true);
+        $this->entityManager->method('flush');
+
+        $teamRideRepo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
+        $teamRideRepo->method('findBy')->willReturn([]);
+        $this->entityManager->method('getRepository')->willReturn($teamRideRepo);
+
+        $this->notificationService->expects($this->once())
+            ->method('createNotificationForUsers')
+            ->with(
+                $this->callback(fn ($users) => 1 === count($users) && 77 === $users[0]->getId()),
+                'event_cancelled',
+                $this->anything(),
+                $this->anything(),
+                $this->anything(),
+            );
+
+        $request = new Request(content: json_encode(['reason' => 'Ausfall']));
+        $response = $this->controller->cancelEvent($event, $request);
+        $data = json_decode($response->getContent(), true);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(1, $data['recipientCount']);
+    }
+
+    public function testCancelPublicEventWithNoParticipantsSendsNoNotification(): void
+    {
+        $event = new CalendarEvent();
+        $event->setTitle('Leeres öffentliches Event');
+        $event->setStartDate(new DateTime('2026-06-15 18:00'));
+
+        $permission = new \App\Entity\CalendarEventPermission();
+        $permission->setPermissionType(\App\Enum\CalendarEventPermissionType::PUBLIC);
+        $event->addPermission($permission);
+
+        // No participants
+        $qb = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
+        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $qb->method('innerJoin')->willReturnSelf();
+        $qb->method('where')->willReturnSelf();
+        $qb->method('andWhere')->willReturnSelf();
+        $qb->method('setParameter')->willReturnSelf();
+        $qb->method('getQuery')->willReturn($query);
+        $query->method('getResult')->willReturn([]);
+        $this->participationRepo->method('createQueryBuilder')->willReturn($qb);
+
+        $this->authChecker->method('isGranted')->willReturn(true);
+        $this->entityManager->method('flush');
+
+        $teamRideRepo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
+        $teamRideRepo->method('findBy')->willReturn([]);
+        $this->entityManager->method('getRepository')->willReturn($teamRideRepo);
+
+        $this->notificationService->expects($this->never())
+            ->method('createNotificationForUsers');
+
+        $request = new Request(content: json_encode(['reason' => 'Ausfall']));
         $response = $this->controller->cancelEvent($event, $request);
         $data = json_decode($response->getContent(), true);
 

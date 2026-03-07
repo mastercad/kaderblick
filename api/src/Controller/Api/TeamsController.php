@@ -27,18 +27,33 @@ class TeamsController extends AbstractController
     ) {
     }
 
+    /**
+     * Supported contexts via ?context= query parameter:
+     *   (none)       – default: only teams the authenticated user is assigned to
+     *   match        – all teams; only effective for coaches, admins and superadmins
+     *   tournament   – identical to "match"
+     * Regular users (e.g. parents) are always filtered to their own teams,
+     * regardless of the context parameter.
+     */
     #[Route('/list', name: 'api_teams_list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
         /** @var TeamRepository $teamsRepository */
         $teamsRepository = $this->entityManager->getRepository(Team::class);
-        /** @var Team[] $teams */
-        $teams = $teamsRepository->fetchOptimizedList($user);
 
         $isAdmin = $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPERADMIN');
         $coachTeamIds = array_keys($this->coachTeamPlayerService->collectCoachTeams($user));
+        $isCoach = count($coachTeamIds) > 0;
+
+        // Only coaches, admins and superadmins may bypass the user-assignment filter.
+        // Regular users (e.g. parents) must never see all teams just by passing a context.
+        $context = $request->query->get('context', '');
+        $allTeams = in_array($context, ['match', 'tournament'], true) && ($isAdmin || $isCoach);
+
+        /** @var Team[] $teams */
+        $teams = $teamsRepository->fetchOptimizedList($user, $allTeams);
 
         return $this->json([
             'teams' => array_map(fn ($team) => [

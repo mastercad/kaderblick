@@ -100,7 +100,7 @@ class CoachTeamPlayerService
                 foreach ($player->getPlayerTeamAssignments() as $pta) {
                     if ($this->isCurrentAssignment($pta->getStartDate(), $pta->getEndDate())) {
                         $start = $pta->getStartDate();
-                        if ($start && ($oldestStart === null || $start < $oldestStart)) {
+                        if ($start && (null === $oldestStart || $start < $oldestStart)) {
                             $oldestStart = $start;
                             $defaultTeamId = $pta->getTeam()->getId();
                         }
@@ -112,7 +112,7 @@ class CoachTeamPlayerService
                 foreach ($coach->getCoachTeamAssignments() as $cta) {
                     if ($this->isCurrentAssignment($cta->getStartDate(), $cta->getEndDate())) {
                         $start = $cta->getStartDate();
-                        if ($start && ($oldestStart === null || $start < $oldestStart)) {
+                        if ($start && (null === $oldestStart || $start < $oldestStart)) {
                             $oldestStart = $start;
                             $defaultTeamId = $cta->getTeam()->getId();
                         }

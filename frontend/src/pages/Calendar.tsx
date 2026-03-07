@@ -108,6 +108,10 @@ type CalendarEvent = {
     };
   };
   permissionType?: string;
+  trainingTeamId?: number;
+  trainingWeekdays?: number[];
+  trainingSeriesEndDate?: string;
+  trainingSeriesId?: string;
   pendingTournamentMatches?: any[];
   teamIds?: any[];
   permissions?: {
@@ -227,6 +231,7 @@ type EventFormData = {
   trainingWeekdays?: number[];
   trainingEndDate?: string;
   trainingDuration?: number;
+  trainingSeriesId?: string;
 };
 
 const messages = {
@@ -301,7 +306,8 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   
   // Zusätzliche Daten
   const [eventTypes, setEventTypes] = useState<{ createAndEditAllowed: boolean; entries: CalendarEventType[] }>({ createAndEditAllowed: false, entries: [] });
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);  // own teams (filtered by user)
+  const [allTeams, setAllTeams] = useState<Team[]>([]);  // all teams (for match/tournament context)
   const [gameTypes, setGameTypes] = useState<{ createAndEditAllowed: boolean; entries: GameType[] }>({ createAndEditAllowed: false, entries: [] });
   const [locations, setLocations] = useState<Location[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
@@ -386,6 +392,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
 
   const [taskDeletionModal, setTaskDeletionModal] = useState<{
     open: boolean;
+    mode?: 'task' | 'training';
   }>({
     open: false
   });
@@ -417,10 +424,11 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     Promise.all([
       apiJson<{ createAndEditAllowed: boolean; entries: CalendarEventType[] }>('/api/calendar-event-types').catch(() => ({ createAndEditAllowed: false, entries: [] })),
       apiJson<TeamsApiResponse[]>('/api/teams/list').catch(() => []),
+      apiJson<TeamsApiResponse[]>('/api/teams/list?context=match').catch(() => []),
       apiJson<{ createAndEditAllowed: boolean; entries: GameType[] }>('/api/game-types').catch(() => ({ createAndEditAllowed: false, entries: [] })),
       apiJson<LocationsApiResponse>('/api/locations').catch(() => ({ locations: [], permissions: { canCreate: false, canEdit: false, canView: false, canDelete: false } })),
       apiJson<{ users: { id: string; firstName: string; lastName: string }[] }>('/api/users').catch(() => ({ users: [] }))
-    ]).then(([eventTypesData, teamsData, gameTypesData, locationsData, usersData]) => {
+    ]).then(([eventTypesData, teamsData, allTeamsData, gameTypesData, locationsData, usersData]) => {
       // Defensive: handle possible error objects
       if ('error' in eventTypesData) {
         setEventTypes({ createAndEditAllowed: false, entries: [] });
@@ -432,18 +440,17 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
           entries: (eventTypesData.entries || []).filter(et => et.name !== 'Turnier-Match')
         });
       }
-      if (Array.isArray(teamsData)) {
-        // Defensive: teamsData might be an array of teams or an array with a single object containing teams
-        if (teamsData.length > 0 && 'teams' in teamsData[0]) {
-          setTeams((teamsData[0] as any).teams || []);
-        } else {
-          setTeams([]);
+      const parseTeams = (data: any): Team[] => {
+        if (Array.isArray(data)) {
+          if (data.length > 0 && 'teams' in data[0]) return (data[0] as any).teams || [];
+          return [];
+        } else if (data && typeof data === 'object' && 'teams' in data) {
+          return (data as any).teams || [];
         }
-      } else if (teamsData && typeof teamsData === 'object' && 'teams' in teamsData) {
-        setTeams((teamsData as any).teams || []);
-      } else {
-        setTeams([]);
-      }
+        return [];
+      };
+      setTeams(parseTeams(teamsData));
+      setAllTeams(parseTeams(allTeamsData));
       if ('error' in gameTypesData) {
         setGameTypes({ createAndEditAllowed: false, entries: [] });
       } else {
@@ -520,6 +527,11 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
             task: ev.task || undefined,
             weatherData: ev.weatherData || undefined,
             permissions: ev.permissions || {},
+            permissionType: ev.permissionType || undefined,
+            trainingTeamId: ev.trainingTeamId || undefined,
+            trainingWeekdays: ev.trainingWeekdays || undefined,
+            trainingSeriesEndDate: ev.trainingSeriesEndDate || undefined,
+            trainingSeriesId: ev.trainingSeriesId || undefined,
             cancelled: ev.cancelled || false,
             cancelReason: ev.cancelReason || undefined,
             cancelledBy: ev.cancelledBy || undefined,
@@ -627,7 +639,12 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       awayTeam: event.game?.awayTeam?.id?.toString() || '',
       gameType: resolvedGameType,
       leagueId: event.game && (event.game as any).league?.id ? (event.game as any).league.id.toString() : '',
-      permissionType: event.permissionType ?? 'public',
+      permissionType: (event as any).permissionType ?? 'public',
+      trainingTeamId: event.trainingTeamId?.toString() || '',
+      trainingRecurring: !!(event.trainingWeekdays && event.trainingWeekdays.length > 0),
+      trainingWeekdays: event.trainingWeekdays || [],
+      trainingEndDate: event.trainingSeriesEndDate || '',
+      trainingSeriesId: event.trainingSeriesId || undefined,
       trainingDuration,
       tournamentId: event.tournament?.id?.toString() || (event as any).tournamentId?.toString() || '',
       tournamentType: event.tournament?.settings?.tournamentType || undefined,
@@ -888,9 +905,12 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     if (!editingEventId) return;
 
     const isTaskEvent = eventFormData.task && Object.keys(eventFormData.task).length > 0;
+    const isTrainingSeries = (eventFormData.trainingWeekdays?.length ?? 0) > 0 || !!eventFormData.trainingSeriesId;
 
     if (isTaskEvent) {
       setTaskDeletionModal({ open: true });
+    } else if (isTrainingSeries) {
+      setTaskDeletionModal({ open: true, mode: 'training' });
     } else {
       showConfirm(
         'Möchten Sie dieses Event wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
@@ -964,6 +984,11 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         task: ev.task || undefined,
         weatherData: ev.weatherData || undefined,
         permissions: ev.permissions || {},
+        permissionType: ev.permissionType || undefined,
+        trainingTeamId: ev.trainingTeamId || undefined,
+        trainingWeekdays: ev.trainingWeekdays || undefined,
+        trainingSeriesEndDate: ev.trainingSeriesEndDate || undefined,
+        trainingSeriesId: ev.trainingSeriesId || undefined,
         cancelled: ev.cancelled || false,
         cancelReason: ev.cancelReason || undefined,
         cancelledBy: ev.cancelledBy || undefined,
@@ -1168,6 +1193,11 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   const tournamentTeams = useMemo(
     () => teams.map(team => ({ value: team.id.toString(), label: team.name })),
     [teams]
+  );
+
+  const allTeamsOptions = useMemo(
+    () => allTeams.map(team => ({ value: team.id.toString(), label: team.name })),
+    [allTeams]
   );
   
   const gameTypesOptions = useMemo(
@@ -1400,6 +1430,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         event={eventFormData as any}
         eventTypes={eventTypesOptions}
         teams={tournamentTeams}
+        allTeams={allTeamsOptions}
         gameTypes={gameTypesOptions}
         locations={locationsOptions}
         users={users}
@@ -1432,10 +1463,18 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         loading={eventSaving}
       />
 
-      {/* Task Deletion Modal with 3 buttons */}
+      {/* Task / Training Deletion Modal */}
       <TaskDeletionModal
         open={taskDeletionModal.open}
         onClose={() => setTaskDeletionModal({ open: false })}
+        title={taskDeletionModal.mode === 'training' ? 'Training löschen' : 'Task löschen'}
+        message={
+          taskDeletionModal.mode === 'training'
+            ? 'Möchten Sie nur diesen einzelnen Trainingstermin oder die gesamte Trainings-Serie löschen?'
+            : 'Möchten Sie nur dieses Event oder die gesamte Task-Serie löschen?'
+        }
+        singleLabel={taskDeletionModal.mode === 'training' ? 'Nur diesen Termin' : 'Nur dieses Event'}
+        seriesLabel="Gesamte Serie"
         onDeleteSingle={() => {
           setTaskDeletionModal({ open: false });
           performDeleteEvent('single');

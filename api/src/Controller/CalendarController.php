@@ -154,6 +154,25 @@ class CalendarController extends AbstractController
                     'canDelete' => $this->isGranted(CalendarEventVoter::DELETE, $calendarEvent),
                     'canCancel' => $this->isGranted(CalendarEventVoter::CANCEL, $calendarEvent),
                 ],
+                'trainingTeamId' => (static function () use ($calendarEvent): ?int {
+                    foreach ($calendarEvent->getPermissions() as $perm) {
+                        if (CalendarEventPermissionType::TEAM === $perm->getPermissionType() && $perm->getTeam()) {
+                            return $perm->getTeam()->getId();
+                        }
+                    }
+
+                    return null;
+                })(),
+                'permissionType' => (static function () use ($calendarEvent): string {
+                    foreach ($calendarEvent->getPermissions() as $perm) {
+                        return $perm->getPermissionType()->value;
+                    }
+
+                    return 'public';
+                })(),
+                'trainingWeekdays' => $calendarEvent->getTrainingWeekdays(),
+                'trainingSeriesEndDate' => $calendarEvent->getTrainingSeriesEndDate(),
+                'trainingSeriesId' => $calendarEvent->getTrainingSeriesId(),
                 'cancelled' => $calendarEvent->isCancelled(),
                 'cancelReason' => $calendarEvent->getCancelReason(),
                 'cancelledBy' => $calendarEvent->getCancelledBy()?->getFullName(),
@@ -208,7 +227,16 @@ class CalendarController extends AbstractController
             return $this->json(['error' => 'Forbidden', 'success' => false], 403);
         }
 
-        $errors = $this->calendarEventService->updateEventFromData($calendarEvent, json_decode($data, true));
+        /** @var User $currentUser */
+        $currentUser = $this->getUser();
+        $jsonData = json_decode($data, true);
+
+        $ownershipError = $this->calendarEventService->validateMatchTeamOwnership($jsonData, $currentUser);
+        if (null !== $ownershipError) {
+            return $this->json(['error' => $ownershipError, 'success' => false], 403);
+        }
+
+        $errors = $this->calendarEventService->updateEventFromData($calendarEvent, $jsonData);
 
         $messages = [];
         if (0 < count($errors)) {
@@ -259,6 +287,10 @@ class CalendarController extends AbstractController
 
         $cursor = new DateTimeImmutable($startDate);
         $end = new DateTimeImmutable($endDate);
+        $bytes = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0F) | 0x40); // version 4
+        $bytes[8] = chr((ord($bytes[8]) & 0x3F) | 0x80); // variant
+        $seriesId = vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
         $createdCount = 0;
 
         while ($cursor <= $end) {
@@ -269,6 +301,9 @@ class CalendarController extends AbstractController
                 $event->setDescription($description ?: null);
                 $event->setCalendarEventType($eventType);
                 $event->setCreatedBy($currentUser);
+                $event->setTrainingWeekdays($weekdays);
+                $event->setTrainingSeriesEndDate($end->format('Y-m-d'));
+                $event->setTrainingSeriesId($seriesId);
 
                 if ($location) {
                     $event->setLocation($location);
@@ -336,6 +371,13 @@ class CalendarController extends AbstractController
 
         $data = json_decode($request->getContent(), true);
 
+        /** @var User $currentUser */
+        $currentUser = $this->getUser();
+        $ownershipError = $this->calendarEventService->validateMatchTeamOwnership($data, $currentUser);
+        if (null !== $ownershipError) {
+            return $this->json(['error' => $ownershipError, 'success' => false], 403);
+        }
+
         $this->calendarEventService->updateEventFromData($calendarEvent, $data);
         $entityManager->flush();
 
@@ -372,6 +414,13 @@ class CalendarController extends AbstractController
 
             $entityManager->remove($task);
             $entityManager->flush();
+        } elseif ('series' === $deletionMode && $calendarEvent->getTrainingSeriesId()) {
+            $seriesEvents = $entityManager->getRepository(CalendarEvent::class)->findBy([
+                'trainingSeriesId' => $calendarEvent->getTrainingSeriesId(),
+            ]);
+            foreach ($seriesEvents as $seriesEvent) {
+                $this->calendarEventService->deleteCalendarEventWithDependencies($seriesEvent);
+            }
         } else {
             $this->calendarEventService->deleteCalendarEventWithDependencies($calendarEvent);
         }
@@ -531,14 +580,20 @@ class CalendarController extends AbstractController
                     break;
 
                 case CalendarEventPermissionType::PUBLIC:
-                    // Public events: notify all verified users
-                    $allUsers = $this->entityManager->getRepository(User::class)
-                        ->createQueryBuilder('u')
-                        ->where('u.isVerified = true')
+                    // Public events: notify users who registered participation
+                    // (attending/maybe/late) — not those who declined.
+                    $participations = $this->participationRepository->createQueryBuilder('p')
+                        ->innerJoin('p.status', 's')
+                        ->where('p.event = :event')
+                        ->andWhere('s.code != :declined')
+                        ->setParameter('event', $calendarEvent)
+                        ->setParameter('declined', 'not_attending')
                         ->getQuery()
                         ->getResult();
-                    foreach ($allUsers as $u) {
-                        $usersById[$u->getId()] = $u;
+                    foreach ($participations as $p) {
+                        if ($p->getUser()) {
+                            $usersById[$p->getUser()->getId()] = $p->getUser();
+                        }
                     }
                     break;
             }
@@ -554,6 +609,20 @@ class CalendarController extends AbstractController
                 if ($passenger->getUser()) {
                     $usersById[$passenger->getUser()->getId()] = $passenger->getUser();
                 }
+            }
+        }
+
+        // 4) Always include admins (ROLE_ADMIN / ROLE_SUPER_ADMIN)
+        $admins = $this->entityManager->getRepository(User::class)
+            ->createQueryBuilder('u')
+            ->where('u.isVerified = true')
+            ->andWhere('u.isEnabled = true')
+            ->getQuery()
+            ->getResult();
+        foreach ($admins as $admin) {
+            $roles = $admin->getRoles();
+            if (in_array('ROLE_ADMIN', $roles) || in_array('ROLE_SUPER_ADMIN', $roles) || in_array('ROLE_SUPERADMIN', $roles)) {
+                $usersById[$admin->getId()] = $admin;
             }
         }
 

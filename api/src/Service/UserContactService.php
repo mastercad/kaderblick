@@ -4,8 +4,8 @@ namespace App\Service;
 
 use App\Entity\User;
 use App\Entity\UserRelation;
-use DateTimeInterface;
 use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -54,9 +54,9 @@ class UserContactService
             ->getResult();
 
         return array_map(static fn (User $u) => [
-            'id'       => $u->getId(),
+            'id' => $u->getId(),
             'fullName' => $u->getFullName(),
-            'context'  => '',
+            'context' => '',
         ], $users);
     }
 
@@ -67,18 +67,18 @@ class UserContactService
      */
     public function collectMyTeamsAndClubs(User $user, ?DateTimeImmutable $now = null): array
     {
-        $now     ??= new DateTimeImmutable();
-        $teamIds  = [];
-        $clubIds  = [];
+        $now ??= new DateTimeImmutable();
+        $teamIds = [];
+        $clubIds = [];
 
         foreach ($user->getUserRelations() as $relation) {
             if (!$this->isRelationActive($relation, $now)) {
                 continue;
             }
 
-            if ($relation->getPlayer() !== null) {
+            if (null !== $relation->getPlayer()) {
                 foreach ($relation->getPlayer()->getPlayerTeamAssignments() as $pta) {
-                    if ($pta->getTeam() && $this->isActive($pta->getStartDate(), $pta->getEndDate(), $now)) {
+                    if ($this->isActive($pta->getStartDate(), $pta->getEndDate(), $now)) {
                         $teamIds[$pta->getTeam()->getId()] = $pta->getTeam()->getName();
                     }
                 }
@@ -89,9 +89,9 @@ class UserContactService
                 }
             }
 
-            if ($relation->getCoach() !== null) {
+            if (null !== $relation->getCoach()) {
                 foreach ($relation->getCoach()->getCoachTeamAssignments() as $cta) {
-                    if ($cta->getTeam() && $this->isActive($cta->getStartDate(), $cta->getEndDate(), $now)) {
+                    if ($this->isActive($cta->getStartDate(), $cta->getEndDate(), $now)) {
                         $teamIds[$cta->getTeam()->getId()] = $cta->getTeam()->getName();
                     }
                 }
@@ -120,7 +120,7 @@ class UserContactService
         ['teamIds' => $myTeamIds, 'clubIds' => $myClubIds] =
             $this->collectMyTeamsAndClubs($me, $now);
 
-        if ($myTeamIds === [] && $myClubIds === []) {
+        if ([] === $myTeamIds && [] === $myClubIds) {
             return [];
         }
 
@@ -144,7 +144,7 @@ class UserContactService
         foreach ($otherRelations as $relation) {
             $shared = $this->collectSharedContexts($relation, $myTeamIds, $myClubIds, $now);
 
-            if ($shared === []) {
+            if ([] === $shared) {
                 continue;
             }
 
@@ -152,7 +152,7 @@ class UserContactService
 
             if (!isset($contacts[$uid])) {
                 $contacts[$uid] = [
-                    'id'       => $uid,
+                    'id' => $uid,
                     'fullName' => $relation->getUser()->getFullName(),
                     'contexts' => $shared,
                 ];
@@ -165,9 +165,9 @@ class UserContactService
 
         $result = array_map(
             static fn (array $c) => [
-                'id'       => $c['id'],
+                'id' => $c['id'],
                 'fullName' => $c['fullName'],
-                'context'  => implode(' | ', $c['contexts']),
+                'context' => implode(' | ', $c['contexts']),
             ],
             array_values($contacts)
         );
@@ -182,8 +182,9 @@ class UserContactService
     /**
      * Collects context strings for $relation that overlap with $myTeamIds/$myClubIds.
      *
-     * @param  array<int,string> $myTeamIds
-     * @param  array<int,string> $myClubIds
+     * @param array<int,string> $myTeamIds
+     * @param array<int,string> $myClubIds
+     *
      * @return string[]
      */
     public function collectSharedContexts(
@@ -195,17 +196,18 @@ class UserContactService
         $now ??= new DateTimeImmutable();
         $shared = [];
 
-        if ($relation->getPlayer() !== null) {
+        if (null !== $relation->getPlayer()) {
             foreach ($relation->getPlayer()->getPlayerTeamAssignments() as $pta) {
-                if ($pta->getTeam()
-                    && isset($myTeamIds[$pta->getTeam()->getId()])
+                if (
+                    isset($myTeamIds[$pta->getTeam()->getId()])
                     && $this->isActive($pta->getStartDate(), $pta->getEndDate(), $now)
                 ) {
                     $shared[] = 'Spieler · ' . $pta->getTeam()->getName();
                 }
             }
             foreach ($relation->getPlayer()->getPlayerClubAssignments() as $pca) {
-                if ($pca->getClub()
+                if (
+                    $pca->getClub()
                     && isset($myClubIds[$pca->getClub()->getId()])
                     && $this->isActive($pca->getStartDate(), $pca->getEndDate(), $now)
                 ) {
@@ -214,17 +216,18 @@ class UserContactService
             }
         }
 
-        if ($relation->getCoach() !== null) {
+        if (null !== $relation->getCoach()) {
             foreach ($relation->getCoach()->getCoachTeamAssignments() as $cta) {
-                if ($cta->getTeam()
-                    && isset($myTeamIds[$cta->getTeam()->getId()])
+                if (
+                    isset($myTeamIds[$cta->getTeam()->getId()])
                     && $this->isActive($cta->getStartDate(), $cta->getEndDate(), $now)
                 ) {
                     $shared[] = 'Trainer · ' . $cta->getTeam()->getName();
                 }
             }
             foreach ($relation->getCoach()->getCoachClubAssignments() as $cca) {
-                if ($cca->getClub()
+                if (
+                    $cca->getClub()
                     && isset($myClubIds[$cca->getClub()->getId()])
                     && $this->isActive($cca->getStartDate(), $cca->getEndDate(), $now)
                 ) {
@@ -238,7 +241,7 @@ class UserContactService
 
     private function isRelationActive(UserRelation $relation, DateTimeImmutable $now): bool
     {
-        if ($relation->getPlayer() !== null) {
+        if (null !== $relation->getPlayer()) {
             foreach ($relation->getPlayer()->getPlayerTeamAssignments() as $pta) {
                 if ($this->isActive($pta->getStartDate(), $pta->getEndDate(), $now)) {
                     return true;
@@ -251,7 +254,7 @@ class UserContactService
             }
         }
 
-        if ($relation->getCoach() !== null) {
+        if (null !== $relation->getCoach()) {
             foreach ($relation->getCoach()->getCoachTeamAssignments() as $cta) {
                 if ($this->isActive($cta->getStartDate(), $cta->getEndDate(), $now)) {
                     return true;
@@ -272,7 +275,7 @@ class UserContactService
         ?DateTimeInterface $end,
         DateTimeImmutable $now,
     ): bool {
-        return ($start === null || $start <= $now)
-            && ($end === null || $end >= $now);
+        return (null === $start || $start <= $now)
+            && (null === $end || $end >= $now);
     }
 }

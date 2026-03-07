@@ -63,9 +63,9 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
     /**
      * @return array<int, Team>
      */
-    public function fetchOptimizedList(?UserInterface $user = null): array
+    public function fetchOptimizedList(?UserInterface $user = null, bool $allTeams = false): array
     {
-        $qb = $this->buildOptimizedListQueryBuilder($user);
+        $qb = $this->buildOptimizedListQueryBuilder($user, null, $allTeams);
 
         $qb->select('t.id, t.name')
             ->addSelect('ag.id as age_group_id, ag.name as age_group_name')
@@ -114,8 +114,12 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
 
     /**
      * Build the base query builder with joins and permission filters.
+     *
+     * @param bool $allTeams When true, the user-assignment filter is skipped and all teams are
+     *                       returned regardless of the caller's role. Use for contexts like
+     *                       match / tournament creation where opponents must be selectable.
      */
-    private function buildOptimizedListQueryBuilder(?UserInterface $user = null, ?string $search = null): \Doctrine\ORM\QueryBuilder
+    private function buildOptimizedListQueryBuilder(?UserInterface $user = null, ?string $search = null, bool $allTeams = false): \Doctrine\ORM\QueryBuilder
     {
         $qb = $this->createQueryBuilder('t')
             ->leftJoin('t.ageGroup', 'ag')
@@ -131,12 +135,13 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
                ->setParameter('search', '%' . strtolower($search) . '%');
         }
 
-        // ROLE_SUPERADMIN and ROLE_ADMIN see all teams without restriction
-        // Everyone else only sees teams with an active assignment
-        $isPrivileged = $user && (
+        // ROLE_SUPERADMIN and ROLE_ADMIN see all teams without restriction.
+        // When $allTeams is true (e.g. match/tournament context), the user filter is also skipped
+        // so that non-admin coaches can select opponents they are not assigned to.
+        $isPrivileged = $allTeams || ($user && (
             in_array('ROLE_SUPERADMIN', $user->getRoles(), true)
             || in_array('ROLE_ADMIN', $user->getRoles(), true)
-        );
+        ));
         if (!$isPrivileged) {
             $playerIds = [];
             $coachIds = [];

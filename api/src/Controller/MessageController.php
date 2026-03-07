@@ -53,13 +53,13 @@ class MessageController extends AbstractController
 
         return $this->json([
             'messages' => array_map(fn (Message $message) => [
-                'id'                 => $message->getId(),
-                'subject'            => $message->getSubject(),
-                'sender'             => $message->getSender()->getFullName(),
-                'senderId'           => $message->getSender()->getId(),
+                'id' => $message->getId(),
+                'subject' => $message->getSubject(),
+                'sender' => $message->getSender()->getFullName(),
+                'senderId' => $message->getSender()->getId(),
                 'senderIsSuperAdmin' => in_array('ROLE_SUPERADMIN', $message->getSender()->getRoles(), true),
-                'sentAt'             => $message->getSentAt()->format('Y-m-d H:i:s'),
-                'isRead'             => $message->isReadBy($user),
+                'sentAt' => $message->getSentAt()->format('Y-m-d H:i:s'),
+                'isRead' => $message->isReadBy($user),
             ], $messages),
         ]);
     }
@@ -108,14 +108,14 @@ class MessageController extends AbstractController
         }
 
         return $this->json([
-            'id'                 => $message->getId(),
-            'subject'            => $message->getSubject(),
-            'content'            => $message->getContent(),
-            'sender'             => $message->getSender()->getFullName(),
-            'senderId'           => $message->getSender()->getId(),
+            'id' => $message->getId(),
+            'subject' => $message->getSubject(),
+            'content' => $message->getContent(),
+            'sender' => $message->getSender()->getFullName(),
+            'senderId' => $message->getSender()->getId(),
             'senderIsSuperAdmin' => in_array('ROLE_SUPERADMIN', $message->getSender()->getRoles(), true),
-            'recipients'         => array_map(fn (User $u) => [
-                'id'   => $u->getId(),
+            'recipients' => array_map(fn (User $u) => [
+                'id' => $u->getId(),
                 'name' => $u->getFullName(),
             ], $message->getRecipients()->toArray()),
             'sentAt' => $message->getSentAt()->format('Y-m-d H:i:s'),
@@ -135,7 +135,8 @@ class MessageController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         // Unverknüpfte User (ohne Team/Club-Zugehörigkeit, kein Superadmin) dürfen nur an Superadmins schreiben
-        if (!$this->isGranted('ROLE_SUPERADMIN') && empty($this->userContactService->collectMyTeamsAndClubs($user))) {
+        $myContext = $this->userContactService->collectMyTeamsAndClubs($user);
+        if (!$this->isGranted('ROLE_SUPERADMIN') && empty($myContext['teamIds']) && empty($myContext['clubIds'])) {
             $recipientIds = $data['recipientIds'] ?? [];
             if (!empty($recipientIds)) {
                 $recipients = $this->entityManager->getRepository(User::class)->findBy(['id' => $recipientIds]);
@@ -215,11 +216,11 @@ class MessageController extends AbstractController
 
         return $this->json([
             'messages' => array_map(fn (Message $message) => [
-                'id'         => $message->getId(),
-                'subject'    => $message->getSubject(),
-                'sender'     => $message->getSender()->getFullName(),
-                'sentAt'     => $message->getSentAt()->format('Y-m-d H:i:s'),
-                'isRead'     => $message->isReadBy($user),
+                'id' => $message->getId(),
+                'subject' => $message->getSubject(),
+                'sender' => $message->getSender()->getFullName(),
+                'sentAt' => $message->getSentAt()->format('Y-m-d H:i:s'),
+                'isRead' => $message->isReadBy($user),
                 'recipients' => array_map(
                     fn (User $u) => ['id' => $u->getId(), 'name' => $u->getFullName()],
                     $message->getRecipients()->toArray()
@@ -229,7 +230,7 @@ class MessageController extends AbstractController
     }
 
     /**
-     * DELETE /api/messages/{id}
+     * DELETE /api/messages/{id}.
      *
      * Sender:    deletes the message entirely.
      * Recipient: removes themselves from the recipient list (inbox-only delete).

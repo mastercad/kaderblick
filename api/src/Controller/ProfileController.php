@@ -38,7 +38,7 @@ class ProfileController extends AbstractController
         }
 
         $isPlayer = count($this->coachTeamPlayerService->collectPlayerTeams($user)) > 0;
-        $isCoach  = count($this->coachTeamPlayerService->collectCoachTeams($user)) > 0;
+        $isCoach = count($this->coachTeamPlayerService->collectCoachTeams($user)) > 0;
 
         $titleData = $userTitleService->retrieveTitleDataForUser($user);
         $levelData = $user->getUserLevel() ? [

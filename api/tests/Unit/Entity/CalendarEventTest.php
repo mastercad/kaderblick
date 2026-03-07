@@ -106,4 +106,96 @@ class CalendarEventTest extends TestCase
 
         $this->assertCount(0, $event->getPermissions());
     }
+
+    // -------------------------------------------------------------------------
+    // Training series fields (added this session)
+    // -------------------------------------------------------------------------
+
+    public function testTrainingWeekdaysDefaultsToNull(): void
+    {
+        $event = new CalendarEvent();
+
+        $this->assertNull($event->getTrainingWeekdays());
+    }
+
+    public function testSetTrainingWeekdays(): void
+    {
+        $event = new CalendarEvent();
+        $result = $event->setTrainingWeekdays([1, 3, 5]);
+
+        $this->assertSame([1, 3, 5], $event->getTrainingWeekdays());
+        $this->assertSame($event, $result);
+    }
+
+    public function testSetTrainingWeekdaysToNull(): void
+    {
+        $event = new CalendarEvent();
+        $event->setTrainingWeekdays([1, 2]);
+        $event->setTrainingWeekdays(null);
+
+        $this->assertNull($event->getTrainingWeekdays());
+    }
+
+    public function testTrainingSeriesEndDateDefaultsToNull(): void
+    {
+        $event = new CalendarEvent();
+
+        $this->assertNull($event->getTrainingSeriesEndDate());
+    }
+
+    public function testSetTrainingSeriesEndDate(): void
+    {
+        $event = new CalendarEvent();
+        $result = $event->setTrainingSeriesEndDate('2026-06-30');
+
+        $this->assertSame('2026-06-30', $event->getTrainingSeriesEndDate());
+        $this->assertSame($event, $result);
+    }
+
+    public function testSetTrainingSeriesEndDateToNull(): void
+    {
+        $event = new CalendarEvent();
+        $event->setTrainingSeriesEndDate('2026-06-30');
+        $event->setTrainingSeriesEndDate(null);
+
+        $this->assertNull($event->getTrainingSeriesEndDate());
+    }
+
+    public function testTrainingSeriesIdDefaultsToNull(): void
+    {
+        $event = new CalendarEvent();
+
+        $this->assertNull($event->getTrainingSeriesId());
+    }
+
+    public function testSetTrainingSeriesId(): void
+    {
+        $event = new CalendarEvent();
+        $uuid = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+        $result = $event->setTrainingSeriesId($uuid);
+
+        $this->assertSame($uuid, $event->getTrainingSeriesId());
+        $this->assertSame($event, $result);
+    }
+
+    public function testSetTrainingSeriesIdToNull(): void
+    {
+        $event = new CalendarEvent();
+        $event->setTrainingSeriesId('some-uuid');
+        $event->setTrainingSeriesId(null);
+
+        $this->assertNull($event->getTrainingSeriesId());
+    }
+
+    public function testTrainingSeriesFieldsSetTogether(): void
+    {
+        $event = new CalendarEvent();
+        $event->setTrainingWeekdays([1, 3, 5]);
+        $event->setTrainingSeriesEndDate('2026-12-31');
+        $event->setTrainingSeriesId('abc-123');
+
+        $this->assertSame([1, 3, 5], $event->getTrainingWeekdays());
+        $this->assertSame('2026-12-31', $event->getTrainingSeriesEndDate());
+        $this->assertSame('abc-123', $event->getTrainingSeriesId());
+    }
 }

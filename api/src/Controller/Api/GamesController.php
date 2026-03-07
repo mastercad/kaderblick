@@ -6,9 +6,9 @@ use App\Entity\Game;
 use App\Entity\GameEvent;
 use App\Entity\GameEventType;
 use App\Entity\Player;
+use App\Entity\Team;
 use App\Entity\Tournament;
 use App\Entity\User;
-use App\Entity\Team;
 use App\Repository\CameraRepository;
 use App\Repository\GameEventRepository;
 use App\Repository\GameRepository;
@@ -297,12 +297,12 @@ class GamesController extends ApiController
             $userDefaultTeamId = $this->coachTeamPlayerService->resolveDefaultTeamId($currentUser);
         }
 
-        $noTeamAssignment = ($userDefaultTeamId === null);
+        $noTeamAssignment = (null === $userDefaultTeamId);
 
         $teamIdParam = $request->query->get('teamId');
-        if ($teamIdParam === 'all') {
+        if ('all' === $teamIdParam) {
             $filterTeamId = null;
-        } elseif ($teamIdParam !== null && $teamIdParam !== '') {
+        } elseif (null !== $teamIdParam && '' !== $teamIdParam) {
             $filterTeamId = (int) $teamIdParam;
         } else {
             // No explicit param: use user's default team, or -1 (no results) if unlinked
@@ -324,7 +324,7 @@ class GamesController extends ApiController
             ->setParameter('now', $now)
             ->orderBy('ce.startDate', 'ASC');
 
-        if ($filterTeamId !== null) {
+        if (null !== $filterTeamId) {
             $upcomingGamesQb
                 ->andWhere('ht.id = :filterTeamId OR at.id = :filterTeamId')
                 ->setParameter('filterTeamId', $filterTeamId);
@@ -346,7 +346,7 @@ class GamesController extends ApiController
             ->setParameter('now', $now)
             ->orderBy('ce.startDate', 'DESC');
 
-        if ($filterTeamId !== null) {
+        if (null !== $filterTeamId) {
             $otherGamesQb
                 ->andWhere('ht.id = :filterTeamId OR at.id = :filterTeamId')
                 ->setParameter('filterTeamId', $filterTeamId);
@@ -483,7 +483,7 @@ class GamesController extends ApiController
         $tournamentsArr = array_values(array_filter(
             array_map($serializeTournament, $tournaments),
             function (array $t) use ($filterTeamId): bool {
-                if ($filterTeamId === null) {
+                if (null === $filterTeamId) {
                     return true;
                 }
 

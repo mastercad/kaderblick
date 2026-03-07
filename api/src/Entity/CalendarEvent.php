@@ -88,6 +88,22 @@ class CalendarEvent
     private ?User $createdBy = null;
 
     /**
+     * Weekdays (0=Sun … 6=Sat) that define the training series this event belongs to.
+     *
+     * @var ?array<int>
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $trainingWeekdays = null;
+
+    /** Series end date (Y-m-d) stored so we can restore it when editing */
+    #[ORM\Column(type: Types::STRING, length: 10, nullable: true)]
+    private ?string $trainingSeriesEndDate = null;
+
+    /** Shared UUID that groups all CalendarEvents belonging to the same training series */
+    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    private ?string $trainingSeriesId = null;
+
+    /**
      * @var Collection<int, CalendarEventPermission>
      */
     #[ORM\OneToMany(targetEntity: CalendarEventPermission::class, mappedBy: 'calendarEvent', cascade: ['persist', 'remove'], orphanRemoval: true)]
@@ -305,6 +321,48 @@ class CalendarEvent
     public function setCancelledBy(?User $cancelledBy): self
     {
         $this->cancelledBy = $cancelledBy;
+
+        return $this;
+    }
+
+    /**
+     * @return ?array<int>
+     */
+    public function getTrainingWeekdays(): ?array
+    {
+        return $this->trainingWeekdays;
+    }
+
+    /**
+     * @param ?array<int> $trainingWeekdays
+     */
+    public function setTrainingWeekdays(?array $trainingWeekdays): self
+    {
+        $this->trainingWeekdays = $trainingWeekdays;
+
+        return $this;
+    }
+
+    public function getTrainingSeriesEndDate(): ?string
+    {
+        return $this->trainingSeriesEndDate;
+    }
+
+    public function setTrainingSeriesEndDate(?string $trainingSeriesEndDate): self
+    {
+        $this->trainingSeriesEndDate = $trainingSeriesEndDate;
+
+        return $this;
+    }
+
+    public function getTrainingSeriesId(): ?string
+    {
+        return $this->trainingSeriesId;
+    }
+
+    public function setTrainingSeriesId(?string $trainingSeriesId): self
+    {
+        $this->trainingSeriesId = $trainingSeriesId;
 
         return $this;
     }

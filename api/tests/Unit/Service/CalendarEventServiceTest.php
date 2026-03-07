@@ -4,10 +4,14 @@ namespace App\Tests\Unit\Service;
 
 use App\Entity\CalendarEvent;
 use App\Entity\CalendarEventType;
+use App\Entity\Coach;
+use App\Entity\CoachTeamAssignment;
 use App\Entity\Game;
 use App\Entity\Task;
 use App\Entity\TaskAssignment;
+use App\Entity\Team;
 use App\Entity\User;
+use App\Entity\UserRelation;
 use App\Event\GameDeletedEvent;
 use App\Service\CalendarEventService;
 use App\Service\TaskEventGeneratorService;
@@ -322,5 +326,179 @@ class CalendarEventServiceTest extends TestCase
 
         $result = $service->loadEventRecipients($calendarEvent);
         $this->assertEquals(['test@example.com'], $result);
+    }
+
+    // ─── validateMatchTeamOwnership ───────────────────────────────────────────
+
+    /** Builds a CalendarEventService whose repository mock returns CalendarEventType stubs. */
+    private function buildServiceWithEventTypes(int $spielId, int $turnierId): CalendarEventService
+    {
+        $spielType = $this->createConfiguredMock(CalendarEventType::class, ['getId' => $spielId]);
+        $turnierType = $this->createConfiguredMock(CalendarEventType::class, ['getId' => $turnierId]);
+
+        $repo = $this->getMockBuilder(\Doctrine\ORM\EntityRepository::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['findOneBy'])
+            ->getMock();
+
+        $repo->method('findOneBy')->willReturnCallback(function (array $criteria) use ($spielType, $turnierType) {
+            return match ($criteria['name'] ?? '') {
+                'Spiel' => $spielType,
+                'Turnier' => $turnierType,
+                default => null,
+            };
+        });
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('getRepository')->willReturn($repo);
+
+        return new CalendarEventService(
+            $em,
+            $this->createMock(ValidatorInterface::class),
+            $this->createMock(EventDispatcherInterface::class),
+            $this->createMock(TaskEventGeneratorService::class),
+            $this->createMock(Security::class),
+        );
+    }
+
+    /**
+     * Creates a User mock with given roles and an optional list of coach team IDs.
+     *
+     * @param array<string> $roles
+     * @param array<int>    $coachTeamIds
+     */
+    private function buildUser(array $roles, array $coachTeamIds = []): User
+    {
+        $relations = [];
+        foreach ($coachTeamIds as $teamId) {
+            $team = $this->createConfiguredMock(Team::class, ['getId' => $teamId]);
+            $assignment = $this->createMock(CoachTeamAssignment::class);
+            $assignment->method('getTeam')->willReturn($team);
+            $coach = $this->createMock(Coach::class);
+            $coach->method('getCoachTeamAssignments')->willReturn(new \Doctrine\Common\Collections\ArrayCollection([$assignment]));
+            $relation = $this->createMock(UserRelation::class);
+            $relation->method('getCoach')->willReturn($coach);
+            $relations[] = $relation;
+        }
+
+        $user = $this->createMock(User::class);
+        $user->method('getRoles')->willReturn($roles);
+        $user->method('getUserRelations')->willReturn(new \Doctrine\Common\Collections\ArrayCollection($relations));
+
+        return $user;
+    }
+
+    public function testValidateMatchTeamOwnershipAdminAlwaysReturnsNull(): void
+    {
+        $service = $this->buildServiceWithEventTypes(5, 6);
+        $admin = $this->buildUser(['ROLE_ADMIN']);
+
+        $result = $service->validateMatchTeamOwnership(['eventTypeId' => 5, 'game' => ['homeTeamId' => 99, 'awayTeamId' => 100]], $admin);
+
+        $this->assertNull($result);
+    }
+
+    public function testValidateMatchTeamOwnershipNonGameEventReturnsNull(): void
+    {
+        $service = $this->buildServiceWithEventTypes(5, 6);
+        $user = $this->buildUser(['ROLE_USER']); // ROLE_USER, no coach
+
+        // eventTypeId=7 = training → no team ownership check
+        $result = $service->validateMatchTeamOwnership(['eventTypeId' => 7], $user);
+
+        $this->assertNull($result);
+    }
+
+    public function testValidateMatchTeamOwnershipNonCoachReturnsError(): void
+    {
+        $service = $this->buildServiceWithEventTypes(5, 6);
+        $user = $this->buildUser(['ROLE_USER']); // no coach assignments
+
+        $result = $service->validateMatchTeamOwnership(
+            ['eventTypeId' => 5, 'game' => ['homeTeamId' => 1, 'awayTeamId' => 2]],
+            $user
+        );
+
+        $this->assertNotNull($result);
+        $this->assertStringContainsString('Trainer', $result);
+    }
+
+    public function testValidateMatchTeamOwnershipCoachOwnTeamAsHomeTeamReturnsNull(): void
+    {
+        $service = $this->buildServiceWithEventTypes(5, 6);
+        $coach = $this->buildUser(['ROLE_USER'], [42]); // coach of team 42
+
+        $result = $service->validateMatchTeamOwnership(
+            ['eventTypeId' => 5, 'game' => ['homeTeamId' => 42, 'awayTeamId' => 99]],
+            $coach
+        );
+
+        $this->assertNull($result);
+    }
+
+    public function testValidateMatchTeamOwnershipCoachOwnTeamAsAwayTeamReturnsNull(): void
+    {
+        $service = $this->buildServiceWithEventTypes(5, 6);
+        $coach = $this->buildUser(['ROLE_USER'], [42]); // coach of team 42
+
+        $result = $service->validateMatchTeamOwnership(
+            ['eventTypeId' => 5, 'game' => ['homeTeamId' => 10, 'awayTeamId' => 42]],
+            $coach
+        );
+
+        $this->assertNull($result);
+    }
+
+    public function testValidateMatchTeamOwnershipCoachTeamNotInGameReturnsError(): void
+    {
+        $service = $this->buildServiceWithEventTypes(5, 6);
+        $coach = $this->buildUser(['ROLE_USER'], [42]); // coach of team 42
+
+        $result = $service->validateMatchTeamOwnership(
+            ['eventTypeId' => 5, 'game' => ['homeTeamId' => 1, 'awayTeamId' => 2]],
+            $coach
+        );
+
+        $this->assertNotNull($result);
+        $this->assertStringContainsString('Heim', $result);
+    }
+
+    public function testValidateMatchTeamOwnershipTournamentWithOwnTeamInMatchReturnsNull(): void
+    {
+        $service = $this->buildServiceWithEventTypes(5, 6);
+        $coach = $this->buildUser(['ROLE_USER'], [42]);
+
+        $result = $service->validateMatchTeamOwnership(
+            [
+                'eventTypeId' => 6,
+                'pendingTournamentMatches' => [
+                    ['homeTeamId' => 10, 'awayTeamId' => 99],
+                    ['homeTeamId' => 42, 'awayTeamId' => 11], // own team here
+                ],
+            ],
+            $coach
+        );
+
+        $this->assertNull($result);
+    }
+
+    public function testValidateMatchTeamOwnershipTournamentWithoutOwnTeamReturnsError(): void
+    {
+        $service = $this->buildServiceWithEventTypes(5, 6);
+        $coach = $this->buildUser(['ROLE_USER'], [42]);
+
+        $result = $service->validateMatchTeamOwnership(
+            [
+                'eventTypeId' => 6,
+                'pendingTournamentMatches' => [
+                    ['homeTeamId' => 10, 'awayTeamId' => 99],
+                    ['homeTeamId' => 1,  'awayTeamId' => 11],
+                ],
+            ],
+            $coach
+        );
+
+        $this->assertNotNull($result);
+        $this->assertStringContainsString('Turnier', $result);
     }
 }

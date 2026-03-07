@@ -16,8 +16,8 @@ use App\Service\UserContactService;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\TestCase;
 
@@ -51,14 +51,13 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectMyTeamsAndClubsIgnoresExpiredUserRelation(): void
     {
-        $team     = $this->makeTeam(1, 'A-Jugend');
+        $team = $this->makeTeam(1, 'A-Jugend');
+        // A relation where all assignments are expired → isRelationActive returns false
         $relation = $this->makePlayerRelationWithTeams(
-            [$this->makePTA($team, null, null)],
-            startDate: new DateTime('-2 months'),
-            endDate: new DateTime('-1 day'),
+            [$this->makePTA($team, new DateTime('-2 months'), new DateTime('-1 day'))],
         );
 
-        $user   = $this->makeUser([$relation]);
+        $user = $this->makeUser([$relation]);
         $result = $this->service->collectMyTeamsAndClubs($user);
 
         $this->assertSame([], $result['teamIds']);
@@ -66,14 +65,13 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectMyTeamsAndClubsIgnoresFutureUserRelation(): void
     {
-        $team     = $this->makeTeam(1, 'B-Jugend');
+        $team = $this->makeTeam(1, 'B-Jugend');
+        // A relation where all assignments start in the future → isRelationActive returns false
         $relation = $this->makePlayerRelationWithTeams(
-            [$this->makePTA($team, null, null)],
-            startDate: new DateTime('+1 day'),
-            endDate: null,
+            [$this->makePTA($team, new DateTime('+1 day'), null)],
         );
 
-        $user   = $this->makeUser([$relation]);
+        $user = $this->makeUser([$relation]);
         $result = $this->service->collectMyTeamsAndClubs($user);
 
         $this->assertSame([], $result['teamIds']);
@@ -81,7 +79,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectMyTeamsAndClubsIncludesRelationWithNullDates(): void
     {
-        $team     = $this->makeTeam(5, 'C-Jugend');
+        $team = $this->makeTeam(5, 'C-Jugend');
         $relation = $this->makePlayerRelationWithTeams(
             [$this->makePTA($team, null, null)],
         );
@@ -98,7 +96,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectMyTeamsAndClubsIncludesActivePlayerTeamAssignment(): void
     {
-        $team     = $this->makeTeam(10, '1. Mannschaft');
+        $team = $this->makeTeam(10, '1. Mannschaft');
         $relation = $this->makePlayerRelationWithTeams([
             $this->makePTA($team, new DateTime('-1 month'), new DateTime('+1 month')),
         ]);
@@ -110,7 +108,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectMyTeamsAndClubsExcludesExpiredPlayerTeamAssignment(): void
     {
-        $team     = $this->makeTeam(10, '1. Mannschaft');
+        $team = $this->makeTeam(10, '1. Mannschaft');
         $relation = $this->makePlayerRelationWithTeams([
             $this->makePTA($team, new DateTime('-2 months'), new DateTime('-1 day')),
         ]);
@@ -122,7 +120,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectMyTeamsAndClubsExcludesFuturePlayerTeamAssignment(): void
     {
-        $team     = $this->makeTeam(10, '1. Mannschaft');
+        $team = $this->makeTeam(10, '1. Mannschaft');
         $relation = $this->makePlayerRelationWithTeams([
             $this->makePTA($team, new DateTime('+1 day'), null),
         ]);
@@ -134,7 +132,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectMyTeamsAndClubsDeduplicatesTeams(): void
     {
-        $team     = $this->makeTeam(7, 'Reserve');
+        $team = $this->makeTeam(7, 'Reserve');
         $relation = $this->makePlayerRelationWithTeams([
             $this->makePTA($team, null, null),
             $this->makePTA($team, null, null),
@@ -151,7 +149,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectMyTeamsAndClubsIncludesActivePlayerClubAssignment(): void
     {
-        $club     = $this->makeClub(20, 'TSV München');
+        $club = $this->makeClub(20, 'TSV München');
         $relation = $this->makePlayerRelationWithClubs([
             $this->makePCA($club, new DateTime('-1 month'), new DateTime('+1 year')),
         ]);
@@ -164,7 +162,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectMyTeamsAndClubsExcludesExpiredPlayerClubAssignment(): void
     {
-        $club     = $this->makeClub(20, 'TSV München');
+        $club = $this->makeClub(20, 'TSV München');
         $relation = $this->makePlayerRelationWithClubs([
             $this->makePCA($club, new DateTime('-2 months'), new DateTime('-1 day')),
         ]);
@@ -180,7 +178,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectMyTeamsAndClubsIncludesActiveCoachTeamAssignment(): void
     {
-        $team     = $this->makeTeam(3, 'U17');
+        $team = $this->makeTeam(3, 'U17');
         $relation = $this->makeCoachRelationWithTeams([
             $this->makeCTA($team, new DateTime('-1 month'), null),
         ]);
@@ -192,7 +190,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectMyTeamsAndClubsExcludesExpiredCoachTeamAssignment(): void
     {
-        $team     = $this->makeTeam(3, 'U17');
+        $team = $this->makeTeam(3, 'U17');
         $relation = $this->makeCoachRelationWithTeams([
             $this->makeCTA($team, new DateTime('-3 months'), new DateTime('-1 day')),
         ]);
@@ -208,7 +206,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectMyTeamsAndClubsIncludesActiveCoachClubAssignment(): void
     {
-        $club     = $this->makeClub(99, 'FC Test');
+        $club = $this->makeClub(99, 'FC Test');
         $relation = $this->makeCoachRelationWithClubs([
             $this->makeCCA($club, new DateTime('-1 month'), null),
         ]);
@@ -222,7 +220,7 @@ class UserContactServiceTest extends TestCase
     {
         $team1 = $this->makeTeam(1, 'U15');
         $team2 = $this->makeTeam(2, 'U17');
-        $club  = $this->makeClub(10, 'VfB');
+        $club = $this->makeClub(10, 'VfB');
 
         $rel1 = $this->makePlayerRelationWithTeams([$this->makePTA($team1, null, null)]);
         $rel2 = $this->makeCoachRelationWithTeams([$this->makeCTA($team2, null, null)]);
@@ -240,7 +238,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectSharedContextsReturnsEmptyWhenNoOverlap(): void
     {
-        $team     = $this->makeTeam(1, 'A');
+        $team = $this->makeTeam(1, 'A');
         $relation = $this->makePlayerRelationWithTeams([$this->makePTA($team, null, null)]);
 
         $shared = $this->service->collectSharedContexts($relation, [999 => 'Other'], [], new DateTimeImmutable());
@@ -250,7 +248,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectSharedContextsPlayerTeamOverlap(): void
     {
-        $team     = $this->makeTeam(1, '1. Mannschaft');
+        $team = $this->makeTeam(1, '1. Mannschaft');
         $relation = $this->makePlayerRelationWithTeams([$this->makePTA($team, null, null)]);
 
         $shared = $this->service->collectSharedContexts($relation, [1 => '1. Mannschaft'], [], new DateTimeImmutable());
@@ -260,7 +258,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectSharedContextsPlayerClubOverlap(): void
     {
-        $club     = $this->makeClub(5, 'FC Bayern');
+        $club = $this->makeClub(5, 'FC Bayern');
         $relation = $this->makePlayerRelationWithClubs([$this->makePCA($club, null, null)]);
 
         $shared = $this->service->collectSharedContexts($relation, [], [5 => 'FC Bayern'], new DateTimeImmutable());
@@ -270,7 +268,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectSharedContextsCoachTeamOverlap(): void
     {
-        $team     = $this->makeTeam(2, 'U19');
+        $team = $this->makeTeam(2, 'U19');
         $relation = $this->makeCoachRelationWithTeams([$this->makeCTA($team, null, null)]);
 
         $shared = $this->service->collectSharedContexts($relation, [2 => 'U19'], [], new DateTimeImmutable());
@@ -280,7 +278,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectSharedContextsCoachClubOverlap(): void
     {
-        $club     = $this->makeClub(7, 'Borussia');
+        $club = $this->makeClub(7, 'Borussia');
         $relation = $this->makeCoachRelationWithClubs([$this->makeCCA($club, null, null)]);
 
         $shared = $this->service->collectSharedContexts($relation, [], [7 => 'Borussia'], new DateTimeImmutable());
@@ -290,7 +288,7 @@ class UserContactServiceTest extends TestCase
 
     public function testCollectSharedContextsIgnoresExpiredAssignment(): void
     {
-        $team     = $this->makeTeam(1, 'X');
+        $team = $this->makeTeam(1, 'X');
         $relation = $this->makePlayerRelationWithTeams([
             $this->makePTA($team, new DateTime('-2 months'), new DateTime('-1 day')),
         ]);
@@ -337,7 +335,7 @@ class UserContactServiceTest extends TestCase
     {
         $me = $this->makeUser([]);
 
-        $em      = $this->createMock(EntityManagerInterface::class);
+        $em = $this->createMock(EntityManagerInterface::class);
         $service = new UserContactService($em);
 
         $result = $service->findContacts($me);
@@ -347,12 +345,12 @@ class UserContactServiceTest extends TestCase
 
     public function testFindContactsReturnsContactWithContextFromMockedQuery(): void
     {
-        $now   = new DateTimeImmutable();
-        $team  = $this->makeTeam(1, '1. Mannschaft');
+        $now = new DateTimeImmutable();
+        $team = $this->makeTeam(1, '1. Mannschaft');
 
         // me: has an active player-team assignment
         $myRelation = $this->makePlayerRelationWithTeams([$this->makePTA($team, null, null)]);
-        $me         = $this->makeUser([$myRelation]);
+        $me = $this->makeUser([$myRelation]);
 
         // other user: also in team 1
         $otherUser = $this->createMock(User::class);
@@ -364,7 +362,7 @@ class UserContactServiceTest extends TestCase
             user: $otherUser,
         );
 
-        $query = $this->createMock(AbstractQuery::class);
+        $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([$otherRelation]);
 
         $qb = $this->createMock(QueryBuilder::class);
@@ -381,7 +379,7 @@ class UserContactServiceTest extends TestCase
         $em->method('createQueryBuilder')->willReturn($qb);
 
         $service = new UserContactService($em);
-        $result  = $service->findContacts($me, $now);
+        $result = $service->findContacts($me, $now);
 
         $this->assertCount(1, $result);
         $this->assertSame(99, $result[0]['id']);
@@ -392,12 +390,12 @@ class UserContactServiceTest extends TestCase
 
     public function testFindContactsDeduplicatesUserAppearingInMultipleRelations(): void
     {
-        $now  = new DateTimeImmutable();
+        $now = new DateTimeImmutable();
         $team = $this->makeTeam(1, 'Mix');
         $club = $this->makeClub(2, 'VfB');
 
         $myRelation = $this->makePlayerRelationWithTeams([$this->makePTA($team, null, null)]);
-        $me         = $this->makeUser([$myRelation]);
+        $me = $this->makeUser([$myRelation]);
 
         $otherUser = $this->createMock(User::class);
         $otherUser->method('getId')->willReturn(42);
@@ -407,7 +405,7 @@ class UserContactServiceTest extends TestCase
         $rel1 = $this->makePlayerRelationWithTeams([$this->makePTA($team, null, null)], user: $otherUser);
         $rel2 = $this->makeCoachRelationWithClubs([$this->makeCCA($club, null, null)], user: $otherUser);
 
-        $query = $this->createMock(AbstractQuery::class);
+        $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn([$rel1, $rel2]);
 
         $qb = $this->buildQbMock($query);
@@ -425,7 +423,7 @@ class UserContactServiceTest extends TestCase
 
     public function testFindContactsSortsResultsAlphabetically(): void
     {
-        $now  = new DateTimeImmutable();
+        $now = new DateTimeImmutable();
         $team = $this->makeTeam(1, 'T');
 
         $me = $this->makeUser([$this->makePlayerRelationWithTeams([$this->makePTA($team, null, null)])]);
@@ -437,7 +435,7 @@ class UserContactServiceTest extends TestCase
             $users[] = $this->makePlayerRelationWithTeams([$this->makePTA($team, null, null)], user: $u);
         }
 
-        $query = $this->createMock(AbstractQuery::class);
+        $query = $this->createMock(Query::class);
         $query->method('getResult')->willReturn($users);
 
         $em = $this->createMock(EntityManagerInterface::class);
@@ -453,9 +451,10 @@ class UserContactServiceTest extends TestCase
     // =========================================================================
 
     /** @param UserRelation[] $relations */
-    private function makeUser(array $relations, ?User $mock = null): User
+    private function makeUser(array $relations): User
     {
-        $user = $mock ?? $this->createMock(User::class);
+        /** @var User&\PHPUnit\Framework\MockObject\MockObject $user */
+        $user = $this->createMock(User::class);
         $user->method('getUserRelations')->willReturn(new ArrayCollection($relations));
 
         return $user;
@@ -482,71 +481,59 @@ class UserContactServiceTest extends TestCase
     /** @param PlayerTeamAssignment[] $assignments */
     private function makePlayerRelationWithTeams(
         array $assignments,
-        ?DateTime $startDate = null,
-        ?DateTime $endDate = null,
         ?User $user = null,
     ): UserRelation {
         $player = $this->createMock(Player::class);
         $player->method('getPlayerTeamAssignments')->willReturn(new ArrayCollection($assignments));
         $player->method('getPlayerClubAssignments')->willReturn(new ArrayCollection());
 
-        return $this->makeRelation($player, null, $startDate, $endDate, $user);
+        return $this->makeRelation($player, null, $user);
     }
 
     /** @param PlayerClubAssignment[] $assignments */
     private function makePlayerRelationWithClubs(
         array $assignments,
-        ?DateTime $startDate = null,
-        ?DateTime $endDate = null,
         ?User $user = null,
     ): UserRelation {
         $player = $this->createMock(Player::class);
         $player->method('getPlayerTeamAssignments')->willReturn(new ArrayCollection());
         $player->method('getPlayerClubAssignments')->willReturn(new ArrayCollection($assignments));
 
-        return $this->makeRelation($player, null, $startDate, $endDate, $user);
+        return $this->makeRelation($player, null, $user);
     }
 
     /** @param CoachTeamAssignment[] $assignments */
     private function makeCoachRelationWithTeams(
         array $assignments,
-        ?DateTime $startDate = null,
-        ?DateTime $endDate = null,
         ?User $user = null,
     ): UserRelation {
         $coach = $this->createMock(Coach::class);
         $coach->method('getCoachTeamAssignments')->willReturn(new ArrayCollection($assignments));
         $coach->method('getCoachClubAssignments')->willReturn(new ArrayCollection());
 
-        return $this->makeRelation(null, $coach, $startDate, $endDate, $user);
+        return $this->makeRelation(null, $coach, $user);
     }
 
     /** @param CoachClubAssignment[] $assignments */
     private function makeCoachRelationWithClubs(
         array $assignments,
-        ?DateTime $startDate = null,
-        ?DateTime $endDate = null,
         ?User $user = null,
     ): UserRelation {
         $coach = $this->createMock(Coach::class);
         $coach->method('getCoachTeamAssignments')->willReturn(new ArrayCollection());
         $coach->method('getCoachClubAssignments')->willReturn(new ArrayCollection($assignments));
 
-        return $this->makeRelation(null, $coach, $startDate, $endDate, $user);
+        return $this->makeRelation(null, $coach, $user);
     }
 
     private function makeRelation(
         ?Player $player,
         ?Coach $coach,
-        ?DateTime $startDate,
-        ?DateTime $endDate,
         ?User $user,
     ): UserRelation {
         $relation = $this->createMock(UserRelation::class);
         $relation->method('getPlayer')->willReturn($player);
         $relation->method('getCoach')->willReturn($coach);
-        $relation->method('getStartDate')->willReturn($startDate);
-        $relation->method('getEndDate')->willReturn($endDate);
 
         $u = $user ?? $this->createMock(User::class);
         $relation->method('getUser')->willReturn($u);
@@ -594,7 +581,7 @@ class UserContactServiceTest extends TestCase
         return $a;
     }
 
-    private function buildQbMock(AbstractQuery $query): QueryBuilder
+    private function buildQbMock(Query $query): QueryBuilder
     {
         $qb = $this->createMock(QueryBuilder::class);
         $qb->method('select')->willReturnSelf();
