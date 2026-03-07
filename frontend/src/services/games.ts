@@ -7,13 +7,16 @@ export interface GamesOverviewData {
   finished_games: GameWithScore[];
   tournaments: TournamentOverview[];
   userTeamIds: number[];
+  userDefaultTeamId?: number;
+  noTeamAssignment?: boolean;
+  availableTeams: { id: number; name: string }[];
 }
 
 // Spiele-Übersicht laden
-export async function fetchGamesOverview(): Promise<GamesOverviewData> {
-  // Da das Backend noch Twig verwendet, verwenden wir eine temporäre API-Route
-  // oder simulieren die Daten bis eine echte API verfügbar ist
-  return apiJson<GamesOverviewData>('/api/games/overview');
+export async function fetchGamesOverview(teamId?: number | 'all'): Promise<GamesOverviewData> {
+  const params = teamId !== undefined ? `?teamId=${teamId}` : '';
+
+  return apiJson<GamesOverviewData>(`/api/games/overview${params}`);
 }
 
 // Einzelnes Spiel mit Details laden

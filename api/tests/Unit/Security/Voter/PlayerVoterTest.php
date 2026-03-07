@@ -8,7 +8,6 @@ use App\Entity\Team;
 use App\Entity\User;
 use App\Security\Voter\PlayerVoter;
 use App\Service\CoachTeamPlayerService;
-use ArrayIterator;
 use Doctrine\Common\Collections\ArrayCollection;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -277,7 +276,7 @@ class PlayerVoterTest extends TestCase
     }
 
     /**
-     * @param array<int, Team> $teams  map of teamId => Team for which the player has assignments
+     * @param array<int, Team> $teams map of teamId => Team for which the player has assignments
      */
     private function createPlayer(int $id, array $teams): Player
     {

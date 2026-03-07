@@ -8,9 +8,11 @@ use App\Entity\GameEventType;
 use App\Entity\Player;
 use App\Entity\Tournament;
 use App\Entity\User;
+use App\Entity\Team;
 use App\Repository\CameraRepository;
 use App\Repository\GameEventRepository;
 use App\Repository\GameRepository;
+use App\Repository\TeamRepository;
 use App\Security\Voter\GameEventVoter;
 use App\Security\Voter\GameVoter;
 use App\Security\Voter\VideoVoter;
@@ -21,6 +23,7 @@ use App\Service\VideoTimelineService;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route(path: '/api/games', name: 'api_games_')]
@@ -282,11 +285,31 @@ class GamesController extends ApiController
     }
 
     #[Route('/overview', name: 'overview', methods: ['GET'])]
-    public function overview(GameRepository $gameRepository, GameEventRepository $gameEventRepository): JsonResponse
+    public function overview(Request $request, GameRepository $gameRepository, GameEventRepository $gameEventRepository, TeamRepository $teamRepository): JsonResponse
     {
         $now = new DateTimeImmutable();
 
-        $upcomingGames = $gameRepository->createQueryBuilder('g')
+        // ---- Resolve team filter ----
+        /** @var User|null $currentUser */
+        $currentUser = $this->getUser();
+        $userDefaultTeamId = null;
+        if ($currentUser instanceof User) {
+            $userDefaultTeamId = $this->coachTeamPlayerService->resolveDefaultTeamId($currentUser);
+        }
+
+        $noTeamAssignment = ($userDefaultTeamId === null);
+
+        $teamIdParam = $request->query->get('teamId');
+        if ($teamIdParam === 'all') {
+            $filterTeamId = null;
+        } elseif ($teamIdParam !== null && $teamIdParam !== '') {
+            $filterTeamId = (int) $teamIdParam;
+        } else {
+            // No explicit param: use user's default team, or -1 (no results) if unlinked
+            $filterTeamId = $userDefaultTeamId ?? -1;
+        }
+
+        $upcomingGamesQb = $gameRepository->createQueryBuilder('g')
             ->addSelect('ce', 'cet', 'ht', 'at', 'l', 'wd')
             ->leftJoin('g.calendarEvent', 'ce')
             ->leftJoin('ce.calendarEventType', 'cet')
@@ -299,11 +322,17 @@ class GamesController extends ApiController
             ->andWhere('ce.endDate > :now OR ce.endDate IS NULL')
             ->setParameter('spiel', 'Spiel')
             ->setParameter('now', $now)
-            ->orderBy('ce.startDate', 'ASC')
-            ->getQuery()
-            ->getResult();
+            ->orderBy('ce.startDate', 'ASC');
 
-        $otherGames = $gameRepository->createQueryBuilder('g')
+        if ($filterTeamId !== null) {
+            $upcomingGamesQb
+                ->andWhere('ht.id = :filterTeamId OR at.id = :filterTeamId')
+                ->setParameter('filterTeamId', $filterTeamId);
+        }
+
+        $upcomingGames = $upcomingGamesQb->getQuery()->getResult();
+
+        $otherGamesQb = $gameRepository->createQueryBuilder('g')
             ->addSelect('ce', 'cet', 'ht', 'at', 'l', 'wd')
             ->leftJoin('g.calendarEvent', 'ce')
             ->leftJoin('ce.calendarEventType', 'cet')
@@ -315,9 +344,15 @@ class GamesController extends ApiController
             ->andWhere('ce.startDate <= :now')
             ->setParameter('spiel', 'Spiel')
             ->setParameter('now', $now)
-            ->orderBy('ce.startDate', 'DESC')
-            ->getQuery()
-            ->getResult();
+            ->orderBy('ce.startDate', 'DESC');
+
+        if ($filterTeamId !== null) {
+            $otherGamesQb
+                ->andWhere('ht.id = :filterTeamId OR at.id = :filterTeamId')
+                ->setParameter('filterTeamId', $filterTeamId);
+        }
+
+        $otherGames = $otherGamesQb->getQuery()->getResult();
 
         $running = [];
         $finished = [];
@@ -445,12 +480,19 @@ class GamesController extends ApiController
             ];
         };
 
-        $tournamentsArr = array_map($serializeTournament, $tournaments);
+        $tournamentsArr = array_values(array_filter(
+            array_map($serializeTournament, $tournaments),
+            function (array $t) use ($filterTeamId): bool {
+                if ($filterTeamId === null) {
+                    return true;
+                }
+
+                return in_array($filterTeamId, $t['teamIds'], true);
+            }
+        ));
 
         // ---- Resolve user team IDs (only currently active assignments) ----
         $userTeamIds = [];
-        /** @var User|null $currentUser */
-        $currentUser = $this->getUser();
         if ($currentUser instanceof User) {
             foreach ($this->coachTeamPlayerService->collectPlayerTeams($currentUser) as $team) {
                 $userTeamIds[$team->getId()] = $team->getId();
@@ -460,12 +502,22 @@ class GamesController extends ApiController
             }
         }
 
+        // ---- All teams for dropdown (independent of game filter) ----
+        $allTeams = $teamRepository->createQueryBuilder('t')
+            ->select('t.id', 't.name')
+            ->orderBy('t.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+
         return $this->json([
             'running_games' => $running,
             'upcoming_games' => $upcomingGamesArr,
             'finished_games' => $finished,
             'tournaments' => $tournamentsArr,
             'userTeamIds' => array_values($userTeamIds),
+            'userDefaultTeamId' => $userDefaultTeamId,
+            'noTeamAssignment' => $noTeamAssignment,
+            'availableTeams' => $allTeams,
         ]);
     }
 

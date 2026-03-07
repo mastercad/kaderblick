@@ -62,6 +62,7 @@ class FeedbackController extends AbstractController
 
     /**
      * @param array<string, mixed> $issue
+     *
      * @return array<string, mixed>
      */
     private function serializeGithubIssue(array $issue, bool $isRead, bool $isResolved, ?string $adminNote): array

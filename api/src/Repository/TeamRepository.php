@@ -134,8 +134,8 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
         // ROLE_SUPERADMIN and ROLE_ADMIN see all teams without restriction
         // Everyone else only sees teams with an active assignment
         $isPrivileged = $user && (
-            in_array('ROLE_SUPERADMIN', $user->getRoles(), true) ||
-            in_array('ROLE_ADMIN', $user->getRoles(), true)
+            in_array('ROLE_SUPERADMIN', $user->getRoles(), true)
+            || in_array('ROLE_ADMIN', $user->getRoles(), true)
         );
         if (!$isPrivileged) {
             $playerIds = [];

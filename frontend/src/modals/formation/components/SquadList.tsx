@@ -78,8 +78,15 @@ const SquadList: React.FC<SquadListProps> = ({
               key={player.id}
               disablePadding
               sx={{ opacity: isActive ? 0.4 : 1, py: 0.2 }}
-              secondaryAction={
-                <Box display="flex" gap={0.5}>
+            >
+              <Box display="flex" alignItems="center" width="100%" gap={1}>
+                <ListItemText
+                  primary={player.name}
+                  secondary={player.shirtNumber ? `#${player.shirtNumber}` : undefined}
+                  primaryTypographyProps={{ variant: 'body2' }}
+                  sx={{ flex: 1, minWidth: 0, mr: 0 }}
+                />
+                <Box display="flex" gap={0.5} flexShrink={0}>
                   <Button
                     size="small" variant="outlined"
                     sx={{ minWidth: 44, fontSize: '0.7rem', px: 0.75 }}
@@ -97,13 +104,7 @@ const SquadList: React.FC<SquadListProps> = ({
                     Bank
                   </Button>
                 </Box>
-              }
-            >
-              <ListItemText
-                primary={player.name}
-                secondary={player.shirtNumber ? `#${player.shirtNumber}` : undefined}
-                primaryTypographyProps={{ variant: 'body2' }}
-              />
+              </Box>
             </ListItem>
           );
         })}
@@ -136,8 +137,15 @@ const SquadList: React.FC<SquadListProps> = ({
                 key={player.id}
                 disablePadding
                 sx={{ py: 0.2 }}
-                secondaryAction={
-                  <Box display="flex" gap={0.25}>
+              >
+                <Box display="flex" alignItems="center" width="100%" gap={1}>
+                  <ListItemText
+                    primary={player.name}
+                    secondary={`#${player.number}${player.position ? ` · ${player.position}` : ''}`}
+                    primaryTypographyProps={{ variant: 'body2' }}
+                    sx={{ flex: 1, minWidth: 0, mr: 0 }}
+                  />
+                  <Box display="flex" gap={0.25} flexShrink={0}>
                     <Tooltip title="Auf die Bank setzen">
                       <Button
                         size="small"
@@ -151,13 +159,7 @@ const SquadList: React.FC<SquadListProps> = ({
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Box>
-                }
-              >
-                <ListItemText
-                  primary={player.name}
-                  secondary={`#${player.number}${player.position ? ` · ${player.position}` : ''}`}
-                  primaryTypographyProps={{ variant: 'body2' }}
-                />
+                </Box>
               </ListItem>
             ))}
           </List>

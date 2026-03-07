@@ -8,7 +8,7 @@ import { lightTheme, darkTheme } from './theme/theme';
 import { NotificationProvider } from './context/NotificationContext';
 import { HomeScrollProvider, useHomeScroll } from './context/HomeScrollContext';
 import { useAuth } from './context/AuthContext';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme as useMuiTheme } from '@mui/material/styles';
 import Home from './pages/Home';
@@ -28,6 +28,7 @@ import SurveyFill from './pages/SurveyFill';
 import ProtectedRoute from './pages/ProtectedRoute';
 import AuthModal from './modals/AuthModal';
 import ProfileModal from './modals/ProfileModal';
+import { MessagesModal } from './modals/MessagesModal';
 import Navigation from './components/Navigation';
 import FooterWithContact from './components/FooterWithContact';
 import Formations from './pages/Formations';
@@ -73,11 +74,30 @@ function App() {
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
+  const [messagesInitialId, setMessagesInitialId] = useState<string | undefined>();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isOnHeroSection } = useHomeScroll();
 
   const isHome = location.pathname === '/' || location.pathname === '';
   const showLoginButton = !isHome || (isHome && isOnHeroSection);
+
+  // Deep-link: push notification with ?modal=messages&messageId=X
+  useEffect(() => {
+    const modal     = searchParams.get('modal');
+    const messageId = searchParams.get('messageId');
+    if (modal === 'messages' && user) {
+      setMessagesInitialId(messageId ?? undefined);
+      setShowMessages(true);
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev.toString());
+        next.delete('modal');
+        next.delete('messageId');
+        return next;
+      }, { replace: true });
+    }
+  }, [searchParams, user]);
 
   // Dynamische theme-color für die Statusleiste im mobilen Browser
   // Reguläre Browser unterstützen NUR Farben (kein Bild möglich).
@@ -184,6 +204,11 @@ function App() {
               </Box>
               <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
               <ProfileModal open={showProfile} onClose={() => setShowProfile(false)} />
+              <MessagesModal
+                open={showMessages}
+                onClose={() => { setShowMessages(false); setMessagesInitialId(undefined); }}
+                initialMessageId={messagesInitialId}
+              />
               {!isHome && (user ? (<FooterWithContact />) : (<Footer />))}
             </Box>
             </PullToRefresh>

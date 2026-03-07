@@ -49,15 +49,21 @@ class NotificationService
                 $url = (string) $data['url'];
             }
 
-            $this->pushNotificationService->sendNotification(
-                $user,
-                $title,
-                $message ?? '',
-                $url
-            );
+            // Check user preference for this notification type (default: enabled)
+            $prefs = $user->getNotificationPreferences() ?? [];
+            $enabled = $prefs[$type] ?? true;
 
-            $notification->setIsSent(true);
-            $this->entityManager->flush();
+            if ($enabled) {
+                $this->pushNotificationService->sendNotification(
+                    $user,
+                    $title,
+                    $message ?? '',
+                    $url
+                );
+
+                $notification->setIsSent(true);
+                $this->entityManager->flush();
+            }
         } catch (Exception $e) {
             // Log error but don't fail the notification creation
             $this->logger->critical('Failed to send push notification: ' . $e->getMessage());
@@ -106,14 +112,20 @@ class NotificationService
 
         foreach ($notifications as $notification) {
             try {
-                $this->pushNotificationService->sendNotification(
-                    $notification->getUser(),
-                    $title,
-                    $message ?? '',
-                    $url
-                );
+                // Check user preference for this notification type (default: enabled)
+                $prefs = $notification->getUser()->getNotificationPreferences() ?? [];
+                $enabled = $prefs[$type] ?? true;
 
-                $notification->setIsSent(true);
+                if ($enabled) {
+                    $this->pushNotificationService->sendNotification(
+                        $notification->getUser(),
+                        $title,
+                        $message ?? '',
+                        $url
+                    );
+
+                    $notification->setIsSent(true);
+                }
             } catch (Exception $e) {
                 $this->logger->warning('Failed to send push for user ' . $notification->getUser()->getId() . ': ' . $e->getMessage());
             }
@@ -218,7 +230,7 @@ class NotificationService
             'message',
             'Neue Nachricht von ' . $sender,
             $subject,
-            ['messageId' => $messageId, 'url' => '/messages/' . $messageId]
+            ['messageId' => $messageId, 'url' => '/?modal=messages&messageId=' . $messageId]
         );
     }
 

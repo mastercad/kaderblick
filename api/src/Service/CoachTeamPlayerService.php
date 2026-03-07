@@ -87,6 +87,44 @@ class CoachTeamPlayerService
     }
 
     /**
+     * Ermittelt das Standard-Team des Users anhand der ältesten aktiven Zuordnung
+     * (Spieler- oder Trainer-Zuordnung). Gibt null zurück wenn keine aktive Zuordnung vorhanden.
+     */
+    public function resolveDefaultTeamId(User $user): ?int
+    {
+        $defaultTeamId = null;
+        $oldestStart = null;
+
+        foreach ($user->getUserRelations() as $relation) {
+            if ($player = $relation->getPlayer()) {
+                foreach ($player->getPlayerTeamAssignments() as $pta) {
+                    if ($this->isCurrentAssignment($pta->getStartDate(), $pta->getEndDate())) {
+                        $start = $pta->getStartDate();
+                        if ($start && ($oldestStart === null || $start < $oldestStart)) {
+                            $oldestStart = $start;
+                            $defaultTeamId = $pta->getTeam()->getId();
+                        }
+                    }
+                }
+            }
+
+            if ($coach = $relation->getCoach()) {
+                foreach ($coach->getCoachTeamAssignments() as $cta) {
+                    if ($this->isCurrentAssignment($cta->getStartDate(), $cta->getEndDate())) {
+                        $start = $cta->getStartDate();
+                        if ($start && ($oldestStart === null || $start < $oldestStart)) {
+                            $oldestStart = $start;
+                            $defaultTeamId = $cta->getTeam()->getId();
+                        }
+                    }
+                }
+            }
+        }
+
+        return $defaultTeamId;
+    }
+
+    /**
      * Ermittelt alle verfügbaren Spieler für einen User basierend auf seinen Coach-Beziehungen.
      * Wenn der User nur ein Team hat, werden direkt die Spieler zurückgegeben.
      * Wenn mehrere Teams vorhanden sind, wird ein Array mit Teams als Keys und Spielern als Values zurückgegeben.
@@ -148,15 +186,18 @@ class CoachTeamPlayerService
     {
         $now = new DateTime();
 
-        // Wenn kein Startdatum gesetzt ist, als aktiv betrachten
+        // Enddatum prüfen: wenn gesetzt und in der Vergangenheit → immer inaktiv
+        if ($endDate && $endDate < $now) {
+            return false;
+        }
+
+        // Kein Startdatum gesetzt → aktiv solange Enddatum nicht abgelaufen (bereits geprüft)
         if (!$startDate) {
             return true;
         }
 
-        // Zuordnung ist aktiv wenn:
-        // - Startdatum <= heute
-        // - und (kein Enddatum gesetzt ODER Enddatum >= heute)
-        return $startDate <= $now && (!$endDate || $endDate >= $now);
+        // Startdatum muss <= heute sein
+        return $startDate <= $now;
     }
 
     /**

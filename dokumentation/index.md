@@ -59,6 +59,7 @@ Diese Dokumentation richtet sich an **alle Nutzer** von Kaderblick:
 | [12 - News](12-news.md) | Vereinsnachrichten | News-Artikel, Sichtbarkeit (Plattform/Verein/Team) |
 | [14 - Umfragen](14-umfragen.md) | Abstimmungen | 5 Fragetypen, 3-Schritte-Assistent, Auswertungen |
 | [15 - Benachrichtigungen](15-benachrichtigungen.md) | Push & In-App | Glocke, Push-Status, Benachrichtigungs-Typen |
+| [21 - Mein Feedback](21-mein-feedback.md) | Feedback | Eigene Rückmeldungen, Status, Antworten des Teams, Feedback einreichen |
 
 ### Auswertung & Personalisierung
 

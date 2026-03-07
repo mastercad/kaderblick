@@ -332,8 +332,8 @@ class CoachTeamPlayerServiceTest extends TestCase
 
     private function createCoachTeamAssignment(
         Team $team,
-        ?\DateTime $startDate,
-        ?\DateTime $endDate
+        ?DateTime $startDate,
+        ?DateTime $endDate
     ): CoachTeamAssignment {
         $assignment = $this->createMock(CoachTeamAssignment::class);
         $assignment->method('getTeam')->willReturn($team);
@@ -345,8 +345,8 @@ class CoachTeamPlayerServiceTest extends TestCase
 
     private function createPlayerTeamAssignment(
         Team $team,
-        ?\DateTime $startDate,
-        ?\DateTime $endDate
+        ?DateTime $startDate,
+        ?DateTime $endDate
     ): PlayerTeamAssignment {
         $assignment = $this->createMock(PlayerTeamAssignment::class);
         $assignment->method('getTeam')->willReturn($team);
