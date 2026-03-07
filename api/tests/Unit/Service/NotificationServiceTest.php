@@ -229,13 +229,35 @@ class NotificationServiceTest extends TestCase
     {
         $user = $this->createMock(User::class);
 
+        // URL muss als Deep-Link zur App gesetzt sein, damit Push-Klick das Modal öffnet
         $this->pushService->expects($this->once())
             ->method('sendNotification')
-            ->with($user, 'Neue Nachricht von Max', 'RE: Training', '/messages/99');
+            ->with($user, 'Neue Nachricht von Max', 'RE: Training', '/?modal=messages&messageId=99');
 
         $notification = $this->service->createMessageNotification($user, 'Max', 'RE: Training', 99);
 
         $this->assertSame('message', $notification->getType());
-        $this->assertSame(['messageId' => 99, 'url' => '/messages/99'], $notification->getData());
+        $this->assertSame(
+            ['messageId' => 99, 'url' => '/?modal=messages&messageId=99'],
+            $notification->getData()
+        );
+    }
+
+    public function testCreateMessageNotificationUsesDeepLinkUrlWithCorrectMessageId(): void
+    {
+        $user = $this->createMock(User::class);
+
+        $this->pushService->expects($this->once())
+            ->method('sendNotification')
+            ->with($user, 'Neue Nachricht von Jana', 'Spielplan', '/?modal=messages&messageId=7');
+
+        $notification = $this->service->createMessageNotification($user, 'Jana', 'Spielplan', 7);
+
+        $data = $notification->getData();
+        $this->assertSame(7, $data['messageId']);
+        $this->assertStringContainsString('modal=messages', $data['url']);
+        $this->assertStringContainsString('messageId=7', $data['url']);
+        // Alte direktroute darf nicht mehr verwendet werden
+        $this->assertStringNotContainsString('/messages/7', $data['url']);
     }
 }

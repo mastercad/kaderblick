@@ -110,10 +110,12 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
       { key: 'games', label: 'Spiele', disabled: false },
     ];
 
+    /*
     // Aufgaben für Spieler (und alle Nicht-Trainer/Nicht-Admin als Basis-Nutzer)
     if (isPlayer || (!isCoach && !isAdminEarly)) {
       items.push({ key: 'tasks', label: 'Aufgaben', disabled: false, icon: <AssignmentIcon fontSize="small" /> });
     }
+    */
 
     // Auswertungen (für Trainer/Spieler/Admin)
     items.push({ key: 'reports', label: 'Auswertungen', disabled: false, icon: <BarChartIcon fontSize="small" /> });
@@ -121,13 +123,17 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
     // Neuigkeiten & Umfragen als "Mehr"-Bereich im Menü oder direkt
     items.push({ key: 'news', label: 'Neuigkeiten', disabled: false, icon: <NewspaperIcon fontSize="small" /> });
     items.push({ key: 'surveys', label: 'Umfragen', disabled: false, icon: <PollIcon fontSize="small" /> });
+    items.push({ key: 'mein-feedback', label: 'Mein Feedback', disabled: false, icon: <FeedbackIcon fontSize="small" /> });
+    items.push({ key: 'tasks', label: 'Meine Aufgaben', disabled: false, icon: <AssignmentIcon fontSize="small" /> });
 
     return items;
   }, [isPlayer, isCoach, isAdminEarly]);
 
   const trainerMenuItems = [
     { key: 'team-size-guide', label: 'Team Size Guide', icon: <CheckroomIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
-    { key: 'formations', label: 'Aufstellungen', page: 'formations', icon: <GroupWorkIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+    { key: 'formations', label: 'Aufstellungen', icon: <GroupWorkIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+    { key: 'players', label: 'Spieler', icon: <PersonIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+    { key: 'teams', label: 'Teams', icon: <GroupsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
   ];
 
   const adminMenuSections = [
@@ -206,7 +212,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
   };
 
   // Desktop: Primäre Items direkt sichtbar, sekundäre im "Mehr"-Dropdown
-  const primaryDesktopKeys = ['home', 'dashboard', 'my-team', 'calendar', 'games', 'tasks', 'reports'];
+  const primaryDesktopKeys = ['home', 'dashboard', 'my-team', 'calendar', 'games', 'reports'];
   const primaryNavItems = navigationItems.filter(item => primaryDesktopKeys.includes(item.key));
   const secondaryNavItems = navigationItems.filter(item => !primaryDesktopKeys.includes(item.key));
 
@@ -454,9 +460,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                             <MenuItem disabled>
                               <Typography variant="subtitle2"
                                 sx={{
-                                  color: isHome
-                                    ? '#fff'
-                                    : 'text.primary',
+                                  color: 'text.primary',
                                 }}
                               >
                                 {section.section}
@@ -689,9 +693,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
             <Typography variant="subtitle2">{user?.name}</Typography>
             <Typography variant="caption" 
               sx={{
-                color: isHome
-                  ? '#fff'
-                  : 'text.primary',
+                color: 'text.primary',
                 }}
             >
               {user?.email}
@@ -701,9 +703,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
         <MenuItem onClick={() => { handleClose(); onOpenProfile(); }}>
           <AccountCircleIcon fontSize="small" 
             sx={{
-              color: isHome
-                ? '#fff'
-                : 'text.primary',
+              color: 'text.primary',
               mr: 1
             }} />
           Profil
@@ -714,9 +714,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
         />
         <MenuItem onClick={handleLogout}>
           <LogoutIcon fontSize="small" sx={{
-            color: isHome
-              ? '#fff'
-              : 'text.primary',
+            color: 'text.primary',
             mr: 1 }}
           />
           Logout

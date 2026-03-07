@@ -12,6 +12,8 @@ interface User {
   shoeSize?: number;
   shirtSize?: string;
   pantsSize?: string;
+  socksSize?: string;
+  jacketSize?: string;
   isCoach?: boolean;
   isPlayer?: boolean;
   roles: { [key: string]: string };

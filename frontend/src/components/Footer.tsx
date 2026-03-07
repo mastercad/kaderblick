@@ -67,6 +67,9 @@ const Footer: React.FC = () => {
           }}>
             Kontakt
           </Link>
+          <Link component={RouterLink} to="https://docs.kaderblick.de" color="inherit" underline="hover">
+            Dokumentation
+          </Link>
         </Box>
       </Container>
     </Box>

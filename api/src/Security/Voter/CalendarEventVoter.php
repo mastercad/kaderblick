@@ -54,6 +54,7 @@ final class CalendarEventVoter extends Voter
                     in_array('ROLE_SUPPORTER', $user->getRoles())
                     || in_array('ROLE_ADMIN', $user->getRoles())
                     || in_array('ROLE_SUPERADMIN', $user->getRoles())
+                    || $this->isCoachOfAnyTeam($user)
                 ) {
                     return true;
                 }
@@ -221,6 +222,22 @@ final class CalendarEventVoter extends Voter
                 if ($this->isCoachInClub($user, $permission->getClub())) {
                     return true;
                 }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns true if the user is a coach of at least one team.
+     * Used to grant coaches general CREATE/EDIT/DELETE access to calendar events
+     * (team-ownership of the specific event is validated separately in CalendarEventService).
+     */
+    private function isCoachOfAnyTeam(User $user): bool
+    {
+        foreach ($user->getUserRelations() as $relation) {
+            if ($relation->getCoach() && $relation->getCoach()->getCoachTeamAssignments()->count() > 0) {
+                return true;
             }
         }
 

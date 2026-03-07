@@ -5,9 +5,12 @@ namespace App\Tests\Unit\Security\Voter;
 use App\Entity\CalendarEvent;
 use App\Entity\CalendarEventPermission;
 use App\Entity\Club;
+use App\Entity\Coach;
+use App\Entity\CoachTeamAssignment;
 use App\Entity\Game;
 use App\Entity\Team;
 use App\Entity\User;
+use App\Entity\UserRelation;
 use App\Enum\CalendarEventPermissionType;
 use App\Security\Voter\CalendarEventVoter;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -205,6 +208,7 @@ class CalendarEventVoterTest extends TestCase
 
     public function testCreateAsNormalUserDenied(): void
     {
+        // ROLE_USER without any coach assignment must be denied
         $user = $this->createUser(1);
         $event = $this->createEvent(2);
         $token = $this->createToken($user);
@@ -212,6 +216,27 @@ class CalendarEventVoterTest extends TestCase
         $result = $this->voter->vote($token, $event, [CalendarEventVoter::CREATE]);
 
         $this->assertEquals(VoterInterface::ACCESS_DENIED, $result);
+    }
+
+    public function testCreateAsCoachGranted(): void
+    {
+        // Build chain: user -> UserRelation -> Coach -> non-empty CoachTeamAssignments
+        $teamAssignment = $this->createMock(CoachTeamAssignment::class);
+        $teamAssignments = new ArrayCollection([$teamAssignment]);
+
+        $coach = $this->createMock(Coach::class);
+        $coach->method('getCoachTeamAssignments')->willReturn($teamAssignments);
+
+        $relation = $this->createMock(UserRelation::class);
+        $relation->method('getCoach')->willReturn($coach);
+
+        $user = $this->createUser(1, ['ROLE_USER'], new ArrayCollection([$relation]));
+        $event = $this->createEvent(2);
+        $token = $this->createToken($user);
+
+        $result = $this->voter->vote($token, $event, [CalendarEventVoter::CREATE]);
+
+        $this->assertEquals(VoterInterface::ACCESS_GRANTED, $result);
     }
 
     public function testDeleteAsSuperadminGranted(): void
@@ -255,15 +280,17 @@ class CalendarEventVoterTest extends TestCase
     // ─── Helper methods ───
 
     /**
-     * @param array<string> $roles
+     * @param array<string>               $roles
+     * @param Collection<int, mixed>|null $userRelations
      *
      * @return User&\PHPUnit\Framework\MockObject\MockObject
      */
-    private function createUser(int $id, array $roles = ['ROLE_USER']): User
+    private function createUser(int $id, array $roles = ['ROLE_USER'], ?Collection $userRelations = null): User
     {
         $user = $this->createMock(User::class);
         $user->method('getId')->willReturn($id);
         $user->method('getRoles')->willReturn($roles);
+        $user->method('getUserRelations')->willReturn($userRelations ?? new ArrayCollection());
 
         return $user;
     }

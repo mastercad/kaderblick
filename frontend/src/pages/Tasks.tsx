@@ -17,6 +17,7 @@ import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import { apiJson } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import TaskEditModal from '../modals/TaskEditModal';
+import { TaskDeletionModal } from '../modals/TaskDeletionModal';
 
 interface TaskUser {
   id: number;
@@ -281,6 +282,8 @@ const Tasks: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [tab, setTab] = useState(0);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+  const [deletionModal, setDeletionModal] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null });
+  const [deletionLoading, setDeletionLoading] = useState(false);
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -327,14 +330,45 @@ const Tasks: React.FC = () => {
 
   const handleEdit = (task: Task) => { setEditTask(task); setShowModal(true); };
 
-  const handleDelete = async (task: Task) => {
-    if (!window.confirm(`Aufgabe "${task.title}" wirklich löschen?`)) return;
+  const handleDelete = (task: Task) => {
+    if (task.isRecurring) {
+      setDeletionModal({ open: true, task });
+    } else {
+      if (!window.confirm(`Aufgabe "${task.title}" wirklich löschen?`)) return;
+      performDeleteTask(task);
+    }
+  };
+
+  const performDeleteTask = async (task: Task) => {
+    setDeletionLoading(true);
     try {
       await apiJson(`/api/tasks/${task.id}`, { method: 'DELETE' });
       setSnackbar({ open: true, message: 'Aufgabe gelöscht', severity: 'success' });
       fetchTasks();
     } catch {
       setSnackbar({ open: true, message: 'Fehler beim Löschen', severity: 'error' });
+    } finally {
+      setDeletionLoading(false);
+    }
+  };
+
+  const performDeleteSingleAssignment = async (task: Task) => {
+    const nextOpen = task.assignments
+      .filter(a => a.status === 'offen')
+      .sort((a, b) => a.assignedDate.localeCompare(b.assignedDate))[0];
+    if (!nextOpen) {
+      // Kein offener Termin vorhanden – gesamten Task löschen
+      return performDeleteTask(task);
+    }
+    setDeletionLoading(true);
+    try {
+      await apiJson(`/api/tasks/assignments/${nextOpen.id}?deleteMode=single`, { method: 'DELETE' });
+      setSnackbar({ open: true, message: 'Termin gelöscht', severity: 'success' });
+      fetchTasks();
+    } catch {
+      setSnackbar({ open: true, message: 'Fehler beim Löschen des Termins', severity: 'error' });
+    } finally {
+      setDeletionLoading(false);
     }
   };
 
@@ -432,6 +466,27 @@ const Tasks: React.FC = () => {
       {showModal && (
         <TaskEditModal open={showModal} onClose={handleModalClose} task={editTask} />
       )}
+
+      {/* Deletion modal for recurring tasks */}
+      <TaskDeletionModal
+        open={deletionModal.open}
+        onClose={() => setDeletionModal({ open: false, task: null })}
+        title="Aufgabe löschen"
+        message={`Möchten Sie nur den nächsten offenen Termin oder die gesamte Aufgaben-Serie "${deletionModal.task?.title}" löschen?`}
+        singleLabel="Nur diesen Termin"
+        seriesLabel="Gesamte Serie"
+        loading={deletionLoading}
+        onDeleteSingle={() => {
+          const task = deletionModal.task;
+          setDeletionModal({ open: false, task: null });
+          if (task) performDeleteSingleAssignment(task);
+        }}
+        onDeleteSeries={() => {
+          const task = deletionModal.task;
+          setDeletionModal({ open: false, task: null });
+          if (task) performDeleteTask(task);
+        }}
+      />
 
       {/* Snackbar */}
       <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar(s => ({ ...s, open: false }))}>

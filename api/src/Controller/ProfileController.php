@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Entity\UserRelation;
+use App\Service\CoachTeamPlayerService;
 use App\Service\EmailVerificationService;
 use App\Service\UserTitleService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,6 +23,7 @@ class ProfileController extends AbstractController
         private UserPasswordHasherInterface $passwordHasher,
         private ValidatorInterface $validator,
         private EmailVerificationService $emailVerificationService,
+        private CoachTeamPlayerService $coachTeamPlayerService,
     ) {
     }
 
@@ -36,19 +37,8 @@ class ProfileController extends AbstractController
             return $this->json(['message' => 'Not logged in'], 401);
         }
 
-        $isCoach = false;
-        $isPlayer = false;
-        /** @var UserRelation $userRelation */
-        foreach ($user->getUserRelations() as $userRelation) {
-            if ('coach' === $userRelation->getRelationType()->getCategory()) {
-                $isCoach = true;
-            } elseif ('player' === $userRelation->getRelationType()->getCategory()) {
-                $isPlayer = true;
-            }
-            if ($isCoach && $isPlayer) {
-                break;
-            }
-        }
+        $isPlayer = count($this->coachTeamPlayerService->collectPlayerTeams($user)) > 0;
+        $isCoach = count($this->coachTeamPlayerService->collectCoachTeams($user)) > 0;
 
         $titleData = $userTitleService->retrieveTitleDataForUser($user);
         $levelData = $user->getUserLevel() ? [
@@ -66,6 +56,8 @@ class ProfileController extends AbstractController
             'shoeSize' => $user->getShoeSize(),
             'shirtSize' => $user->getShirtSize(),
             'pantsSize' => $user->getPantsSize(),
+            'socksSize' => $user->getSocksSize(),
+            'jacketSize' => $user->getJacketSize(),
             'roles' => $user->getRoles(),
             'isCoach' => $isCoach,
             'isPlayer' => $isPlayer,
@@ -122,6 +114,12 @@ class ProfileController extends AbstractController
         }
         if (isset($data['pantsSize'])) {
             $user->setPantsSize($data['pantsSize']);
+        }
+        if (isset($data['socksSize'])) {
+            $user->setSocksSize($data['socksSize']);
+        }
+        if (isset($data['jacketSize'])) {
+            $user->setJacketSize($data['jacketSize']);
         }
 
         // Handle password change

@@ -8,7 +8,7 @@ import { lightTheme, darkTheme } from './theme/theme';
 import { NotificationProvider } from './context/NotificationContext';
 import { HomeScrollProvider, useHomeScroll } from './context/HomeScrollContext';
 import { useAuth } from './context/AuthContext';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme as useMuiTheme } from '@mui/material/styles';
 import Home from './pages/Home';
@@ -28,10 +28,15 @@ import SurveyFill from './pages/SurveyFill';
 import ProtectedRoute from './pages/ProtectedRoute';
 import AuthModal from './modals/AuthModal';
 import ProfileModal from './modals/ProfileModal';
+import { MessagesModal } from './modals/MessagesModal';
 import Navigation from './components/Navigation';
 import FooterWithContact from './components/FooterWithContact';
 import Formations from './pages/Formations';
 import FeedbackAdmin from './pages/Feedback';
+import FeedbackDetail from './pages/FeedbackDetail';
+import GithubIssueDetail from './pages/GithubIssueDetail';
+import MyFeedback from './pages/MyFeedback';
+import MyFeedbackDetail from './pages/MyFeedbackDetail';
 import AdminTitleXpOverview from './pages/admin/AdminTitleXpOverview';
 import FabStackRoot from './components/FabStackRoot';
 import Locations from './pages/Locations';
@@ -69,11 +74,30 @@ function App() {
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
+  const [messagesInitialId, setMessagesInitialId] = useState<string | undefined>();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isOnHeroSection } = useHomeScroll();
 
   const isHome = location.pathname === '/' || location.pathname === '';
   const showLoginButton = !isHome || (isHome && isOnHeroSection);
+
+  // Deep-link: push notification with ?modal=messages&messageId=X
+  useEffect(() => {
+    const modal     = searchParams.get('modal');
+    const messageId = searchParams.get('messageId');
+    if (modal === 'messages' && user) {
+      setMessagesInitialId(messageId ?? undefined);
+      setShowMessages(true);
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev.toString());
+        next.delete('modal');
+        next.delete('messageId');
+        return next;
+      }, { replace: true });
+    }
+  }, [searchParams, user]);
 
   // Dynamische theme-color für die Statusleiste im mobilen Browser
   // Reguläre Browser unterstützen NUR Farben (kein Bild möglich).
@@ -147,6 +171,10 @@ function App() {
                   <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
                   <Route path="/test" element={<ProtectedRoute><TestPage /></ProtectedRoute>} />
                   <Route path="/admin/feedback" element={<ProtectedRoute><FeedbackAdmin /></ProtectedRoute>} />
+                  <Route path="/admin/feedback/:id" element={<ProtectedRoute><FeedbackDetail /></ProtectedRoute>} />
+                  <Route path="/admin/github-issue/:number" element={<ProtectedRoute><GithubIssueDetail /></ProtectedRoute>} />
+                  <Route path="/mein-feedback" element={<ProtectedRoute><MyFeedback /></ProtectedRoute>} />
+                  <Route path="/mein-feedback/:id" element={<ProtectedRoute><MyFeedbackDetail /></ProtectedRoute>} />
                   <Route path="/admin/user-relations" element={<ProtectedRoute><UserRelations /></ProtectedRoute>} />
                   <Route path="/admin/title-xp-overview" element={<ProtectedRoute><AdminTitleXpOverview /></ProtectedRoute>} />
                   <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
@@ -176,6 +204,11 @@ function App() {
               </Box>
               <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
               <ProfileModal open={showProfile} onClose={() => setShowProfile(false)} />
+              <MessagesModal
+                open={showMessages}
+                onClose={() => { setShowMessages(false); setMessagesInitialId(undefined); }}
+                initialMessageId={messagesInitialId}
+              />
               {!isHome && (user ? (<FooterWithContact />) : (<Footer />))}
             </Box>
             </PullToRefresh>

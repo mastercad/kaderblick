@@ -149,6 +149,100 @@ class CalendarEventService
      *
      * @return ConstraintViolationList<int, mixed>
      */
+    /**
+     * Validates that the authenticated user's own team is part of the game or tournament
+     * they are trying to create or edit.
+     *
+     * Returns null when valid (or when the user is admin/superadmin).
+     * Returns a human-readable German error message when the check fails.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function validateMatchTeamOwnership(array $data, User $user): ?string
+    {
+        // Admins and superadmins may always create events for any team
+        if (
+            in_array('ROLE_SUPERADMIN', $user->getRoles(), true)
+            || in_array('ROLE_ADMIN', $user->getRoles(), true)
+        ) {
+            return null;
+        }
+
+        $calendarEventTypeSpiel = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Spiel']);
+        $calendarEventTypeTournament = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Turnier']);
+
+        $eventTypeId = (int) ($data['eventTypeId'] ?? 0);
+        $isGameEvent = $calendarEventTypeSpiel && $eventTypeId === $calendarEventTypeSpiel->getId();
+        $isTournamentEvent = $calendarEventTypeTournament && $eventTypeId === $calendarEventTypeTournament->getId();
+        $isTournamentPayload = isset($data['pendingTournamentMatches'])
+            && is_array($data['pendingTournamentMatches'])
+            && count($data['pendingTournamentMatches']) > 0;
+
+        // Only game and tournament events require team-ownership validation
+        if (!$isGameEvent && !$isTournamentEvent) {
+            return null;
+        }
+
+        // Collect IDs of all teams the user is currently coaching
+        $coachTeamIds = [];
+        foreach ($user->getUserRelations() as $relation) {
+            if ($relation->getCoach()) {
+                foreach ($relation->getCoach()->getCoachTeamAssignments() as $assignment) {
+                    $coachTeamIds[] = (int) $assignment->getTeam()->getId();
+                }
+            }
+        }
+
+        if (empty($coachTeamIds)) {
+            return 'Du bist keinem Team als Trainer zugeordnet. '
+                . 'Spiele und Turniere können nur von Trainern ihres eigenen Teams angelegt werden.';
+        }
+
+        // ── Regular game (no tournament payload) ──────────────────────────────
+        if ($isGameEvent && !$isTournamentPayload) {
+            $homeTeamId = (int) ($data['game']['homeTeamId'] ?? 0);
+            $awayTeamId = (int) ($data['game']['awayTeamId'] ?? 0);
+
+            // If teams are not yet set, let the normal validation handle it
+            if (!$homeTeamId || !$awayTeamId) {
+                return null;
+            }
+
+            if (
+                !in_array($homeTeamId, $coachTeamIds, true)
+                && !in_array($awayTeamId, $coachTeamIds, true)
+            ) {
+                return 'Dein Team muss als Heim- oder Auswärtsteam eingetragen sein. '
+                    . 'Du kannst nur Spiele anlegen, an denen eines deiner Teams beteiligt ist.';
+            }
+
+            return null;
+        }
+
+        // ── Tournament event ──────────────────────────────────────────────────
+        if (!$isTournamentPayload) {
+            // No matches defined yet — the user is a coach, allow creation
+            return null;
+        }
+
+        foreach ($data['pendingTournamentMatches'] as $match) {
+            $homeTeamId = (int) ($match['homeTeamId'] ?? 0);
+            $awayTeamId = (int) ($match['awayTeamId'] ?? 0);
+            if (
+                in_array($homeTeamId, $coachTeamIds, true)
+                || in_array($awayTeamId, $coachTeamIds, true)
+            ) {
+                return null; // Own team found — permission granted
+            }
+        }
+
+        return 'Dein Team muss in mindestens einem Turnierspiel als Heim- oder Auswärtsteam vertreten sein. '
+            . 'Du kannst nur Turniere anlegen, an denen eines deiner Teams teilnimmt.';
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
     public function updateEventFromData(CalendarEvent $calendarEvent, array $data): ConstraintViolationList
     {
         $calendarEventTypeSpiel = $this->entityManager->getRepository(CalendarEventType::class)->findOneBy(['name' => 'Spiel']);
@@ -306,6 +400,10 @@ class CalendarEventService
         if (!$tournament) {
             $tournament = new Tournament();
             $tournament->setCalendarEvent($calendarEvent);
+            $currentUser = $this->security->getUser();
+            if ($currentUser instanceof User) {
+                $tournament->setCreatedBy($currentUser);
+            }
             $this->entityManager->persist($tournament);
             $calendarEvent->setTournament($tournament);
         }

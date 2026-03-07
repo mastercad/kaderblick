@@ -16,6 +16,7 @@ use App\Repository\PlayerClubAssignmentRepository;
 use App\Repository\PlayerNationalityAssignmentRepository;
 use App\Repository\PlayerTeamAssignmentRepository;
 use App\Security\Voter\PlayerVoter;
+use App\Service\CoachTeamPlayerService;
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -30,8 +31,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('IS_AUTHENTICATED')]
 class PlayersController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $entityManager)
-    {
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+        private CoachTeamPlayerService $coachTeamPlayerService
+    ) {
     }
 
     #[Route('', methods: ['GET'], name: 'index')]
@@ -45,11 +48,22 @@ class PlayersController extends AbstractController
         $repo = $this->entityManager->getRepository(Player::class);
         $qb = $repo->createQueryBuilder('p');
 
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+        $isAdmin = $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPERADMIN');
+        $coachTeamIds = array_keys($this->coachTeamPlayerService->collectCoachTeams($user));
+        $isCoach = count($coachTeamIds) > 0;
+
         // Filter by team
         if ($teamId) {
             $qb->innerJoin('p.playerTeamAssignments', 'pta')
                ->andWhere('pta.team = :teamId')
                ->setParameter('teamId', (int) $teamId);
+        } elseif (!$isAdmin && $isCoach) {
+            // Coach sieht nur Spieler aus seinen aktiv zugeordneten Teams
+            $qb->innerJoin('p.playerTeamAssignments', 'pta')
+               ->andWhere('pta.team IN (:coachTeamIds)')
+               ->setParameter('coachTeamIds', $coachTeamIds);
         }
 
         // Filter by search (firstName / lastName)
@@ -73,9 +87,6 @@ class PlayersController extends AbstractController
            ->setMaxResults($limit);
 
         $players = $qb->getQuery()->getResult();
-
-        // Permissions: VIEW always true for logged-in users, CREATE/EDIT/DELETE require ROLE_ADMIN
-        $isAdmin = $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPERADMIN');
 
         return $this->json([
             'players' => array_map(fn ($player) => [
@@ -136,12 +147,20 @@ class PlayersController extends AbstractController
                 ], $player->getPlayerTeamAssignments()->toArray()),
                 'fussballDeUrl' => $player->getFussballDeUrl(),
                 'fussballDeId' => $player->getFussballDeId(),
-                'permissions' => [
-                    'canView' => true,
-                    'canEdit' => $isAdmin,
-                    'canCreate' => $isAdmin,
-                    'canDelete' => $isAdmin,
-                ]
+                'permissions' => (static function () use ($player, $isAdmin, $isCoach, $coachTeamIds): array {
+                    $playerTeamIds = array_map(
+                        fn ($pta) => $pta->getTeam()->getId(),
+                        $player->getPlayerTeamAssignments()->toArray()
+                    );
+                    $coachCanManage = $isCoach && count(array_intersect($playerTeamIds, $coachTeamIds)) > 0;
+
+                    return [
+                        'canView' => true,
+                        'canEdit' => $isAdmin || $coachCanManage,
+                        'canCreate' => $isAdmin || $isCoach,
+                        'canDelete' => $isAdmin || $coachCanManage,
+                    ];
+                })()
             ], $players),
             'total' => $total,
             'page' => $page,

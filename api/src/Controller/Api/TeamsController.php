@@ -8,6 +8,7 @@ use App\Entity\Team;
 use App\Entity\User;
 use App\Repository\TeamRepository;
 use App\Security\Voter\TeamVoter;
+use App\Service\CoachTeamPlayerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,19 +21,39 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('IS_AUTHENTICATED')]
 class TeamsController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $entityManager)
-    {
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+        private CoachTeamPlayerService $coachTeamPlayerService
+    ) {
     }
 
+    /**
+     * Supported contexts via ?context= query parameter:
+     *   (none)       – default: only teams the authenticated user is assigned to
+     *   match        – all teams; only effective for coaches, admins and superadmins
+     *   tournament   – identical to "match"
+     * Regular users (e.g. parents) are always filtered to their own teams,
+     * regardless of the context parameter.
+     */
     #[Route('/list', name: 'api_teams_list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
         /** @var TeamRepository $teamsRepository */
         $teamsRepository = $this->entityManager->getRepository(Team::class);
+
+        $isAdmin = $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPERADMIN');
+        $coachTeamIds = array_keys($this->coachTeamPlayerService->collectCoachTeams($user));
+        $isCoach = count($coachTeamIds) > 0;
+
+        // Only coaches, admins and superadmins may bypass the user-assignment filter.
+        // Regular users (e.g. parents) must never see all teams just by passing a context.
+        $context = $request->query->get('context', '');
+        $allTeams = in_array($context, ['match', 'tournament'], true) && ($isAdmin || $isCoach);
+
         /** @var Team[] $teams */
-        $teams = $teamsRepository->fetchOptimizedList($user);
+        $teams = $teamsRepository->fetchOptimizedList($user, $allTeams);
 
         return $this->json([
             'teams' => array_map(fn ($team) => [
@@ -47,16 +68,10 @@ class TeamsController extends AbstractController
                     'name' => $team['league_name'],
                 ],
                 'permissions' => [
-                    /*
-                    'canView' => $this->isGranted(TeamVoter::VIEW, $team),
-                    'canEdit' => $this->isGranted(TeamVoter::EDIT, $team),
-                    'canDelete' => $this->isGranted(TeamVoter::DELETE, $team),
-                    'canCreate' => $this->isGranted(TeamVoter::CREATE, $team)
-                    */
                     'canView' => true,
-                    'canEdit' => $this->isGranted('ROLE_ADMIN', $user) || $this->isGranted('ROLE_SUPERADMIN', $user),
-                    'canDelete' => $this->isGranted('ROLE_ADMIN', $user) || $this->isGranted('ROLE_SUPERADMIN', $user),
-                    'canCreate' => $this->isGranted('ROLE_ADMIN', $user) || $this->isGranted('ROLE_SUPERADMIN', $user),
+                    'canEdit' => $isAdmin || in_array($team['id'], $coachTeamIds),
+                    'canDelete' => $isAdmin || in_array($team['id'], $coachTeamIds),
+                    'canCreate' => $isAdmin,
                 ]
             ], $teams)
         ]);
@@ -76,6 +91,7 @@ class TeamsController extends AbstractController
         $result = $teamsRepository->fetchPaginatedList($user, $search, $page, $limit);
 
         $isAdmin = $this->isGranted('ROLE_ADMIN', $user) || $this->isGranted('ROLE_SUPERADMIN', $user);
+        $coachTeamIds = array_keys($this->coachTeamPlayerService->collectCoachTeams($user));
 
         return $this->json([
             'teams' => array_map(fn ($team) => [
@@ -91,8 +107,8 @@ class TeamsController extends AbstractController
                 ],
                 'permissions' => [
                     'canView' => true,
-                    'canEdit' => $isAdmin,
-                    'canDelete' => $isAdmin,
+                    'canEdit' => $isAdmin || in_array($team['id'], $coachTeamIds),
+                    'canDelete' => $isAdmin || in_array($team['id'], $coachTeamIds),
                     'canCreate' => $isAdmin,
                 ]
             ], $result['data']),
@@ -140,7 +156,7 @@ class TeamsController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        if (!$this->isGranted(TeamVoter::CREATE, $team)) {
+        if (!$this->isGranted(TeamVoter::EDIT, $team)) {
             return $this->json(['error' => 'Unauthorized'], Response::HTTP_FORBIDDEN);
         }
 

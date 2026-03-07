@@ -260,6 +260,140 @@ class TeamsControllerTest extends ApiWebTestCase
         $this->assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
     }
 
+    // ────────────────────────────── Context-aware team list ──────────────────────────────
+
+    /**
+     * A non-admin / non-coach user (user6, parent of a player in Team 1) must only
+     * see their own teams without a context parameter.
+     */
+    public function testListWithoutContextReturnsOnlyOwnTeamsForParentUser(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user6@example.com'); // ROLE_USER, linked to Team 1 only
+
+        $client->request('GET', '/api/teams/list');
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('teams', $data);
+
+        // user6 is only related to Team 1 — must not see more
+        $this->assertCount(1, $data['teams']);
+        $this->assertEquals('Team 1', $data['teams'][0]['name']);
+    }
+
+    /**
+     * A parent user (not a coach) must NOT get all teams with context=match.
+     * Only coaches / admins / superadmins may bypass the assignment filter.
+     */
+    public function testListWithContextMatchDoesNotBypassFilterForParentUser(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user6@example.com'); // ROLE_USER, parent only — NOT a coach
+
+        $client->request('GET', '/api/teams/list?context=match');
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('teams', $data);
+
+        // Filter must still be applied → only Team 1
+        $this->assertCount(1, $data['teams']);
+    }
+
+    /**
+     * A coach user (user3, Mentor of coach assigned to Team 2) must see all teams with context=match
+     * so they can select opponent teams when creating a game.
+     */
+    public function testListWithContextMatchReturnsAllTeamsForCoach(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user3@example.com'); // ROLE_GUEST but has a Mentor (coach-category) relation
+
+        $client->request('GET', '/api/teams/list?context=match');
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('teams', $data);
+
+        // All 16 fixture teams must be visible
+        $this->assertCount(16, $data['teams']);
+    }
+
+    /**
+     * context=tournament must behave identically to context=match for a coach.
+     */
+    public function testListWithContextTournamentReturnsAllTeamsForCoach(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user3@example.com'); // coach-category relation (Mentor)
+
+        $client->request('GET', '/api/teams/list?context=tournament');
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('teams', $data);
+
+        $this->assertCount(16, $data['teams']);
+    }
+
+    /**
+     * A coach without a context parameter still only sees their own assigned teams.
+     */
+    public function testListWithoutContextReturnsOnlyOwnTeamsForCoach(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user3@example.com'); // coach-category relation, parent of player in Team 2, friend of player in Team 1
+
+        $client->request('GET', '/api/teams/list');
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('teams', $data);
+
+        // user3 is related to Team 1 (friend/player) and Team 2 (parent/player + Mentor/coach) — 2 unique teams
+        $this->assertCount(2, $data['teams']);
+    }
+
+    /**
+     * An admin user must always see all teams, regardless of the context parameter.
+     */
+    public function testListAdminAlwaysSeesAllTeamsRegardlessOfContext(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com'); // ROLE_ADMIN
+
+        // Without context
+        $client->request('GET', '/api/teams/list');
+        $dataWithout = json_decode($client->getResponse()->getContent(), true);
+
+        // With context=match
+        $client->request('GET', '/api/teams/list?context=match');
+        $dataWithMatch = json_decode($client->getResponse()->getContent(), true);
+
+        $this->assertCount(16, $dataWithout['teams']);
+        $this->assertCount(16, $dataWithMatch['teams']);
+    }
+
+    /**
+     * An unknown context value must fall back to the default user-assignment filter,
+     * even for a coach.
+     */
+    public function testListWithUnknownContextUsesDefaultFilter(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user3@example.com'); // coach-category relation, normally 2 teams
+
+        $client->request('GET', '/api/teams/list?context=unknown_context');
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('teams', $data);
+
+        // Unknown context → same as no context → only own teams (Team 1 + Team 2)
+        $this->assertCount(2, $data['teams']);
+    }
+
     // ────────────────────────────── Combined Filters ──────────────────────────────
 
     public function testIndexCombinesSearchAndPagination(): void

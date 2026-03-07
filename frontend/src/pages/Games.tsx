@@ -12,6 +12,11 @@ import {
   Stack,
   alpha,
   useTheme,
+  Select,
+  MenuItem,
+  ListSubheader,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import {
   SportsSoccer as SoccerIcon,
@@ -21,6 +26,7 @@ import {
   EmojiEvents as TournamentIcon,
   CalendarToday as CalendarIcon,
   AccessTime as TimeIcon,
+  FilterList as FilterIcon,
 } from '@mui/icons-material';
 import { fetchGamesOverview, GamesOverviewData } from '../services/games';
 import { Game, GameWithScore, TournamentOverview } from '../types/games';
@@ -52,6 +58,8 @@ export default function Games() {
   const [error, setError] = useState<string | null>(null);
   const [weatherModalOpen, setWeatherModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | 'all'>('all');
+  const [noTeamAssignment, setNoTeamAssignment] = useState(false);
 
   const openWeatherModal = (eventId: number | null) => {
     setSelectedEventId(eventId);
@@ -62,15 +70,22 @@ export default function Games() {
     loadGamesOverview();
   }, []);
 
-  const loadGamesOverview = async () => {
+  const loadGamesOverview = async (teamId?: number | 'all') => {
     try {
       setLoading(true);
       setError(null);
-      const result = await fetchGamesOverview();
+      const result = await fetchGamesOverview(teamId);
       if ('error' in result) {
         throw new Error(String(result.error));
       }
-      setData(result as GamesOverviewData);
+      const overviewData = result as GamesOverviewData;
+      setData(overviewData);
+      if (teamId === undefined) {
+        setNoTeamAssignment(overviewData.noTeamAssignment ?? false);
+        if (overviewData.userDefaultTeamId) {
+          setSelectedTeamId(overviewData.userDefaultTeamId);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Laden der Spiele');
     } finally {
@@ -98,7 +113,7 @@ export default function Games() {
     return (
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
         <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
-        <Button variant="contained" onClick={loadGamesOverview}>Erneut versuchen</Button>
+        <Button variant="contained" onClick={() => loadGamesOverview()}>Erneut versuchen</Button>
       </Box>
     );
   }
@@ -507,6 +522,16 @@ export default function Games() {
     </Box>
   );
 
+  // ─── Team dropdown data (comes from backend, independent of game filter) ─
+  const availableTeams = data.availableTeams || [];
+  const myTeams = availableTeams
+    .filter(t => (data.userTeamIds || []).includes(t.id))
+    .map(t => [t.id, t.name] as [number, string]);
+  const otherTeams = availableTeams
+    .filter(t => !(data.userTeamIds || []).includes(t.id))
+    .map(t => [t.id, t.name] as [number, string]);
+  const showTeamFilter = availableTeams.length > 1;
+
   // ─── Data grouping ────────────────────────────────────────────
   const runningTournaments = (data.tournaments || []).filter(t => t.status === 'running');
   const upcomingTournaments = (data.tournaments || []).filter(t => t.status === 'upcoming');
@@ -522,12 +547,56 @@ export default function Games() {
   return (
     <Box sx={{ px: { xs: 1.5, sm: 3 }, py: { xs: 2, sm: 3 }, maxWidth: 960, mx: 'auto' }}>
       {/* Page Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: showTeamFilter ? 2 : 3 }}>
         <SoccerIcon sx={{ fontSize: { xs: 28, sm: 32 }, color: 'primary.main' }} />
         <Typography variant="h4" component="h1" sx={{ fontWeight: 700, fontSize: { xs: '1.4rem', sm: '1.8rem' } }}>
           Spiele & Turniere
         </Typography>
       </Box>
+
+      {/* Team Filter Dropdown */}
+      {showTeamFilter && (
+        <Box sx={{ mb: 3 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 320 } }}>
+            <InputLabel id="team-filter-label">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <FilterIcon sx={{ fontSize: 16 }} />
+                Team filtern
+              </Box>
+            </InputLabel>
+            <Select
+              labelId="team-filter-label"
+              label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><FilterIcon sx={{ fontSize: 16 }} />Team filtern</Box>}
+              value={selectedTeamId}
+              onChange={e => {
+                const v = e.target.value as number | 'all';
+                setSelectedTeamId(v);
+                loadGamesOverview(v);
+              }}
+            >
+              <MenuItem value="all">Alle Teams</MenuItem>
+
+              {myTeams.length > 0 && [
+                <ListSubheader key="my-header" sx={{ fontWeight: 700, lineHeight: '32px', fontSize: '0.75rem', color: 'primary.main' }}>
+                  Meine Teams
+                </ListSubheader>,
+                ...myTeams.map(([id, name]) => (
+                  <MenuItem key={`my-${id}`} value={id}>{name}</MenuItem>
+                )),
+              ]}
+
+              {otherTeams.length > 0 && [
+                <ListSubheader key="other-header" sx={{ fontWeight: 700, lineHeight: '32px', fontSize: '0.75rem', color: 'text.secondary' }}>
+                  Weitere Teams
+                </ListSubheader>,
+                ...otherTeams.map(([id, name]) => (
+                  <MenuItem key={`other-${id}`} value={id}>{name}</MenuItem>
+                )),
+              ]}
+            </Select>
+          </FormControl>
+        </Box>
+      )}
 
       {/* ── Running ── */}
       {runningCount > 0 && (
@@ -595,19 +664,28 @@ export default function Games() {
 
       {/* Empty State */}
       {!hasAny && (
-        <Box sx={{
-          textAlign: 'center',
-          py: 8,
-          px: 2,
-        }}>
-          <SoccerIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            Keine Spiele oder Turniere
-          </Typography>
-          <Typography variant="body2" color="text.disabled">
-            Aktuell sind keine Spiele oder Turniere vorhanden.
-          </Typography>
-        </Box>
+        noTeamAssignment && selectedTeamId === 'all'
+          ? (
+            <Box sx={{ textAlign: 'center', py: 8, px: 2 }}>
+              <FilterIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                Kein Team ausgewählt
+              </Typography>
+              <Typography variant="body2" color="text.disabled">
+                Du bist keinem Team zugeordnet. Wähle über den Filter oben ein Team aus, um dessen Spiele zu sehen.
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 8, px: 2 }}>
+              <SoccerIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                Keine Spiele oder Turniere
+              </Typography>
+              <Typography variant="body2" color="text.disabled">
+                Für dieses Team sind aktuell keine Spiele oder Turniere vorhanden.
+              </Typography>
+            </Box>
+          )
       )}
 
       <WeatherModal
