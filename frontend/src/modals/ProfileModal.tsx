@@ -1,6 +1,39 @@
 import React from 'react';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import CircularProgress from '@mui/material/CircularProgress';
+import getCroppedImg from '../utils/cropImage';
+import Cropper from 'react-easy-crop';
+import type { Area } from 'react-easy-crop';
+import Avatar from '@mui/material/Avatar';
+import EditIcon from '@mui/icons-material/Edit';
+import UploadIcon from '@mui/icons-material/Upload';
+import LinkIcon from '@mui/icons-material/Link';
+import Tooltip from '@mui/material/Tooltip';
+import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Divider from '@mui/material/Divider';
+import MenuItem from '@mui/material/MenuItem';
+import Alert from '@mui/material/Alert';
+import Switch from '@mui/material/Switch';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import BaseModal from './BaseModal';
+import { apiJson } from '../utils/api';
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { BACKEND_URL } from '../../config';
+import { FaTrashAlt } from 'react-icons/fa';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import SendIcon from '@mui/icons-material/Send';
+import Chip from '@mui/material/Chip';
+import { pushHealthMonitor, type PushHealthReport, type PushHealthStatus } from '../services/pushHealthMonitor';
 
 // XP Breakdown Modal (lädt echte Daten inkl. Titel/Level)
 const XpBreakdownModal: React.FC<{ open: boolean; onClose: () => void }> = ({ open, onClose }) => {
@@ -21,24 +54,22 @@ const XpBreakdownModal: React.FC<{ open: boolean; onClose: () => void }> = ({ op
       setAllTitles([]);
       setLevel(null);
       setXpTotal(null);
-      import('../utils/api').then(({ apiJson }) => {
-        apiJson('/api/xp-breakdown')
-          .then((data: any) => {
-            if (data && Array.isArray(data.breakdown)) {
-              setBreakdown(data.breakdown);
-              setTitle(data.title || null);
-              setAllTitles(Array.isArray(data.allTitles) ? data.allTitles : []);
-              setLevel(data.level || null);
-              setXpTotal(typeof data.xpTotal === 'number' ? data.xpTotal : null);
-            } else if (data && data.error) {
-              setError(data.error);
-            } else {
-              setError('Unbekannter Fehler beim Laden der XP-Daten');
-            }
-          })
-          .catch(() => setError('Fehler beim Laden der XP-Daten'))
-          .finally(() => setLoading(false));
-      });
+      apiJson('/api/xp-breakdown')
+        .then((data: any) => {
+          if (data && Array.isArray(data.breakdown)) {
+            setBreakdown(data.breakdown);
+            setTitle(data.title || null);
+            setAllTitles(Array.isArray(data.allTitles) ? data.allTitles : []);
+            setLevel(data.level || null);
+            setXpTotal(typeof data.xpTotal === 'number' ? data.xpTotal : null);
+          } else if (data && data.error) {
+            setError(data.error);
+          } else {
+            setError('Unbekannter Fehler beim Laden der XP-Daten');
+          }
+        })
+        .catch(() => setError('Fehler beim Laden der XP-Daten'))
+        .finally(() => setLoading(false));
     }
   }, [open]);
 
@@ -100,39 +131,6 @@ const XpBreakdownModal: React.FC<{ open: boolean; onClose: () => void }> = ({ op
     </BaseModal>
   );
 };
-import getCroppedImg from '../utils/cropImage';
-import Cropper from 'react-easy-crop';
-import type { Area } from 'react-easy-crop';
-import Avatar from '@mui/material/Avatar';
-import EditIcon from '@mui/icons-material/Edit';
-import UploadIcon from '@mui/icons-material/Upload';
-import LinkIcon from '@mui/icons-material/Link';
-import Tooltip from '@mui/material/Tooltip';
-import IconButton from '@mui/material/IconButton';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Divider from '@mui/material/Divider';
-import MenuItem from '@mui/material/MenuItem';
-import Alert from '@mui/material/Alert';
-import Switch from '@mui/material/Switch';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
-import BaseModal from './BaseModal';
-import { apiJson } from '../utils/api';
-import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext';
-import { BACKEND_URL } from '../../config';
-import { FaTrashAlt } from 'react-icons/fa';
-import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
-import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import SendIcon from '@mui/icons-material/Send';
-import Chip from '@mui/material/Chip';
-import { pushHealthMonitor, type PushHealthReport, type PushHealthStatus } from '../services/pushHealthMonitor';
 
 interface ProfileData {
   firstName: string;
@@ -143,6 +141,8 @@ interface ProfileData {
   shoeSize?: number | '';
   shirtSize?: string;
   pantsSize?: string;
+  socksSize?: string;
+  jacketSize?: string;
   password?: string;
   confirmPassword?: string;
   avatarUrl?: string;
@@ -172,6 +172,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
     shoeSize: '',
     shirtSize: '',
     pantsSize: '',
+    socksSize: '',
+    jacketSize: '',
     password: '',
     confirmPassword: '',
     avatarUrl: '',
@@ -294,6 +296,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
         shoeSize: userData.shoeSize || '',
         shirtSize: userData.shirtSize || '',
         pantsSize: userData.pantsSize || '',
+        socksSize: userData.socksSize || '',
+        jacketSize: userData.jacketSize || '',
         password: '',
         confirmPassword: '',
         avatarUrl: userData.avatarFile || '',
@@ -342,6 +346,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
         shoeSize: form.shoeSize,
         shirtSize: form.shirtSize,
         pantsSize: form.pantsSize,
+        socksSize: form.socksSize,
+        jacketSize: form.jacketSize,
         avatarUrl,
         ...(form.password ? { password: form.password } : {})
       };
@@ -394,6 +400,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
 
   const shirtSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
   const pantsSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '28/30', '30/30', '32/30', '34/30', '36/30', '28/32', '30/32', '32/32', '34/32', '36/32'];
+  const socksSizes = ['35-38', '39-42', '43-46', '47-50'];
+  const jacketSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
   const titleWithLink = (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -546,6 +554,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
           fullWidth
           required
         />
+        {/* Körperliche Daten */}
         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
           <TextField
             label="Körpergröße (cm)"
@@ -561,18 +570,11 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
             onChange={e => setForm(prev => ({ ...prev, weight: e.target.value ? Number(e.target.value) : '' }))}
             fullWidth
           />
-          <TextField
-            label="Schuhgröße (EU)"
-            type="number"
-            inputProps={{ step: 0.5 }}
-            value={form.shoeSize}
-            onChange={e => setForm(prev => ({ ...prev, shoeSize: e.target.value ? Number(e.target.value) : '' }))}
-            fullWidth
-          />
         </Box>
+        {/* Kleidungsgrößen */}
         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
           <TextField
-            label="T-Shirt Größe"
+            label="Trikot-Größe"
             select
             value={form.shirtSize}
             onChange={e => setForm(prev => ({ ...prev, shirtSize: e.target.value }))}
@@ -584,7 +586,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
             ))}
           </TextField>
           <TextField
-            label="Hosengröße"
+            label="Shorts-Größe"
             select
             value={form.pantsSize}
             onChange={e => setForm(prev => ({ ...prev, pantsSize: e.target.value }))}
@@ -592,6 +594,41 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
           >
             <MenuItem value="">Bitte wählen</MenuItem>
             {pantsSizes.map(size => (
+              <MenuItem key={size} value={size}>{size}</MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label="Trainingsjacke"
+            select
+            value={form.jacketSize}
+            onChange={e => setForm(prev => ({ ...prev, jacketSize: e.target.value }))}
+            fullWidth
+          >
+            <MenuItem value="">Bitte wählen</MenuItem>
+            {jacketSizes.map(size => (
+              <MenuItem key={size} value={size}>{size}</MenuItem>
+            ))}
+          </TextField>
+        </Box>
+        {/* Schuh & Stutzen */}
+        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
+          <TextField
+            label="Schuhgröße (EU)"
+            type="number"
+            inputProps={{ step: 0.5 }}
+            value={form.shoeSize}
+            onChange={e => setForm(prev => ({ ...prev, shoeSize: e.target.value ? Number(e.target.value) : '' }))}
+            fullWidth
+          />
+          <TextField
+            label="Stutzen-/Sockengröße"
+            select
+            value={form.socksSize}
+            onChange={e => setForm(prev => ({ ...prev, socksSize: e.target.value }))}
+            fullWidth
+          >
+            <MenuItem value="">Bitte wählen</MenuItem>
+            {socksSizes.map(size => (
               <MenuItem key={size} value={size}>{size}</MenuItem>
             ))}
           </TextField>

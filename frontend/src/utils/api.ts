@@ -87,3 +87,22 @@ export async function apiJson<T = any>(endpoint: string, options: ApiRequestOpti
   }
   return data as T;
 }
+
+/**
+ * API-Funktion die eine Blob-Antwort (z.B. PDF) zurückgibt.
+ * Wirft ApiError bei HTTP-Fehlern.
+ */
+export async function apiBlob(endpoint: string, options: ApiRequestOptions = {}): Promise<Blob> {
+  const response = await apiRequest(endpoint, options);
+  if (!response.ok) {
+    let msg = `HTTP ${response.status}`;
+    try {
+      const data = await response.json();
+      msg = data?.error || data?.message || msg;
+    } catch {
+      // ignore
+    }
+    throw new ApiError(msg, response.status);
+  }
+  return response.blob();
+}

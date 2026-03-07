@@ -70,6 +70,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 10, nullable: true)]
     private ?string $pantsSize = null;
 
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $socksSize = null;
+
+    #[ORM\Column(length: 3, nullable: true)]
+    private ?string $jacketSize = null;
+
     #[ORM\Column(length: 180, nullable: true)]
     private ?string $newEmail = null;
 
@@ -367,6 +373,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPantsSize(?string $pantsSize): self
     {
         $this->pantsSize = $pantsSize;
+
+        return $this;
+    }
+
+    public function getSocksSize(): ?string
+    {
+        return $this->socksSize;
+    }
+
+    public function setSocksSize(?string $socksSize): self
+    {
+        $this->socksSize = $socksSize;
+
+        return $this;
+    }
+
+    public function getJacketSize(): ?string
+    {
+        return $this->jacketSize;
+    }
+
+    public function setJacketSize(?string $jacketSize): self
+    {
+        $this->jacketSize = $jacketSize;
 
         return $this;
     }

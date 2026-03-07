@@ -23,6 +23,7 @@ import EventIcon from '@mui/icons-material/Event';
 import SystemIcon from '@mui/icons-material/Info';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
+import FeedbackIcon from '@mui/icons-material/Feedback';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MarkAsReadIcon from '@mui/icons-material/DoneAll';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -43,6 +44,8 @@ const getNotificationIcon = (type: AppNotification['type']) => {
       return <DirectionsCarIcon fontSize="small" />;
     case 'event_cancelled':
       return <EventBusyIcon fontSize="small" />;
+    case 'feedback':
+      return <FeedbackIcon fontSize="small" />;
     default: return <SystemIcon fontSize="small" />;
   }
 };

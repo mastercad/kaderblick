@@ -66,6 +66,8 @@ class ProfileController extends AbstractController
             'shoeSize' => $user->getShoeSize(),
             'shirtSize' => $user->getShirtSize(),
             'pantsSize' => $user->getPantsSize(),
+            'socksSize' => $user->getSocksSize(),
+            'jacketSize' => $user->getJacketSize(),
             'roles' => $user->getRoles(),
             'isCoach' => $isCoach,
             'isPlayer' => $isPlayer,
@@ -122,6 +124,12 @@ class ProfileController extends AbstractController
         }
         if (isset($data['pantsSize'])) {
             $user->setPantsSize($data['pantsSize']);
+        }
+        if (isset($data['socksSize'])) {
+            $user->setSocksSize($data['socksSize']);
+        }
+        if (isset($data['jacketSize'])) {
+            $user->setJacketSize($data['jacketSize']);
         }
 
         // Handle password change

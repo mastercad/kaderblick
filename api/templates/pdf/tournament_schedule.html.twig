@@ -11,6 +11,7 @@
             color: #333;
             line-height: 1.5;
             background: #fff;
+            padding: 0 2mm;
         }
 
         @page {
@@ -22,10 +23,12 @@
            ACCENT BAR (top edge)
            ══════════════════════════ */
         .accent-bar {
+            position: fixed;
+            top: -18mm;
+            left: -18mm;
+            right: -18mm;
             background: linear-gradient(90deg, #018606, #02a808);
-            height: 5px;
-            margin: -18mm -18mm 0 -18mm;
-            width: calc(100% + 36mm);
+            height: 6px;
         }
 
         /* ══════════════════════════
@@ -289,13 +292,13 @@
            ══════════════════════════ */
         .footer {
             position: fixed;
-            bottom: -12mm;
-            left: 0;
-            right: 0;
+            bottom: -22mm;
+            left: -18mm;
+            right: -18mm;
             font-size: 7pt;
             color: #aaa;
             border-top: 1px solid #e0e0e0;
-            padding-top: 5px;
+            padding: 5px 18mm 0 18mm;
         }
         .footer table { width: 100%; border-collapse: collapse; }
         .footer td { padding: 0; }

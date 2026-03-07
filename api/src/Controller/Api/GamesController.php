@@ -14,6 +14,7 @@ use App\Repository\GameRepository;
 use App\Security\Voter\GameEventVoter;
 use App\Security\Voter\GameVoter;
 use App\Security\Voter\VideoVoter;
+use App\Service\CoachTeamPlayerService;
 use App\Service\TournamentAdvancementService;
 use App\Service\UserTitleService;
 use App\Service\VideoTimelineService;
@@ -72,6 +73,7 @@ class GamesController extends ApiController
         EntityManagerInterface $entityManager,
         private readonly VideoTimelineService $videoTimelineService,
         private readonly TournamentAdvancementService $advancementService,
+        private readonly CoachTeamPlayerService $coachTeamPlayerService,
     ) {
         $this->entityManager = $entityManager;
     }
@@ -445,24 +447,16 @@ class GamesController extends ApiController
 
         $tournamentsArr = array_map($serializeTournament, $tournaments);
 
-        // ---- Resolve user team IDs ----
+        // ---- Resolve user team IDs (only currently active assignments) ----
         $userTeamIds = [];
         /** @var User|null $currentUser */
         $currentUser = $this->getUser();
         if ($currentUser instanceof User) {
-            foreach ($currentUser->getUserRelations() as $rel) {
-                if ($rel->getPlayer() instanceof Player) {
-                    foreach ($rel->getPlayer()->getPlayerTeamAssignments() as $assignment) {
-                        $teamId = $assignment->getTeam()->getId();
-                        $userTeamIds[$teamId] = $teamId;
-                    }
-                }
-                if ($rel->getCoach() instanceof \App\Entity\Coach) {
-                    foreach ($rel->getCoach()->getCoachTeamAssignments() as $assignment) {
-                        $teamId = $assignment->getTeam()->getId();
-                        $userTeamIds[$teamId] = $teamId;
-                    }
-                }
+            foreach ($this->coachTeamPlayerService->collectPlayerTeams($currentUser) as $team) {
+                $userTeamIds[$team->getId()] = $team->getId();
+            }
+            foreach ($this->coachTeamPlayerService->collectCoachTeams($currentUser) as $team) {
+                $userTeamIds[$team->getId()] = $team->getId();
             }
         }
 

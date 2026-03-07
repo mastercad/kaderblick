@@ -610,6 +610,10 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       }
     }
 
+    const trainingDuration = endDate && endDate.isAfter(startDate)
+      ? endDate.diff(startDate, 'minutes')
+      : (event as any).trainingDuration || 90;
+
     setEventFormData({
       title: event.title,
       date: startDate.format('YYYY-MM-DD'),
@@ -624,6 +628,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       gameType: resolvedGameType,
       leagueId: event.game && (event.game as any).league?.id ? (event.game as any).league.id.toString() : '',
       permissionType: event.permissionType ?? 'public',
+      trainingDuration,
       tournamentId: event.tournament?.id?.toString() || (event as any).tournamentId?.toString() || '',
       tournamentType: event.tournament?.settings?.tournamentType || undefined,
       tournamentRoundDuration: event.tournament?.settings?.roundDuration || 10,

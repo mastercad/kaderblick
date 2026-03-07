@@ -61,6 +61,32 @@ class CoachTeamPlayerService
     }
 
     /**
+     * Ermittelt alle Teams, denen ein User als Spieler aktuell zugeordnet ist.
+     *
+     * @return array<Team>
+     */
+    public function collectPlayerTeams(User $user): array
+    {
+        $teams = [];
+
+        foreach ($user->getUserRelations() as $relation) {
+            $player = $relation->getPlayer();
+            if ($player) {
+                foreach ($player->getPlayerTeamAssignments() as $assignment) {
+                    if ($this->isCurrentAssignment($assignment->getStartDate(), $assignment->getEndDate())) {
+                        $team = $assignment->getTeam();
+                        if (!isset($teams[$team->getId()])) {
+                            $teams[$team->getId()] = $team;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $teams;
+    }
+
+    /**
      * Ermittelt alle verfügbaren Spieler für einen User basierend auf seinen Coach-Beziehungen.
      * Wenn der User nur ein Team hat, werden direkt die Spieler zurückgegeben.
      * Wenn mehrere Teams vorhanden sind, wird ein Array mit Teams als Keys und Spielern als Values zurückgegeben.

@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Team;
 use App\Entity\User;
+use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -130,8 +131,13 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
                ->setParameter('search', '%' . strtolower($search) . '%');
         }
 
-        // Permission-based filters for non-admin users
-        if ($user && !in_array('ROLE_ADMIN', $user->getRoles(), true) && !in_array('ROLE_SUPERADMIN', $user->getRoles(), true)) {
+        // ROLE_SUPERADMIN and ROLE_ADMIN see all teams without restriction
+        // Everyone else only sees teams with an active assignment
+        $isPrivileged = $user && (
+            in_array('ROLE_SUPERADMIN', $user->getRoles(), true) ||
+            in_array('ROLE_ADMIN', $user->getRoles(), true)
+        );
+        if (!$isPrivileged) {
             $playerIds = [];
             $coachIds = [];
             if ($user instanceof User) {
@@ -144,16 +150,26 @@ class TeamRepository extends ServiceEntityRepository implements OptimizedReposit
                     }
                 }
             }
+
+            $now = new DateTime();
+            $dateCondition = '(pta.startDate IS NULL OR pta.startDate <= :now) AND (pta.endDate IS NULL OR pta.endDate >= :now)';
+            $coachDateCondition = '(cta.startDate IS NULL OR cta.startDate <= :now) AND (cta.endDate IS NULL OR cta.endDate >= :now)';
+
             if ($playerIds && $coachIds) {
-                $qb->andWhere('pta.player IN (:playerIds) OR cta.coach IN (:coachIds)')
+                $qb->andWhere(
+                    "(pta.player IN (:playerIds) AND $dateCondition) OR (cta.coach IN (:coachIds) AND $coachDateCondition)"
+                )
                    ->setParameter('playerIds', $playerIds)
-                   ->setParameter('coachIds', $coachIds);
+                   ->setParameter('coachIds', $coachIds)
+                   ->setParameter('now', $now);
             } elseif ($playerIds) {
-                $qb->andWhere('pta.player IN (:playerIds)')
-                   ->setParameter('playerIds', $playerIds);
+                $qb->andWhere("pta.player IN (:playerIds) AND $dateCondition")
+                   ->setParameter('playerIds', $playerIds)
+                   ->setParameter('now', $now);
             } elseif ($coachIds) {
-                $qb->andWhere('cta.coach IN (:coachIds)')
-                   ->setParameter('coachIds', $coachIds);
+                $qb->andWhere("cta.coach IN (:coachIds) AND $coachDateCondition")
+                   ->setParameter('coachIds', $coachIds)
+                   ->setParameter('now', $now);
             } else {
                 $qb->andWhere('1 = 0');
             }

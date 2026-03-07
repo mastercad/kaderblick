@@ -12,6 +12,11 @@ import {
   Stack,
   alpha,
   useTheme,
+  Select,
+  MenuItem,
+  ListSubheader,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import {
   SportsSoccer as SoccerIcon,
@@ -21,6 +26,7 @@ import {
   EmojiEvents as TournamentIcon,
   CalendarToday as CalendarIcon,
   AccessTime as TimeIcon,
+  FilterList as FilterIcon,
 } from '@mui/icons-material';
 import { fetchGamesOverview, GamesOverviewData } from '../services/games';
 import { Game, GameWithScore, TournamentOverview } from '../types/games';
@@ -52,6 +58,7 @@ export default function Games() {
   const [error, setError] = useState<string | null>(null);
   const [weatherModalOpen, setWeatherModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | 'all'>('all');
 
   const openWeatherModal = (eventId: number | null) => {
     setSelectedEventId(eventId);
@@ -507,27 +514,97 @@ export default function Games() {
     </Box>
   );
 
+  // ─── Team extraction for dropdown ───────────────────────────
+  const allTeamsMap = new Map<number, string>();
+  const addTeam = (team: { id: number; name: string } | null | undefined) => {
+    if (team) allTeamsMap.set(team.id, team.name);
+  };
+  [...data.running_games, ...data.upcoming_games].forEach(g => { addTeam(g.homeTeam); addTeam(g.awayTeam); });
+  data.finished_games.forEach(gws => { addTeam(gws.game.homeTeam); addTeam(gws.game.awayTeam); });
+
+  const myTeams = Array.from(allTeamsMap.entries())
+    .filter(([id]) => (data.userTeamIds || []).includes(id))
+    .sort((a, b) => a[1].localeCompare(b[1]));
+  const otherTeams = Array.from(allTeamsMap.entries())
+    .filter(([id]) => !(data.userTeamIds || []).includes(id))
+    .sort((a, b) => a[1].localeCompare(b[1]));
+  const showTeamFilter = allTeamsMap.size > 1;
+
+  // ─── Filtered data ────────────────────────────────────────────
+  const filterGame = (game: { homeTeam: { id: number } | null; awayTeam: { id: number } | null }) =>
+    selectedTeamId === 'all' ||
+    game.homeTeam?.id === selectedTeamId ||
+    game.awayTeam?.id === selectedTeamId;
+
+  const filterTournament = (t: { teamIds?: number[] }) =>
+    selectedTeamId === 'all' ||
+    (t.teamIds || []).includes(selectedTeamId as number);
+
   // ─── Data grouping ────────────────────────────────────────────
-  const runningTournaments = (data.tournaments || []).filter(t => t.status === 'running');
-  const upcomingTournaments = (data.tournaments || []).filter(t => t.status === 'upcoming');
-  const finishedTournaments = (data.tournaments || []).filter(t => t.status === 'finished');
+  const runningTournaments = (data.tournaments || []).filter(t => t.status === 'running' && filterTournament(t));
+  const upcomingTournaments = (data.tournaments || []).filter(t => t.status === 'upcoming' && filterTournament(t));
+  const finishedTournaments = (data.tournaments || []).filter(t => t.status === 'finished' && filterTournament(t));
   const hasTournaments = (data.tournaments || []).length > 0;
 
-  const runningCount = data.running_games.length + runningTournaments.length;
-  const upcomingCount = data.upcoming_games.length + upcomingTournaments.length;
-  const finishedCount = data.finished_games.length + finishedTournaments.length;
+  const filteredRunningGames = data.running_games.filter(filterGame);
+  const filteredUpcomingGames = data.upcoming_games.filter(filterGame);
+  const filteredFinishedGames = data.finished_games.filter(gws => filterGame(gws.game));
+
+  const runningCount = filteredRunningGames.length + runningTournaments.length;
+  const upcomingCount = filteredUpcomingGames.length + upcomingTournaments.length;
+  const finishedCount = filteredFinishedGames.length + finishedTournaments.length;
 
   const hasAny = runningCount > 0 || upcomingCount > 0 || finishedCount > 0;
 
   return (
     <Box sx={{ px: { xs: 1.5, sm: 3 }, py: { xs: 2, sm: 3 }, maxWidth: 960, mx: 'auto' }}>
       {/* Page Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: showTeamFilter ? 2 : 3 }}>
         <SoccerIcon sx={{ fontSize: { xs: 28, sm: 32 }, color: 'primary.main' }} />
         <Typography variant="h4" component="h1" sx={{ fontWeight: 700, fontSize: { xs: '1.4rem', sm: '1.8rem' } }}>
           Spiele & Turniere
         </Typography>
       </Box>
+
+      {/* Team Filter Dropdown */}
+      {showTeamFilter && (
+        <Box sx={{ mb: 3 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 320 } }}>
+            <InputLabel id="team-filter-label">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <FilterIcon sx={{ fontSize: 16 }} />
+                Team filtern
+              </Box>
+            </InputLabel>
+            <Select
+              labelId="team-filter-label"
+              label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><FilterIcon sx={{ fontSize: 16 }} />Team filtern</Box>}
+              value={selectedTeamId}
+              onChange={e => setSelectedTeamId(e.target.value as number | 'all')}
+            >
+              <MenuItem value="all">Alle Teams</MenuItem>
+
+              {myTeams.length > 0 && [
+                <ListSubheader key="my-header" sx={{ fontWeight: 700, lineHeight: '32px', fontSize: '0.75rem', color: 'primary.main' }}>
+                  Meine Teams
+                </ListSubheader>,
+                ...myTeams.map(([id, name]) => (
+                  <MenuItem key={`my-${id}`} value={id}>{name}</MenuItem>
+                )),
+              ]}
+
+              {otherTeams.length > 0 && [
+                <ListSubheader key="other-header" sx={{ fontWeight: 700, lineHeight: '32px', fontSize: '0.75rem', color: 'text.secondary' }}>
+                  Weitere Teams
+                </ListSubheader>,
+                ...otherTeams.map(([id, name]) => (
+                  <MenuItem key={`other-${id}`} value={id}>{name}</MenuItem>
+                )),
+              ]}
+            </Select>
+          </FormControl>
+        </Box>
+      )}
 
       {/* ── Running ── */}
       {runningCount > 0 && (
@@ -539,7 +616,7 @@ export default function Games() {
             color={theme.palette.success.main}
           />
           <Stack spacing={2}>
-            {data.running_games.map(game => (
+            {filteredRunningGames.map(game => (
               <GameCard key={`running-game-${game.id}`} game={game} isRunning />
             ))}
             {runningTournaments.map(t => (
@@ -559,7 +636,7 @@ export default function Games() {
             color={theme.palette.primary.main}
           />
           <Stack spacing={2}>
-            {data.upcoming_games.map(game => (
+            {filteredUpcomingGames.map(game => (
               <GameCard key={`upcoming-game-${game.id}`} game={game} />
             ))}
             {upcomingTournaments.map(t => (
@@ -579,7 +656,7 @@ export default function Games() {
             color={theme.palette.text.secondary}
           />
           <Stack spacing={2}>
-            {data.finished_games.map(gameData => (
+            {filteredFinishedGames.map(gameData => (
               <GameCard
                 key={`finished-game-${gameData.game.id}`}
                 game={gameData.game}

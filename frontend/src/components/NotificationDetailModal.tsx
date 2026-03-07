@@ -20,6 +20,7 @@ import EventIcon from '@mui/icons-material/Event';
 import SystemIcon from '@mui/icons-material/Info';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
+import FeedbackIcon from '@mui/icons-material/Feedback';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useNavigate } from 'react-router-dom';
 import { AppNotification } from '../types/notifications';
@@ -43,6 +44,8 @@ const getNotificationIcon = (type: AppNotification['type']) => {
       return <DirectionsCarIcon />;
     case 'event_cancelled':
       return <EventBusyIcon />;
+    case 'feedback':
+      return <FeedbackIcon />;
     default: return <SystemIcon />;
   }
 };
@@ -61,6 +64,8 @@ const getNotificationColor = (type: AppNotification['type']) => {
       return '#d32f2f';
     case 'event_cancelled':
       return '#e65100';
+    case 'feedback':
+      return '#7b5ea7';
     default: return '#757575';
   }
 };
@@ -76,6 +81,7 @@ const getNotificationLabel = (type: AppNotification['type']) => {
     case 'team_ride_cancel': return 'Mitfahrt storniert';
     case 'team_ride_deleted': return 'Mitfahrt gelöscht';
     case 'event_cancelled': return 'Event abgesagt';
+    case 'feedback': return 'Feedback-Antwort';
     default: return 'Benachrichtigung';
   }
 };
@@ -276,6 +282,21 @@ const renderNotificationData = (type: AppNotification['type'], data: any, onNavi
             </Typography>
           )}
           {renderSmartUrl(data.url, onNavigate)}
+        </Box>
+      );
+
+    case 'feedback':
+      return (
+        <Box>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<FeedbackIcon />}
+            onClick={() => onNavigate(data.url ?? '/mein-feedback')}
+            sx={{ mt: 0.5 }}
+          >
+            Feedback öffnen
+          </Button>
         </Box>
       );
 

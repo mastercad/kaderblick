@@ -32,6 +32,10 @@ import Navigation from './components/Navigation';
 import FooterWithContact from './components/FooterWithContact';
 import Formations from './pages/Formations';
 import FeedbackAdmin from './pages/Feedback';
+import FeedbackDetail from './pages/FeedbackDetail';
+import GithubIssueDetail from './pages/GithubIssueDetail';
+import MyFeedback from './pages/MyFeedback';
+import MyFeedbackDetail from './pages/MyFeedbackDetail';
 import AdminTitleXpOverview from './pages/admin/AdminTitleXpOverview';
 import FabStackRoot from './components/FabStackRoot';
 import Locations from './pages/Locations';
@@ -147,6 +151,10 @@ function App() {
                   <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
                   <Route path="/test" element={<ProtectedRoute><TestPage /></ProtectedRoute>} />
                   <Route path="/admin/feedback" element={<ProtectedRoute><FeedbackAdmin /></ProtectedRoute>} />
+                  <Route path="/admin/feedback/:id" element={<ProtectedRoute><FeedbackDetail /></ProtectedRoute>} />
+                  <Route path="/admin/github-issue/:number" element={<ProtectedRoute><GithubIssueDetail /></ProtectedRoute>} />
+                  <Route path="/mein-feedback" element={<ProtectedRoute><MyFeedback /></ProtectedRoute>} />
+                  <Route path="/mein-feedback/:id" element={<ProtectedRoute><MyFeedbackDetail /></ProtectedRoute>} />
                   <Route path="/admin/user-relations" element={<ProtectedRoute><UserRelations /></ProtectedRoute>} />
                   <Route path="/admin/title-xp-overview" element={<ProtectedRoute><AdminTitleXpOverview /></ProtectedRoute>} />
                   <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />

@@ -306,6 +306,10 @@ class CalendarEventService
         if (!$tournament) {
             $tournament = new Tournament();
             $tournament->setCalendarEvent($calendarEvent);
+            $currentUser = $this->security->getUser();
+            if ($currentUser instanceof User) {
+                $tournament->setCreatedBy($currentUser);
+            }
             $this->entityManager->persist($tournament);
             $calendarEvent->setTournament($tournament);
         }
