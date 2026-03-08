@@ -46,6 +46,7 @@ import {
   finishGame,
 } from '../services/games';
 import { fetchVideos, saveVideo, deleteVideo, Video, YoutubeLink, Camera } from '../services/videos';
+import { getApiErrorMessage } from '../utils/api';
 import VideoModal from '../modals/VideoModal';
 import VideoPlayModal from '../modals/VideoPlayModal';
 import { VideoSegmentModal } from '../modals/VideoSegmentModal';
@@ -254,7 +255,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       await loadGameEvents(); // Reload events so timeline has current data
       showToast('Das Video wurde erfolgreich gespeichert.', 'success');
     } catch (e: any) {
-      setError(e.message || 'Fehler beim Speichern des Videos');
+      showToast(getApiErrorMessage(e), 'error');
     } finally {
       setVideoDialogLoading(false);
     }
@@ -269,7 +270,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       await loadVideos();
       await loadGameEvents(); // Reload events for consistency
     } catch (e: any) {
-      setError(e.message || 'Fehler beim Löschen des Videos');
+      showToast(getApiErrorMessage(e), 'error');
     } finally {
       setVideoDeleteLoading(false);
     }
@@ -310,7 +311,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       });
       setGameEvents(repairedEvents);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Ereignisse');
+      showToast(getApiErrorMessage(err), 'error');
     }
   };
 
@@ -329,7 +330,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       setGameStartDate(result.game?.calendarEvent?.startDate ?? null);
       await loadVideos(); // Reload videos to update event mappings
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Löschen des Ereignisses');
+      showToast(getApiErrorMessage(err), 'error');
     }
   };
 
@@ -341,7 +342,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       await syncFussballDe(gameId);
       await loadGameDetails(); // Reload data
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Synchronisieren mit Fussball.de');
+      showToast(getApiErrorMessage(err), 'error');
     } finally {
       setSyncing(false);
     }
@@ -360,7 +361,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       setAwayScore(result.awayScore);
       setGameStartDate(result.game?.calendarEvent?.startDate ?? null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Spieldetails');
+      showToast(getApiErrorMessage(err), 'error');
     }
     await loadVideos(); // Reload videos to update event mappings
   };
@@ -919,7 +920,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                     </Box>
 
                     {/* Actions */}
-                    {user && (
+                    {canCreateEvents() && (
                       <Box sx={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -1137,12 +1138,16 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                         <IconButton size="small" onClick={() => handleOpenPlayVideo(video)} sx={{ p: 0.5 }}>
                           <YouTubeIcon sx={{ fontSize: 18, color: 'error.main' }} />
                         </IconButton>
-                        <IconButton size="small" onClick={() => handleOpenEditVideo(video)} sx={{ p: 0.5 }}>
-                          <EditIcon sx={{ fontSize: 18 }} />
-                        </IconButton>
-                        <IconButton size="small" onClick={() => setVideoToDelete(video)} sx={{ p: 0.5 }}>
-                          <DeleteIcon sx={{ fontSize: 18, color: 'error.main' }} />
-                        </IconButton>
+                        {canCreateVideos() && (
+                          <>
+                            <IconButton size="small" onClick={() => handleOpenEditVideo(video)} sx={{ p: 0.5 }}>
+                              <EditIcon sx={{ fontSize: 18 }} />
+                            </IconButton>
+                            <IconButton size="small" onClick={() => setVideoToDelete(video)} sx={{ p: 0.5 }}>
+                              <DeleteIcon sx={{ fontSize: 18, color: 'error.main' }} />
+                            </IconButton>
+                          </>
+                        )}
                       </Box>
                     )}
                   </Box>

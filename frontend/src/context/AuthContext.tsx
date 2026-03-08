@@ -16,6 +16,7 @@ interface User {
   jacketSize?: string;
   isCoach?: boolean;
   isPlayer?: boolean;
+  needsRegistrationContext?: boolean;
   roles: { [key: string]: string };
   avatarFile?: string;
   title?: {

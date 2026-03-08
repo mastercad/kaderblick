@@ -38,6 +38,7 @@ import GithubIssueDetail from './pages/GithubIssueDetail';
 import MyFeedback from './pages/MyFeedback';
 import MyFeedbackDetail from './pages/MyFeedbackDetail';
 import AdminTitleXpOverview from './pages/admin/AdminTitleXpOverview';
+import SystemSettings from './pages/admin/SystemSettings';
 import FabStackRoot from './components/FabStackRoot';
 import Locations from './pages/Locations';
 import Clubs from './pages/Clubs';
@@ -64,6 +65,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import { PullToRefresh } from './components/PullToRefresh';
 import { PushWarningBanner } from './components/PushWarningBanner';
+import RegistrationContextDialog from './components/RegistrationContextDialog';
 
 
 function App() {
@@ -76,6 +78,7 @@ function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
   const [messagesInitialId, setMessagesInitialId] = useState<string | undefined>();
+  const [showRegistrationContext, setShowRegistrationContext] = useState(false);
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isOnHeroSection } = useHomeScroll();
@@ -132,6 +135,14 @@ function App() {
     }
   }, [isLoading]);
 
+  // Show registration context dialog when the user has no player/coach links yet (server-driven flag)
+  useEffect(() => {
+    if (user?.needsRegistrationContext) {
+      const timer = setTimeout(() => setShowRegistrationContext(true), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
+
   // Keep rendering even during loading - preload screen will stay visible
   if (isLoading) {
     return null; // Return null while loading, preload screen stays visible
@@ -177,6 +188,7 @@ function App() {
                   <Route path="/mein-feedback/:id" element={<ProtectedRoute><MyFeedbackDetail /></ProtectedRoute>} />
                   <Route path="/admin/user-relations" element={<ProtectedRoute><UserRelations /></ProtectedRoute>} />
                   <Route path="/admin/title-xp-overview" element={<ProtectedRoute><AdminTitleXpOverview /></ProtectedRoute>} />
+                  <Route path="/admin/system-settings" element={<ProtectedRoute><SystemSettings /></ProtectedRoute>} />
                   <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
                   <Route path="/news/:id" element={<ProtectedRoute><NewsDetail /></ProtectedRoute>} />
                   <Route path="locations" element={<ProtectedRoute><Locations /></ProtectedRoute>} />
@@ -208,6 +220,10 @@ function App() {
                 open={showMessages}
                 onClose={() => { setShowMessages(false); setMessagesInitialId(undefined); }}
                 initialMessageId={messagesInitialId}
+              />
+              <RegistrationContextDialog
+                open={showRegistrationContext}
+                onClose={() => setShowRegistrationContext(false)}
               />
               {!isHome && (user ? (<FooterWithContact />) : (<Footer />))}
             </Box>

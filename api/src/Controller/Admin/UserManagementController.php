@@ -9,6 +9,7 @@ use App\Entity\Player;
 use App\Entity\RelationType;
 use App\Entity\User;
 use App\Entity\UserRelation;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use InvalidArgumentException;
@@ -319,6 +320,50 @@ class UserManagementController extends AbstractController
     public function deleteUser(User $user): Response
     {
         try {
+            /** @var Connection $conn */
+            $conn = $this->em->getConnection();
+            $id = $user->getId();
+
+            // ── 1. Nullify nullable audit / substitute references ──────────────────
+            $conn->executeStatement('UPDATE videos            SET updated_from_id   = NULL WHERE updated_from_id   = ?', [$id]);
+            $conn->executeStatement('UPDATE camera            SET updated_from_id   = NULL WHERE updated_from_id   = ?', [$id]);
+            $conn->executeStatement('UPDATE task_assignments  SET substitute_user_id = NULL WHERE substitute_user_id = ?', [$id]);
+
+            // ── 2. Remove dependent child rows before deleting parent rows ─────────
+            // task_assignments that belong to tasks being deleted
+            $conn->executeStatement(
+                'DELETE ta FROM task_assignments ta INNER JOIN tasks t ON ta.task_id = t.id WHERE t.created_by_id = ?',
+                [$id]
+            );
+            // team_ride_passengers for rides where this user was the driver
+            $conn->executeStatement(
+                'DELETE trp FROM team_ride_passenger trp INNER JOIN team_ride tr ON trp.team_ride_id = tr.id WHERE tr.driver_id = ?',
+                [$id]
+            );
+            // video_segments for videos being deleted
+            $conn->executeStatement(
+                'DELETE vs FROM video_segments vs INNER JOIN videos v ON vs.video_id = v.id WHERE v.created_from_id = ?',
+                [$id]
+            );
+
+            // ── 3. Delete records owned by or requiring this user ──────────────────
+            $conn->executeStatement('DELETE FROM dashboard_widgets  WHERE user_id        = ?', [$id]);
+            $conn->executeStatement('DELETE FROM user_relations      WHERE user_id        = ?', [$id]);
+            $conn->executeStatement('DELETE FROM team_ride_passenger WHERE user_id        = ?', [$id]);
+            $conn->executeStatement('DELETE FROM team_ride           WHERE driver_id      = ?', [$id]);
+            $conn->executeStatement('DELETE FROM task_assignments    WHERE user_id        = ?', [$id]);
+            $conn->executeStatement('DELETE FROM tasks               WHERE created_by_id  = ?', [$id]);
+            $conn->executeStatement('DELETE FROM news                WHERE created_by     = ?', [$id]);
+            $conn->executeStatement('DELETE FROM videos              WHERE created_from_id = ?', [$id]);
+            $conn->executeStatement(
+                'DELETE FROM video_types WHERE created_from_id = ? OR updated_from_id = ?',
+                [$id, $id]
+            );
+            $conn->executeStatement('DELETE FROM camera WHERE created_from_id = ?', [$id]);
+
+            // ── 4. Let Doctrine cascade the rest (user_levels, user_xp_events,
+            //       push_subscriptions, video_segments via orphanRemoval / cascade)
+            $this->em->refresh($user);
             $this->em->remove($user);
             $this->em->flush();
 

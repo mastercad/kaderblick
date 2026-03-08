@@ -9,6 +9,8 @@ use App\Controller\Api\PlayersController;
 use App\Controller\Api\SurveyController;
 use App\Controller\Api\TaskController;
 use App\Controller\Api\TeamsController;
+use App\Controller\CalendarController;
+use App\Controller\ParticipationController;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -66,6 +68,8 @@ class ContainerWiringTest extends KernelTestCase
             'MyTeamController' => [MyTeamController::class],
             'SurveyController' => [SurveyController::class],
             'TaskController' => [TaskController::class],
+            'CalendarController' => [CalendarController::class],
+            'ParticipationController' => [ParticipationController::class],
         ];
     }
 }

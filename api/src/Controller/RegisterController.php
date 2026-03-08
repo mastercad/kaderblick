@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Service\RegistrationNotificationService;
 use App\Service\UserVerificationService;
 use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -12,13 +13,15 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Throwable;
 
 #[Route('/api', name: 'api_')]
 class RegisterController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $em,
-        private UserVerificationService $verificationService
+        private UserVerificationService $verificationService,
+        private RegistrationNotificationService $registrationNotificationService
     ) {
     }
 
@@ -95,8 +98,16 @@ class RegisterController extends AbstractController
 
         $this->em->flush();
 
+        // Notify admins about the newly verified user
+        try {
+            $this->registrationNotificationService->notifyAdminsAboutNewUser($user);
+        } catch (Throwable) {
+            // Non-critical – don't fail the verification
+        }
+
         return new JsonResponse([
-            'message' => 'Deine E-Mail-Adresse wurde erfolgreich verifiziert. Du kannst dich jetzt anmelden.'
+            'message' => 'Deine E-Mail-Adresse wurde erfolgreich verifiziert. Du kannst dich jetzt anmelden.',
+            'needsContext' => true,
         ], 200);
     }
 

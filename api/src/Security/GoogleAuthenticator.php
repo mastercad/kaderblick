@@ -4,6 +4,7 @@ namespace App\Security;
 
 use App\Entity\User;
 use App\Service\RefreshTokenService;
+use App\Service\RegistrationNotificationService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
@@ -21,6 +22,7 @@ use Symfony\Component\Security\Http\Authenticator\AbstractAuthenticator;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
+use Throwable;
 use Twig\Environment;
 
 class GoogleAuthenticator extends AbstractAuthenticator
@@ -33,6 +35,7 @@ class GoogleAuthenticator extends AbstractAuthenticator
         private Environment $twig,
         private MailerInterface $mailer,
         private ParameterBagInterface $params,
+        private RegistrationNotificationService $registrationNotificationService,
         private int $jwtTtl = 3600
     ) {
     }
@@ -54,13 +57,15 @@ class GoogleAuthenticator extends AbstractAuthenticator
         $params = $this->params;
 
         return new SelfValidatingPassport(
-            new UserBadge($googleId, function () use ($googleId, $email, $googleUserData, $mailer, $params) {
+            new UserBadge($googleId, function () use ($googleId, $email, $googleUserData, $mailer, $params, $request) {
                 $user = $this->em->getRepository(User::class)->findOneBy(['googleId' => $googleId]);
                 if (!$user) {
+                    $isCompletelyNew = false;
                     $user = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
                     if ($user) {
                         $user->setGoogleId($googleId);
                     } else {
+                        $isCompletelyNew = true;
                         $user = new User();
                         $user->setEmail($email);
                         $user->setGoogleId($googleId);
@@ -74,6 +79,15 @@ class GoogleAuthenticator extends AbstractAuthenticator
 
                     $this->em->persist($user);
                     $this->em->flush();
+
+                    if ($isCompletelyNew) {
+                        $request->attributes->set('_is_new_google_user', true);
+                        try {
+                            $this->registrationNotificationService->notifyAdminsAboutNewUser($user);
+                        } catch (Throwable) {
+                            // Non-critical – don't fail the login
+                        }
+                    }
 
                     $email = (new TemplatedEmail())
                         ->from('no-reply@kaderblick.de')
@@ -109,10 +123,12 @@ class GoogleAuthenticator extends AbstractAuthenticator
         $expireTimestamp = $expireDate->getTimestamp();
 
         // Auth-Daten für das Template vorbereiten
+        $isNewUser = $request->attributes->get('_is_new_google_user', false);
         $authData = [
             'success' => true,
             'token' => $accessToken,
             'refreshToken' => $refreshToken,
+            'isNewUser' => $isNewUser,
             'user' => [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),

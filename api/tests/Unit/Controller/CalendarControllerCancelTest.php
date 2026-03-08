@@ -10,8 +10,12 @@ use App\Security\Voter\CalendarEventVoter;
 use App\Service\CalendarEventService;
 use App\Service\EmailNotificationService;
 use App\Service\NotificationService;
+use App\Service\TeamMembershipService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\Query;
+use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -36,6 +40,27 @@ class CalendarControllerCancelTest extends TestCase
         $this->participationRepo = $this->createMock(ParticipationRepository::class);
         $calendarEventService = $this->createMock(CalendarEventService::class);
         $this->notificationService = $this->createMock(NotificationService::class);
+        $teamMembershipService = $this->createMock(TeamMembershipService::class);
+
+        // Default repository stub: findBy() → [], getResult() → [] to prevent
+        // foreach-null PHP warnings when tests don't set up an explicit repo mock.
+        // Individual tests may override via $this->entityManager->method('getRepository')->willReturn(...).
+        $defaultQuery = $this->createMock(Query::class);
+        $defaultQuery->method('getResult')->willReturn([]);
+        $defaultQuery->method('getSingleScalarResult')->willReturn(0);
+        $defaultQb = $this->createMock(QueryBuilder::class);
+        $defaultQb->method('select')->willReturnSelf();
+        $defaultQb->method('where')->willReturnSelf();
+        $defaultQb->method('andWhere')->willReturnSelf();
+        $defaultQb->method('setParameter')->willReturnSelf();
+        $defaultQb->method('innerJoin')->willReturnSelf();
+        $defaultQb->method('orderBy')->willReturnSelf();
+        $defaultQb->method('getQuery')->willReturn($defaultQuery);
+        $defaultRepo = $this->createMock(EntityRepository::class);
+        $defaultRepo->method('findBy')->willReturn([]);
+        $defaultRepo->method('findOneBy')->willReturn(null);
+        $defaultRepo->method('createQueryBuilder')->willReturn($defaultQb);
+        $this->entityManager->method('getRepository')->willReturn($defaultRepo);
 
         $this->controller = new CalendarController(
             $this->entityManager,
@@ -43,6 +68,7 @@ class CalendarControllerCancelTest extends TestCase
             $this->participationRepo,
             $calendarEventService,
             $this->notificationService,
+            $teamMembershipService,
         );
 
         // Set up authenticated user
@@ -192,11 +218,6 @@ class CalendarControllerCancelTest extends TestCase
         $this->authChecker->method('isGranted')->willReturn(true);
         $this->entityManager->method('flush');
 
-        // Mock the TeamRide repository to return empty
-        $teamRideRepo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
-        $teamRideRepo->method('findBy')->willReturn([]);
-        $this->entityManager->method('getRepository')->willReturn($teamRideRepo);
-
         $this->notificationService->expects($this->once())
             ->method('createNotificationForUsers')
             ->with(
@@ -233,10 +254,6 @@ class CalendarControllerCancelTest extends TestCase
 
         $this->authChecker->method('isGranted')->willReturn(true);
         $this->entityManager->method('flush');
-
-        $teamRideRepo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
-        $teamRideRepo->method('findBy')->willReturn([]);
-        $this->entityManager->method('getRepository')->willReturn($teamRideRepo);
 
         // Notification should NOT be called because the only recipient is the canceller
         $this->notificationService->expects($this->never())
@@ -331,10 +348,6 @@ class CalendarControllerCancelTest extends TestCase
         $this->authChecker->method('isGranted')->willReturn(true);
         $this->entityManager->method('flush');
 
-        $teamRideRepo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
-        $teamRideRepo->method('findBy')->willReturn([]);
-        $this->entityManager->method('getRepository')->willReturn($teamRideRepo);
-
         $this->notificationService->expects($this->once())
             ->method('createNotificationForUsers')
             ->with(
@@ -368,10 +381,6 @@ class CalendarControllerCancelTest extends TestCase
         $this->authChecker->method('isGranted')->willReturn(true);
         $this->entityManager->method('flush');
 
-        $teamRideRepo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
-        $teamRideRepo->method('findBy')->willReturn([]);
-        $this->entityManager->method('getRepository')->willReturn($teamRideRepo);
-
         $this->notificationService->expects($this->never())
             ->method('createNotificationForUsers');
 
@@ -403,8 +412,8 @@ class CalendarControllerCancelTest extends TestCase
         $mockParticipation->method('getUser')->willReturn($participantUser);
 
         // Mock the QueryBuilder chain on participationRepo
-        $qb = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $qb = $this->createMock(QueryBuilder::class);
+        $query = $this->createMock(Query::class);
         $qb->method('innerJoin')->willReturnSelf();
         $qb->method('where')->willReturnSelf();
         $qb->method('andWhere')->willReturnSelf();
@@ -415,10 +424,6 @@ class CalendarControllerCancelTest extends TestCase
 
         $this->authChecker->method('isGranted')->willReturn(true);
         $this->entityManager->method('flush');
-
-        $teamRideRepo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
-        $teamRideRepo->method('findBy')->willReturn([]);
-        $this->entityManager->method('getRepository')->willReturn($teamRideRepo);
 
         $this->notificationService->expects($this->once())
             ->method('createNotificationForUsers')
@@ -449,8 +454,8 @@ class CalendarControllerCancelTest extends TestCase
         $event->addPermission($permission);
 
         // No participants
-        $qb = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
-        $query = $this->createMock(\Doctrine\ORM\Query::class);
+        $qb = $this->createMock(QueryBuilder::class);
+        $query = $this->createMock(Query::class);
         $qb->method('innerJoin')->willReturnSelf();
         $qb->method('where')->willReturnSelf();
         $qb->method('andWhere')->willReturnSelf();
@@ -461,10 +466,6 @@ class CalendarControllerCancelTest extends TestCase
 
         $this->authChecker->method('isGranted')->willReturn(true);
         $this->entityManager->method('flush');
-
-        $teamRideRepo = $this->createMock(\Doctrine\ORM\EntityRepository::class);
-        $teamRideRepo->method('findBy')->willReturn([]);
-        $this->entityManager->method('getRepository')->willReturn($teamRideRepo);
 
         $this->notificationService->expects($this->never())
             ->method('createNotificationForUsers');

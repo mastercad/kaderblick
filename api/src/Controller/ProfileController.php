@@ -2,9 +2,11 @@
 
 namespace App\Controller;
 
+use App\Entity\RegistrationRequest;
 use App\Entity\User;
 use App\Service\CoachTeamPlayerService;
 use App\Service\EmailVerificationService;
+use App\Service\SystemSettingService;
 use App\Service\UserTitleService;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
@@ -24,6 +26,7 @@ class ProfileController extends AbstractController
         private ValidatorInterface $validator,
         private EmailVerificationService $emailVerificationService,
         private CoachTeamPlayerService $coachTeamPlayerService,
+        private SystemSettingService $systemSettingService,
     ) {
     }
 
@@ -39,6 +42,14 @@ class ProfileController extends AbstractController
 
         $isPlayer = count($this->coachTeamPlayerService->collectPlayerTeams($user)) > 0;
         $isCoach = count($this->coachTeamPlayerService->collectCoachTeams($user)) > 0;
+
+        $hasUserRelations = $user->getUserRelations()->count() > 0;
+        $hasRegistrationRequests = $this->entityManager->getRepository(RegistrationRequest::class)
+            ->count(['user' => $user]) > 0;
+        $featureEnabled = $this->systemSettingService->isRegistrationContextEnabled();
+        $userRoles = $user->getRoles();
+        $isAdminOrAbove = in_array('ROLE_ADMIN', $userRoles, true) || in_array('ROLE_SUPERADMIN', $userRoles, true);
+        $needsRegistrationContext = $featureEnabled && !$isAdminOrAbove && !$hasUserRelations && !$hasRegistrationRequests;
 
         $titleData = $userTitleService->retrieveTitleDataForUser($user);
         $levelData = $user->getUserLevel() ? [
@@ -63,7 +74,8 @@ class ProfileController extends AbstractController
             'isPlayer' => $isPlayer,
             'avatarFile' => $user->getAvatarFilename(),
             'title' => $titleData,
-            'level' => $levelData
+            'level' => $levelData,
+            'needsRegistrationContext' => $needsRegistrationContext
         ]);
     }
 

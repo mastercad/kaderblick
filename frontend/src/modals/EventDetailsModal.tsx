@@ -29,6 +29,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { apiJson, apiRequest } from '../utils/api';
 import { WeatherDisplay } from '../components/WeatherIcons';
 import WeatherModal from './WeatherModal';
@@ -73,6 +75,8 @@ export interface EventDetailsModalProps {
       canEdit?: boolean;
       canDelete?: boolean;
       canCancel?: boolean;
+      canViewRides?: boolean;
+      canParticipate?: boolean;
     };
     cancelled?: boolean;
     cancelReason?: string;
@@ -148,7 +152,10 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   const [participationStatuses, setParticipationStatuses] = useState<Array<any>>([]);
   const [currentParticipation, setCurrentParticipation] = useState<any>(null);
   const [participations, setParticipations] = useState<Array<any>>([]);
-  const [note, setNote] = useState('');
+  // Note dialog state
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [pendingStatusId, setPendingStatusId] = useState<number | null>(null);
+  const [dialogNote, setDialogNote] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [weatherModalOpen, setWeatherModalOpen] = useState(false);
@@ -207,11 +214,11 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
 
   // Auto-open rides modal when initialOpenRides is set
   useEffect(() => {
-    if (initialOpenRides && open && event?.id) {
+    if (initialOpenRides && open && event?.id && event?.permissions?.canViewRides) {
       setSelectedEventId(event.id);
       setTeamRideModalOpen(true);
     }
-  }, [initialOpenRides, open, event?.id]);
+  }, [initialOpenRides, open, event?.id, event?.permissions?.canViewRides]);
 
   const tourSteps = [
     {
@@ -220,11 +227,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     },
     {
       target: "event-action-button",
-      content: "Mit diesem Button kannst du dich zum Event anmelden oder abmelden!",
-    },
-    {
-      target: "participation-note",
-      content: "Teile hier optional mit, warum du diesen Status gesetzt hast.",
+      content: "Hier kannst du dich zum Event anmelden oder abmelden. Nach dem Klick öffnet sich ein Fenster, wo du optional eine Nachricht hinterlassen kannst.",
     },
     /*
     {
@@ -247,7 +250,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   ];
 
   useEffect(() => {
-    if (!event?.id || !open) {
+    if (!event?.id || !open || !event?.permissions?.canViewRides) {
       setTeamRideStatus('none');
       return;
     }
@@ -276,42 +279,85 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   };
 
   useEffect(() => {
-    if (!event || !open) return;
+    if (!event || !open || !event.permissions?.canParticipate) {
+      setParticipationStatuses([]);
+      setCurrentParticipation(null);
+      setParticipations([]);
+      return;
+    }
     setLoading(true);
     Promise.all([
       apiJson(`/api/participation/statuses`),
-      apiJson(`/api/participation/event/${event.id}`).catch(() => []),
+      apiJson(`/api/participation/event/${event.id}`).catch(() => ({})),
     ])
       .then(([statusesResponse, list]) => {
         if (!Array.isArray(statusesResponse.statuses)) {
           console.error('FEHLER: participation/statuses liefert kein Array!', statusesResponse);
         }
         setParticipationStatuses(Array.isArray(statusesResponse.statuses) ? statusesResponse.statuses : []);
-        setParticipations(list.participations);
+        setParticipations(list.participations ?? []);
+        if (list.my_participation) {
+          const mp = list.my_participation;
+          setCurrentParticipation({
+            statusId: mp.status_id,
+            statusName: mp.status_name,
+            color: mp.status_color,
+            icon: mp.status_icon,
+            note: mp.note,
+          });
+        } else {
+          setCurrentParticipation(null);
+        }
       })
       .catch(() => {
         setParticipationStatuses([]);
         setCurrentParticipation(null);
         setParticipations([]);
-        setNote('');
       })
       .finally(() => setLoading(false));
-  }, [event, open]);
+  }, [event, open, event?.permissions?.canParticipate]);
 
-  const handleParticipationChange = (statusId: number) => {
+  const handleStatusClick = (statusId: number) => {
     if (!event) return;
+    setPendingStatusId(statusId);
+    // Pre-fill note if user already has a note for this event
+    setDialogNote(currentParticipation?.note ?? '');
+    setNoteDialogOpen(true);
+  };
+
+  const handleParticipationSubmit = () => {
+    if (!event || !pendingStatusId) return;
+    setNoteDialogOpen(false);
     setSaving(true);
     apiJson(`/api/participation/event/${event.id}/respond`, {
       method: 'POST',
-      body: { status_id: statusId, note },
+      body: { status_id: pendingStatusId, note: dialogNote },
     })
-      .then(() => {
-        return Promise.all([
-          apiJson(`/api/participation/event/${event.id}`),
-        ]);
+      .then((response) => {
+        if (response.my_participation) {
+          const mp = response.my_participation;
+          setCurrentParticipation({
+            statusId: mp.status_id,
+            statusName: mp.status_name,
+            color: mp.status_color,
+            icon: mp.status_icon,
+            note: mp.note,
+          });
+        }
+        return apiJson(`/api/participation/event/${event.id}`);
       })
-      .then(([list]) => {
-        setParticipations(list.participations);
+      .then((list) => {
+        setParticipations(list.participations ?? []);
+        if (list.my_participation) {
+          const mp = list.my_participation;
+          setCurrentParticipation({
+            statusId: mp.status_id,
+            statusName: mp.status_name,
+            color: mp.status_color,
+            icon: mp.status_icon,
+            note: mp.note,
+          });
+        }
       })
       .finally(() => setSaving(false));
   };
@@ -435,7 +481,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                 Löschen
               </Button>
             )}
-            {((showEdit && onEdit) || event.permissions?.canEdit) && (
+            {event.permissions?.canEdit && onEdit && (
               <Button
                 onClick={onEdit}
                 variant="outlined"
@@ -559,6 +605,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                   <WeatherDisplay code={event.weatherData?.weatherCode} theme={theme.palette.mode} size={32} />
                 </Box>
               </Tooltip>
+              {event.permissions?.canViewRides && (
               <Tooltip
                 title={
                   teamRideStatus === 'none'
@@ -613,6 +660,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                   )}
                 </Box>
               </Tooltip>
+              )}
             </Stack>
           </Paper>
 
@@ -692,6 +740,8 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
 
           <Divider sx={{ my: 0.5 }} />
 
+          {event.permissions?.canParticipate && (
+          <>
           {/* --- Participation Section --- */}
           <Box>
             <Stack direction="row" spacing={1} alignItems="center" mb={1.5}>
@@ -708,6 +758,56 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                 {/* Participation Buttons — hidden when cancelled */}
                 {!event.cancelled && (
                   <>
+                    {/* Current participation status badge */}
+                    {currentParticipation && (
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          mb: 2,
+                          p: 1.25,
+                          borderRadius: 2,
+                          borderColor: currentParticipation.color || 'divider',
+                          bgcolor: `${currentParticipation.color || '#888'}18`,
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 1,
+                        }}
+                      >
+                        <CheckCircleOutlineIcon
+                          sx={{ fontSize: 18, color: currentParticipation.color || 'text.secondary', mt: 0.15, flexShrink: 0 }}
+                        />
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography variant="body2" fontWeight={600} sx={{ color: currentParticipation.color || 'text.primary' }}>
+                            {currentParticipation.statusName}
+                          </Typography>
+                          {currentParticipation.note && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: 'block', fontStyle: 'italic', wordBreak: 'break-word' }}
+                            >
+                              {currentParticipation.note}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Button
+                          size="small"
+                          variant="text"
+                          startIcon={<ChatBubbleOutlineIcon sx={{ fontSize: 14 }} />}
+                          onClick={() => handleStatusClick(currentParticipation.statusId)}
+                          disabled={saving}
+                          sx={{
+                            ml: 'auto',
+                            textTransform: 'none',
+                            fontSize: '0.75rem',
+                            flexShrink: 0,
+                            color: 'text.secondary',
+                          }}
+                        >
+                          Notiz
+                        </Button>
+                      </Paper>
+                    )}
                     <Stack
                       id="event-action-button"
                       direction="row"
@@ -724,14 +824,15 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                           <Button
                             key={status.id}
                             variant={isActive ? 'contained' : 'outlined'}
-                            size="small"
+                            size={isMobile ? 'medium' : 'small'}
                             startIcon={status.icon ? <i className={`fa fa-${status.icon} fa-fw`} /> : undefined}
                             disabled={saving}
-                            onClick={() => handleParticipationChange(status.id)}
+                            onClick={() => handleStatusClick(status.id)}
                             sx={{
                               borderRadius: 6,
                               textTransform: 'none',
                               fontWeight: isActive ? 700 : 500,
+                              minWidth: isMobile ? 96 : undefined,
                               bgcolor: isActive ? (status.color || undefined) : undefined,
                               color: isActive ? '#fff' : (status.color || undefined),
                               borderColor: status.color || undefined,
@@ -749,24 +850,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                       })
                   )}
                 </Stack>
-
-                {/* Note Field */}
-                <Box id="participation-note" mb={2}>
-                  <TextField
-                    label="Notiz (optional)"
-                    value={note}
-                    onChange={e => setNote(e.target.value)}
-                    fullWidth
-                    multiline
-                    minRows={1}
-                    maxRows={3}
-                    disabled={saving}
-                    size="small"
-                    sx={{
-                      '& .MuiOutlinedInput-root': { borderRadius: 2 },
-                    }}
-                  />
-                </Box>                  </>
+                  </>
                 )}
                 {/* Participant List - Collapsible */}
                 <Box id="participations-list">
@@ -805,19 +889,42 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                                 {group.statusName} ({group.participants.length})
                               </Typography>
                             </Stack>
-                            <Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ gap: 0.5 }}>
+                            <Stack spacing={0.75}>
                               {group.participants.map(p => (
-                                <Chip
+                                <Box
                                   key={p.user_id}
-                                  label={p.user_name}
-                                  size="small"
-                                  variant="outlined"
                                   sx={{
-                                    borderColor: group.color || undefined,
-                                    fontSize: '0.75rem',
-                                    height: 26,
+                                    display: 'flex',
+                                    alignItems: p.note ? 'flex-start' : 'center',
+                                    gap: 1,
+                                    py: p.note ? 0.5 : 0,
                                   }}
-                                />
+                                >
+                                  <Chip
+                                    label={p.user_name}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{
+                                      borderColor: group.color || undefined,
+                                      fontSize: '0.75rem',
+                                      height: 26,
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                  {p.note && (
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      sx={{
+                                        fontStyle: 'italic',
+                                        lineHeight: 1.4,
+                                        wordBreak: 'break-word',
+                                      }}
+                                    >
+                                      {p.note}
+                                    </Typography>
+                                  )}
+                                </Box>
                               ))}
                             </Stack>
                           </Box>
@@ -829,6 +936,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
               </>
             )}
           </Box>
+          </>)}
         </Box>
       </BaseModal>
 
@@ -846,6 +954,82 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
       />
 
       <TourTooltip steps={tourSteps} />
+
+      {/* Note Dialog — opens when user clicks a participation status button */}
+      {(() => {
+        const pendingStatus = participationStatuses.find(s => s.id === pendingStatusId);
+        return (
+          <Dialog
+            open={noteDialogOpen}
+            onClose={() => setNoteDialogOpen(false)}
+            maxWidth="xs"
+            fullWidth
+            PaperProps={{ sx: { borderRadius: isMobile ? 0 : 3, m: isMobile ? 0 : 2, width: '100%' } }}
+            sx={isMobile ? { '& .MuiDialog-container': { alignItems: 'flex-end' } } : {}}
+          >
+            <DialogTitle sx={{ pb: 1 }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                {pendingStatus?.color && (
+                  <Box
+                    sx={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: '50%',
+                      bgcolor: pendingStatus.color,
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
+                <Typography variant="subtitle1" fontWeight={700}>
+                  {pendingStatus?.name ?? 'Rückmeldung'}
+                </Typography>
+              </Stack>
+            </DialogTitle>
+            <DialogContent sx={{ pt: '8px !important' }}>
+              <Typography variant="body2" color="text.secondary" mb={1.5}>
+                Möchtest du eine Nachricht hinzufügen? (optional)
+              </Typography>
+              <TextField
+                id="participation-note"
+                label="Nachricht (optional)"
+                value={dialogNote}
+                onChange={e => setDialogNote(e.target.value)}
+                fullWidth
+                multiline
+                minRows={3}
+                maxRows={6}
+                autoFocus
+                inputProps={{ maxLength: 300 }}
+                placeholder={
+                  'z.B. Komme 10 Minuten später\nBringe Eierschecke mit\n…'
+                }
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                helperText={`${dialogNote.length}/300`}
+              />
+            </DialogContent>
+            <DialogActions sx={{ px: 2.5, pb: 2.5, gap: 1 }}>
+              <Button
+                onClick={() => setNoteDialogOpen(false)}
+                sx={{ borderRadius: 2, flex: 1 }}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={handleParticipationSubmit}
+                variant="contained"
+                sx={{
+                  borderRadius: 2,
+                  flex: 2,
+                  bgcolor: pendingStatus?.color || undefined,
+                  '&:hover': { bgcolor: pendingStatus?.color ? `${pendingStatus.color}cc` : undefined },
+                }}
+              >
+                Bestätigen
+              </Button>
+            </DialogActions>
+          </Dialog>
+        );
+      })()}
 
       {/* Cancel Dialog */}
       <Dialog open={cancelDialogOpen} onClose={() => setCancelDialogOpen(false)} maxWidth="sm" fullWidth>
