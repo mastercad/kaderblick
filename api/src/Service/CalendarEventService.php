@@ -66,24 +66,33 @@ class CalendarEventService
         if ('Turnier' === $calendarEvent->getCalendarEventType()?->getName()) {
             $tournament = $this->entityManager->getRepository(Tournament::class)->findOneBy(['calendarEvent' => $calendarEvent]);
             if ($tournament) {
-                // Sammle alle Game-IDs, die zu den Matches gehören
-                $gameIds = [];
+                // Lösche Abhängigkeiten der Match-Games (game_events, substitutions, videos),
+                // dann die Matches, das Tournament und zuletzt die Games selbst.
+                $gameEventRepo = $this->entityManager->getRepository(GameEvent::class);
+                $substitutionRepo = $this->entityManager->getRepository(Substitution::class);
+                $videoRepo = $this->entityManager->getRepository(Video::class);
+                $matchGames = [];
+
                 foreach ($tournament->getMatches() as $match) {
-                    if ($match->getGame()) {
-                        $gameIds[] = $match->getGame()->getId();
+                    $matchGame = $match->getGame();
+                    if ($matchGame) {
+                        $matchGames[] = $matchGame;
+                        foreach ($gameEventRepo->findBy(['game' => $matchGame]) as $ge) {
+                            $this->entityManager->remove($ge);
+                        }
+                        foreach ($substitutionRepo->findBy(['game' => $matchGame]) as $sub) {
+                            $this->entityManager->remove($sub);
+                        }
+                        foreach ($videoRepo->findBy(['game' => $matchGame]) as $video) {
+                            $this->entityManager->remove($video);
+                        }
                     }
                     $this->entityManager->remove($match);
                 }
                 $this->entityManager->remove($tournament);
-                // Lösche alle Games, die zu den Matches gehörten (auch wenn sie nicht mehr referenziert werden)
-                if (count($gameIds) > 0) {
-                    $gameRepo = $this->entityManager->getRepository(Game::class);
-                    foreach ($gameIds as $gid) {
-                        $game = $gameRepo->find($gid);
-                        if ($game) {
-                            $this->entityManager->remove($game);
-                        }
-                    }
+                // Match-Games nach Matches/Tournament entfernen, damit keine FK-Verletzung auftritt
+                foreach ($matchGames as $matchGame) {
+                    $this->entityManager->remove($matchGame);
                 }
             }
         }

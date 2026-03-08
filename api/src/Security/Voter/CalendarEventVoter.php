@@ -17,7 +17,7 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /**
- * @template-extends Voter<string, CalendarEvent>
+ * @template-extends Voter<string, CalendarEvent|Team|null>
  */
 final class CalendarEventVoter extends Voter
 {
@@ -48,15 +48,66 @@ final class CalendarEventVoter extends Voter
 
         switch ($attribute) {
             case self::CREATE:
-            case self::EDIT:
-            case self::DELETE:
+                if (in_array('ROLE_SUPERADMIN', $user->getRoles())) {
+                    return true;
+                }
+
+                // When subject is a Team (called from createTrainingSeries), verify team membership
+                if ($subject instanceof Team) {
+                    if (
+                        (in_array('ROLE_ADMIN', $user->getRoles()) || in_array('ROLE_SUPPORTER', $user->getRoles()))
+                        && $this->isUserInTeam($user, $subject)
+                    ) {
+                        return true;
+                    }
+
+                    return $this->isCoachOfTeam($user, $subject);
+                }
+
+                // When subject is a CalendarEvent (not yet linked to a team),
+                // allow any admin/supporter/coach – team ownership is validated
+                // separately in CalendarEventService::validateMatchTeamOwnership().
                 if (
-                    in_array('ROLE_SUPPORTER', $user->getRoles())
-                    || in_array('ROLE_ADMIN', $user->getRoles())
-                    || in_array('ROLE_SUPERADMIN', $user->getRoles())
+                    in_array('ROLE_ADMIN', $user->getRoles())
+                    || in_array('ROLE_SUPPORTER', $user->getRoles())
                     || $this->isCoachOfAnyTeam($user)
                 ) {
                     return true;
+                }
+
+                break;
+
+            case self::EDIT:
+            case self::DELETE:
+                if (in_array('ROLE_SUPERADMIN', $user->getRoles())) {
+                    return true;
+                }
+
+                if (!$subject instanceof CalendarEvent) {
+                    return false;
+                }
+
+                $teams = $this->getEventTeams($subject);
+
+                // No team binding – only the creator may edit/delete
+                if (empty($teams)) {
+                    return $subject->getCreatedBy()?->getId() === $user->getId();
+                }
+
+                // ROLE_ADMIN or ROLE_SUPPORTER must also be a member of one of the event's teams
+                if (in_array('ROLE_ADMIN', $user->getRoles()) || in_array('ROLE_SUPPORTER', $user->getRoles())) {
+                    foreach ($teams as $team) {
+                        if ($this->isUserInTeam($user, $team)) {
+                            return true;
+                        }
+                    }
+                }
+
+                // Coach of any of the event's teams
+                foreach ($teams as $team) {
+                    if ($this->isCoachOfTeam($user, $team)) {
+                        return true;
+                    }
                 }
 
                 break;
@@ -67,6 +118,34 @@ final class CalendarEventVoter extends Voter
         }
 
         return false;
+    }
+
+    /**
+     * Returns all Team objects associated with a CalendarEvent.
+     * Checks both game teams (homeTeam/awayTeam) and TEAM-type permissions.
+     *
+     * @return Team[]
+     */
+    private function getEventTeams(CalendarEvent $event): array
+    {
+        $teams = [];
+
+        if ($event->getGame()) {
+            if ($event->getGame()->getHomeTeam()) {
+                $teams[] = $event->getGame()->getHomeTeam();
+            }
+            if ($event->getGame()->getAwayTeam()) {
+                $teams[] = $event->getGame()->getAwayTeam();
+            }
+        }
+
+        foreach ($event->getPermissions() as $permission) {
+            if (CalendarEventPermissionType::TEAM === $permission->getPermissionType() && $permission->getTeam()) {
+                $teams[] = $permission->getTeam();
+            }
+        }
+
+        return array_unique($teams, SORT_REGULAR);
     }
 
     private function canViewCalendarEvent(CalendarEvent $calendarEvent, User $user): bool

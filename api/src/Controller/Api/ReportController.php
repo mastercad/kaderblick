@@ -458,6 +458,7 @@ class ReportController extends AbstractController
                 $filters[$k] = $v;
             }
         }
+        $diagramType = $config['diagramType'] ?? 'bar';
         $config['filters'] = $filters;
 
         $reportData = $reportDataService->generateReportData($config);
@@ -468,7 +469,7 @@ class ReportController extends AbstractController
             'config' => $config,
             'labels' => $reportData['labels'],
             'datasets' => $reportData['datasets'],
-            'diagramType' => $config['diagramType'] ?? 'bar',
+            'diagramType' => $diagramType,
             'meta' => $reportData['meta'] ?? null,
         ];
 

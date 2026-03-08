@@ -44,7 +44,7 @@ const baseEvent = {
     awayTeam: { name: 'SC Gegner' },
     gameType: { name: 'Freundschaftsspiel' }
   },
-  permissions: { canEdit: true, canDelete: true }
+  permissions: { canEdit: true, canDelete: true, canParticipate: true, canViewRides: true }
 };
 
 const participationStatuses = [
@@ -83,11 +83,20 @@ describe('EventDetailsModal', () => {
       if (url.includes('/api/participation/statuses')) {
         return Promise.resolve({ statuses: participationStatuses });
       }
-      if (url.includes('/api/participation/event/1')) {
-        return Promise.resolve({ participations });
+      if (url.includes('/api/participation/event/1') && !url.includes('/respond')) {
+        return Promise.resolve({ participations, my_participation: null });
       }
       if (url.includes('/respond')) {
-        return Promise.resolve({});
+        return Promise.resolve({
+          my_participation: {
+            status_id: 2,
+            status_name: 'Absage',
+            status_code: 'NO',
+            status_color: '#f44336',
+            status_icon: 'fa-times',
+            note: '',
+          },
+        });
       }
       return Promise.resolve({});
     });
@@ -119,6 +128,8 @@ describe('EventDetailsModal', () => {
       expect(screen.getByText('Absage')).toBeInTheDocument();
       expect(screen.getByText('Max Mustermann')).toBeInTheDocument();
       expect(screen.getByText('Erika Musterfrau')).toBeInTheDocument();
+      // Participant note should be shown inline in the list
+      expect(screen.getByText('Komme später')).toBeInTheDocument();
     });
   });
 
@@ -146,7 +157,7 @@ describe('EventDetailsModal', () => {
     expect(defaultProps.onDelete).toHaveBeenCalled();
   });
 
-  it('shows participation buttons and handles participation change', async () => {
+  it('shows participation buttons and opens note dialog on click', async () => {
     await act(async () => {
       render(<EventDetailsModal {...defaultProps} />);
     });
@@ -154,19 +165,67 @@ describe('EventDetailsModal', () => {
       expect(screen.getByText('Zusage')).toBeInTheDocument();
       expect(screen.getByText('Absage')).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByText('Absage'));
+    // Click a status button → note dialog should open
+    await act(async () => {
+      fireEvent.click(screen.getByText('Absage'));
+    });
+    await waitFor(() => {
+      expect(screen.getByLabelText('Nachricht (optional)')).toBeInTheDocument();
+    });
+    // Confirm the dialog → POST should be called
+    await act(async () => {
+      fireEvent.click(screen.getByText('Bestätigen'));
+    });
     await waitFor(() => {
       expect(apiJson).toHaveBeenCalledWith('/api/participation/event/1/respond', expect.objectContaining({ method: 'POST' }));
     });
   });
 
-  it('allows entering a note in the Notizfeld', async () => {
+  it('allows entering a note in the dialog before confirming', async () => {
     await act(async () => {
       render(<EventDetailsModal {...defaultProps} />);
     });
-    const noteField = await screen.findByLabelText('Notiz (optional)');
-    fireEvent.change(noteField, { target: { value: 'Testnotiz' } });
-    expect(noteField).toHaveValue('Testnotiz');
+    await waitFor(() => {
+      expect(screen.getByText('Zusage')).toBeInTheDocument();
+    });
+    // Open dialog
+    await act(async () => {
+      fireEvent.click(screen.getByText('Zusage'));
+    });
+    const noteField = await screen.findByLabelText('Nachricht (optional)');
+    fireEvent.change(noteField, { target: { value: 'Komme 10 Minuten später' } });
+    expect(noteField).toHaveValue('Komme 10 Minuten später');
+    // Confirm → note should be sent in POST body
+    await act(async () => {
+      fireEvent.click(screen.getByText('Bestätigen'));
+    });
+    await waitFor(() => {
+      expect(apiJson).toHaveBeenCalledWith(
+        '/api/participation/event/1/respond',
+        expect.objectContaining({ body: expect.objectContaining({ note: 'Komme 10 Minuten später' }) })
+      );
+    });
+  });
+
+  it('closes note dialog on Abbrechen', async () => {
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} />);
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Zusage')).toBeInTheDocument();
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText('Zusage'));
+    });
+    await waitFor(() => {
+      expect(screen.getByLabelText('Nachricht (optional)')).toBeInTheDocument();
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText('Abbrechen'));
+    });
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Nachricht (optional)')).not.toBeInTheDocument();
+    });
   });
 
   it('opens weather modal when weather icon is clicked', async () => {
@@ -227,7 +286,7 @@ describe('EventDetailsModal', () => {
     });
   });
 
-  it('hides note field when event is cancelled', async () => {
+  it('hides participation action buttons when event is cancelled (note dialog unreachable)', async () => {
     const cancelledEvent = {
       ...baseEvent,
       cancelled: true,
@@ -236,7 +295,9 @@ describe('EventDetailsModal', () => {
     await act(async () => {
       render(<EventDetailsModal {...defaultProps} event={cancelledEvent} />);
     });
-    expect(screen.queryByLabelText('Notiz (optional)')).not.toBeInTheDocument();
+    // Status buttons hidden → note dialog cannot be opened
+    expect(screen.queryByText('Zusage')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Nachricht (optional)')).not.toBeInTheDocument();
   });
 
   it('shows Absagen button when user has canCancel permission and event is not cancelled', async () => {
@@ -314,5 +375,109 @@ describe('EventDetailsModal', () => {
       render(<EventDetailsModal {...defaultProps} event={eventWithoutDescription} />);
     });
     expect(screen.queryByText('Beschreibung des Events')).not.toBeInTheDocument();
+  });
+
+  // ─── canParticipate permission gating ────────────────────────────────────
+
+  it('hides entire participation section when canParticipate is false', async () => {
+    const eventNoParticipate = {
+      ...baseEvent,
+      permissions: { canEdit: true, canDelete: true, canParticipate: false, canViewRides: true },
+    };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={eventNoParticipate} />);
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Teilnahme')).not.toBeInTheDocument();
+      expect(screen.queryByText('Zusage')).not.toBeInTheDocument();
+      expect(screen.queryByText('Absage')).not.toBeInTheDocument();
+    });
+  });
+
+  it('shows participation section when canParticipate is true', async () => {
+    // baseEvent already has canParticipate: true — just verify the section is present
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} />);
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Teilnahme')).toBeInTheDocument();
+      expect(screen.getByText('Zusage')).toBeInTheDocument();
+      expect(screen.getByText('Absage')).toBeInTheDocument();
+    });
+  });
+
+  it('does not fetch participations when canParticipate is false', async () => {
+    const eventNoParticipate = {
+      ...baseEvent,
+      permissions: { canEdit: true, canDelete: true, canParticipate: false, canViewRides: true },
+    };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={eventNoParticipate} />);
+    });
+    await waitFor(() => {
+      const calls = (apiJson as jest.Mock).mock.calls.map((c: any[]) => c[0] as string);
+      expect(calls.every((url: string) => !url.includes('/api/participation/event/'))).toBe(true);
+    });
+  });
+
+  // ─── canViewRides permission gating ──────────────────────────────────────
+
+  it('hides car-ride icon when canViewRides is false', async () => {
+    const eventNoRides = {
+      ...baseEvent,
+      permissions: { canEdit: true, canDelete: true, canParticipate: true, canViewRides: false },
+    };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={eventNoRides} />);
+    });
+    // The car Tooltip uses aria-label or title "Fahrgemeinschaften" (or similar); verify absence
+    expect(screen.queryByTitle('Fahrgemeinschaften')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Fahrgemeinschaften')).not.toBeInTheDocument();
+  });
+
+  it('hides car-ride icon when canViewRides is missing', async () => {
+    const eventMissingRides = {
+      ...baseEvent,
+      permissions: { canEdit: true, canDelete: true, canParticipate: true },
+    };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={eventMissingRides} />);
+    });
+    expect(screen.queryByTitle('Fahrgemeinschaften')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Fahrgemeinschaften')).not.toBeInTheDocument();
+  });
+
+  // ─── Tournament events ───────────────────────────────────────────────────
+  // The backend sets canParticipate: false for tournament-type events.
+  // This test documents that the frontend correctly hides the section in that case.
+
+  it('hides participation section for tournament-type events (canParticipate: false)', async () => {
+    const tournamentEvent = {
+      ...baseEvent,
+      type: { name: 'Turnier', color: '#e53935' },
+      permissions: { canEdit: false, canDelete: false, canParticipate: false, canViewRides: false },
+    };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={tournamentEvent} />);
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Teilnahme')).not.toBeInTheDocument();
+      expect(screen.queryByText('Zusage')).not.toBeInTheDocument();
+      expect(screen.queryByText('Absage')).not.toBeInTheDocument();
+    });
+  });
+
+  it('still renders event title and description for tournament-type events', async () => {
+    const tournamentEvent = {
+      ...baseEvent,
+      title: 'Sommer-Turnier',
+      type: { name: 'Turnier', color: '#e53935' },
+      permissions: { canEdit: false, canDelete: false, canParticipate: false, canViewRides: false },
+    };
+    await act(async () => {
+      render(<EventDetailsModal {...defaultProps} event={tournamentEvent} />);
+    });
+    expect(screen.getByText('Sommer-Turnier')).toBeInTheDocument();
+    expect(screen.getByText('Beschreibung des Events')).toBeInTheDocument();
   });
 });

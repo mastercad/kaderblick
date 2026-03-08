@@ -77,6 +77,11 @@ class TeamRidesController extends AbstractController
         $ride->setDriver($user);
         $ride->setSeats($data['seats'] ?? 1);
         $ride->setNote($data['note'] ?? null);
+
+        if (!$this->isGranted(TeamRideVoter::CREATE, $ride)) {
+            return $this->json(['error' => 'Nur Teammitglieder können Mitfahrgelegenheiten anbieten.'], Response::HTTP_FORBIDDEN);
+        }
+
         $this->em->persist($ride);
         $this->em->flush();
 
@@ -106,6 +111,11 @@ class TeamRidesController extends AbstractController
         if (!$ride instanceof TeamRide) {
             return $this->json(['error' => 'Ride not found'], Response::HTTP_BAD_REQUEST);
         }
+
+        if (!$this->isGranted(TeamRideVoter::VIEW, $ride)) {
+            return $this->json(['error' => 'Nur Teammitglieder können Mitfahrgelegenheiten buchen.'], Response::HTTP_FORBIDDEN);
+        }
+
         if ($ride->getPassengers()->count() >= $ride->getSeats()) {
             return $this->json(['error' => 'No seats available'], Response::HTTP_CONFLICT);
         }
@@ -157,6 +167,10 @@ class TeamRidesController extends AbstractController
 
         if (!$ride instanceof TeamRide) {
             return $this->json(['error' => 'Ride not found'], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (!$this->isGranted(TeamRideVoter::VIEW, $ride)) {
+            return $this->json(['error' => 'Nur Teammitglieder können Buchungen stornieren.'], Response::HTTP_FORBIDDEN);
         }
 
         $passengerEntity = null;

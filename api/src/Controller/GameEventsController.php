@@ -9,6 +9,7 @@ use App\Repository\GameEventRepository;
 use App\Repository\GameEventTypeRepository;
 use App\Repository\PlayerRepository;
 use App\Repository\SubstitutionReasonRepository;
+use App\Security\Voter\GameEventVoter;
 use App\Security\Voter\GameVoter;
 use App\Service\FussballDeCrawlerService;
 use App\Service\GameDetailsSyncService;
@@ -62,8 +63,8 @@ class GameEventsController extends AbstractController
         GameEventTypeRepository $eventTypeRepo,
         SubstitutionReasonRepository $substitutionReasonRepo
     ): JsonResponse {
-        // Require ROLE_ADMIN to add game events
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        // Nur Teammitglieder mit ROLE_ADMIN/ROLE_SUPPORTER oder Trainer dürfen Spielereignisse anlegen
+        $this->denyAccessUnlessGranted(GameEventVoter::CREATE, $game);
 
         $data = json_decode($request->getContent(), true);
         if (!$data) {
@@ -179,11 +180,14 @@ class GameEventsController extends AbstractController
         GameEventTypeRepository $eventTypeRepo,
         SubstitutionReasonRepository $substitutionReasonRepo
     ): JsonResponse {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
         $event = $eventRepo->find($eventId);
         if (!$event || $event->getGame()->getId() !== $gameId) {
             return $this->json(['error' => 'Event not found'], 404);
         }
+
+        // Nur Teammitglieder mit ROLE_ADMIN/ROLE_SUPPORTER oder Trainer dürfen Spielereignisse bearbeiten
+        $this->denyAccessUnlessGranted(GameEventVoter::EDIT, $event);
+
         $data = json_decode($request->getContent(), true);
         if (!$data) {
             return $this->json(['error' => 'Invalid data'], 400);
@@ -225,11 +229,14 @@ class GameEventsController extends AbstractController
         EntityManagerInterface $em,
         GameEventRepository $eventRepo
     ): JsonResponse {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
         $event = $eventRepo->find($eventId);
         if (!$event || $event->getGame()->getId() !== $gameId) {
             return $this->json(['error' => 'Event not found'], 404);
         }
+
+        // Nur Teammitglieder mit ROLE_ADMIN/ROLE_SUPPORTER oder Trainer dürfen Spielereignisse löschen
+        $this->denyAccessUnlessGranted(GameEventVoter::DELETE, $event);
+
         $em->remove($event);
         $em->flush();
 

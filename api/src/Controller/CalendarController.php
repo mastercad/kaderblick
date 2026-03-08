@@ -23,6 +23,7 @@ use App\Security\Voter\CalendarEventVoter;
 use App\Service\CalendarEventService;
 use App\Service\EmailNotificationService;
 use App\Service\NotificationService;
+use App\Service\TeamMembershipService;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -40,7 +41,8 @@ class CalendarController extends AbstractController
         private readonly EmailNotificationService $emailService,
         private readonly ParticipationRepository $participationRepository,
         private readonly CalendarEventService $calendarEventService,
-        private readonly NotificationService $notificationService
+        private readonly NotificationService $notificationService,
+        private readonly TeamMembershipService $teamMembershipService
     ) {
     }
 
@@ -153,6 +155,8 @@ class CalendarController extends AbstractController
                     'canEdit' => $this->isGranted(CalendarEventVoter::EDIT, $calendarEvent),
                     'canDelete' => $this->isGranted(CalendarEventVoter::DELETE, $calendarEvent),
                     'canCancel' => $this->isGranted(CalendarEventVoter::CANCEL, $calendarEvent),
+                    'canViewRides' => $this->canUserViewRides($calendarEvent),
+                    'canParticipate' => $this->canUserParticipateInCalendarEvent($calendarEvent),
                 ],
                 'trainingTeamId' => (static function () use ($calendarEvent): ?int {
                     foreach ($calendarEvent->getPermissions() as $perm) {
@@ -284,6 +288,11 @@ class CalendarController extends AbstractController
         $eventType = $this->entityManager->getReference(CalendarEventType::class, (int) $eventTypeId);
         $location = $locationId ? $this->entityManager->getReference(Location::class, (int) $locationId) : null;
         $team = $teamId ? $this->entityManager->getReference(Team::class, (int) $teamId) : null;
+
+        // Validate that the current user is allowed to create events for this team
+        if ($team && !$this->isGranted(CalendarEventVoter::CREATE, $team)) {
+            return $this->json(['error' => 'Keine Berechtigung für das ausgewählte Team.', 'success' => false], 403);
+        }
 
         $cursor = new DateTimeImmutable($startDate);
         $end = new DateTimeImmutable($endDate);
@@ -528,6 +537,45 @@ class CalendarController extends AbstractController
             'success' => true,
             'recipientCount' => count($recipients),
         ]);
+    }
+
+    /**
+     * Returns true when the currently authenticated user may view team rides for this event.
+     * Mirrors TeamRideVoter::VIEW logic: ROLE_SUPERADMIN always, otherwise team members only.
+     */
+    private function canUserViewRides(CalendarEvent $calendarEvent): bool
+    {
+        if ($this->isGranted('ROLE_SUPERADMIN')) {
+            return true;
+        }
+
+        /** @var ?User $user */
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return false;
+        }
+
+        return $this->teamMembershipService->isUserTeamMemberForEvent($user, $calendarEvent);
+    }
+
+    /**
+     * Returns true when the currently authenticated user is eligible to participate
+     * in this event (and should see the participation section in the UI).
+     * Mirrors ParticipationController::canUserParticipate logic via TeamMembershipService.
+     */
+    private function canUserParticipateInCalendarEvent(CalendarEvent $calendarEvent): bool
+    {
+        if ($this->isGranted('ROLE_SUPERADMIN')) {
+            return true;
+        }
+
+        /** @var ?User $user */
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return false;
+        }
+
+        return $this->teamMembershipService->canUserParticipateInEvent($user, $calendarEvent);
     }
 
     /**

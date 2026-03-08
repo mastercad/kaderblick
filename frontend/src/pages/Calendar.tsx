@@ -24,7 +24,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import TodayIcon from '@mui/icons-material/Today';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { apiJson, apiRequest } from '../utils/api';
+import { apiJson, apiRequest, getApiErrorMessage } from '../utils/api';
 import { TournamentGameMode, TournamentType } from '../types/tournament';
 import moment from 'moment';
 import AddIcon from '@mui/icons-material/Add';
@@ -270,14 +270,6 @@ type CalendarProps = {
 function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   // Handler für globalen FabStack setzen/entfernen
   const fabStack = useFabStack();
-  React.useEffect(() => {
-    // CalendarFab nur auf Kalender-Seite anzeigen
-    fabStack?.addFab(<CalendarFab onClick={handleAddEvent} />, 'calendar-fab');
-    return () => {
-      fabStack?.removeFab('calendar-fab');
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [view, setView] = useState(isMobile ? Views.DAY : Views.MONTH);
@@ -302,6 +294,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     taskOffset: 0
   });
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
+  const [editingEventPermissions, setEditingEventPermissions] = useState<{ canEdit?: boolean; canDelete?: boolean } | null>(null);
   const [eventSaving, setEventSaving] = useState(false);
   
   // Zusätzliche Daten
@@ -311,6 +304,19 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   const [gameTypes, setGameTypes] = useState<{ createAndEditAllowed: boolean; entries: GameType[] }>({ createAndEditAllowed: false, entries: [] });
   const [locations, setLocations] = useState<Location[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
+
+  // CalendarFab nur anzeigen wenn der Benutzer Events erstellen darf
+  React.useEffect(() => {
+    if (!eventTypes.createAndEditAllowed) {
+      fabStack?.removeFab('calendar-fab');
+      return;
+    }
+    fabStack?.addFab(<CalendarFab onClick={handleAddEvent} />, 'calendar-fab');
+    return () => {
+      fabStack?.removeFab('calendar-fab');
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventTypes.createAndEditAllowed]);
 
   // Deep-link: open event details (and optionally rides) from URL params
   const [searchParams, setSearchParams] = useSearchParams();
@@ -393,6 +399,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   const [taskDeletionModal, setTaskDeletionModal] = useState<{
     open: boolean;
     mode?: 'task' | 'training';
+    eventId?: number;
   }>({
     open: false
   });
@@ -558,6 +565,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
 
   // Event-Handler für das Erstellen neuer Events
   const handleDateClick = (slotInfo: any) => {
+    if (!eventTypes.createAndEditAllowed) return;
     const clickedDate = moment(slotInfo.start).format('YYYY-MM-DD');
     setEventFormData({
       title: '',
@@ -570,6 +578,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       taskOffset: 0
     });
     setEditingEventId(null);
+    setEditingEventPermissions(null);
     setEventModalOpen(true);
   };
 
@@ -666,6 +675,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       } : undefined
     });
     setEditingEventId(event.id);
+    setEditingEventPermissions(event.permissions ?? null);
     setSelectedEvent(null);
     setEventModalOpen(true);
   };
@@ -871,10 +881,10 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unbekannter Fehler' }));
+        const errorData = await response.json().catch(() => ({ error: 'Unbekannter Fehler' }));
         console.error(response);
         console.error(errorData);
-        throw new Error(errorData.message || `HTTP ${response.status}`);
+        throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
       }
 
       await refreshEvents();
@@ -895,7 +905,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       
     } catch (error: any) {
       console.error('Error saving event:', error);
-      showAlert('Fehler beim Speichern des Events: ' + error.message, 'error', 'Speichern fehlgeschlagen');
+      showAlert(getApiErrorMessage(error), 'error', 'Speichern fehlgeschlagen');
     } finally {
       setEventSaving(false);
     }
@@ -908,9 +918,9 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     const isTrainingSeries = (eventFormData.trainingWeekdays?.length ?? 0) > 0 || !!eventFormData.trainingSeriesId;
 
     if (isTaskEvent) {
-      setTaskDeletionModal({ open: true });
+      setTaskDeletionModal({ open: true, eventId: editingEventId });
     } else if (isTrainingSeries) {
-      setTaskDeletionModal({ open: true, mode: 'training' });
+      setTaskDeletionModal({ open: true, mode: 'training', eventId: editingEventId });
     } else {
       showConfirm(
         'Möchten Sie dieses Event wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
@@ -922,25 +932,48 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     }
   };
 
-  const performDeleteEvent = async (deletionMode: 'single' | 'series') => {
-    if (!editingEventId) return;
+  const handleDeleteSelectedEvent = async () => {
+    if (!selectedEvent) return;
+
+    const isTaskEvent = selectedEvent.task && Object.keys(selectedEvent.task).length > 0;
+    const isTrainingSeries = !!selectedEvent.trainingSeriesId;
+
+    if (isTaskEvent) {
+      setTaskDeletionModal({ open: true, eventId: selectedEvent.id });
+    } else if (isTrainingSeries) {
+      setTaskDeletionModal({ open: true, mode: 'training', eventId: selectedEvent.id });
+    } else {
+      showConfirm(
+        'Möchten Sie dieses Event wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+        async () => {
+          await performDeleteEvent('single', selectedEvent.id);
+        },
+        'Event löschen'
+      );
+    }
+  };
+
+  const performDeleteEvent = async (deletionMode: 'single' | 'series', eventId?: number) => {
+    const id = eventId ?? editingEventId;
+    if (!id) return;
     
     setEventSaving(true);
     try {
-      const response = await apiRequest(`/api/calendar/event/${editingEventId}`, {
+      const response = await apiRequest(`/api/calendar/event/${id}`, {
         method: 'DELETE',
         body: {deletionMode: deletionMode}
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unbekannter Fehler' }));
-        throw new Error(errorData.message || `HTTP ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Unbekannter Fehler' }));
+        throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
       }
 
       // Events neu laden
       await refreshEvents();
 
       setEventModalOpen(false);
+      setSelectedEvent(null);
       setTaskDeletionModal({ open: false });
       setEventFormData({
         title: '',
@@ -957,7 +990,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       
     } catch (error: any) {
       console.error('Error deleting event:', error);
-      showAlert('Fehler beim Löschen des Events: ' + error.message, 'error', 'Löschen fehlgeschlagen');
+      showAlert(getApiErrorMessage(error), 'error', 'Löschen fehlgeschlagen');
     } finally {
       setEventSaving(false);
     }
@@ -1013,6 +1046,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       taskOffset: 0
     });
     setEditingEventId(null);
+    setEditingEventPermissions(null);
     setEventModalOpen(true);
   };
 
@@ -1394,13 +1428,9 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
           cancelReason: selectedEvent.cancelReason,
           cancelledBy: selectedEvent.cancelledBy,
         } : null}
-        onEdit={() => selectedEvent && handleEditEvent(selectedEvent)}
-        showEdit={true}
-        onDelete={selectedEvent?.permissions?.canDelete ? () => {
-          if (selectedEvent) {
-            handleDeleteEvent();
-          }
-        } : undefined}
+        onEdit={selectedEvent?.permissions?.canEdit ? () => selectedEvent && handleEditEvent(selectedEvent) : undefined}
+        showEdit={selectedEvent?.permissions?.canEdit === true}
+        onDelete={selectedEvent?.permissions?.canDelete ? handleDeleteSelectedEvent : undefined}
         onCancelled={() => {
           setSelectedEvent(null);
           refreshEvents();
@@ -1425,8 +1455,8 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
           });
         }}
         onSave={handleSaveEvent}
-        onDelete={editingEventId ? handleDeleteEvent : undefined}
-        showDelete={!!editingEventId}
+        onDelete={editingEventId && editingEventPermissions?.canDelete ? handleDeleteEvent : undefined}
+        showDelete={!!editingEventId && editingEventPermissions?.canDelete === true}
         event={eventFormData as any}
         eventTypes={eventTypesOptions}
         teams={tournamentTeams}
@@ -1476,12 +1506,14 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         singleLabel={taskDeletionModal.mode === 'training' ? 'Nur diesen Termin' : 'Nur dieses Event'}
         seriesLabel="Gesamte Serie"
         onDeleteSingle={() => {
+          const { eventId } = taskDeletionModal;
           setTaskDeletionModal({ open: false });
-          performDeleteEvent('single');
+          performDeleteEvent('single', eventId);
         }}
         onDeleteSeries={() => {
+          const { eventId } = taskDeletionModal;
           setTaskDeletionModal({ open: false });
-          performDeleteEvent('series');
+          performDeleteEvent('series', eventId);
         }}
         loading={eventSaving}
       />

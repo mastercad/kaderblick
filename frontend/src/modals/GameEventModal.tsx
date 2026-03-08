@@ -15,7 +15,7 @@ const parseMinuteInput = (input: string) => {
   return 0;
 };
 import React, { useState, useEffect, useRef } from 'react';
-import { apiJson } from '../utils/api';
+import { apiJson, getApiErrorMessage } from '../utils/api';
 import {
   Button,
   TextField,
@@ -24,7 +24,8 @@ import {
   InputLabel,
   FormControl,
   Box,
-  Typography
+  Typography,
+  Alert
 } from '@mui/material';
 import { 
   fetchGameEventTypes,
@@ -95,6 +96,7 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
     }
   };
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [eventTypes, setEventTypes] = useState<GameEventType[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [substitutionReasons, setSubstitutionReasons] = useState<SubstitutionReason[]>([]);
@@ -259,12 +261,14 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
       onSuccess();
     } catch (error) {
       console.error('Error saving game event:', error);
+      setSubmitError(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
   };
 
   const handleClose = () => {
+    setSubmitError(null);
     setFormData({
       team: '',
       eventType: '',
@@ -302,6 +306,11 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
       }
     >
       <Box>
+        {submitError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError(null)}>
+            {submitError}
+          </Alert>
+        )}
         <Typography variant="h6" gutterBottom>
           {game.homeTeam.name} vs {game.awayTeam.name}
         </Typography>

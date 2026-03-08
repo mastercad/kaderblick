@@ -84,7 +84,7 @@ class MyTeamController extends AbstractController
                     'lastName' => $player->getLastName(),
                     'fullName' => $player->getFullName(),
                     'shirtNumber' => $shirtNumber,
-                    'mainPosition' => $player->getMainPosition() ? [ // @phpstan-ignore ternary.alwaysTrue
+                    'mainPosition' => $player->getMainPosition() ? [
                         'id' => $player->getMainPosition()->getId(),
                         'name' => $player->getMainPosition()->getName(),
                     ] : null,
@@ -110,7 +110,7 @@ class MyTeamController extends AbstractController
             $teamsData[] = [
                 'id' => $team->getId(),
                 'name' => $team->getName(),
-                'ageGroup' => $team->getAgeGroup() ? [ // @phpstan-ignore ternary.alwaysTrue
+                'ageGroup' => $team->getAgeGroup() ? [
                     'id' => $team->getAgeGroup()->getId(),
                     'name' => $team->getAgeGroup()->getName(),
                 ] : null,
