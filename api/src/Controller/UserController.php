@@ -73,6 +73,7 @@ class UserController extends AbstractController
                 'id' => $userRelation->getId(),
                 'fullName' => $userRelation->getPlayer() ? $userRelation->getPlayer()->getFullname() :
                     ($userRelation->getCoach() ? $userRelation->getCoach()->getFullname() : 'N/A'),
+                'name' => $userRelation->getRelationType()->getName(),
                 'identifier' => $userRelation->getRelationType()->getIdentifier(),
                 'category' => $userRelation->getRelationType()->getCategory()
             ], $user->getUserRelations()->toArray())
