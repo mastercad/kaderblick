@@ -69,6 +69,7 @@ class CalendarControllerCancelTest extends TestCase
             $calendarEventService,
             $this->notificationService,
             $teamMembershipService,
+            $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcherInterface::class),
         );
 
         // Set up authenticated user

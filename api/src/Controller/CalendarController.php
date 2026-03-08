@@ -17,6 +17,7 @@ use App\Entity\TeamRide;
 use App\Entity\User;
 use App\Entity\WeatherData;
 use App\Enum\CalendarEventPermissionType;
+use App\Event\CalendarEventCreatedEvent;
 use App\Repository\CalendarEventRepository;
 use App\Repository\ParticipationRepository;
 use App\Security\Voter\CalendarEventVoter;
@@ -28,6 +29,7 @@ use DateTime;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -42,7 +44,8 @@ class CalendarController extends AbstractController
         private readonly ParticipationRepository $participationRepository,
         private readonly CalendarEventService $calendarEventService,
         private readonly NotificationService $notificationService,
-        private readonly TeamMembershipService $teamMembershipService
+        private readonly TeamMembershipService $teamMembershipService,
+        private readonly EventDispatcherInterface $dispatcher
     ) {
     }
 
@@ -254,6 +257,8 @@ class CalendarController extends AbstractController
             );
         }
 
+        $this->dispatcher->dispatch(new CalendarEventCreatedEvent($currentUser, $calendarEvent));
+
         return $this->json(['success' => true]);
     }
 
@@ -361,6 +366,7 @@ class CalendarController extends AbstractController
 
                 $this->entityManager->flush();
                 ++$createdCount;
+                $this->dispatcher->dispatch(new CalendarEventCreatedEvent($currentUser, $event));
             }
             $cursor = $cursor->modify('+1 day');
         }

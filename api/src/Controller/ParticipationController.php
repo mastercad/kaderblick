@@ -5,6 +5,9 @@ namespace App\Controller;
 use App\Entity\CalendarEvent;
 use App\Entity\Participation;
 use App\Entity\User;
+use App\Event\CalendarEventParticipatedEvent;
+use App\Event\MatchAttendedEvent;
+use App\Event\TrainingAttendedEvent;
 use App\Repository\ParticipationRepository;
 use App\Repository\ParticipationStatusRepository;
 use App\Security\Voter\ParticipationVoter;
@@ -12,6 +15,7 @@ use App\Service\NotificationService;
 use App\Service\TeamMembershipService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -24,7 +28,8 @@ class ParticipationController extends AbstractController
         private ParticipationRepository $participationRepository,
         private ParticipationStatusRepository $participationStatusRepository,
         private NotificationService $notificationService,
-        private TeamMembershipService $teamMembershipService
+        private TeamMembershipService $teamMembershipService,
+        private EventDispatcherInterface $dispatcher
     ) {
     }
 
@@ -136,6 +141,18 @@ class ParticipationController extends AbstractController
 
         $this->em->persist($participation);
         $this->em->flush();
+
+        // Dispatch XP event based on participation status and event type
+        if ('confirmed' === $status->getCode()) {
+            $eventTypeName = $event->getCalendarEventType()?->getName() ?? '';
+            if ('Training' === $eventTypeName) {
+                $this->dispatcher->dispatch(new TrainingAttendedEvent($user, $event));
+            } elseif (in_array($eventTypeName, ['Spiel', 'Turnier-Match'], true)) {
+                $this->dispatcher->dispatch(new MatchAttendedEvent($user, $event));
+            } else {
+                $this->dispatcher->dispatch(new CalendarEventParticipatedEvent($user, $event));
+            }
+        }
 
         // Create notifications for other participants when a user changed
         // their participation status (the actor does not need a notification).

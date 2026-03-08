@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 use App\Entity\Task;
 use App\Entity\TaskAssignment;
 use App\Entity\User;
+use App\Event\TaskCompletedEvent;
 use App\Repository\TaskAssignmentRepository;
 use App\Repository\TaskRepository;
 use App\Repository\UserRepository;
@@ -15,6 +16,7 @@ use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -200,7 +202,8 @@ class TaskController extends AbstractController
         Request $request,
         TaskAssignmentRepository $assignmentRepo,
         EntityManagerInterface $em,
-        SerializerInterface $serializer
+        SerializerInterface $serializer,
+        EventDispatcherInterface $dispatcher
     ): JsonResponse {
         $assignment = $assignmentRepo->find($assignmentId);
         if (!$assignment) {
@@ -214,6 +217,14 @@ class TaskController extends AbstractController
             $assignment->setAssignedDate(new DateTimeImmutable($data['assignedDate']));
         }
         $em->flush();
+
+        if (isset($data['status']) && 'erledigt' === $data['status']) {
+            $assignedUser = $assignment->getUser();
+            if ($assignedUser instanceof User) {
+                $dispatcher->dispatch(new TaskCompletedEvent($assignedUser, $assignment->getTask()));
+            }
+        }
+
         $json = $serializer->serialize($assignment, 'json', ['groups' => ['assignment:read']]);
 
         return JsonResponse::fromJsonString($json, Response::HTTP_OK);

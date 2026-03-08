@@ -13,6 +13,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
@@ -49,6 +50,7 @@ class ParticipationControllerAccessTest extends TestCase
             $this->participationStatusRepo,
             $notificationService,
             $this->membershipService,
+            $this->createMock(EventDispatcherInterface::class),
         );
 
         $this->authChecker = $this->createMock(AuthorizationCheckerInterface::class);

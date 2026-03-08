@@ -68,6 +68,7 @@ class CalendarControllerPermissionsTest extends TestCase
             $calendarEventService,
             $notificationService,
             $this->membershipService,
+            $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcherInterface::class),
         );
 
         $this->authChecker = $this->createMock(AuthorizationCheckerInterface::class);
