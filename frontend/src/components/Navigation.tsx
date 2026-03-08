@@ -167,6 +167,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
         { label: 'Aufstellungen', page: 'formations', icon: <GroupWorkIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
         { label: 'Aufgaben', page: 'tasks', icon: <ManageAccountsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
         { label: 'Titel & XP Übersicht', page: 'admin/title-xp-overview', icon: <EmojiEventsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        ...(isSuperAdmin ? [{ label: 'XP-Konfiguration', page: 'admin/xp-config', icon: <EmojiEventsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> }] : []),
         ...(isSuperAdmin ? [{ label: 'System-Einstellungen', page: 'admin/system-settings', icon: <SettingsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> }] : []),
       ],
     },

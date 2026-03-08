@@ -39,6 +39,7 @@ import MyFeedback from './pages/MyFeedback';
 import MyFeedbackDetail from './pages/MyFeedbackDetail';
 import AdminTitleXpOverview from './pages/admin/AdminTitleXpOverview';
 import SystemSettings from './pages/admin/SystemSettings';
+import XpConfig from './pages/admin/XpConfig';
 import FabStackRoot from './components/FabStackRoot';
 import Locations from './pages/Locations';
 import Clubs from './pages/Clubs';
@@ -188,6 +189,7 @@ function App() {
                   <Route path="/mein-feedback/:id" element={<ProtectedRoute><MyFeedbackDetail /></ProtectedRoute>} />
                   <Route path="/admin/user-relations" element={<ProtectedRoute><UserRelations /></ProtectedRoute>} />
                   <Route path="/admin/title-xp-overview" element={<ProtectedRoute><AdminTitleXpOverview /></ProtectedRoute>} />
+                  <Route path="/admin/xp-config" element={<ProtectedRoute><XpConfig /></ProtectedRoute>} />
                   <Route path="/admin/system-settings" element={<ProtectedRoute><SystemSettings /></ProtectedRoute>} />
                   <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
                   <Route path="/news/:id" element={<ProtectedRoute><NewsDetail /></ProtectedRoute>} />

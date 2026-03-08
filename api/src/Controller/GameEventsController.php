@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Entity\Game;
 use App\Entity\GameEvent;
 use App\Entity\Player;
+use App\Event\GameEventCreatedEvent;
+use App\Event\GameEventUpdatedEvent;
 use App\Repository\GameEventRepository;
 use App\Repository\GameEventTypeRepository;
 use App\Repository\PlayerRepository;
@@ -18,6 +20,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -61,7 +64,8 @@ class GameEventsController extends AbstractController
         EntityManagerInterface $em,
         PlayerRepository $playerRepo,
         GameEventTypeRepository $eventTypeRepo,
-        SubstitutionReasonRepository $substitutionReasonRepo
+        SubstitutionReasonRepository $substitutionReasonRepo,
+        EventDispatcherInterface $dispatcher,
     ): JsonResponse {
         // Nur Teammitglieder mit ROLE_ADMIN/ROLE_SUPPORTER oder Trainer dürfen Spielereignisse anlegen
         $this->denyAccessUnlessGranted(GameEventVoter::CREATE, $game);
@@ -118,6 +122,12 @@ class GameEventsController extends AbstractController
         }
         $em->persist($event);
         $em->flush();
+
+        /** @var \App\Entity\User $currentUser */
+        $currentUser = $this->getUser();
+        if (null !== $currentUser) {
+            $dispatcher->dispatch(new GameEventCreatedEvent($currentUser, $event));
+        }
 
         return $this->json(['success' => true]);
     }
@@ -178,7 +188,8 @@ class GameEventsController extends AbstractController
         GameEventRepository $eventRepo,
         PlayerRepository $playerRepo,
         GameEventTypeRepository $eventTypeRepo,
-        SubstitutionReasonRepository $substitutionReasonRepo
+        SubstitutionReasonRepository $substitutionReasonRepo,
+        EventDispatcherInterface $dispatcher,
     ): JsonResponse {
         $event = $eventRepo->find($eventId);
         if (!$event || $event->getGame()->getId() !== $gameId) {
@@ -218,6 +229,12 @@ class GameEventsController extends AbstractController
             $event->setDescription($reasonEntity ? $reasonEntity->getName() : $data['reason']);
         }
         $em->flush();
+
+        /** @var \App\Entity\User $currentUser */
+        $currentUser = $this->getUser();
+        if (null !== $currentUser) {
+            $dispatcher->dispatch(new GameEventUpdatedEvent($currentUser, $event));
+        }
 
         return $this->json(['success' => true]);
     }

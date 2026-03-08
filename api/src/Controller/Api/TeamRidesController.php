@@ -8,12 +8,14 @@ use App\Entity\TeamRidePassenger;
 use App\Entity\User;
 use App\Entity\UserRelation;
 use App\Enum\CalendarEventPermissionType;
+use App\Event\CarpoolOfferedEvent;
 use App\Repository\CalendarEventRepository;
 use App\Repository\TeamRideRepository;
 use App\Security\Voter\TeamRideVoter;
 use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,7 +28,8 @@ class TeamRidesController extends AbstractController
         private EntityManagerInterface $em,
         private TeamRideRepository $teamRideRepo,
         private CalendarEventRepository $eventRepo,
-        private NotificationService $notificationService
+        private NotificationService $notificationService,
+        private EventDispatcherInterface $dispatcher
     ) {
     }
 
@@ -84,6 +87,8 @@ class TeamRidesController extends AbstractController
 
         $this->em->persist($ride);
         $this->em->flush();
+
+        $this->dispatcher->dispatch(new CarpoolOfferedEvent($user, $ride));
 
         // Push notification: notify all team members about new ride
         $teamUsers = $this->getTeamUsersForEvent($event);

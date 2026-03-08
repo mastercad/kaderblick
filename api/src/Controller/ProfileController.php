@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\RegistrationRequest;
 use App\Entity\User;
+use App\Event\ProfileCompletenessReachedEvent;
+use App\Event\ProfileUpdatedEvent;
 use App\Service\CoachTeamPlayerService;
 use App\Service\EmailVerificationService;
 use App\Service\SystemSettingService;
@@ -11,6 +13,7 @@ use App\Service\UserTitleService;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -27,6 +30,7 @@ class ProfileController extends AbstractController
         private EmailVerificationService $emailVerificationService,
         private CoachTeamPlayerService $coachTeamPlayerService,
         private SystemSettingService $systemSettingService,
+        private EventDispatcherInterface $dispatcher,
     ) {
     }
 
@@ -154,6 +158,15 @@ class ProfileController extends AbstractController
         // Save changes
         $this->entityManager->flush();
 
+        // Dispatch XP events
+        $this->dispatcher->dispatch(new ProfileUpdatedEvent($user));
+        $completeness = $this->calculateProfileCompleteness($user);
+        foreach ([25, 50, 75, 100] as $milestone) {
+            if ($completeness >= $milestone) {
+                $this->dispatcher->dispatch(new ProfileCompletenessReachedEvent($user, $milestone));
+            }
+        }
+
         // Send verification email if email changed
         if ($emailChanged) {
             $this->emailVerificationService->sendEmailChangeVerification($user);
@@ -187,6 +200,24 @@ class ProfileController extends AbstractController
         } catch (Exception $e) {
             return $this->json(['message' => 'Fehler bei der E-Mail-Verifizierung'], 400);
         }
+    }
+
+    private function calculateProfileCompleteness(User $user): int
+    {
+        $fields = [
+            'firstName' => null !== $user->getFirstName() && '' !== $user->getFirstName(),
+            'lastName' => null !== $user->getLastName() && '' !== $user->getLastName(),
+            'email' => null !== $user->getEmail() && '' !== $user->getEmail(),
+            'avatar' => null !== $user->getAvatarFilename(),
+            'height' => null !== $user->getHeight(),
+            'weight' => null !== $user->getWeight(),
+            'shoeSize' => null !== $user->getShoeSize(),
+            'shirtSize' => null !== $user->getShirtSize(),
+            'pantsSize' => null !== $user->getPantsSize(),
+            'hasUserRelations' => $user->getUserRelations()->count() > 0,
+        ];
+
+        return (int) round((count(array_filter($fields)) / count($fields)) * 100);
     }
 
     #[Route('/xp-breakdown', name: 'api_xp_breakdown', methods: ['GET'])]
