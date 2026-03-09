@@ -2,9 +2,7 @@
 
 namespace App\Controller\Api;
 
-use App\Entity\Player;
 use App\Entity\TaskAssignment;
-use App\Entity\Team;
 use App\Entity\User;
 use App\Entity\UserRelation;
 use App\Repository\CalendarEventRepository;
@@ -38,16 +36,39 @@ class MyTeamController extends AbstractController
         // Sammle alle Teams des Benutzers (über UserRelations → Player/Coach → TeamAssignments)
         $teams = [];
         $teamIds = [];
-        $myPlayerIds = [];
+        $myPlayerIds = []; // nur self_player
+        $myCoachIds = []; // nur self_coach
+        /** @var array<int, array{identifier: string, name: string}> $playerRelations */
+        $playerRelations = []; // playerId → Verknüpfungsart
+        /** @var array<int, array{identifier: string, name: string}> $coachRelations */
+        $coachRelations = []; // coachId  → Verknüpfungsart
+        $today = new DateTime();
 
         foreach ($user->getUserRelations() as $relation) {
+            $relationType = $relation->getRelationType();
+            $relationTypeIdentifier = $relationType->getIdentifier();
+            $relationData = [
+                'identifier' => $relationTypeIdentifier,
+                'name' => $relationType->getName(),
+            ];
+
             // Über Spieler-Verknüpfungen
             if ($relation->getPlayer()) {
                 $player = $relation->getPlayer();
-                $myPlayerIds[] = $player->getId();
+                $playerId = $player->getId();
+
+                if ('self_player' === $relationTypeIdentifier) {
+                    $myPlayerIds[] = $playerId;
+                }
+
+                // Speichere die Verknüpfungsart (self_player hat Vorrang)
+                if (!isset($playerRelations[$playerId]) || 'self_player' === $relationTypeIdentifier) {
+                    $playerRelations[$playerId] = $relationData;
+                }
+
                 foreach ($player->getPlayerTeamAssignments() as $pta) {
                     $team = $pta->getTeam();
-                    if (!in_array($team->getId(), $teamIds)) {
+                    if (!in_array($team->getId(), $teamIds, true)) {
                         $teamIds[] = $team->getId();
                         $teams[] = $team;
                     }
@@ -55,9 +76,21 @@ class MyTeamController extends AbstractController
             }
             // Über Trainer-Verknüpfungen
             if ($relation->getCoach()) {
-                foreach ($relation->getCoach()->getCoachTeamAssignments() as $cta) {
+                $coach = $relation->getCoach();
+                $coachId = $coach->getId();
+
+                if ('self_coach' === $relationTypeIdentifier) {
+                    $myCoachIds[] = $coachId;
+                }
+
+                // Speichere die Verknüpfungsart (self_coach hat Vorrang)
+                if (!isset($coachRelations[$coachId]) || 'self_coach' === $relationTypeIdentifier) {
+                    $coachRelations[$coachId] = $relationData;
+                }
+
+                foreach ($coach->getCoachTeamAssignments() as $cta) {
                     $team = $cta->getTeam();
-                    if (!in_array($team->getId(), $teamIds)) {
+                    if (!in_array($team->getId(), $teamIds, true)) {
                         $teamIds[] = $team->getId();
                         $teams[] = $team;
                     }
@@ -65,7 +98,7 @@ class MyTeamController extends AbstractController
             }
         }
 
-        // Baue Teamdaten mit Spielerliste
+        // Baue Teamdaten mit Spieler- und Trainerliste
         $teamsData = [];
         foreach ($teams as $team) {
             $players = $team->getCurrentPlayers();
@@ -88,9 +121,44 @@ class MyTeamController extends AbstractController
                         'id' => $player->getMainPosition()->getId(),
                         'name' => $player->getMainPosition()->getName(),
                     ] : null,
-                    'isMe' => in_array($player->getId(), $myPlayerIds),
+                    'isMe' => in_array($player->getId(), $myPlayerIds, true),
+                    'myRelation' => $playerRelations[$player->getId()] ?? null,
                 ];
             }
+
+            $coachesDataById = [];
+            foreach ($team->getCoachTeamAssignments() as $cta) {
+                if (
+                    (null !== $cta->getStartDate() && $cta->getStartDate() > $today)
+                    || (null !== $cta->getEndDate() && $cta->getEndDate() < $today)
+                ) {
+                    continue;
+                }
+
+                $coach = $cta->getCoach();
+                $coachId = $coach->getId();
+                if (null === $coachId || isset($coachesDataById[$coachId])) {
+                    continue;
+                }
+
+                $assignmentType = $cta->getCoachTeamAssignmentType();
+
+                $coachesDataById[$coachId] = [
+                    'id' => $coachId,
+                    'firstName' => $coach->getFirstName(),
+                    'lastName' => $coach->getLastName(),
+                    'fullName' => $coach->getFullName(),
+                    'assignmentType' => $assignmentType ? [
+                        'id' => $assignmentType->getId(),
+                        'name' => $assignmentType->getName(),
+                    ] : null,
+                    'isMe' => in_array($coachId, $myCoachIds, true),
+                    'myRelation' => $coachRelations[$coachId] ?? null,
+                ];
+            }
+
+            $coachesData = array_values($coachesDataById);
+            usort($coachesData, fn ($a, $b) => strcmp($a['fullName'], $b['fullName']));
 
             // Sortiere nach Trikotnummer
             usort($playersData, function ($a, $b) {
@@ -119,7 +187,9 @@ class MyTeamController extends AbstractController
                     'name' => $team->getLeague()->getName(),
                 ] : null,
                 'players' => $playersData,
+                'coaches' => $coachesData,
                 'playerCount' => count($playersData),
+                'coachCount' => count($coachesData),
             ];
         }
 
@@ -135,7 +205,7 @@ class MyTeamController extends AbstractController
             $eventTeam = null;
             foreach ($event->getPermissions() as $permission) {
                 $permTeam = $permission->getTeam();
-                if (null !== $permTeam && in_array($permTeam->getId(), $teamIds)) {
+                if (null !== $permTeam && in_array($permTeam->getId(), $teamIds, true)) {
                     $eventTeam = $permTeam;
                     break;
                 }

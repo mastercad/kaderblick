@@ -2,12 +2,10 @@
 
 namespace App\Service;
 
-use App\Entity\Message;
 use App\Entity\RegistrationRequest;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Throwable;
 
 class RegistrationNotificationService
@@ -15,7 +13,6 @@ class RegistrationNotificationService
     public function __construct(
         private EntityManagerInterface $em,
         private NotificationService $notificationService,
-        private ParameterBagInterface $params,
         private LoggerInterface $logger
     ) {
     }
@@ -37,33 +34,9 @@ class RegistrationNotificationService
         }
 
         $linkPath = '/admin/user-relations?tab=requests';
-        $websiteUrl = $this->params->get('app.website_url');
-        $fullLink = rtrim((string) $websiteUrl, '/') . $linkPath;
 
         $subject = 'Neuer Benutzer registriert: ' . $userName;
-        $content = sprintf(
-            "Der Benutzer <strong>%s</strong> (%s) hat sich soeben registriert.\n\n"
-            . "Falls der Benutzer einen Zuordnungsantrag gestellt hat, kannst du ihn hier überprüfen:\n"
-            . '<a href="%s">Benutzerverknüpfungen verwalten</a>',
-            htmlspecialchars($userName),
-            htmlspecialchars($newUser->getEmail()),
-            $fullLink
-        );
 
-        // System message from the new user to all admins
-        $message = new Message();
-        $message->setSender($newUser)
-            ->setSubject($subject)
-            ->setContent($content);
-
-        foreach ($admins as $admin) {
-            $message->addRecipient($admin);
-        }
-
-        $this->em->persist($message);
-        $this->em->flush();
-
-        // Push notifications
         foreach ($admins as $admin) {
             try {
                 $this->notificationService->createNotification(
@@ -104,34 +77,8 @@ class RegistrationNotificationService
         $entityName = $request->getPlayer()?->getFullName() ?? $request->getCoach()?->getFullName() ?? 'unbekannt';
         $relTypeName = $request->getRelationType()->getName();
         $linkPath = '/admin/user-relations?tab=requests';
-        $websiteUrl = $this->params->get('app.website_url');
-        $fullLink = rtrim((string) $websiteUrl, '/') . $linkPath;
 
         $subject = sprintf('Neuer Zuordnungsantrag von %s', $userName);
-        $content = sprintf(
-            '<p>Der Benutzer <strong>%s</strong> (%s) hat einen Zuordnungsantrag gestellt:</p>'
-            . '<ul><li><strong>Bezugsperson:</strong> %s</li><li><strong>Beziehung:</strong> %s</li></ul>'
-            . '%s'
-            . '<p><a href="%s">Antrag jetzt bearbeiten →</a></p>',
-            htmlspecialchars($userName),
-            htmlspecialchars($newUser->getEmail()),
-            htmlspecialchars($entityName),
-            htmlspecialchars($relTypeName),
-            $request->getNote() ? '<p><strong>Anmerkung:</strong> ' . htmlspecialchars($request->getNote()) . '</p>' : '',
-            $fullLink
-        );
-
-        $message = new Message();
-        $message->setSender($newUser)
-            ->setSubject($subject)
-            ->setContent($content);
-
-        foreach ($admins as $admin) {
-            $message->addRecipient($admin);
-        }
-
-        $this->em->persist($message);
-        $this->em->flush();
 
         foreach ($admins as $admin) {
             try {
@@ -148,6 +95,46 @@ class RegistrationNotificationService
                     ['error' => $e->getMessage()]
                 );
             }
+        }
+    }
+
+    /**
+     * Notify the requesting user that their registration request was approved.
+     */
+    public function notifyUserAboutApprovedRequest(RegistrationRequest $request): void
+    {
+        $user = $request->getUser();
+        $relTypeName = $request->getRelationType()->getName();
+
+        if ($request->getPlayer()) {
+            $entityLabel = 'Spieler';
+            $entityName = $request->getPlayer()->getFullName();
+        } elseif ($request->getCoach()) {
+            $entityLabel = 'Trainer';
+            $entityName = $request->getCoach()->getFullName();
+        } else {
+            $entityLabel = 'Person';
+            $entityName = 'unbekannt';
+        }
+
+        try {
+            $this->notificationService->createNotification(
+                $user,
+                'registration_request_approved',
+                '🎉 Dein Zuordnungsantrag wurde genehmigt!',
+                sprintf(
+                    'Du wurdest als %s mit dem %s %s verknüpft.',
+                    $relTypeName,
+                    $entityLabel,
+                    $entityName
+                ),
+                ['url' => '/profile']
+            );
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Failed to send approval push notification to user ' . $user->getId(),
+                ['error' => $e->getMessage()]
+            );
         }
     }
 

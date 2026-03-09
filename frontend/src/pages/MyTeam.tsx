@@ -32,6 +32,11 @@ import StarIcon from '@mui/icons-material/Star';
 import { apiJson } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
+interface RelationHint {
+  identifier: string;
+  name: string;
+}
+
 interface PlayerData {
   id: number;
   firstName: string;
@@ -40,6 +45,17 @@ interface PlayerData {
   shirtNumber: string | null;
   mainPosition: { id: number; name: string } | null;
   isMe: boolean;
+  myRelation: RelationHint | null;
+}
+
+interface CoachData {
+  id: number;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  assignmentType: { id: number; name: string } | null;
+  isMe: boolean;
+  myRelation: RelationHint | null;
 }
 
 interface TeamData {
@@ -48,7 +64,9 @@ interface TeamData {
   ageGroup: { id: number; name: string } | null;
   league: { id: number; name: string } | null;
   players: PlayerData[];
+  coaches: CoachData[];
   playerCount: number;
+  coachCount: number;
 }
 
 interface EventData {
@@ -229,7 +247,10 @@ export default function MyTeam() {
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Kader
               </Typography>
-              <Chip label={currentTeam.playerCount} size="small" color="primary" />
+              <Chip label={`${currentTeam.playerCount} Spieler`} size="small" color="primary" />
+              {currentTeam.coachCount > 0 && (
+                <Chip label={`${currentTeam.coachCount} Trainer`} size="small" color="secondary" variant="outlined" />
+              )}
             </Stack>
 
             <List dense disablePadding>
@@ -269,6 +290,9 @@ export default function MyTeam() {
                           {player.isMe && (
                             <Chip label="Du" size="small" sx={{ height: 20, fontSize: 11, bgcolor: 'primary.contrastText', color: 'primary.main', fontWeight: 700 }} />
                           )}
+                          {!player.isMe && player.myRelation && (
+                            <Chip label={player.myRelation.name} size="small" variant="outlined" sx={{ height: 20, fontSize: 11 }} />
+                          )}
                         </Stack>
                       }
                       secondary={player.mainPosition?.name || 'Keine Position'}
@@ -277,9 +301,58 @@ export default function MyTeam() {
                   {idx < currentTeam.players.length - 1 && !player.isMe && <Divider variant="inset" component="li" />}
                 </React.Fragment>
               ))}
-              {currentTeam.players.length === 0 && (
+
+              {currentTeam.players.length > 0 && currentTeam.coaches.length > 0 && <Divider sx={{ my: 1 }} />}
+
+              {currentTeam.coaches.map((coach, idx) => (
+                <React.Fragment key={`coach-${coach.id}`}>
+                  <ListItem
+                    sx={{
+                      borderRadius: 1,
+                      ...(coach.isMe && {
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
+                        '& .MuiListItemText-secondary': { color: 'primary.contrastText', opacity: 0.8 },
+                      }),
+                      py: 0.5,
+                    }}
+                  >
+                    <ListItemAvatar>
+                      <Avatar
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          bgcolor: coach.isMe ? 'primary.contrastText' : 'secondary.main',
+                          color: coach.isMe ? 'primary.main' : 'secondary.contrastText',
+                        }}
+                      >
+                        <PersonIcon sx={{ fontSize: 18 }} />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <Typography variant="body2" sx={{ fontWeight: coach.isMe ? 700 : 400 }}>
+                            {coach.fullName}
+                          </Typography>
+                          {coach.isMe && (
+                            <Chip label="Du" size="small" sx={{ height: 20, fontSize: 11, bgcolor: 'primary.contrastText', color: 'primary.main', fontWeight: 700 }} />
+                          )}
+                          {!coach.isMe && coach.myRelation && (
+                            <Chip label={coach.myRelation.name} size="small" variant="outlined" sx={{ height: 20, fontSize: 11 }} />
+                          )}
+                        </Stack>
+                      }
+                      secondary={coach.assignmentType?.name || 'Trainer'}
+                    />
+                  </ListItem>
+                  {idx < currentTeam.coaches.length - 1 && !coach.isMe && <Divider variant="inset" component="li" />}
+                </React.Fragment>
+              ))}
+
+              {currentTeam.players.length === 0 && currentTeam.coaches.length === 0 && (
                 <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                  Noch keine Spieler im Kader.
+                  Noch keine Spieler oder Trainer im Team.
                 </Typography>
               )}
             </List>

@@ -6,6 +6,7 @@ use App\Entity\RegistrationRequest;
 use App\Entity\User;
 use App\Entity\UserRelation;
 use App\Repository\RegistrationRequestRepository;
+use App\Service\RegistrationNotificationService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,6 +14,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Throwable;
 
 #[Route('/admin/registration-requests', name: 'admin_registration_requests_')]
 #[IsGranted('ROLE_ADMIN')]
@@ -20,26 +22,52 @@ class RegistrationRequestAdminController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $em,
-        private RegistrationRequestRepository $requestRepository
+        private RegistrationRequestRepository $requestRepository,
+        private RegistrationNotificationService $notificationService
     ) {
     }
 
     /**
-     * List all pending (and optionally all) registration requests.
+     * List registration requests with server-side pagination and optional status filter.
+     *
+     * Query params:
+     *   status  – "pending" | "approved" | "rejected" | "all"  (default: "pending")
+     *   page    – 1-based page number                           (default: 1)
+     *   limit   – rows per page, clamped to [5, 100]           (default: 25)
      */
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(Request $request): JsonResponse
     {
         $statusFilter = $request->query->get('status', 'pending');
+        $page = max(1, (int) $request->query->get('page', 1));
+        $limit = min(100, max(5, (int) $request->query->get('limit', 25)));
+        $offset = ($page - 1) * $limit;
+        $search = trim((string) $request->query->get('search', ''));
 
-        if ('all' === $statusFilter) {
-            $requests = $this->em->getRepository(RegistrationRequest::class)->findBy([], ['createdAt' => 'DESC']);
-        } else {
-            $requests = $this->em->getRepository(RegistrationRequest::class)->findBy(
-                ['status' => $statusFilter],
-                ['createdAt' => 'ASC']
-            );
+        $qb = $this->em->getRepository(RegistrationRequest::class)
+            ->createQueryBuilder('r')
+            ->join('r.user', 'u')
+            ->orderBy('r.createdAt', 'DESC');
+
+        if ('all' !== $statusFilter) {
+            $qb->andWhere('r.status = :status')->setParameter('status', $statusFilter);
         }
+
+        if ('' !== $search) {
+            $qb->andWhere('u.firstName LIKE :search OR u.lastName LIKE :search OR u.email LIKE :search')
+               ->setParameter('search', '%' . $search . '%');
+        }
+
+        // Count before slicing
+        $total = (int) (clone $qb)->select('COUNT(r.id)')->getQuery()->getSingleScalarResult();
+
+        // Paginated result
+        $requests = $qb
+            ->select('r')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
 
         return $this->json([
             'requests' => array_map(fn (RegistrationRequest $r) => $this->serialize($r), $requests),
@@ -48,6 +76,9 @@ class RegistrationRequestAdminController extends AbstractController
                 'approved' => $this->requestRepository->count(['status' => RegistrationRequest::STATUS_APPROVED]),
                 'rejected' => $this->requestRepository->count(['status' => RegistrationRequest::STATUS_REJECTED]),
             ],
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
         ]);
     }
 
@@ -84,6 +115,13 @@ class RegistrationRequestAdminController extends AbstractController
             ->setProcessedBy($admin);
 
         $this->em->flush();
+
+        // Notify the requesting user about the approval
+        try {
+            $this->notificationService->notifyUserAboutApprovedRequest($registrationRequest);
+        } catch (Throwable) {
+            // Non-critical
+        }
 
         return $this->json([
             'success' => true,

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Service\DefaultDashboardService;
 use App\Service\RegistrationNotificationService;
 use App\Service\UserVerificationService;
 use DateTime;
@@ -21,7 +22,8 @@ class RegisterController extends AbstractController
     public function __construct(
         private EntityManagerInterface $em,
         private UserVerificationService $verificationService,
-        private RegistrationNotificationService $registrationNotificationService
+        private RegistrationNotificationService $registrationNotificationService,
+        private DefaultDashboardService $defaultDashboardService,
     ) {
     }
 
@@ -97,6 +99,13 @@ class RegisterController extends AbstractController
              ->setVerificationExpires(null);
 
         $this->em->flush();
+
+        // Create default dashboard for the verified user
+        try {
+            $this->defaultDashboardService->createDefaultDashboard($user);
+        } catch (Throwable) {
+            // Non-critical – don't fail the verification
+        }
 
         // Notify admins about the newly verified user
         try {

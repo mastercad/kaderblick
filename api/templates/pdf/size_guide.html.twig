@@ -408,7 +408,7 @@
     {# ─── Warning if incomplete data ─── #}
     {% if missingAny|length > 0 %}
     <div class="warning-box">
-        ⚠ <strong>{{ missingAny|length }} Spieler</strong> haben unvollständige Größenangaben (markiert mit „–").
+        <strong>(!)</strong> <strong>{{ missingAny|length }} Spieler</strong> haben unvollständige Größenangaben (markiert mit „–").
         Bitte vervollständige die fehlenden Daten im Spielerprofil.
     </div>
     {% endif %}
@@ -417,7 +417,7 @@
     <div class="section-title">Zusammenfassung nach Größen</div>
     <div class="summary-grid">
         <div class="summary-cell">
-            <div class="summary-label">🧥 Trikot</div>
+            <div class="summary-label">Trikot</div>
             {% for size, count in summaries.shirt %}
             <div class="summary-row">
                 <div class="summary-size">{{ size }}</div>
@@ -428,7 +428,7 @@
             {% endfor %}
         </div>
         <div class="summary-cell">
-            <div class="summary-label">🩳 Shorts</div>
+            <div class="summary-label">Shorts</div>
             {% for size, count in summaries.shorts %}
             <div class="summary-row">
                 <div class="summary-size">{{ size }}</div>
@@ -439,7 +439,7 @@
             {% endfor %}
         </div>
         <div class="summary-cell">
-            <div class="summary-label">🧥 Jacke</div>
+            <div class="summary-label">Jacke</div>
             {% for size, count in summaries.jacket %}
             <div class="summary-row">
                 <div class="summary-size">{{ size }}</div>
@@ -450,7 +450,7 @@
             {% endfor %}
         </div>
         <div class="summary-cell">
-            <div class="summary-label">🧦 Socken</div>
+            <div class="summary-label">Socken</div>
             {% for size, count in summaries.socks %}
             <div class="summary-row">
                 <div class="summary-size">{{ size }}</div>
@@ -461,7 +461,7 @@
             {% endfor %}
         </div>
         <div class="summary-cell">
-            <div class="summary-label">👟 Schuhe</div>
+            <div class="summary-label">Schuhe</div>
             {% for size, count in summaries.shoes %}
             <div class="summary-row">
                 <div class="summary-size">{{ size }}</div>
