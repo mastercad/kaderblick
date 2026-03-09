@@ -18,6 +18,12 @@ import {
   useMediaQuery,
   useTheme,
   Collapse,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Autocomplete,
+  TextField,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -41,9 +47,11 @@ import {
 } from '@mui/icons-material';
 import { ReportBuilderModal, type Report } from '../modals/ReportBuilderModal';
 import { DynamicConfirmationModal } from '../modals/DynamicConfirmationModal';
-import { fetchReportDefinitions, deleteReport, fetchReportBuilderData } from '../services/reports';
+import { fetchReportDefinitions, deleteReport, fetchReportPresets, fetchReportContextData } from '../services/reports';
+import type { ContextOption } from '../services/reports';
 import { createWidget } from '../services/createWidget';
 import { apiJson } from '../utils/api';
+import { needsContext } from '../utils/reportHelpers';
 import { ReportWidget } from '../widgets/ReportWidget';
 import { WidgetRefreshProvider } from '../context/WidgetRefreshContext';
 
@@ -232,7 +240,7 @@ const ReportCard: React.FC<ReportCardProps> = ({
             >
               {previewOpen ? 'Vorschau ausblenden' : 'Vorschau anzeigen'}
             </Button>
-            <Collapse in={previewOpen} timeout={300}>
+            <Collapse in={previewOpen} timeout={300} mountOnEnter>
               <Paper
                 variant="outlined"
                 sx={{
@@ -311,6 +319,20 @@ const ReportsOverviewInner = () => {
   const [presetsExpanded, setPresetsExpanded] = useState(true);
   const [savingPreset, setSavingPreset] = useState<string | null>(null);
 
+  // ── Context modal state ──
+  const [contextModal, setContextModal] = useState<{
+    open: boolean;
+    needsTeam: boolean;
+    needsPlayer: boolean;
+    preset?: Preset;
+    templateReport?: Report;
+  }>({ open: false, needsTeam: false, needsPlayer: false });
+  const [contextTeams, setContextTeams] = useState<ContextOption[]>([]);
+  const [contextPlayers, setContextPlayers] = useState<ContextOption[]>([]);
+  const [contextDataLoading, setContextDataLoading] = useState(false);
+  const [selectedContextTeam, setSelectedContextTeam] = useState<ContextOption | null>(null);
+  const [selectedContextPlayer, setSelectedContextPlayer] = useState<ContextOption | null>(null);
+
   useEffect(() => {
     loadReports();
     loadPresets();
@@ -318,14 +340,38 @@ const ReportsOverviewInner = () => {
 
   const loadPresets = async () => {
     try {
-      const builderData = await fetchReportBuilderData();
-      if (builderData.presets) {
-        setPresets(builderData.presets as unknown as Preset[]);
+      const data = await fetchReportPresets();
+      if (data.presets) {
+        setPresets(data.presets as unknown as Preset[]);
       }
     } catch (err) {
       console.error('Failed to load presets:', err);
     }
   };
+
+  const openContextModal = useCallback(async (opts: {
+    preset?: Preset;
+    templateReport?: Report;
+    needsTeam: boolean;
+    needsPlayer: boolean;
+  }) => {
+    setSelectedContextTeam(null);
+    setSelectedContextPlayer(null);
+    setContextModal({ open: true, ...opts });
+    // Lazy load teams/players only on first open
+    if (contextTeams.length === 0 && contextPlayers.length === 0) {
+      setContextDataLoading(true);
+      try {
+        const data = await fetchReportContextData();
+        setContextTeams(data.teams);
+        setContextPlayers(data.players);
+      } catch (err) {
+        console.error('Failed to load context data:', err);
+      } finally {
+        setContextDataLoading(false);
+      }
+    }
+  }, [contextTeams.length, contextPlayers.length]);
 
   const loadReports = async () => {
     try {
@@ -432,8 +478,107 @@ const ReportsOverviewInner = () => {
     setReportToDelete(null);
   };
 
+  /** Called after context modal is confirmed – creates a personal copy with filters applied. */
+  const handleConfirmContext = useCallback(async () => {
+    const filters: { team?: string; player?: string } = {};
+    if (selectedContextTeam)   filters.team   = String(selectedContextTeam.id);
+    if (selectedContextPlayer) filters.player = String(selectedContextPlayer.id);
+
+    const { preset, templateReport } = contextModal;
+    setContextModal((s) => ({ ...s, open: false }));
+    setSelectedContextTeam(null);
+    setSelectedContextPlayer(null);
+
+    if (preset) {
+      // Defer to handleUsePreset with the pre-collected filters (no modal re-trigger)
+      // Inline the preset creation here to avoid a forward const reference
+      setSavingPreset(preset.key);
+      try {
+        const reportData = {
+          name: preset.label,
+          description: '',
+          config: {
+            diagramType: preset.config.diagramType || 'bar',
+            xField: preset.config.xField || '',
+            yField: preset.config.yField || '',
+            groupBy: preset.config.groupBy,
+            metrics: preset.config.metrics,
+            radarNormalize: preset.config.radarNormalize,
+            facetBy: preset.config.facetBy,
+            facetSubType: preset.config.facetSubType,
+            facetLayout: preset.config.facetLayout,
+            showLegend: preset.config.showLegend ?? true,
+            showLabels: preset.config.showLabels ?? false,
+            filters: {
+              ...(preset.config.filters || {}),
+              ...filters,
+            },
+          },
+        };
+        const result = await apiJson<{ id: number }>('/api/report/definition', {
+          method: 'POST',
+          body: reportData,
+        });
+        await loadReports();
+        if (result?.id) {
+          await createWidget({ type: 'report', reportId: result.id });
+          setSnackbar({ open: true, message: `"${preset.label}" wurde erstellt und zum Dashboard hinzugefügt!`, severity: 'success' });
+        }
+      } catch (err) {
+        console.error('Failed to create from preset with context:', err);
+        setSnackbar({ open: true, message: 'Fehler beim Erstellen der Auswertung', severity: 'error' });
+      } finally {
+        setSavingPreset(null);
+      }
+      return;
+    }
+
+    if (templateReport) {
+      // Template flow: create a personal copy with merged filters, then add to dashboard
+      setSavingPreset(`template-${templateReport.id}`);
+      try {
+        const mergedConfig = {
+          ...templateReport.config,
+          filters: {
+            ...(templateReport.config.filters || {}),
+            ...filters,
+          },
+        };
+        const result = await apiJson<{ id: number }>('/api/report/definition', {
+          method: 'POST',
+          body: {
+            name: templateReport.name,
+            description: templateReport.description || '',
+            config: mergedConfig,
+            isTemplate: false,
+          },
+        });
+        if (result?.id) {
+          await createWidget({ type: 'report', reportId: result.id });
+          await loadReports();
+          setSnackbar({ open: true, message: `"${templateReport.name}" wurde personalisiert und zum Dashboard hinzugefügt!`, severity: 'success' });
+        }
+      } catch (err) {
+        console.error('Failed to add template with context:', err);
+        setSnackbar({ open: true, message: 'Fehler beim Hinzufügen zum Dashboard', severity: 'error' });
+      } finally {
+        setSavingPreset(null);
+      }
+    }
+  }, [contextModal, selectedContextTeam, selectedContextPlayer]);
+
   const handleAddToDashboard = useCallback(async (report: Report) => {
     if (!report.id) return;
+
+    // For template reports with player/team dimension: ask for context first
+    if (report.isTemplate) {
+      const ctx = needsContext(report.config);
+      if (ctx.needsPlayer || ctx.needsTeam) {
+        await openContextModal({ templateReport: report, ...ctx });
+        return;
+      }
+    }
+
     try {
       await createWidget({ type: 'report', reportId: report.id });
       setSnackbar({
@@ -449,9 +594,17 @@ const ReportsOverviewInner = () => {
         severity: 'error',
       });
     }
-  }, []);
+  }, [openContextModal]);
 
-  const handleUsePreset = useCallback(async (preset: Preset) => {
+  const handleUsePreset = useCallback(async (preset: Preset, contextFilters?: { team?: string; player?: string }) => {
+    // If preset involves player/team dimension and no contextFilters provided yet: open modal first
+    if (!contextFilters) {
+      const ctx = needsContext(preset.config);
+      if (ctx.needsPlayer || ctx.needsTeam) {
+        await openContextModal({ preset, ...ctx });
+        return;
+      }
+    }
     setSavingPreset(preset.key);
     try {
       const reportData = {
@@ -469,7 +622,11 @@ const ReportsOverviewInner = () => {
           facetLayout: preset.config.facetLayout,
           showLegend: preset.config.showLegend ?? true,
           showLabels: preset.config.showLabels ?? false,
-          filters: preset.config.filters || {},
+          filters: {
+            ...(preset.config.filters || {}),
+            ...(contextFilters?.team   ? { team:   contextFilters.team }   : {}),
+            ...(contextFilters?.player ? { player: contextFilters.player } : {}),
+          },
         },
       };
       const result = await apiJson<{ id: number }>('/api/report/definition', {
@@ -637,6 +794,83 @@ const ReportsOverviewInner = () => {
           )}
         </Box>
       )}
+
+      {/* ── Context modal (team/player selection for presets & templates) ── */}
+      <Dialog
+        open={contextModal.open}
+        onClose={() => setContextModal((s) => ({ ...s, open: false }))}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Auswertung anpassen</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Diese Vorlage zeigt Daten
+            {contextModal.needsPlayer && contextModal.needsTeam
+              ? ' nach Spielern und Teams':
+              contextModal.needsPlayer
+              ? ' pro Spieler'
+              : ' pro Mannschaft'}.
+            {' '}Du kannst die Auswertung jetzt auf bestimmte Einträge einschränken – oder sie ohne Filter übernehmen.
+          </Typography>
+          {contextDataLoading ? (
+            <Box display="flex" justifyContent="center" p={2}><CircularProgress size={28} /></Box>
+          ) : (
+            <Box display="flex" flexDirection="column" gap={2}>
+              {contextModal.needsTeam && (
+                <Autocomplete
+                  options={contextTeams}
+                  getOptionLabel={(o) => o.name || ''}
+                  value={selectedContextTeam}
+                  onChange={(_, v) => setSelectedContextTeam(v)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Team (optional)" size="small" />
+                  )}
+                />
+              )}
+              {contextModal.needsPlayer && (
+                <Autocomplete
+                  options={contextPlayers}
+                  getOptionLabel={(o) => o.fullName || o.name || ''}
+                  value={selectedContextPlayer}
+                  onChange={(_, v) => setSelectedContextPlayer(v)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Spieler (optional)" size="small" />
+                  )}
+                />
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 2, py: 1.5, gap: 1 }}>
+          <Button
+            onClick={() => {
+              // Proceed without any context filter
+              const { preset, templateReport } = contextModal;
+              setContextModal((s) => ({ ...s, open: false }));
+              if (preset) handleUsePreset(preset, {});
+              else if (templateReport) {
+                createWidget({ type: 'report', reportId: templateReport.id! })
+                  .then(() => setSnackbar({ open: true, message: `"${templateReport.name}" wurde zum Dashboard hinzugefügt!`, severity: 'success' }))
+                  .catch(() => setSnackbar({ open: true, message: 'Fehler beim Hinzufügen', severity: 'error' }));
+              }
+            }}
+            color="inherit"
+            sx={{ textTransform: 'none' }}
+          >
+            Ohne Einschränkung
+          </Button>
+          <Button
+            onClick={handleConfirmContext}
+            variant="contained"
+            color="primary"
+            disabled={contextDataLoading}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            Übernehmen
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── Modals ── */}
       <ReportBuilderModal

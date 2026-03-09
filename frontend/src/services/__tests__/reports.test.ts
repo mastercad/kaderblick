@@ -11,7 +11,15 @@
  * deleteReport:           DELETE /api/report/definition/{id}
  */
 
-import { saveReport, fetchAvailableReports, fetchReportDefinitions, fetchReportById, deleteReport } from '../reports';
+import {
+  saveReport,
+  fetchAvailableReports,
+  fetchReportDefinitions,
+  fetchReportById,
+  deleteReport,
+  fetchReportPresets,
+  fetchReportContextData,
+} from '../reports';
 
 const mockApiJson = jest.fn();
 jest.mock('../../utils/api', () => ({
@@ -248,5 +256,87 @@ describe('deleteReport', () => {
     mockApiJson.mockRejectedValue(new Error('Forbidden'));
 
     await expect(deleteReport(42)).rejects.toThrow('Forbidden');
+  });
+});
+
+// =============================================================================
+//  fetchReportPresets
+// =============================================================================
+
+describe('fetchReportPresets', () => {
+  it('ruft GET /api/report/presets auf', async () => {
+    mockApiJson.mockResolvedValue({ presets: [] });
+
+    await fetchReportPresets();
+
+    expect(mockApiJson).toHaveBeenCalledTimes(1);
+    expect(mockApiJson).toHaveBeenCalledWith('/api/report/presets');
+  });
+
+  it('gibt das presets-Array zurück', async () => {
+    const mockPresets = [
+      { key: 'goals-per-player', label: 'Tore pro Spieler', config: { xField: 'player', yField: 'goals' } },
+      { key: 'cards-per-team',   label: 'Karten pro Team',  config: { xField: 'team',   yField: 'yellowCards' } },
+    ];
+    mockApiJson.mockResolvedValue({ presets: mockPresets });
+
+    const result = await fetchReportPresets();
+
+    expect(result.presets).toEqual(mockPresets);
+  });
+
+  it('gibt leeres presets-Array zurück wenn der Server ein leeres Array schickt', async () => {
+    mockApiJson.mockResolvedValue({ presets: [] });
+
+    const result = await fetchReportPresets();
+
+    expect(result.presets).toEqual([]);
+  });
+
+  it('leitet Fehler weiter wenn der API-Aufruf fehlschlägt', async () => {
+    mockApiJson.mockRejectedValue(new Error('Unauthorized'));
+
+    await expect(fetchReportPresets()).rejects.toThrow('Unauthorized');
+  });
+});
+
+// =============================================================================
+//  fetchReportContextData
+// =============================================================================
+
+describe('fetchReportContextData', () => {
+  it('ruft GET /api/report/context-data auf', async () => {
+    mockApiJson.mockResolvedValue({ teams: [], players: [] });
+
+    await fetchReportContextData();
+
+    expect(mockApiJson).toHaveBeenCalledTimes(1);
+    expect(mockApiJson).toHaveBeenCalledWith('/api/report/context-data');
+  });
+
+  it('gibt teams- und players-Arrays zurück', async () => {
+    const mockTeams   = [{ id: 1, name: 'U17' }, { id: 2, name: 'U19' }];
+    const mockPlayers = [{ id: 10, fullName: 'Max Mustermann' }, { id: 11, fullName: 'Erika Muster' }];
+    mockApiJson.mockResolvedValue({ teams: mockTeams, players: mockPlayers });
+
+    const result = await fetchReportContextData();
+
+    expect(result.teams).toEqual(mockTeams);
+    expect(result.players).toEqual(mockPlayers);
+  });
+
+  it('gibt leere Arrays zurück wenn Nutzer keine Zuordnungen hat', async () => {
+    mockApiJson.mockResolvedValue({ teams: [], players: [] });
+
+    const result = await fetchReportContextData();
+
+    expect(result.teams).toEqual([]);
+    expect(result.players).toEqual([]);
+  });
+
+  it('leitet Fehler weiter wenn der API-Aufruf fehlschlägt', async () => {
+    mockApiJson.mockRejectedValue(new Error('Server Error'));
+
+    await expect(fetchReportContextData()).rejects.toThrow('Server Error');
   });
 });
