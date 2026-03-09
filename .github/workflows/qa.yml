@@ -163,3 +163,12 @@ jobs:
 
       - name: run PHPUnit
         run: docker compose exec -T api ./vendor/bin/phpunit
+
+  # ============================================================
+  #  Gate: beide Jobs müssen grün sein
+  # ============================================================
+  all-checks:
+    runs-on: ubuntu-latest
+    needs: [frontend-qa, quality-assurance]
+    steps:
+      - run: echo "All QA checks passed."
