@@ -588,11 +588,15 @@ class ReportDataService
         // 2) Collect ALL possible x-labels and layer keys across all facets
         //    so every panel has the same structure (consistent comparison)
         $allXLabels = [];
+        $allXSortKeys = [];
         $allLayerKeys = [];
         foreach ($facetBuckets as $facetEvents) {
             foreach ($facetEvents as $event) {
                 $x = $this->stringifyValue($this->retrieveFieldValue($event, $xField));
                 $allXLabels[$x] = true;
+                if (!isset($allXSortKeys[$x])) {
+                    $allXSortKeys[$x] = $this->retrieveSortKey($event, $xField);
+                }
 
                 if (!empty($groupBy)) {
                     $parts = [];
@@ -605,7 +609,8 @@ class ReportDataService
             }
         }
         $xLabels = array_keys($allXLabels);
-        sort($xLabels);
+        // Sort by sort key (handles date/month fields correctly; falls back to display value)
+        usort($xLabels, fn ($a, $b) => strcmp($allXSortKeys[$a] ?? $a, $allXSortKeys[$b] ?? $b));
         $layers = array_keys($allLayerKeys);
         sort($layers);
 
@@ -771,16 +776,20 @@ class ReportDataService
     {
         // Bar/Line: X = xField, Y = Anzahl der Events pro X (mit Fallback)
         $counts = [];
+        $sortKeys = [];
         foreach ($events as $event) {
             $x = $this->retrieveFieldValue($event, $xField);
             if (null === $x || '' === $x) {
                 $x = 'Unbekannt';
             }
             $counts[$x] = ($counts[$x] ?? 0) + 1;
+            if (!isset($sortKeys[$x])) {
+                $sortKeys[$x] = $this->retrieveSortKey($event, $xField);
+            }
         }
         $xLabels = array_keys($counts);
-        sort($xLabels);
-        // TODO das erscheint mir hier wenig sinnvoll. die Daten passen mit und ohne [$x] im frontend
+        // Sort by sort key (handles date/month fields correctly; falls back to display value)
+        usort($xLabels, fn ($a, $b) => strcmp($sortKeys[$a] ?? $a, $sortKeys[$b] ?? $b));
         $data = [];
         foreach ($xLabels as $x) {
             $data[] = $counts[$x];
@@ -813,6 +822,7 @@ class ReportDataService
     {
         // Mit groupBy: X = xField, Layer = groupBy, Y = yField
         $xValues = [];
+        $xSortKeys = [];
         $layerValues = [];
         $matrix = [];
         foreach ($events as $event) {
@@ -827,6 +837,9 @@ class ReportDataService
             }
             $layerKey = $layerKeyParts ? implode(' | ', $layerKeyParts) : '';
             $xValues[$x] = true;
+            if (!isset($xSortKeys[$x])) {
+                $xSortKeys[$x] = $this->retrieveSortKey($event, $xField);
+            }
             $layerValues[$layerKey] = true;
             if (!isset($matrix[$layerKey][$x])) {
                 $matrix[$layerKey][$x] = 0;
@@ -834,7 +847,8 @@ class ReportDataService
             ++$matrix[$layerKey][$x];
         }
         $xLabels = array_keys($xValues);
-        sort($xLabels);
+        // Sort by sort key (handles date/month fields correctly; falls back to display value)
+        usort($xLabels, fn ($a, $b) => strcmp($xSortKeys[$a] ?? $a, $xSortKeys[$b] ?? $b));
         $layers = array_keys($layerValues);
         sort($layers);
 
@@ -854,6 +868,24 @@ class ReportDataService
             'labels' => $xLabels,
             'datasets' => $datasets,
         ];
+    }
+
+    /**
+     * Returns a sort key for an event's field value.
+     * Uses the field alias's 'sortKey' callback if available (e.g. for date/month fields),
+     * otherwise falls back to the display value for standard lexicographic sort.
+     */
+    private function retrieveSortKey(GameEvent $event, string $field): string
+    {
+        $fieldAliases = ReportFieldAliasService::fieldAliases($this->em);
+        if (isset($fieldAliases[$field]['sortKey']) && is_callable($fieldAliases[$field]['sortKey'])) {
+            $key = $fieldAliases[$field]['sortKey']($event);
+
+            return (null !== $key && '' !== $key) ? (string) $key : 'zzzz';
+        }
+
+        // Fallback: use display value (lexicographic sort)
+        return $this->stringifyValue($this->retrieveFieldValue($event, $field));
     }
 
     private function retrieveFieldValue(GameEvent $event, string $field): mixed

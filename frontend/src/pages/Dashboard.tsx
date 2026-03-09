@@ -16,12 +16,13 @@ import { AddWidgetModal } from '../modals/AddWidgetModal';
 import { SelectReportModal } from '../modals/SelectReportModal';
 import { updateWidgetWidth } from '../services/updateWidgetWidth';
 import { createWidget } from '../services/createWidget';
-import { fetchAvailableReports, ReportDefinition } from '../services/reports';
+import { fetchAvailableReports, ReportDefinition, fetchReportById, saveReport } from '../services/reports';
 import { reorderWidgets } from '../services/reorderWidgets';
 import { DashboardDndKitWrapper } from '../dnd/DashboardDndKitWrapper';
 import { DynamicConfirmationModal } from '../modals/DynamicConfirmationModal';
 import { deleteWidget } from '../services/deleteWidget';
 import { WidgetRefreshProvider, useWidgetRefresh } from '../context/WidgetRefreshContext';
+import { ReportBuilderModal, type Report } from '../modals/ReportBuilderModal';
 
 export default function Dashboard() {
   return (
@@ -33,7 +34,7 @@ export default function Dashboard() {
 
 function DashboardContent() {
   const { refreshWidget: triggerRefresh, isRefreshing } = useWidgetRefresh();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [widgets, setWidgets] = useState<WidgetData[]>([]);
   const [loading, setLoading] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -45,6 +46,11 @@ function DashboardContent() {
   const [settingsWidgetId, setSettingsWidgetId] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteWidgetId, setDeleteWidgetId] = useState<string | null>(null);
+
+  // ── Report edit flow ──
+  const [editReportOpen, setEditReportOpen] = useState(false);
+  const [editReportWidgetId, setEditReportWidgetId] = useState<string | null>(null);
+  const [editReport, setEditReport] = useState<Report | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -62,6 +68,58 @@ function DashboardContent() {
     } catch (error) {
       console.error('Error refreshing widget:', error);
     }
+  };
+
+  const handleEditReport = async (widgetId: string) => {
+    const widget = widgets.find(w => w.id === widgetId);
+    if (!widget?.reportId) return;
+    try {
+      const report = await fetchReportById(widget.reportId);
+      setEditReport(report as Report);
+      setEditReportWidgetId(widgetId);
+      setEditReportOpen(true);
+    } catch (e) {
+      console.error('Fehler beim Laden des Reports', e);
+    }
+  };
+
+  const handleEditReportSave = async (updatedReport: Report) => {
+    const widget = widgets.find(w => w.id === editReportWidgetId);
+    if (!widget) return;
+
+    let savedReport: Report;
+    if (updatedReport.isTemplate && !isAdmin) {
+      // Regular user editing a template: create a personal copy
+      savedReport = await saveReport({ ...updatedReport, id: undefined, isTemplate: false });
+    } else {
+      // Own report or admin editing template in-place
+      savedReport = await saveReport(updatedReport);
+    }
+
+    // If a new report was created (template copy), update the widget's reportId
+    if (savedReport.id && savedReport.id !== widget.reportId) {
+      await updateWidgetWidth({
+        id: widget.id,
+        width: widget.width,
+        position: widget.position,
+        config: widget.config,
+        enabled: widget.enabled,
+        reportId: savedReport.id,
+      });
+      // Reload widgets so the widget now references the copy
+      setLoading(true);
+      fetchDashboardWidgets()
+        .then(setWidgets)
+        .catch(() => setWidgets([]))
+        .finally(() => setLoading(false));
+    } else {
+      // Own report updated in place — just refresh the chart
+      triggerRefresh(widget.id);
+    }
+
+    setEditReportOpen(false);
+    setEditReport(null);
+    setEditReportWidgetId(null);
   };
   const handleDelete = (id: string) => {
     setDeleteWidgetId(id);
@@ -219,6 +277,7 @@ function DashboardContent() {
             onRefresh={() => handleRefresh(widget.id)}
             onDelete={() => handleDelete(widget.id)}
             onSettings={() => handleSettings(widget.id)}
+            onEditReport={widget.type === 'report' ? () => handleEditReport(widget.id) : undefined}
             dragHandle={dragHandle}
           >
             {widget.type === 'upcoming_events' && <UpcomingEventsWidget widgetId={widget.id} config={widget.config} />}
@@ -278,6 +337,18 @@ function DashboardContent() {
         })()}
         onClose={handleSettingsClose}
         onSave={handleSettingsSave}
+      />
+
+      {/* Report edit modal */}
+      <ReportBuilderModal
+        open={editReportOpen}
+        onClose={() => {
+          setEditReportOpen(false);
+          setEditReport(null);
+          setEditReportWidgetId(null);
+        }}
+        onSave={handleEditReportSave}
+        report={editReport}
       />
     </Box>
   );

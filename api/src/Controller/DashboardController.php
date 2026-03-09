@@ -189,6 +189,13 @@ class DashboardController extends AbstractController
             if (isset($data['config'])) {
                 $widget->setConfig($data['config']);
             }
+            // Allow updating the linked report definition (e.g. after copying a template)
+            if (isset($data['reportId'])) {
+                $newReport = $em->getRepository(ReportDefinition::class)->find((int) $data['reportId']);
+                if ($newReport && ($newReport->getUser() === $user || $newReport->isTemplate())) {
+                    $widget->setReportDefinition($newReport);
+                }
+            }
         } elseif ($widget && $widget->getUser() !== $user && $widget->isDefault()) {
             $newWidget = new DashboardWidget();
             $newWidget->setUser($user);

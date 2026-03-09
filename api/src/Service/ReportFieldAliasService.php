@@ -100,6 +100,18 @@ class ReportFieldAliasService
 
                     return null;
                 },
+                'sortKey' => static function ($event) {
+                    $game = $event->getGame();
+                    $ce = $game ? $game->getCalendarEvent() : null;
+                    if ($ce) {
+                        $date = $ce->getStartDate();
+                        if ($date instanceof DateTimeInterface) {
+                            return $date->format('Y-m-d'); // ISO format for correct lexicographic sort
+                        }
+                    }
+
+                    return '9999-99-99';
+                },
                 'entity' => 'Game',
                 'field' => 'startDate',
                 'type' => 'date',
@@ -122,6 +134,18 @@ class ReportFieldAliasService
                     }
 
                     return null;
+                },
+                'sortKey' => static function ($event) {
+                    $game = $event->getGame();
+                    $ce = $game ? $game->getCalendarEvent() : null;
+                    if ($ce) {
+                        $date = $ce->getStartDate();
+                        if ($date instanceof DateTimeInterface) {
+                            return $date->format('Y-m'); // e.g. "2024-03" for correct chronological sort
+                        }
+                    }
+
+                    return '9999-99';
                 },
                 'entity' => 'Game',
                 'type' => 'string',

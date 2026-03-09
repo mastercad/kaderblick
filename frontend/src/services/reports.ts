@@ -18,15 +18,16 @@ export async function fetchReportDefinitions(): Promise<{ templates: any[], user
 
 export async function saveReport(report: Report): Promise<Report> {
   if (report.id) {
-    await apiJson(`/api/report/definition/${report.id}`, {
+    const putResponse = await apiJson(`/api/report/definition/${report.id}`, {
       method: 'PUT',
       body: JSON.stringify({
         name: report.name,
         description: report.description,
         config: report.config,
+        isTemplate: report.isTemplate ?? false,
       }),
     });
-    return report;
+    return { ...report, id: putResponse?.id ?? report.id };
   } else {
     const response = await apiJson('/api/report/definition', {
       method: 'POST',
@@ -34,10 +35,15 @@ export async function saveReport(report: Report): Promise<Report> {
         name: report.name,
         description: report.description,
         config: report.config,
+        isTemplate: report.isTemplate ?? false,
       }),
     });
     return { ...report, id: response.id };
   }
+}
+
+export async function fetchReportById(id: number): Promise<Report> {
+  return apiJson(`/api/report/definition/${id}`);
 }
 
 export async function deleteReport(id: number): Promise<void> {
