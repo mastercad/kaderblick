@@ -14,7 +14,6 @@ export interface ContextRequirements {
 export interface ReportConfig {
   xField?: unknown;
   groupBy?: unknown;
-  [key: string]: unknown;
 }
 
 /**
