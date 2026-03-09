@@ -68,6 +68,27 @@ export async function fetchReportBuilderData(): Promise<ReportBuilderData> {
   return apiJson('/api/report/builder-data');
 }
 
+export interface ReportPreset {
+  key: string;
+  label: string;
+  config: Record<string, unknown>;
+}
+
+/** Lightweight – only returns the preset list (no fields/dates/etc.) */
+export async function fetchReportPresets(): Promise<{ presets: ReportPreset[] }> {
+  return apiJson('/api/report/presets');
+}
+
+export interface ContextOption { id: number; name?: string; fullName?: string }
+
+/** Lightweight – only returns teams and players for the context-selection modal. */
+export async function fetchReportContextData(): Promise<{
+  teams: ContextOption[];
+  players: ContextOption[];
+}> {
+  return apiJson('/api/report/context-data');
+}
+
 export async function previewReport(report: Report): Promise<{ preview?: string; error?: string }> {
   // Verwendet den bestehenden /reports/preview Endpunkt (für Web-Interface)
   const formData = new FormData();
