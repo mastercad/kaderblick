@@ -35,6 +35,9 @@ services:
     App\Security\Json401EntryPoint:
         public: true
 
+    lexik_jwt_authentication.extractor.authorization_header_extractor:
+        class: App\Security\JwtTokenExtractor
+
     # Monolog channel bindings for custom loggers
     Psr\Log\LoggerInterface $xpProcessingLogger: '@monolog.logger.xp_processing'
     Psr\Log\LoggerInterface $cronLogger: '@monolog.logger.cron'
@@ -46,6 +49,7 @@ services:
         exclude:
             - '../src/DependencyInjection/'
             - '../src/Kernel.php'
+            - '../src/Security/JwtTokenExtractor.php'
     
     # Configure DataFixtures as services with autowiring
     App\DataFixtures\:

@@ -10,6 +10,8 @@ use App\Service\CoachTeamPlayerService;
 use App\Service\EmailVerificationService;
 use App\Service\SystemSettingService;
 use App\Service\UserTitleService;
+use DateTime;
+use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -335,5 +337,63 @@ class ProfileController extends AbstractController
             'titles' => $titlesWithPlayers,
             'users' => $users,
         ]);
+    }
+
+    #[Route('/profile/api-token', name: 'api_profile_api_token_get', methods: ['GET'])]
+    public function getApiToken(): JsonResponse
+    {
+        /** @var ?User $user */
+        $user = $this->getUser();
+
+        if (!($user instanceof User)) {
+            return $this->json(['message' => 'Not logged in'], 401);
+        }
+
+        $createdAt = $user->getApiTokenCreatedAt();
+
+        return $this->json([
+            'hasToken' => null !== $user->getApiToken(),
+            'createdAt' => $createdAt?->format(DateTimeInterface::ATOM),
+        ]);
+    }
+
+    #[Route('/profile/api-token', name: 'api_profile_api_token_generate', methods: ['POST'])]
+    public function generateApiToken(): JsonResponse
+    {
+        /** @var ?User $user */
+        $user = $this->getUser();
+
+        if (!($user instanceof User)) {
+            return $this->json(['message' => 'Not logged in'], 401);
+        }
+
+        $token = 'kbak_' . bin2hex(random_bytes(24));
+        $now = new DateTime();
+
+        $user->setApiToken($token);
+        $user->setApiTokenCreatedAt($now);
+        $this->entityManager->flush();
+
+        return $this->json([
+            'token' => $token,
+            'createdAt' => $now->format(DateTimeInterface::ATOM),
+        ]);
+    }
+
+    #[Route('/profile/api-token', name: 'api_profile_api_token_revoke', methods: ['DELETE'])]
+    public function revokeApiToken(): JsonResponse
+    {
+        /** @var ?User $user */
+        $user = $this->getUser();
+
+        if (!($user instanceof User)) {
+            return $this->json(['message' => 'Not logged in'], 401);
+        }
+
+        $user->setApiToken(null);
+        $user->setApiTokenCreatedAt(null);
+        $this->entityManager->flush();
+
+        return $this->json(['success' => true]);
     }
 }

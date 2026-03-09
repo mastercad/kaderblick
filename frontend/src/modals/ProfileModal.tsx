@@ -60,6 +60,8 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { alpha } from '@mui/material/styles';
 import { useTheme as useMuiTheme } from '@mui/material/styles';
 import { pushHealthMonitor, type PushHealthReport, type PushHealthStatus } from '../services/pushHealthMonitor';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -287,18 +289,75 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
   const [prefsSaving, setPrefsSaving] = React.useState(false);
   const [prefsMessage, setPrefsMessage] = React.useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
+  // API Token
+  const [apiTokenStatus, setApiTokenStatus] = React.useState<{ hasToken: boolean; createdAt: string | null } | null>(null);
+  const [apiTokenLoading, setApiTokenLoading] = React.useState(false);
+  const [newlyGeneratedToken, setNewlyGeneratedToken] = React.useState<string | null>(null);
+  const [apiTokenMessage, setApiTokenMessage] = React.useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [tokenCopied, setTokenCopied] = React.useState(false);
+
   React.useEffect(() => {
     if (open) {
       loadUserProfile();
       loadUserRelations();
       checkPushHealth();
       loadNotifPrefs();
+      loadApiTokenStatus();
       setActiveTab(0);
       setMessage(null);
+      setNewlyGeneratedToken(null);
+      setApiTokenMessage(null);
     }
   }, [open]);
 
   // ── Data loading ──
+
+  const loadApiTokenStatus = async () => {
+    try {
+      const data = await apiJson('/api/profile/api-token');
+      setApiTokenStatus(data);
+    } catch {
+      setApiTokenStatus(null);
+    }
+  };
+
+  const handleGenerateToken = async () => {
+    setApiTokenLoading(true);
+    setApiTokenMessage(null);
+    setNewlyGeneratedToken(null);
+    try {
+      const data = await apiJson('/api/profile/api-token', { method: 'POST' });
+      setNewlyGeneratedToken(data.token);
+      setApiTokenStatus({ hasToken: true, createdAt: data.createdAt });
+      setApiTokenMessage({ text: 'Token erfolgreich generiert. Speichere ihn jetzt – er wird nicht erneut angezeigt.', type: 'success' });
+    } catch {
+      setApiTokenMessage({ text: 'Fehler beim Generieren des Tokens.', type: 'error' });
+    } finally {
+      setApiTokenLoading(false);
+    }
+  };
+
+  const handleRevokeToken = async () => {
+    setApiTokenLoading(true);
+    setApiTokenMessage(null);
+    setNewlyGeneratedToken(null);
+    try {
+      await apiJson('/api/profile/api-token', { method: 'DELETE' });
+      setApiTokenStatus({ hasToken: false, createdAt: null });
+      setApiTokenMessage({ text: 'Token wurde widerrufen.', type: 'success' });
+    } catch {
+      setApiTokenMessage({ text: 'Fehler beim Widerrufen des Tokens.', type: 'error' });
+    } finally {
+      setApiTokenLoading(false);
+    }
+  };
+
+  const handleCopyToken = async () => {
+    if (!newlyGeneratedToken) return;
+    await navigator.clipboard.writeText(newlyGeneratedToken);
+    setTokenCopied(true);
+    setTimeout(() => setTokenCopied(false), 2000);
+  };
 
   const loadUserProfile = async () => {
     try {
@@ -616,6 +675,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
             <Tab icon={<CheckroomIcon fontSize="small" />} iconPosition="start" label="Ausrüstung" />
             <Tab icon={<SettingsIcon fontSize="small" />} iconPosition="start" label="Einstellungen" />
             <Tab icon={<NotificationsIcon fontSize="small" />} iconPosition="start" label="Benachrichtigungen" />
+            <Tab icon={<VpnKeyIcon fontSize="small" />} iconPosition="start" label="API-Token" />
           </Tabs>
         </Box>
 
@@ -839,6 +899,80 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
                 </Stack>
               </SectionCard>
             ))}
+          </TabPanel>
+
+          {/* ── Tab 4: API-Token ──────────────────────────────────────────── */}
+          <TabPanel value={activeTab} index={4}>
+            <SectionCard title="Persönlicher API-Token" icon={<VpnKeyIcon fontSize="small" />}>
+              <Stack spacing={2}>
+                <Typography variant="body2" color="text.secondary">
+                  Mit einem persönlichen API-Token kannst du dich bei API-Anfragen und Automatisierungen authentifizieren.
+                  Verwende ihn als <code>Authorization: Bearer &lt;token&gt;</code>-Header.
+                </Typography>
+
+                {apiTokenStatus && apiTokenStatus.hasToken && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CheckCircleOutlineIcon fontSize="small" color="success" />
+                    <Typography variant="body2">
+                      Token aktiv
+                      {apiTokenStatus.createdAt && (
+                        <Typography component="span" variant="body2" color="text.secondary">
+                          {' '}· erstellt am {new Date(apiTokenStatus.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </Typography>
+                      )}
+                    </Typography>
+                  </Box>
+                )}
+
+                {newlyGeneratedToken && (
+                  <Alert severity="warning" icon={<WarningAmberIcon fontSize="inherit" />}
+                    sx={{ fontFamily: 'monospace', fontSize: '0.78rem', wordBreak: 'break-all', alignItems: 'flex-start' }}
+                  >
+                    <Typography variant="caption" fontWeight={700} display="block" mb={0.5}>
+                      Token nur einmal sichtbar – jetzt kopieren!
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                      <code style={{ flex: 1, wordBreak: 'break-all' }}>{newlyGeneratedToken}</code>
+                      <Tooltip title={tokenCopied ? 'Kopiert!' : 'In Zwischenablage kopieren'}>
+                        <IconButton size="small" onClick={handleCopyToken} color={tokenCopied ? 'success' : 'default'}>
+                          <ContentCopyIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Alert>
+                )}
+
+                {apiTokenMessage && (
+                  <Alert severity={apiTokenMessage.type} onClose={() => setApiTokenMessage(null)}>
+                    {apiTokenMessage.text}
+                  </Alert>
+                )}
+
+                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="contained"
+                    startIcon={apiTokenLoading ? <CircularProgress size={16} color="inherit" /> : <VpnKeyIcon />}
+                    onClick={handleGenerateToken}
+                    disabled={apiTokenLoading}
+                    sx={{ textTransform: 'none', borderRadius: 2 }}
+                  >
+                    {apiTokenStatus?.hasToken ? 'Token neu generieren' : 'Token generieren'}
+                  </Button>
+                  {apiTokenStatus?.hasToken && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<FaTrashAlt />}
+                      onClick={handleRevokeToken}
+                      disabled={apiTokenLoading}
+                      sx={{ textTransform: 'none', borderRadius: 2 }}
+                    >
+                      Token widerrufen
+                    </Button>
+                  )}
+                </Box>
+              </Stack>
+            </SectionCard>
           </TabPanel>
         </Box>
       </BaseModal>
