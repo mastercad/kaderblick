@@ -21,23 +21,23 @@ export async function saveReport(report: Report): Promise<Report> {
   if (report.id) {
     const putResponse = await apiJson(`/api/report/definition/${report.id}`, {
       method: 'PUT',
-      body: JSON.stringify({
+      body: {
         name: report.name,
         description: report.description,
         config: report.config,
         isTemplate: report.isTemplate ?? false,
-      }),
+      },
     });
     return { ...report, id: putResponse?.id ?? report.id };
   } else {
     const response = await apiJson('/api/report/definition', {
       method: 'POST',
-      body: JSON.stringify({
+      body: {
         name: report.name,
         description: report.description,
         config: report.config,
         isTemplate: report.isTemplate ?? false,
-      }),
+      },
     });
     return { ...report, id: response.id };
   }
