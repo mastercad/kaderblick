@@ -52,6 +52,7 @@ jobs:
   #  Backend Quality Assurance
   # ============================================================
   quality-assurance:
+    needs: frontend-qa
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
