@@ -1,5 +1,6 @@
 import { apiJson } from '../utils/api';
-import type { Report, ReportBuilderData } from '../types/reports';
+import type { ReportBuilderData } from '../types/reports';
+import type { Report } from '../modals/ReportBuilder/types';
 
 export interface ReportDefinition {
   id: number;
@@ -76,11 +77,15 @@ export async function previewReport(report: Report): Promise<{ preview?: string;
   formData.append('config[xField]', report.config.xField);
   formData.append('config[yField]', report.config.yField);
   
-  report.config.groupBy.forEach((field, index) => {
-    formData.append(`config[groupBy][${index}]`, field);
-  });
-  
-  Object.entries(report.config.filters).forEach(([key, value]) => {
+  if (Array.isArray(report.config.groupBy)) {
+    (report.config.groupBy as unknown as string[]).forEach((field, index) => {
+      formData.append(`config[groupBy][${index}]`, field);
+    });
+  } else if (report.config.groupBy) {
+    formData.append('config[groupBy]', report.config.groupBy);
+  }
+
+  Object.entries(report.config.filters ?? {}).forEach(([key, value]) => {
     if (value) {
       formData.append(`config[filters][${key}]`, value.toString());
     }
