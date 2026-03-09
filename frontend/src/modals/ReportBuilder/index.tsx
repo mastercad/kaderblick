@@ -47,6 +47,7 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
           Du bearbeitest eine Vorlage. Deine Änderungen werden als persönliche Kopie für dich gespeichert — die Vorlage selbst bleibt unverändert.
         </Alert>
       )}
+      {state.isMobile ? <MobileWizard state={state} /> : <DesktopLayout state={state} />}
 
       <HelpDialog open={state.helpOpen} onClose={() => state.setHelpOpen(false)} />
     </BaseModal>
