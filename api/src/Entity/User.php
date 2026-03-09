@@ -89,6 +89,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTime $emailVerificationTokenExpiresAt = null;
 
+    #[ORM\Column(length: 64, nullable: true, unique: true)]
+    private ?string $apiToken = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?DateTime $apiTokenCreatedAt = null;
+
     #[ORM\OneToOne(mappedBy: 'user', targetEntity: UserLevel::class, cascade: ['persist', 'remove'])]
     private ?UserLevel $userLevel = null;
 
@@ -455,6 +461,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmailVerificationTokenExpiresAt(?DateTime $expiresAt): self
     {
         $this->emailVerificationTokenExpiresAt = $expiresAt;
+
+        return $this;
+    }
+
+    public function getApiToken(): ?string
+    {
+        return $this->apiToken;
+    }
+
+    public function setApiToken(?string $apiToken): self
+    {
+        $this->apiToken = $apiToken;
+
+        return $this;
+    }
+
+    public function getApiTokenCreatedAt(): ?DateTime
+    {
+        return $this->apiTokenCreatedAt;
+    }
+
+    public function setApiTokenCreatedAt(?DateTime $apiTokenCreatedAt): self
+    {
+        $this->apiTokenCreatedAt = $apiTokenCreatedAt;
 
         return $this;
     }
