@@ -9,6 +9,8 @@ use App\Entity\Player;
 use App\Entity\RelationType;
 use App\Entity\User;
 use App\Entity\UserRelation;
+use App\Service\DefaultDashboardService;
+use App\Service\NotificationService;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
@@ -19,19 +21,34 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Throwable;
 
 #[Route('/admin/users', name: 'admin_users_')]
 #[IsGranted('ROLE_ADMIN')]
 class UserManagementController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $em)
-    {
+    public function __construct(
+        private EntityManagerInterface $em,
+        private NotificationService $notificationService,
+        private DefaultDashboardService $defaultDashboardService,
+    ) {
     }
 
     #[Route('', name: 'index', methods: ['GET'])]
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $users = $this->em->getRepository(User::class)->findBy([], ['lastName' => 'ASC', 'firstName' => 'ASC']);
+        $search = trim((string) $request->query->get('search', ''));
+
+        if ('' !== $search) {
+            $qb = $this->em->getRepository(User::class)->createQueryBuilder('u')
+                ->where('u.firstName LIKE :term OR u.lastName LIKE :term OR u.email LIKE :term')
+                ->setParameter('term', '%' . $search . '%')
+                ->orderBy('u.lastName', 'ASC')
+                ->addOrderBy('u.firstName', 'ASC');
+            $users = $qb->getQuery()->getResult();
+        } else {
+            $users = $this->em->getRepository(User::class)->findBy([], ['lastName' => 'ASC', 'firstName' => 'ASC']);
+        }
 
         return $this->json(
             [
@@ -197,10 +214,17 @@ class UserManagementController extends AbstractController
     {
         $this->em->beginTransaction();
         try {
+            // Capture existing relation signatures to detect new ones later
             $existingRelations = $this->em->getRepository(UserRelation::class)->findBy(['user' => $user]);
-            foreach ($existingRelations as $relation) {
-                $this->em->remove($relation);
+            $oldSignatures = [];
+            foreach ($existingRelations as $existingRelation) {
+                $pid = $existingRelation->getPlayer()?->getId();
+                $cid = $existingRelation->getCoach()?->getId();
+                $rtid = $existingRelation->getRelationType()->getId();
+                $oldSignatures[] = $rtid . '_' . ($pid ?? 'c' . $cid);
+                $this->em->remove($existingRelation);
             }
+            $newRelations = [];
 
             $data = json_decode($request->getContent(), true);
             $relations = $data['relations'] ?? [];
@@ -238,10 +262,57 @@ class UserManagementController extends AbstractController
                 }
 
                 $this->em->persist($relation);
+                $newRelations[] = $relation;
             }
 
             $this->em->flush();
             $this->em->commit();
+
+            // Ensure team-specific report widgets exist for newly linked teams
+            try {
+                $this->defaultDashboardService->createDefaultDashboard($user);
+            } catch (Throwable) {
+                // Non-critical – don't roll back the assignment
+            }
+
+            // Send push notification to the user for each genuinely new relation
+            foreach ($newRelations as $newRelation) {
+                $pid = $newRelation->getPlayer()?->getId();
+                $cid = $newRelation->getCoach()?->getId();
+                $rtid = $newRelation->getRelationType()->getId();
+                $sig = $rtid . '_' . ($pid ?? 'c' . $cid);
+
+                if (in_array($sig, $oldSignatures, true)) {
+                    continue; // unchanged relation – skip notification
+                }
+
+                $relTypeName = $newRelation->getRelationType()->getName();
+
+                if ($newRelation->getPlayer()) {
+                    $entityLabel = 'Spieler';
+                    $entityName = $newRelation->getPlayer()->getFullName();
+                } else {
+                    $entityLabel = 'Trainer';
+                    $entityName = $newRelation->getCoach()?->getFullName() ?? 'unbekannt';
+                }
+
+                try {
+                    $this->notificationService->createNotification(
+                        $user,
+                        'user_relation_assigned',
+                        'Neue Verknüpfung eingerichtet',
+                        sprintf(
+                            'Du wurdest als %s mit dem %s %s verknüpft.',
+                            $relTypeName,
+                            $entityLabel,
+                            $entityName
+                        ),
+                        ['url' => '/profile']
+                    );
+                } catch (Throwable) {
+                    // Non-critical – don't roll back
+                }
+            }
 
             return $this->json([
                 'status' => 'success',

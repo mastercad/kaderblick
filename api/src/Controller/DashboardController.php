@@ -350,7 +350,13 @@ class DashboardController extends AbstractController
                         'title' => $event->getTitle(),
                         'startDate' => $event->getStartDate()?->format('c'),
                         'endDate' => $event->getEndDate()?->format('c'),
-                        'location' => $event->getLocation()?->getName(),
+                        'location' => $event->getLocation() ? [
+                            'id' => $event->getLocation()->getId(),
+                            'name' => $event->getLocation()->getName(),
+                            'latitude' => $event->getLocation()->getLatitude(),
+                            'longitude' => $event->getLocation()->getLongitude(),
+                            'address' => $event->getLocation()->getAddress(),
+                        ] : null,
                         'calendarEventType' => [
                             'name' => $event->getCalendarEventType()?->getName(),
                             'color' => $event->getCalendarEventType()?->getColor(),
