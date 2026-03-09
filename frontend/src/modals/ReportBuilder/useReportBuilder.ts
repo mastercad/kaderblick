@@ -22,7 +22,7 @@ export function useReportBuilder(
   onSave: (report: Report) => Promise<void>,
   onClose: () => void,
 ): ReportBuilderState {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, isAdmin } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -207,6 +207,7 @@ export function useReportBuilder(
     helpOpen,
     setHelpOpen,
     isSuperAdmin,
+    isAdmin,
     isMobile,
     fullScreen,
     handleConfigChange,

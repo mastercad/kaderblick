@@ -10,8 +10,17 @@ import {
   Slider,
   Checkbox,
   FormControlLabel,
+  Tooltip,
 } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import type { ReportBuilderState } from './types';
+
+/** Reusable tooltip info icon */
+const Tip: React.FC<{ text: string }> = ({ text }) => (
+  <Tooltip title={text} placement="top-end">
+    <InfoOutlinedIcon fontSize="small" sx={{ mt: 1.75, color: 'text.secondary', flexShrink: 0, cursor: 'default' }} />
+  </Tooltip>
+);
 
 interface StepFiltersProps {
   state: ReportBuilderState;
@@ -33,28 +42,37 @@ export const StepFilters: React.FC<StepFiltersProps> = ({ state }) => {
           {/* Date range */}
           {builderData.availableDates?.length > 0 && (
             <Paper variant="outlined" sx={{ p: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>Zeitraum</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography variant="subtitle2">Zeitraum</Typography>
+                <Tooltip title="Schränkt die ausgewerteten Ereignisse auf einen bestimmten Datumsbereich ein. Nur Ereignisse innerhalb dieses Zeitraums fließen in den Report ein." placement="top">
+                  <InfoOutlinedIcon fontSize="small" sx={{ color: 'text.secondary', cursor: 'default' }} />
+                </Tooltip>
+              </Box>
               <Box display="flex" gap={2} mb={1} flexWrap="wrap">
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={currentReport.config.filters?.dateFrom != null}
-                      onChange={(e) => handleFilterChange('dateFrom', e.target.checked ? builderData.minDate : null)}
-                      size="small"
-                    />
-                  }
-                  label="Von"
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={currentReport.config.filters?.dateTo != null}
-                      onChange={(e) => handleFilterChange('dateTo', e.target.checked ? builderData.maxDate : null)}
-                      size="small"
-                    />
-                  }
-                  label="Bis"
-                />
+                <Tooltip title="Startdatum des Zeitfensters aktivieren und einstellen." placement="top">
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={currentReport.config.filters?.dateFrom != null}
+                        onChange={(e) => handleFilterChange('dateFrom', e.target.checked ? builderData.minDate : null)}
+                        size="small"
+                      />
+                    }
+                    label="Von"
+                  />
+                </Tooltip>
+                <Tooltip title="Enddatum des Zeitfensters aktivieren und einstellen." placement="top">
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={currentReport.config.filters?.dateTo != null}
+                        onChange={(e) => handleFilterChange('dateTo', e.target.checked ? builderData.maxDate : null)}
+                        size="small"
+                      />
+                    }
+                    label="Bis"
+                  />
+                </Tooltip>
               </Box>
 
               {(currentReport.config.filters?.dateFrom != null || currentReport.config.filters?.dateTo != null) && (
@@ -92,95 +110,113 @@ export const StepFilters: React.FC<StepFiltersProps> = ({ state }) => {
           )}
 
           {/* Team */}
-          <FormControl fullWidth>
-            <InputLabel>Team</InputLabel>
-            <Select
-              value={currentReport.config.filters?.team || ''}
-              onChange={(e) => handleFilterChange('team', e.target.value)}
-              label="Team"
-            >
-              <MenuItem value="">Alle Teams</MenuItem>
-              {builderData.teams.map((team) => (
-                <MenuItem key={team.id} value={team.id.toString()}>{team.name}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Spieler */}
-          <FormControl fullWidth>
-            <InputLabel>Spieler</InputLabel>
-            <Select
-              value={currentReport.config.filters?.player || ''}
-              onChange={(e) => handleFilterChange('player', e.target.value)}
-              label="Spieler"
-            >
-              <MenuItem value="">Alle Spieler</MenuItem>
-              {builderData.players.map((player) => (
-                <MenuItem key={player.id} value={player.id.toString()}>{player.fullName}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Spieltyp */}
-          {(builderData.gameTypes?.length ?? 0) > 0 && (
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
             <FormControl fullWidth>
-              <InputLabel>Spieltyp</InputLabel>
+              <InputLabel>Team</InputLabel>
               <Select
-                value={currentReport.config.filters?.gameType || ''}
-                onChange={(e) => handleFilterChange('gameType', e.target.value)}
-                label="Spieltyp"
+                value={currentReport.config.filters?.team || ''}
+                onChange={(e) => handleFilterChange('team', e.target.value)}
+                label="Team"
               >
-                <MenuItem value="">Alle Spieltypen</MenuItem>
-                {builderData.gameTypes!.map((gt) => (
-                  <MenuItem key={gt.id} value={gt.id.toString()}>{gt.name}</MenuItem>
+                <MenuItem value="">Alle Teams</MenuItem>
+                {builderData.teams.map((team) => (
+                  <MenuItem key={team.id} value={team.id.toString()}>{team.name}</MenuItem>
                 ))}
               </Select>
             </FormControl>
+            <Tip text="Zeigt nur Ereignisse, die für die gewählte Mannschaft erfasst wurden. Ohne Auswahl werden alle Teams berücksichtigt." />
+          </Box>
+
+          {/* Spieler */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+            <FormControl fullWidth>
+              <InputLabel>Spieler</InputLabel>
+              <Select
+                value={currentReport.config.filters?.player || ''}
+                onChange={(e) => handleFilterChange('player', e.target.value)}
+                label="Spieler"
+              >
+                <MenuItem value="">Alle Spieler</MenuItem>
+                {builderData.players.map((player) => (
+                  <MenuItem key={player.id} value={player.id.toString()}>{player.fullName}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Tip text="Filtert auf Ereignisse eines einzelnen Spielers. Kombinierbar mit allen anderen Filtern – z.B. „Tore von Spieler X in Heimspielen“." />
+          </Box>
+
+          {/* Spieltyp */}
+          {(builderData.gameTypes?.length ?? 0) > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+              <FormControl fullWidth>
+                <InputLabel>Spieltyp</InputLabel>
+                <Select
+                  value={currentReport.config.filters?.gameType || ''}
+                  onChange={(e) => handleFilterChange('gameType', e.target.value)}
+                  label="Spieltyp"
+                >
+                  <MenuItem value="">Alle Spieltypen</MenuItem>
+                  {builderData.gameTypes!.map((gt) => (
+                    <MenuItem key={gt.id} value={gt.id.toString()}>{gt.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Tip text="Filtert nach der Art des Spiels, z.B. nur Ligaspiele, nur Pokalspiele oder nur Freundschaftsspiele." />
+            </Box>
           )}
 
           {/* Ereignistyp */}
-          <FormControl fullWidth>
-            <InputLabel>Ereignistyp</InputLabel>
-            <Select
-              value={currentReport.config.filters?.eventType || ''}
-              onChange={(e) => handleFilterChange('eventType', e.target.value)}
-              label="Ereignistyp"
-            >
-              <MenuItem value="">Alle Ereignistypen</MenuItem>
-              {builderData.eventTypes.map((eventType) => (
-                <MenuItem key={eventType.id} value={eventType.id.toString()}>{eventType.name}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+            <FormControl fullWidth>
+              <InputLabel>Ereignistyp</InputLabel>
+              <Select
+                value={currentReport.config.filters?.eventType || ''}
+                onChange={(e) => handleFilterChange('eventType', e.target.value)}
+                label="Ereignistyp"
+              >
+                <MenuItem value="">Alle Ereignistypen</MenuItem>
+                {builderData.eventTypes.map((eventType) => (
+                  <MenuItem key={eventType.id} value={eventType.id.toString()}>{eventType.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Tip text="Beschränkt den Report auf einen bestimmten Ereignistyp, z.B. nur Tore oder nur Vorlagen. Wird oft mit der Y-Achse kombiniert." />
+          </Box>
 
           {/* Platztyp */}
-          <FormControl fullWidth>
-            <InputLabel>Platztyp</InputLabel>
-            <Select
-              value={currentReport.config.filters?.surfaceType || ''}
-              onChange={(e) => handleFilterChange('surfaceType', e.target.value)}
-              label="Platztyp"
-            >
-              <MenuItem value="">Alle Platztypen</MenuItem>
-              {builderData.surfaceTypes?.map((st) => (
-                <MenuItem key={st.id} value={st.id.toString()}>{st.name}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+            <FormControl fullWidth>
+              <InputLabel>Platztyp</InputLabel>
+              <Select
+                value={currentReport.config.filters?.surfaceType || ''}
+                onChange={(e) => handleFilterChange('surfaceType', e.target.value)}
+                label="Platztyp"
+              >
+                <MenuItem value="">Alle Platztypen</MenuItem>
+                {builderData.surfaceTypes?.map((st) => (
+                  <MenuItem key={st.id} value={st.id.toString()}>{st.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Tip text="Filtert nach der Beschaffenheit des Spielfelds, z.B. nur Ereignisse auf Naturrasen oder nur auf Kunstrasen." />
+          </Box>
 
           {/* Niederschlag */}
-          <FormControl fullWidth>
-            <InputLabel>Wetter (Niederschlag)</InputLabel>
-            <Select
-              value={currentReport.config.filters?.precipitation || ''}
-              onChange={(e) => handleFilterChange('precipitation', e.target.value)}
-              label="Wetter (Niederschlag)"
-            >
-              <MenuItem value="">Beliebig</MenuItem>
-              <MenuItem value="yes">Mit Niederschlag</MenuItem>
-              <MenuItem value="no">Ohne Niederschlag</MenuItem>
-            </Select>
-          </FormControl>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+            <FormControl fullWidth>
+              <InputLabel>Wetter (Niederschlag)</InputLabel>
+              <Select
+                value={currentReport.config.filters?.precipitation || ''}
+                onChange={(e) => handleFilterChange('precipitation', e.target.value)}
+                label="Wetter (Niederschlag)"
+              >
+                <MenuItem value="">Beliebig</MenuItem>
+                <MenuItem value="yes">Mit Niederschlag</MenuItem>
+                <MenuItem value="no">Ohne Niederschlag</MenuItem>
+              </Select>
+            </FormControl>
+            <Tip text="Filtert Ereignisse nach dem Wetter am Spieltag. Erfordert, dass für das Spiel Wetterdaten hinterlegt sind." />
+          </Box>
         </>
       )}
     </Box>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '@mui/material';
+import { Alert, Button } from '@mui/material';
 import BaseModal from '../BaseModal';
 import type { ReportBuilderModalProps } from './types';
 import { useReportBuilder } from './useReportBuilder';
@@ -42,7 +42,11 @@ export const ReportBuilderModal: React.FC<ReportBuilderModalProps> = ({
         )
       }
     >
-      {state.isMobile ? <MobileWizard state={state} /> : <DesktopLayout state={state} />}
+      {state.currentReport.isTemplate && !state.isAdmin && (
+        <Alert severity="info" sx={{ mb: 2, flexShrink: 0 }}>
+          Du bearbeitest eine Vorlage. Deine Änderungen werden als persönliche Kopie für dich gespeichert — die Vorlage selbst bleibt unverändert.
+        </Alert>
+      )}
 
       <HelpDialog open={state.helpOpen} onClose={() => state.setHelpOpen(false)} />
     </BaseModal>

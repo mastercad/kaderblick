@@ -108,6 +108,7 @@ export interface ReportBuilderState {
 
   // Auth
   isSuperAdmin: boolean;
+  isAdmin: boolean;
 
   // Responsive
   isMobile: boolean;

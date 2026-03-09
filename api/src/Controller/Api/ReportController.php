@@ -522,6 +522,29 @@ class ReportController extends AbstractController
         ]);
     }
 
+    #[Route('/definition/{id}', name: 'api_report_get', methods: ['GET'])]
+    public function getDefinition(int $id, EntityManagerInterface $em): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $report = $em->getRepository(ReportDefinition::class)->find($id);
+        if (!$report) {
+            return $this->json(['error' => 'Report not found'], 404);
+        }
+        // Allow access to own reports and templates
+        if (!$report->isTemplate() && $report->getUser()?->getId() !== $user->getId()) {
+            return $this->json(['error' => 'Access denied'], 403);
+        }
+
+        return $this->json([
+            'id' => $report->getId(),
+            'name' => $report->getName(),
+            'description' => $report->getDescription(),
+            'config' => $report->getConfig(),
+            'isTemplate' => $report->isTemplate(),
+        ]);
+    }
+
     #[Route('/definition', name: 'api_report_create', methods: ['POST'])]
     public function create(Request $request, EntityManagerInterface $em): JsonResponse
     {
@@ -563,8 +586,16 @@ class ReportController extends AbstractController
         $report->setName($data['name']);
         $report->setDescription($data['description'] ?? null);
         $report->setConfig($data['config']);
-        $report->setUser($user);
-        $report->setIsTemplate(false);
+        if (
+            !empty($data['isTemplate'])
+            && (in_array('ROLE_ADMIN', $user->getRoles()) || in_array('ROLE_SUPERADMIN', $user->getRoles()))
+        ) {
+            $report->setIsTemplate(true);
+            $report->setUser(null);
+        } else {
+            $report->setIsTemplate(false);
+            $report->setUser($user);
+        }
         $em->persist($report);
         $em->flush();
 
@@ -636,10 +667,31 @@ class ReportController extends AbstractController
 
                 return $this->json(['status' => 'success', 'id' => $newReport->getId()]);
             } else {
+                // Admin/SuperAdmin: update in-place.
+                // Also allow demoting the template back to a regular report.
+                if (isset($data['isTemplate']) && false === (bool) $data['isTemplate']) {
+                    $report->setIsTemplate(false);
+                    $report->setUser($user);
+                }
                 $report->setUpdatedAt(new DateTimeImmutable());
                 $em->flush();
             }
         } else {
+            // Allow Admin/SuperAdmin to promote/demote isTemplate on their own report
+            if (
+                isset($data['isTemplate'])
+                && (
+                    in_array('ROLE_ADMIN', $user->getRoles())
+                    || in_array('ROLE_SUPERADMIN', $user->getRoles())
+                )
+            ) {
+                $report->setIsTemplate((bool) $data['isTemplate']);
+                if ((bool) $data['isTemplate']) {
+                    $report->setUser(null);
+                } else {
+                    $report->setUser($user);
+                }
+            }
             $report->setUpdatedAt(new DateTimeImmutable());
             $em->flush();
         }

@@ -120,32 +120,42 @@ export const StepOptions: React.FC<StepOptionsProps> = ({ state }) => {
       {diag === 'pitchheatmap' && (
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Typography variant="subtitle2" gutterBottom>Heatmap-Optionen</Typography>
-          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-            <InputLabel>Darstellung</InputLabel>
-            <Select
-              value={(currentReport.config as any).heatmapStyle || 'smoothed'}
-              onChange={(e) => handleConfigChange('heatmapStyle', e.target.value)}
-              label="Darstellung"
-            >
-              <MenuItem value="smoothed">Geglättet (Standard)</MenuItem>
-              <MenuItem value="classic">Klassisch (Grid)</MenuItem>
-              <MenuItem value="both">Beides</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={!!(currentReport.config as any).heatmapSpatial}
-                onChange={(e) =>
-                  setCurrentReport(prev => ({
-                    ...prev,
-                    config: { ...prev.config, heatmapSpatial: e.target.checked },
-                  }))
-                }
-              />
-            }
-            label="Räumliche Heatmap (x/y)"
-          />
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 2 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Darstellung</InputLabel>
+              <Select
+                value={(currentReport.config as any).heatmapStyle || 'smoothed'}
+                onChange={(e) => handleConfigChange('heatmapStyle', e.target.value)}
+                label="Darstellung"
+              >
+                <MenuItem value="smoothed">Geglättet (Standard)</MenuItem>
+                <MenuItem value="classic">Klassisch (Grid)</MenuItem>
+                <MenuItem value="both">Beides</MenuItem>
+              </Select>
+            </FormControl>
+            <Tooltip title="Geglättet: Kernel-Dichte-Schätzung für weiche Farbverläufe. Klassisch: gleichmäßiges Gitter zeigt Zonen-Häufigkeit. Beides: beide Darstellungen überlagert." placement="top-end">
+              <InfoOutlinedIcon fontSize="small" sx={{ mt: 1, color: 'text.secondary', cursor: 'default', flexShrink: 0 }} />
+            </Tooltip>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!(currentReport.config as any).heatmapSpatial}
+                  onChange={(e) =>
+                    setCurrentReport(prev => ({
+                      ...prev,
+                      config: { ...prev.config, heatmapSpatial: e.target.checked },
+                    }))
+                  }
+                />
+              }
+              label="Räumliche Heatmap (x/y)"
+            />
+            <Tooltip title="Verwendet die gespeicherten X/Y-Koordinaten der Ereignisse um eine positionsgenaue Spielfeldkarte zu zeichnen, statt eine Raster-Aggregation zu verwenden." placement="top-end">
+              <InfoOutlinedIcon fontSize="small" sx={{ color: 'text.secondary', cursor: 'default', flexShrink: 0 }} />
+            </Tooltip>
+          </Box>
           <Typography variant="caption" color="text.secondary" display="block" sx={{ ml: 4 }}>
             Versucht X/Y-Koordinaten für Events zu verwenden
           </Typography>
@@ -154,43 +164,58 @@ export const StepOptions: React.FC<StepOptionsProps> = ({ state }) => {
 
       {/* Radar options */}
       {(diag === 'radar' || diag === 'radaroverlay') && (
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={(currentReport.config as any).radarNormalize === true}
-              onChange={(e) =>
-                setCurrentReport(prev => ({
-                  ...prev,
-                  config: { ...prev.config, radarNormalize: e.target.checked },
-                }))
-              }
-            />
-          }
-          label="Pro Dataset normalisieren"
-        />
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={(currentReport.config as any).radarNormalize === true}
+                onChange={(e) =>
+                  setCurrentReport(prev => ({
+                    ...prev,
+                    config: { ...prev.config, radarNormalize: e.target.checked },
+                  }))
+                }
+              />
+            }
+            label="Pro Dataset normalisieren"
+          />
+          <Tooltip title="Skaliert jeden Datensatz unabhängig auf 0–100 %, sodass Spieler oder Teams mit unterschiedlichen Gesamtzahlen direkt verglichen werden können." placement="top-end">
+            <InfoOutlinedIcon fontSize="small" sx={{ color: 'text.secondary', cursor: 'default', flexShrink: 0 }} />
+          </Tooltip>
+        </Box>
       )}
 
       {/* Legend & Labels */}
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Typography variant="subtitle2" gutterBottom>Anzeige</Typography>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={currentReport.config.showLegend}
-              onChange={(e) => handleConfigChange('showLegend', e.target.checked)}
-            />
-          }
-          label="Legende anzeigen"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={currentReport.config.showLabels}
-              onChange={(e) => handleConfigChange('showLabels', e.target.checked)}
-            />
-          }
-          label="Datenlabels anzeigen"
-        />
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={currentReport.config.showLegend}
+                onChange={(e) => handleConfigChange('showLegend', e.target.checked)}
+              />
+            }
+            label="Legende anzeigen"
+          />
+          <Tooltip title="Blendet eine Farblegende ein, die erklärt welche Farbe welchen Datensatz (z.B. welchen Spieler) repräsentiert." placement="top-end">
+            <InfoOutlinedIcon fontSize="small" sx={{ color: 'text.secondary', cursor: 'default', flexShrink: 0 }} />
+          </Tooltip>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={currentReport.config.showLabels}
+                onChange={(e) => handleConfigChange('showLabels', e.target.checked)}
+              />
+            }
+            label="Datenlabels anzeigen"
+          />
+          <Tooltip title="Zeigt den genauen Zahlenwert direkt auf oder neben jedem Balken bzw. Punkt im Diagramm an – nützlich wenn genaue Werte ohne Hover erkennbar sein sollen." placement="top-end">
+            <InfoOutlinedIcon fontSize="small" sx={{ color: 'text.secondary', cursor: 'default', flexShrink: 0 }} />
+          </Tooltip>
+        </Box>
       </Paper>
 
       {/* DB aggregates (admin only) */}
