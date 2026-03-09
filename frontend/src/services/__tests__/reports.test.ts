@@ -23,11 +23,11 @@ const BASE_CONFIG = {
   xField: 'player',
   yField: 'goals',
   filters: {},
-  groupBy: [],
-  metrics: [],
+  groupBy: undefined,
+  metrics: [] as string[],
   showLegend: true,
   showLabels: false,
-} as const;
+};
 
 beforeEach(() => {
   jest.clearAllMocks();
