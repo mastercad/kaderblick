@@ -10,20 +10,13 @@ export interface ContextRequirements {
   needsTeam: boolean;
 }
 
-/** Minimal shape of the report config fields that needsContext relies on. */
-export interface ReportConfig {
-  xField?: unknown;
-  groupBy?: unknown;
-  [key: string]: unknown;
-}
-
 /**
  * Determines whether a report config references a player or team dimension.
  * Returns `needsPlayer: true` when xField or groupBy includes "player",
  * and `needsTeam: true` when xField or groupBy includes "team".
  */
 export const needsContext = (
-  config: ReportConfig | undefined | null,
+  config: { xField?: unknown; groupBy?: unknown } | undefined | null,
 ): ContextRequirements => {
   if (!config) return { needsPlayer: false, needsTeam: false };
 
