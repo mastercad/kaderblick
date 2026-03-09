@@ -53,7 +53,7 @@ describe('saveReport – POST (neuer Report)', () => {
 
     expect(mockApiJson).toHaveBeenCalledTimes(1);
     const [, options] = mockApiJson.mock.calls[0];
-    expect(options.body).not.toBeTypeOf('string');
+    expect(typeof options.body).not.toBe('string');
     expect(options.body.isTemplate).toBe(true);
   });
 
@@ -105,7 +105,7 @@ describe('saveReport – PUT (bestehender Report)', () => {
     const [url, options] = mockApiJson.mock.calls[0];
     expect(url).toBe('/api/report/definition/10');
     expect(options.method).toBe('PUT');
-    expect(options.body).not.toBeTypeOf('string');
+    expect(typeof options.body).not.toBe('string');
     expect(options.body.isTemplate).toBe(true);
   });
 
