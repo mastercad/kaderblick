@@ -75,11 +75,12 @@ jest.mock('../useReportBuilder', () => ({
 // BaseModal lives at modals/BaseModal — from __tests__/ that is ../../BaseModal
 jest.mock('../../BaseModal', () => ({
   __esModule: true,
-  default: ({ open, title, children }: any) =>
+  default: ({ open, title, children, actions }: any) =>
     open ? (
       <div data-testid="Dialog">
         <div data-testid="DialogTitle">{title}</div>
         <div data-testid="DialogContent">{children}</div>
+        {actions && <div data-testid="DialogActions">{actions}</div>}
       </div>
     ) : null,
 }));
@@ -201,5 +202,73 @@ describe('ReportBuilderModal — Titel', () => {
   it('zeigt "Neuer Report" wenn kein Report übergeben wird', () => {
     renderModal({}, null);
     expect(screen.getByTestId('DialogTitle')).toHaveTextContent('Neuer Report');
+  });
+});
+
+// ── Tests: Inhalt & Regression ────────────────────────────────────────────────
+//
+// Regression: Die Zeile
+//   {state.isMobile ? <MobileWizard state={state} /> : <DesktopLayout state={state} />}
+// darf niemals aus index.tsx entfernt werden.  Diese Tests stellen sicher,
+// dass Desktop- und Mobile-Layout immer korrekt gerendert werden.
+
+describe('ReportBuilderModal — Inhalt & Regression', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('[REGRESSION] DesktopLayout wird gerendert wenn open=true und nicht mobil', () => {
+    renderModal({ isMobile: false });
+
+    expect(screen.getByTestId('DesktopLayout')).toBeInTheDocument();
+    expect(screen.queryByTestId('MobileWizard')).not.toBeInTheDocument();
+  });
+
+  it('[REGRESSION] MobileWizard wird gerendert wenn open=true und mobil', () => {
+    renderModal({ isMobile: true });
+
+    expect(screen.getByTestId('MobileWizard')).toBeInTheDocument();
+    expect(screen.queryByTestId('DesktopLayout')).not.toBeInTheDocument();
+  });
+
+  it('[REGRESSION] Weder DesktopLayout noch MobileWizard werden gerendert wenn open=false', () => {
+    mockUseReportBuilder.mockReturnValue(makeState({ isMobile: false }));
+    render(
+      <ReportBuilderModal
+        open={false}
+        onClose={NOOP}
+        onSave={NOOP}
+        report={BASE_REPORT}
+      />,
+    );
+
+    expect(screen.queryByTestId('DesktopLayout')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('MobileWizard')).not.toBeInTheDocument();
+  });
+
+  it('Modal-Inhalt ist sichtbar wenn open=true', () => {
+    renderModal({ isMobile: false });
+
+    expect(screen.getByTestId('Dialog')).toBeInTheDocument();
+    expect(screen.getByTestId('DialogContent')).toBeInTheDocument();
+  });
+
+  it('handleSave wird aufgerufen wenn der Speichern-Button geklickt wird', () => {
+    const handleSave = jest.fn();
+    renderModal({ handleSave, canSave: true, isMobile: false });
+
+    // Der Speichern-Button ist im BaseModal-Footer — über den gemockten Button suchen
+    const buttons = screen.getAllByRole('button');
+    const saveButton = buttons.find(b => b.textContent?.toLowerCase().includes('speichern'));
+    expect(saveButton).toBeDefined();
+    saveButton!.click();
+    expect(handleSave).toHaveBeenCalledTimes(1);
+  });
+
+  it('Speichern-Button ist deaktiviert wenn canSave=false', () => {
+    renderModal({ canSave: false, isMobile: false });
+
+    const buttons = screen.getAllByRole('button');
+    const saveButton = buttons.find(b => b.textContent?.toLowerCase().includes('speichern'));
+    expect(saveButton).toBeDefined();
+    expect(saveButton).toBeDisabled();
   });
 });

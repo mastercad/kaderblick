@@ -1,14 +1,17 @@
 /**
- * Tests für reports.ts — saveReport
+ * Tests für reports.ts
  *
- * Geprüft wird, dass isTemplate korrekt in den Request-Body eingebettet
- * wird, egal ob ein neuer Report erstellt (POST) oder ein bestehender
- * aktualisiert (PUT) wird. Außerdem wird sichergestellt, dass bei einer
- * Kopier-Antwort des Servers (PUT → neue ID) die zurückgegebene ID
- * des Reports korrekt übernommen wird.
+ * saveReport:
+ *   – isTemplate wird korrekt in den Request-Body eingebettet (POST + PUT)
+ *   – Bei Kopier-Antwort (PUT → neue ID) wird die neue ID übernommen
+ *
+ * fetchAvailableReports:  GET /api/report/available
+ * fetchReportDefinitions: GET /api/report/definitions
+ * fetchReportById:        GET /api/report/definition/{id}
+ * deleteReport:           DELETE /api/report/definition/{id}
  */
 
-import { saveReport } from '../reports';
+import { saveReport, fetchAvailableReports, fetchReportDefinitions, fetchReportById, deleteReport } from '../reports';
 
 const mockApiJson = jest.fn();
 jest.mock('../../utils/api', () => ({
@@ -125,5 +128,125 @@ describe('saveReport – PUT (bestehender Report)', () => {
     const result = await saveReport({ id: 10, name: 'Template', description: '', config: BASE_CONFIG, isTemplate: true });
 
     expect(result.id).toBe(10);
+  });
+});
+
+// =============================================================================
+//  fetchAvailableReports
+// =============================================================================
+
+describe('fetchAvailableReports', () => {
+  it('ruft GET /api/report/available auf', async () => {
+    mockApiJson.mockResolvedValue([]);
+
+    await fetchAvailableReports();
+
+    expect(mockApiJson).toHaveBeenCalledTimes(1);
+    expect(mockApiJson).toHaveBeenCalledWith('/api/report/available');
+  });
+
+  it('gibt das Array der verfügbaren Reports zurück', async () => {
+    const mockData = [
+      { id: 1, name: 'Template A', isTemplate: true },
+      { id: 2, name: 'Eigener Report', isTemplate: false },
+    ];
+    mockApiJson.mockResolvedValue(mockData);
+
+    const result = await fetchAvailableReports();
+
+    expect(result).toEqual(mockData);
+  });
+
+  it('leitet Fehler weiter wenn der API-Aufruf fehlschlägt', async () => {
+    mockApiJson.mockRejectedValue(new Error('Network error'));
+
+    await expect(fetchAvailableReports()).rejects.toThrow('Network error');
+  });
+});
+
+// =============================================================================
+//  fetchReportDefinitions
+// =============================================================================
+
+describe('fetchReportDefinitions', () => {
+  it('ruft GET /api/report/definitions auf', async () => {
+    mockApiJson.mockResolvedValue({ templates: [], userReports: [] });
+
+    await fetchReportDefinitions();
+
+    expect(mockApiJson).toHaveBeenCalledWith('/api/report/definitions');
+  });
+
+  it('gibt { templates, userReports } zurück', async () => {
+    const mockData = {
+      templates: [{ id: 1, name: 'T1', isTemplate: true }],
+      userReports: [{ id: 2, name: 'U1', isTemplate: false }],
+    };
+    mockApiJson.mockResolvedValue(mockData);
+
+    const result = await fetchReportDefinitions();
+
+    expect(result.templates).toHaveLength(1);
+    expect(result.userReports).toHaveLength(1);
+    expect(result.templates[0].id).toBe(1);
+    expect(result.userReports[0].id).toBe(2);
+  });
+});
+
+// =============================================================================
+//  fetchReportById
+// =============================================================================
+
+describe('fetchReportById', () => {
+  it('ruft GET /api/report/definition/{id} auf', async () => {
+    mockApiJson.mockResolvedValue({ id: 42, name: 'Test', config: BASE_CONFIG, isTemplate: false });
+
+    await fetchReportById(42);
+
+    expect(mockApiJson).toHaveBeenCalledWith('/api/report/definition/42');
+  });
+
+  it('gibt den vollständigen Report zurück', async () => {
+    const mockReport = { id: 42, name: 'Test', description: 'Beschreibung', config: BASE_CONFIG, isTemplate: true };
+    mockApiJson.mockResolvedValue(mockReport);
+
+    const result = await fetchReportById(42);
+
+    expect(result).toEqual(mockReport);
+  });
+
+  it('leitet Fehler weiter wenn der API-Aufruf fehlschlägt (z. B. 404/403)', async () => {
+    mockApiJson.mockRejectedValue(new Error('Not found'));
+
+    await expect(fetchReportById(9999)).rejects.toThrow('Not found');
+  });
+});
+
+// =============================================================================
+//  deleteReport
+// =============================================================================
+
+describe('deleteReport', () => {
+  it('ruft DELETE /api/report/definition/{id} auf', async () => {
+    mockApiJson.mockResolvedValue(undefined);
+
+    await deleteReport(42);
+
+    expect(mockApiJson).toHaveBeenCalledTimes(1);
+    expect(mockApiJson).toHaveBeenCalledWith('/api/report/definition/42', { method: 'DELETE' });
+  });
+
+  it('gibt nichts zurück (void)', async () => {
+    mockApiJson.mockResolvedValue(undefined);
+
+    const result = await deleteReport(42);
+
+    expect(result).toBeUndefined();
+  });
+
+  it('leitet Fehler weiter wenn der API-Aufruf fehlschlägt (z. B. 403)', async () => {
+    mockApiJson.mockRejectedValue(new Error('Forbidden'));
+
+    await expect(deleteReport(42)).rejects.toThrow('Forbidden');
   });
 });
