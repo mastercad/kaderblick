@@ -53,8 +53,8 @@ describe('saveReport – POST (neuer Report)', () => {
 
     expect(mockApiJson).toHaveBeenCalledTimes(1);
     const [, options] = mockApiJson.mock.calls[0];
-    const body = JSON.parse(options.body);
-    expect(body.isTemplate).toBe(true);
+    expect(options.body).not.toBeTypeOf('string');
+    expect(options.body.isTemplate).toBe(true);
   });
 
   it('sendet isTemplate: false wenn report.isTemplate === false', async () => {
@@ -62,8 +62,7 @@ describe('saveReport – POST (neuer Report)', () => {
 
     await saveReport({ name: 'Own Report', description: '', config: BASE_CONFIG, isTemplate: false });
 
-    const body = JSON.parse(mockApiJson.mock.calls[0][1].body);
-    expect(body.isTemplate).toBe(false);
+    expect(mockApiJson.mock.calls[0][1].body.isTemplate).toBe(false);
   });
 
   it('sendet isTemplate: false wenn report.isTemplate undefined', async () => {
@@ -71,8 +70,7 @@ describe('saveReport – POST (neuer Report)', () => {
 
     await saveReport({ name: 'No Flag', description: '', config: BASE_CONFIG });
 
-    const body = JSON.parse(mockApiJson.mock.calls[0][1].body);
-    expect(body.isTemplate).toBe(false);
+    expect(mockApiJson.mock.calls[0][1].body.isTemplate).toBe(false);
   });
 
   it('benutzt POST /api/report/definition wenn keine id vorhanden', async () => {
@@ -107,8 +105,8 @@ describe('saveReport – PUT (bestehender Report)', () => {
     const [url, options] = mockApiJson.mock.calls[0];
     expect(url).toBe('/api/report/definition/10');
     expect(options.method).toBe('PUT');
-    const body = JSON.parse(options.body);
-    expect(body.isTemplate).toBe(true);
+    expect(options.body).not.toBeTypeOf('string');
+    expect(options.body.isTemplate).toBe(true);
   });
 
   it('sendet isTemplate: false im Body wenn report.isTemplate === false', async () => {
@@ -116,8 +114,7 @@ describe('saveReport – PUT (bestehender Report)', () => {
 
     await saveReport({ id: 11, name: 'Own', description: '', config: BASE_CONFIG, isTemplate: false });
 
-    const body = JSON.parse(mockApiJson.mock.calls[0][1].body);
-    expect(body.isTemplate).toBe(false);
+    expect(mockApiJson.mock.calls[0][1].body.isTemplate).toBe(false);
   });
 
   it('übernimmt die neue ID aus der Server-Antwort (Kopier-Fall)', async () => {
