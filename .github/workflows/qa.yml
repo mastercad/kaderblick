@@ -1,11 +1,14 @@
 name: Quality Assurance
 
 on:
-#  push:
-#    branches:
-#      - '**'
+  push:
+    branches: [main]
   pull_request:
   workflow_call:
+
+permissions:
+  contents: read
+  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -42,11 +45,42 @@ jobs:
       - name: ESLint
         run: npm run lint
 
-      - name: Jest tests
-        run: npm test -- --passWithNoTests --ci --forceExit
+      - name: Jest tests with coverage
+        run: npm test -- --passWithNoTests --ci --forceExit --coverage --coverageReporters=json-summary --coverageReporters=text
 
       - name: Build verification
         run: npm run build
+
+      - name: Jest Coverage Comment
+        id: frontend-coverage
+        if: github.event_name == 'pull_request'
+        uses: MishaKav/jest-coverage-comment@v1
+        with:
+          coverage-summary-path: frontend/coverage/coverage-summary.json
+          title: "🎨 Frontend Test Coverage"
+
+      - name: Extract frontend coverage percentage
+        id: frontend-pct
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            PCT=$(node -e "const c=require('./coverage/coverage-summary.json');console.log(c.total.statements.pct)")
+            echo "coverage=$PCT" >> $GITHUB_OUTPUT
+          else
+            echo "coverage=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update Frontend Coverage Badge
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_TOKEN }}
+          gistID: ${{ vars.COVERAGE_GIST_ID }}
+          filename: frontend-coverage.json
+          label: Frontend Coverage
+          message: "${{ steps.frontend-pct.outputs.coverage }}%"
+          valColorRange: ${{ steps.frontend-pct.outputs.coverage }}
+          minColorRange: 0
+          maxColorRange: 100
 
   # ============================================================
   #  Backend Quality Assurance
@@ -161,8 +195,46 @@ jobs:
       - name: run PHPStan
         run: docker compose exec -T api ./vendor/bin/phpstan analyse
 
-      - name: run PHPUnit
-        run: docker compose exec -T api ./vendor/bin/phpunit
+      - name: run PHPUnit with coverage
+        id: phpunit-coverage
+        run: |
+          docker compose exec -T -e XDEBUG_MODE=coverage api ./vendor/bin/phpunit \
+            --coverage-clover var/coverage-clover.xml \
+            --coverage-text 2>&1 | tee phpunit-output.txt
+
+          # Extract line coverage percentage
+          COVERAGE=$(grep "Lines:" phpunit-output.txt | head -1 | awk '{print $2}' | tr -d '%')
+          echo "coverage=${COVERAGE:-0}" >> $GITHUB_OUTPUT
+
+      - name: Generate Backend Coverage Report
+        if: github.event_name == 'pull_request'
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: api/var/coverage-clover.xml
+          badge: true
+          format: markdown
+          output: both
+          thresholds: '40 70'
+
+      - name: Add Backend Coverage PR Comment
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: backend-coverage
+          path: code-coverage-results.md
+
+      - name: Update Backend Coverage Badge
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_TOKEN }}
+          gistID: ${{ vars.COVERAGE_GIST_ID }}
+          filename: backend-coverage.json
+          label: Backend Coverage
+          message: "${{ steps.phpunit-coverage.outputs.coverage }}%"
+          valColorRange: ${{ steps.phpunit-coverage.outputs.coverage }}
+          minColorRange: 0
+          maxColorRange: 100
 
   # ============================================================
   #  Gate: beide Jobs müssen grün sein

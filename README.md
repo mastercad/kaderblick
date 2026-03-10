@@ -18,6 +18,11 @@
   <img src="https://img.shields.io/badge/Lizenz-Privat-red" alt="Lizenz" />
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mastercad/50e9e3c9975d61652b25c057f2aac0f5/raw/frontend-coverage.json" alt="Frontend Coverage" />
+  <img src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mastercad/50e9e3c9975d61652b25c057f2aac0f5/raw/backend-coverage.json" alt="Backend Coverage" />
+</p>
+
 ---
 
 ## 💡 Warum Kaderblick?

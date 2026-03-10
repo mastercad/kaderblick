@@ -176,15 +176,30 @@ class ParticipationController extends AbstractController
                     default => $status->getCode()
                 };
 
-                $title = sprintf('%s: %s', $event->getTitle(), $actorName . ' - ' . $statusText);
-                $message = sprintf('%s hat seine Teilnahme auf "%s" gesetzt.', $actorName, $statusText);
+                $eventDate = $event->getStartDate()?->format('d.m.Y H:i') ?? '';
+                $location = $event->getLocation();
+
+                $title = sprintf('%s: %s – %s', $event->getTitle(), $actorName, $statusText);
+                $lines = [];
+                if ('' !== $eventDate) {
+                    $lines[] = '📅 ' . $eventDate;
+                }
+                if ($location) {
+                    $lines[] = '📍 ' . $location->getName();
+                }
+                $lines[] = sprintf('%s hat seine Teilnahme auf „%s" gesetzt.', $actorName, $statusText);
+                $message = implode("\n", $lines);
 
                 $this->notificationService->createNotification(
                     $recipient,
                     'participation',
                     $title,
                     $message,
-                    ['participationId' => $participation->getId(), 'actorId' => $user->getId()]
+                    [
+                        'participationId' => $participation->getId(),
+                        'actorId' => $user->getId(),
+                        'url' => '/calendar?eventId=' . $event->getId(),
+                    ]
                 );
             }
         }

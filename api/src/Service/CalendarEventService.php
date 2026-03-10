@@ -41,6 +41,7 @@ class CalendarEventService
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly TaskEventGeneratorService $taskEventGeneratorService,
         private readonly Security $security,
+        private readonly TeamMembershipService $teamMembershipService,
     ) {
     }
 
@@ -784,14 +785,9 @@ class CalendarEventService
         $this->entityManager->persist($permission);
     }
 
-    /** @return array<int, string> */
+    /** @return User[] */
     public function loadEventRecipients(CalendarEvent $calendarEvent): array
     {
-        return $this->entityManager->getRepository(User::class)
-            ->createQueryBuilder('u')
-            ->select('u.email')
-            ->where('u.isVerified = true')
-            ->getQuery()
-            ->getSingleColumnResult();
+        return $this->teamMembershipService->resolveEventRecipients($calendarEvent);
     }
 }

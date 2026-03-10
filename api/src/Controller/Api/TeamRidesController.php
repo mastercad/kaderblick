@@ -94,11 +94,19 @@ class TeamRidesController extends AbstractController
         $teamUsers = $this->getTeamUsersForEvent($event);
         $filteredUsers = array_filter($teamUsers, fn (User $u) => $u->getId() !== $user->getId());
         if (!empty($filteredUsers)) {
+            $eventDate = $event->getStartDate()?->format('d.m.Y H:i') ?? '';
+            $location = $event->getLocation();
+            $rideLines = [$user->getFullName() . ' bietet eine Mitfahrgelegenheit an (' . $ride->getSeats() . ' Plätze).'];
+            $rideLines[] = '📅 ' . $event->getTitle() . ($eventDate ? ' – ' . $eventDate : '');
+            if ($location) {
+                $rideLines[] = '📍 ' . $location->getName();
+            }
+
             $this->notificationService->createNotificationForUsers(
                 array_values($filteredUsers),
                 'team_ride',
-                'Neue Mitfahrgelegenheit',
-                $user->getFullName() . ' bietet eine Mitfahrgelegenheit an (' . $ride->getSeats() . ' Plätze) für ' . $event->getTitle(),
+                'Neue Mitfahrgelegenheit: ' . $event->getTitle(),
+                implode("\n", $rideLines),
                 ['eventTitle' => $event->getTitle(), 'url' => '/calendar?eventId=' . $event->getId() . '&openRides=1']
             );
         }
@@ -137,6 +145,8 @@ class TeamRidesController extends AbstractController
 
         $event = $ride->getEvent();
         $eventTitle = $event ? $event->getTitle() : '';
+        $eventDate = $event?->getStartDate()?->format('d.m.Y H:i') ?? '';
+        $eventInfo = $eventTitle . ($eventDate ? ' am ' . $eventDate : '');
 
         $notificationUrl = $event ? '/calendar?eventId=' . $event->getId() . '&openRides=1' : '/calendar';
 
@@ -145,7 +155,7 @@ class TeamRidesController extends AbstractController
             $ride->getDriver(),
             'team_ride_booking',
             'Mitfahrgelegenheit gebucht',
-            $user->getFullName() . ' hat einen Platz in deiner Mitfahrgelegenheit für ' . $eventTitle . ' gebucht.',
+            $user->getFullName() . ' hat einen Platz in deiner Mitfahrgelegenheit für ' . $eventInfo . ' gebucht.',
             ['eventTitle' => $eventTitle, 'url' => $notificationUrl]
         );
 
@@ -155,7 +165,7 @@ class TeamRidesController extends AbstractController
                 $user,
                 'team_ride_booking',
                 'Platz gebucht',
-                'Du hast einen Platz in der Mitfahrgelegenheit von ' . $ride->getDriver()->getFullName() . ' für ' . $eventTitle . ' gebucht.',
+                'Du hast einen Platz in der Mitfahrgelegenheit von ' . $ride->getDriver()->getFullName() . ' für ' . $eventInfo . ' gebucht.',
                 ['eventTitle' => $eventTitle, 'url' => $notificationUrl]
             );
         }
@@ -195,6 +205,8 @@ class TeamRidesController extends AbstractController
 
         $event = $ride->getEvent();
         $eventTitle = $event ? $event->getTitle() : '';
+        $eventDate = $event?->getStartDate()?->format('d.m.Y H:i') ?? '';
+        $eventInfo = $eventTitle . ($eventDate ? ' am ' . $eventDate : '');
 
         $notificationUrl = $event ? '/calendar?eventId=' . $event->getId() . '&openRides=1' : '/calendar';
 
@@ -203,7 +215,7 @@ class TeamRidesController extends AbstractController
             $ride->getDriver(),
             'team_ride_cancel',
             'Buchung storniert',
-            $user->getFullName() . ' hat die Buchung der Mitfahrgelegenheit für ' . $eventTitle . ' storniert.',
+            $user->getFullName() . ' hat die Buchung der Mitfahrgelegenheit für ' . $eventInfo . ' storniert.',
             ['eventTitle' => $eventTitle, 'url' => $notificationUrl]
         );
 
@@ -213,7 +225,7 @@ class TeamRidesController extends AbstractController
                 $user,
                 'team_ride_cancel',
                 'Buchung storniert',
-                'Du hast deine Buchung der Mitfahrgelegenheit von ' . $ride->getDriver()->getFullName() . ' für ' . $eventTitle . ' storniert.',
+                'Du hast deine Buchung der Mitfahrgelegenheit von ' . $ride->getDriver()->getFullName() . ' für ' . $eventInfo . ' storniert.',
                 ['eventTitle' => $eventTitle, 'url' => $notificationUrl]
             );
         }
@@ -259,6 +271,8 @@ class TeamRidesController extends AbstractController
 
         $event = $ride->getEvent();
         $eventTitle = $event ? $event->getTitle() : '';
+        $eventDate = $event?->getStartDate()?->format('d.m.Y H:i') ?? '';
+        $eventInfo = $eventTitle . ($eventDate ? ' am ' . $eventDate : '');
 
         $notificationUrl = $event ? '/calendar?eventId=' . $event->getId() . '&openRides=1' : '/calendar';
 
@@ -267,7 +281,7 @@ class TeamRidesController extends AbstractController
             $removedUser,
             'team_ride_cancel',
             'Aus Mitfahrgelegenheit entfernt',
-            $ride->getDriver()->getFullName() . ' hat dich aus der Mitfahrgelegenheit für ' . $eventTitle . ' entfernt.',
+            $ride->getDriver()->getFullName() . ' hat dich aus der Mitfahrgelegenheit für ' . $eventInfo . ' entfernt.',
             ['eventTitle' => $eventTitle, 'url' => $notificationUrl]
         );
 
@@ -277,7 +291,7 @@ class TeamRidesController extends AbstractController
                 $currentUser,
                 'team_ride_cancel',
                 'Mitfahrer entfernt',
-                $removedUser->getFullName() . ' wurde aus deiner Mitfahrgelegenheit für ' . $eventTitle . ' entfernt.',
+                $removedUser->getFullName() . ' wurde aus deiner Mitfahrgelegenheit für ' . $eventInfo . ' entfernt.',
                 ['eventTitle' => $eventTitle, 'url' => $notificationUrl]
             );
         }
@@ -302,6 +316,8 @@ class TeamRidesController extends AbstractController
 
         $event = $ride->getEvent();
         $eventTitle = $event ? $event->getTitle() : '';
+        $eventDate = $event?->getStartDate()?->format('d.m.Y H:i') ?? '';
+        $eventInfo = $eventTitle . ($eventDate ? ' am ' . $eventDate : '');
         $driverName = $ride->getDriver()->getFullName();
 
         // Collect passengers before removal for notifications
@@ -315,6 +331,7 @@ class TeamRidesController extends AbstractController
 
         $notificationUrl = $event ? '/calendar?eventId=' . $event->getId() . '&openRides=1' : '/calendar';
         $notificationData = ['eventTitle' => $eventTitle, 'url' => $notificationUrl];
+        $deleteMessage = $driverName . ' hat die Mitfahrgelegenheit für ' . $eventInfo . ' zurückgezogen.';
 
         // Push notification: notify all passengers that the ride was withdrawn
         foreach ($passengerUsers as $passengerUser) {
@@ -322,7 +339,7 @@ class TeamRidesController extends AbstractController
                 $passengerUser,
                 'team_ride_deleted',
                 'Mitfahrgelegenheit zurückgezogen',
-                $driverName . ' hat die Mitfahrgelegenheit für ' . $eventTitle . ' zurückgezogen.',
+                $deleteMessage,
                 $notificationData
             );
         }
@@ -338,7 +355,7 @@ class TeamRidesController extends AbstractController
                     array_values($filteredUsers),
                     'team_ride_deleted',
                     'Mitfahrgelegenheit zurückgezogen',
-                    $driverName . ' hat die Mitfahrgelegenheit für ' . $eventTitle . ' zurückgezogen.',
+                    $deleteMessage,
                     $notificationData
                 );
             }

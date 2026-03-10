@@ -15,6 +15,7 @@ use App\Entity\UserRelation;
 use App\Event\GameDeletedEvent;
 use App\Service\CalendarEventService;
 use App\Service\TaskEventGeneratorService;
+use App\Service\TeamMembershipService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -67,7 +68,8 @@ class CalendarEventServiceTest extends TestCase
             $this->createMock(ValidatorInterface::class),
             $this->createMock(EventDispatcherInterface::class),
             $this->createMock(TaskEventGeneratorService::class),
-            $this->createMock(Security::class)
+            $this->createMock(Security::class),
+            $this->createMock(TeamMembershipService::class),
         );
         $service->deleteCalendarEventsForTask($task);
     }
@@ -88,7 +90,8 @@ class CalendarEventServiceTest extends TestCase
             $this->createMock(ValidatorInterface::class),
             $this->createMock(EventDispatcherInterface::class),
             $this->createMock(TaskEventGeneratorService::class),
-            $this->createMock(Security::class)
+            $this->createMock(Security::class),
+            $this->createMock(TeamMembershipService::class),
         );
         $service->deleteCalendarEventsForTask($task);
     }
@@ -120,7 +123,8 @@ class CalendarEventServiceTest extends TestCase
             $this->createMock(ValidatorInterface::class),
             $dispatcher,
             $this->createMock(TaskEventGeneratorService::class),
-            $this->createMock(Security::class)
+            $this->createMock(Security::class),
+            $this->createMock(TeamMembershipService::class),
         );
 
         $service->deleteCalendarEventWithDependencies($calendarEvent);
@@ -152,7 +156,8 @@ class CalendarEventServiceTest extends TestCase
             $this->createMock(ValidatorInterface::class),
             $dispatcher,
             $this->createMock(TaskEventGeneratorService::class),
-            $this->createMock(Security::class)
+            $this->createMock(Security::class),
+            $this->createMock(TeamMembershipService::class),
         );
 
         $service->deleteCalendarEventWithDependencies($calendarEvent);
@@ -205,7 +210,8 @@ class CalendarEventServiceTest extends TestCase
             $validator,
             $this->createMock(EventDispatcherInterface::class),
             $this->createMock(TaskEventGeneratorService::class),
-            $security
+            $security,
+            $this->createMock(TeamMembershipService::class),
         );
 
         $data = [
@@ -264,7 +270,8 @@ class CalendarEventServiceTest extends TestCase
             $validator,
             $this->createMock(EventDispatcherInterface::class),
             $this->createMock(TaskEventGeneratorService::class),
-            $security
+            $security,
+            $this->createMock(TeamMembershipService::class),
         );
 
         $data = [
@@ -296,36 +303,40 @@ class CalendarEventServiceTest extends TestCase
             $this->createMock(ValidatorInterface::class),
             $this->createMock(EventDispatcherInterface::class),
             $this->createMock(TaskEventGeneratorService::class),
-            $security
+            $security,
+            $this->createMock(TeamMembershipService::class),
         );
 
         $result = $service->fullfillTaskEntity($task, $calendarEvent, []);
         $this->assertInstanceOf(Task::class, $result);
     }
 
-    public function testLoadEventRecipientsReturnsEmails(): void
+    public function testLoadEventRecipientsDelegatesToTeamMembershipService(): void
     {
         $calendarEvent = $this->createMock(CalendarEvent::class);
-        $repo = $this->getMockBuilder(\Doctrine\ORM\EntityRepository::class)->disableOriginalConstructor()->onlyMethods(['createQueryBuilder'])->getMock();
-        $queryBuilder = $this->getMockBuilder(\Doctrine\ORM\QueryBuilder::class)->disableOriginalConstructor()->onlyMethods(['select', 'where', 'getQuery'])->getMock();
-        $query = $this->getMockBuilder(\Doctrine\ORM\Query::class)->disableOriginalConstructor()->onlyMethods(['getSingleColumnResult'])->getMock();
-        $repo->method('createQueryBuilder')->willReturn($queryBuilder);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('getQuery')->willReturn($query);
-        $query->method('getSingleColumnResult')->willReturn(['test@example.com']);
+        $user1 = $this->createMock(User::class);
+        $user2 = $this->createMock(User::class);
+
+        $teamMembershipService = $this->createMock(TeamMembershipService::class);
+        $teamMembershipService->expects($this->once())
+            ->method('resolveEventRecipients')
+            ->with($calendarEvent)
+            ->willReturn([$user1, $user2]);
+
         $em = $this->createMock(EntityManagerInterface::class);
-        $em->method('getRepository')->willReturn($repo);
         $service = new CalendarEventService(
             $em,
             $this->createMock(ValidatorInterface::class),
             $this->createMock(EventDispatcherInterface::class),
             $this->createMock(TaskEventGeneratorService::class),
-            $this->createMock(Security::class)
+            $this->createMock(Security::class),
+            $teamMembershipService,
         );
 
         $result = $service->loadEventRecipients($calendarEvent);
-        $this->assertEquals(['test@example.com'], $result);
+        $this->assertCount(2, $result);
+        $this->assertSame($user1, $result[0]);
+        $this->assertSame($user2, $result[1]);
     }
 
     // ─── validateMatchTeamOwnership ───────────────────────────────────────────
@@ -358,6 +369,7 @@ class CalendarEventServiceTest extends TestCase
             $this->createMock(EventDispatcherInterface::class),
             $this->createMock(TaskEventGeneratorService::class),
             $this->createMock(Security::class),
+            $this->createMock(TeamMembershipService::class),
         );
     }
 
