@@ -178,7 +178,7 @@ export default function RegistrationContextDialog({ open, onClose }: Props) {
                     <>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                             Damit wir wissen, wem wir dich im Verein zuordnen sollen, kannst du hier
-                            freiwillig angeben, ob du selbst Spieler/Trainer bist oder jemanden betreust.
+                            freiwillig angeben, ob du selbst Spieler/Trainer bist, oder im Verhältnis zu einem stehst.
                             Ein Admin prüft den Antrag noch einmal, bevor er aktiviert wird.
                         </Typography>
 
