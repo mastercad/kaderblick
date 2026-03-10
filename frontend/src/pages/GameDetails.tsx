@@ -803,46 +803,7 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                       px: { xs: 0.5, sm: 1 },
                     }}
                   >
-                    {/* Minute Badge + Icon stacked on mobile */}
-                    <Box sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      minWidth: { xs: 44, sm: 56 },
-                      flexShrink: 0,
-                      pt: 0.25,
-                    }}>
-                      <Chip
-                        label={minute ?? ''}
-                        size="small"
-                        sx={{
-                          bgcolor: 'grey.100',
-                          color: 'text.primary',
-                          fontWeight: 700,
-                          fontSize: { xs: '0.72rem', sm: '0.8rem' },
-                          height: 26,
-                          minWidth: { xs: 44, sm: 56 },
-                          fontVariantNumeric: 'tabular-nums',
-                        }}
-                      />
-                      {/* Event Icon — inline on desktop, under badge on mobile */}
-                      <Box sx={{
-                        display: { xs: 'flex', sm: 'none' },
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 28,
-                        height: 28,
-                        borderRadius: '50%',
-                        bgcolor: alpha(color || '#999', 0.12),
-                      }}>
-                        <Box sx={{ color: color || 'text.secondary', display: 'flex', alignItems: 'center', fontSize: '0.9rem' }}>
-                          {getGameEventIconByCode(icon)}
-                        </Box>
-                      </Box>
-                    </Box>
-
-                    {/* Event Icon — separate column on desktop */}
+                    {/* Event Icon — separate column on desktop (first) */}
                     <Box sx={{
                       display: { xs: 'none', sm: 'flex' },
                       alignItems: 'center',
@@ -857,6 +818,45 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
                       <Box sx={{ color: color || 'text.secondary', display: 'flex', alignItems: 'center', fontSize: '1rem' }}>
                         {getGameEventIconByCode(icon)}
                       </Box>
+                    </Box>
+
+                    {/* Icon (mobile) + Minute Badge */}
+                    <Box sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      minWidth: { xs: 44, sm: 56 },
+                      flexShrink: 0,
+                      pt: 0.25,
+                    }}>
+                      {/* Event Icon — on top on mobile only */}
+                      <Box sx={{
+                        display: { xs: 'flex', sm: 'none' },
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 28,
+                        height: 28,
+                        borderRadius: '50%',
+                        bgcolor: alpha(color || '#999', 0.12),
+                      }}>
+                        <Box sx={{ color: color || 'text.secondary', display: 'flex', alignItems: 'center', fontSize: '0.9rem' }}>
+                          {getGameEventIconByCode(icon)}
+                        </Box>
+                      </Box>
+                      <Chip
+                        label={minute ?? ''}
+                        size="small"
+                        sx={{
+                          bgcolor: 'grey.100',
+                          color: 'text.primary',
+                          fontWeight: 700,
+                          fontSize: { xs: '0.72rem', sm: '0.8rem' },
+                          height: 26,
+                          minWidth: { xs: 44, sm: 56 },
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      />
                     </Box>
 
                     {/* Content */}
