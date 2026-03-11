@@ -19,10 +19,12 @@ import {
     Chip,
     Stack,
     Paper,
+    IconButton,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CloseIcon from '@mui/icons-material/Close';
 import { apiJson } from '../utils/api';
 
 interface EntityOption {
@@ -118,8 +120,8 @@ export default function RegistrationContextDialog({ open, onClose }: Props) {
             } else {
                 setSubmitted(true);
             }
-        } catch {
-            setError('Der Antrag konnte nicht gesendet werden. Bitte versuche es später erneut.');
+        } catch (e: any) {
+            setError(e?.message || 'Der Antrag konnte nicht gesendet werden. Bitte versuche es später erneut.');
         } finally {
             setSubmitting(false);
         }
@@ -150,8 +152,16 @@ export default function RegistrationContextDialog({ open, onClose }: Props) {
 
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-            <DialogTitle sx={{ pb: 1 }}>
+            <DialogTitle sx={{ pb: 1, pr: 6 }}>
                 Meine Vereinszugehörigkeit angeben
+                <IconButton
+                    onClick={handleClose}
+                    size="small"
+                    sx={{ position: 'absolute', top: 10, right: 10 }}
+                    aria-label="Schließen"
+                >
+                    <CloseIcon fontSize="small" />
+                </IconButton>
             </DialogTitle>
 
             <DialogContent>

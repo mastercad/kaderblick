@@ -1251,51 +1251,95 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     <>
       <Box sx={{ width: '100%', height: '100%', p: 3 }}>
         <Box sx={{ p: { xs: 1, sm: 2 } }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 0, sm: 2 } }}>
             <Typography variant={isMobile ? "h5" : "h4"} component="h1">
               Kalender
             </Typography>
-            
-            {/* Event-Type Filter mit Chips */}
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                {eventTypes.entries.map(et => (
-                  <Chip
-                    key={et.id}
-                    label={et.name}
-                    onClick={() => toggleEventType(et.id)}
-                    variant={activeEventTypeIds.has(et.id) ? 'filled' : 'outlined'}
-                    sx={{
-                      backgroundColor: activeEventTypeIds.has(et.id) ? (et.color || '#1976d2') : 'transparent',
-                      color: activeEventTypeIds.has(et.id) ? '#ffffff' : (et.color || '#1976d2'),
-                      borderColor: et.color || '#1976d2',
-                      fontWeight: 'bold',
-                      '&:hover': {
-                        backgroundColor: activeEventTypeIds.has(et.id) 
-                          ? (et.color || '#1976d2')
-                          : `${et.color || '#1976d2'}20`,
-                        transform: 'scale(1.05)',
-                      },
-                      '&:active': {
-                        transform: 'scale(0.95)',
-                      }
-                    }}
-                  />
-                ))}
-              </Stack>
-              
-              {eventTypes.createAndEditAllowed && (
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleAddEvent}
-                  size={isMobile ? "small" : "medium"}
-                >
-                  {isMobile ? "Neu" : "Neues Event"}
-                </Button>
-              )}
-            </Box>
+
+            {/* Desktop: Chips + Button in Titelzeile */}
+            {!isMobile && (
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                  {eventTypes.entries.map(et => (
+                    <Chip
+                      key={et.id}
+                      label={et.name}
+                      onClick={() => toggleEventType(et.id)}
+                      variant={activeEventTypeIds.has(et.id) ? 'filled' : 'outlined'}
+                      sx={{
+                        backgroundColor: activeEventTypeIds.has(et.id) ? (et.color || '#1976d2') : 'transparent',
+                        color: activeEventTypeIds.has(et.id) ? '#ffffff' : (et.color || '#1976d2'),
+                        borderColor: et.color || '#1976d2',
+                        fontWeight: 'bold',
+                        '&:hover': {
+                          backgroundColor: activeEventTypeIds.has(et.id)
+                            ? (et.color || '#1976d2')
+                            : `${et.color || '#1976d2'}20`,
+                          transform: 'scale(1.05)',
+                        },
+                        '&:active': { transform: 'scale(0.95)' },
+                      }}
+                    />
+                  ))}
+                </Stack>
+                {eventTypes.createAndEditAllowed && (
+                  <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddEvent}>
+                    Neues Event
+                  </Button>
+                )}
+              </Box>
+            )}
+
+            {/* Mobile: nur Add-Button in Titelzeile */}
+            {isMobile && eventTypes.createAndEditAllowed && (
+              <IconButton
+                onClick={handleAddEvent}
+                color="primary"
+                sx={{ bgcolor: 'primary.main', color: '#fff', '&:hover': { bgcolor: 'primary.dark' }, borderRadius: 2 }}
+                size="small"
+              >
+                <AddIcon />
+              </IconButton>
+            )}
           </Box>
+
+          {/* Mobile: horizontal scrollbare Filter-Chips */}
+          {isMobile && eventTypes.entries.length > 0 && (
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'nowrap',
+                overflowX: 'auto',
+                gap: 1,
+                py: 1,
+                mb: 1,
+                mx: -1,
+                px: 1,
+                // Scrollbar ausblenden (aber scrollbar bleiben)
+                scrollbarWidth: 'none',
+                '&::-webkit-scrollbar': { display: 'none' },
+                '-ms-overflow-style': 'none',
+              }}
+            >
+              {eventTypes.entries.map(et => (
+                <Chip
+                  key={et.id}
+                  label={et.name}
+                  onClick={() => toggleEventType(et.id)}
+                  variant={activeEventTypeIds.has(et.id) ? 'filled' : 'outlined'}
+                  size="small"
+                  sx={{
+                    flexShrink: 0,
+                    backgroundColor: activeEventTypeIds.has(et.id) ? (et.color || '#1976d2') : 'transparent',
+                    color: activeEventTypeIds.has(et.id) ? '#ffffff' : (et.color || '#1976d2'),
+                    borderColor: et.color || '#1976d2',
+                    fontWeight: 'bold',
+                    '&:active': { transform: 'scale(0.95)' },
+                  }}
+                />
+              ))}
+            </Box>
+          )}
           
           {/* Mobile Navigation */}
           {isMobile && (
@@ -1355,6 +1399,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
             step={30}
             showMultiDayTimes
             defaultDate={new Date()}
+            scrollToTime={(() => { const t = new Date(); t.setMinutes(t.getMinutes() - 30); return t; })()}
             onSelectEvent={handleEventClick}
             onSelectSlot={handleDateClick}
             selectable={true}

@@ -22,13 +22,13 @@ jest.mock('../../context/AuthContext', () => ({
 }));
 
 // ────── Mock RegistrationContextDialog – capture the open prop ──────
-jest.mock('../RegistrationContextDialog', () => (props: { open: boolean; onClose: () => void }) => (
+jest.mock('../../modals/RegistrationContextDialog', () => (props: { open: boolean; onClose: () => void }) => (
   props.open ? <div data-testid="RegistrationContextDialog" /> : null
 ));
 
 // ────── TestTrigger: mirrors the App.tsx useEffect exactly ──────
 import { useAuth } from '../../context/AuthContext';
-import RegistrationContextDialog from '../RegistrationContextDialog';
+import RegistrationContextDialog from '../../modals/RegistrationContextDialog';
 
 function TestTrigger() {
   const { user } = useAuth() as any;

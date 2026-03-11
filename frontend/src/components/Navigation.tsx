@@ -60,13 +60,24 @@ import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import DeleteIcon from '@mui/icons-material/Delete';
+import HomeIcon from '@mui/icons-material/Home';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import Badge from '@mui/material/Badge';
+import BottomNavigation from '@mui/material/BottomNavigation';
+import BottomNavigationAction from '@mui/material/BottomNavigationAction';
+import Paper from '@mui/material/Paper';
 import React, { useState, useMemo } from 'react';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme, alpha } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
 import { useHomeScroll } from '../context/HomeScrollContext';
+import { apiJson } from '../utils/api';
+import RegistrationContextDialog from '../modals/RegistrationContextDialog';
+import LinkIcon from '@mui/icons-material/Link';
 import { useNotifications } from '../context/NotificationContext';
 import { AppNotification } from '../types/notifications';
 import { NotificationDetailModal } from './NotificationDetailModal';
@@ -106,9 +117,16 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [trainerDrawerOpen, setTrainerDrawerOpen] = useState(false);
   const [adminDrawerOpen, setAdminDrawerOpen] = useState(false);
+  const [userRelations, setUserRelations] = useState<{ id: number }[]>([]);
+  const [showRelationModal, setShowRelationModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const isHome = location.pathname === '/' || location.pathname === '';
+
+  React.useEffect(() => {
+    if (!isAuthenticated) { setUserRelations([]); return; }
+    apiJson('/api/users/relations').then(data => setUserRelations(Array.isArray(data) ? data : [])).catch(() => setUserRelations([]));
+  }, [isAuthenticated]);
 
   // Helper: prüfe ob ein Nav-Key aktiv ist (auch bei Sub-Routen)
   const isNavItemActive = (key: string): boolean => {
@@ -539,21 +557,6 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
                 </Box>
               )}
 
-              {/* Mobile Navigation Button */}
-              {isMobile && (
-                <IconButton
-                  onClick={handleMobileMenuToggle}
-                  sx={{ 
-                    mr: 1,
-                    color: isHome
-                      ? '#fff'
-                      : theme.palette.primary.contrastText,
-                  }}
-                >
-                  <MenuIcon />
-                </IconButton>
-              )}
-
               {/* Common Controls */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <IconButton
@@ -617,125 +620,186 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
         </Toolbar>
       </AppBar>
 
-      {/* Mobile Navigation Drawer */}
+      {/* Mobile: "Mehr" Bottom Sheet */}
       <Drawer
-        anchor="left"
+        anchor="bottom"
         open={mobileMenuOpen}
         onClose={handleMobileMenuClose}
         sx={{
           '& .MuiDrawer-paper': {
-            width: 280,
-            boxSizing: 'border-box',
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            pb: 2,
           },
         }}
       >
-        <Box sx={{ pt: 2, pb: 1 }}>
-          <Typography variant="h6" sx={{ px: 2, mb: 1 }}>
-            Navigation
-          </Typography>
-          <Divider />
-          <List>
-            {navigationItems.map((item) => (
-                <ListItem key={item.key} disablePadding>
-                  <ListItemButton
-                    selected={isNavItemActive(item.key)}
-                    disabled={item.disabled}
-                    onClick={() => !item.disabled && handlePageChangeAndClose(item.key === 'home' ? '' : item.key)}
-                  >
-                    {item.icon && (
-                      <Box sx={{ mr: 1.5, display: 'flex', alignItems: 'center', color: 'text.secondary' }}>{item.icon}</Box>
-                    )}
-                    <ListItemText primary={item.label} />
-                  </ListItemButton>
-                </ListItem>
-            ))}
-            {/* Trainer Untermenü im Drawer (Accordion) */}
-            {user?.isCoach && (
-              <>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    selected={isAnyTrainerActive}
-                    onClick={() => setTrainerDrawerOpen((prev: boolean) => !prev)}
-                  >
-                    <ListItemText primary="Trainer" />
-                    {trainerDrawerOpen ? <ExpandLess /> : <ExpandMore />}
-                  </ListItemButton>
-                </ListItem>
-                <Collapse in={trainerDrawerOpen} timeout="auto" unmountOnExit>
-                  {trainerMenuItems.map((item) => (
-                    <ListItem key={item.key} disablePadding sx={{ pl: 3 }}>
-                      <ListItemButton
-                        selected={isNavItemActive(item.key)}
-                        onClick={() => handleTrainerMenuClick(item.key)}
-                      >
-                        <ListItemText primary={item.label} />
+        {/* Drag handle */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 1, pb: 0.5 }}>
+          <Box sx={{ width: 36, height: 4, borderRadius: 2, bgcolor: 'divider' }} />
+        </Box>
+
+        <List dense>
+          {/* Sekundäre Nav-Items (Mein Team, Neuigkeiten, …) */}
+          {navigationItems
+            .filter(item => !['home', 'calendar', 'games', 'dashboard'].includes(item.key))
+            .map((item) => (
+              <ListItem key={item.key} disablePadding>
+                <ListItemButton
+                  selected={isNavItemActive(item.key)}
+                  disabled={item.disabled}
+                  onClick={() => !item.disabled && handlePageChangeAndClose(item.key)}
+                >
+                  {item.icon && (
+                    <ListItemIcon sx={{ minWidth: 36, color: isNavItemActive(item.key) ? 'primary.main' : 'text.secondary' }}>
+                      {item.icon}
+                    </ListItemIcon>
+                  )}
+                  <ListItemText primary={item.label} />
+                </ListItemButton>
+              </ListItem>
+            ))
+          }
+
+          {/* Nachrichten */}
+          <NavigationMessagesButton variant="icon-with-text" text="Nachrichten" />
+
+          {/* Trainer Untermenü (Accordion) */}
+          {user?.isCoach && (
+            <>
+              <Divider sx={{ my: 0.5 }} />
+              <ListItem disablePadding>
+                <ListItemButton
+                  selected={isAnyTrainerActive}
+                  onClick={() => setTrainerDrawerOpen((prev: boolean) => !prev)}
+                >
+                  <ListItemIcon sx={{ minWidth: 36, color: 'text.secondary' }}>
+                    <GroupWorkIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary="Trainer" />
+                  {trainerDrawerOpen ? <ExpandLess /> : <ExpandMore />}
+                </ListItemButton>
+              </ListItem>
+              <Collapse in={trainerDrawerOpen} timeout="auto" unmountOnExit>
+                {trainerMenuItems.map((item) => (
+                  <ListItem key={item.key} disablePadding sx={{ pl: 2 }}>
+                    <ListItemButton
+                      selected={isNavItemActive(item.key)}
+                      onClick={() => handleTrainerMenuClick(item.key)}
+                    >
+                      {item.icon}
+                      <ListItemText primary={item.label} />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </Collapse>
+            </>
+          )}
+
+          {/* Admin Untermenü (Accordion) */}
+          {isAdmin && (
+            <>
+              <Divider sx={{ my: 0.5 }} />
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => setAdminDrawerOpen((prev: boolean) => !prev)}
+                >
+                  <ListItemIcon sx={{ minWidth: 36, color: 'text.secondary' }}>
+                    <ManageAccountsIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary="Administration" />
+                  {adminDrawerOpen ? <ExpandLess /> : <ExpandMore />}
+                </ListItemButton>
+              </ListItem>
+              <Collapse in={adminDrawerOpen} timeout="auto" unmountOnExit>
+                {adminMenuSections.map((section) => (
+                  <Box key={section.section}>
+                    <ListItem disablePadding sx={{ pl: 2 }}>
+                      <ListItemButton disabled>
+                        <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                          {section.section}
+                        </Typography>
                       </ListItemButton>
                     </ListItem>
-                  ))}
-                </Collapse>
-              </>
-            )}
-            {/* Admin Untermenü im Drawer (Accordion) */}
-            {isAdmin && (
-              <>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    onClick={() => setAdminDrawerOpen((prev: boolean) => !prev)}
-                  >
-                    <ListItemText primary="Administration" />
-                    {adminDrawerOpen ? <ExpandLess /> : <ExpandMore />}
-                  </ListItemButton>
-                </ListItem>
-                <Collapse in={adminDrawerOpen} timeout="auto" unmountOnExit>
-                  {adminMenuSections.map((section) => (
-                    <Box key={section.section}>
-                      <ListItem disablePadding sx={{ pl: 2 }}>
-                        <ListItemButton disabled>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                            {section.section}
-                          </Typography>
+                    {section.items.map((item) => (
+                      <ListItem key={item.label} disablePadding sx={{ pl: 4 }}>
+                        <ListItemButton
+                          selected={location.pathname === `/${item.page || item.href}`}
+                          onClick={() => {
+                            handleMobileMenuClose();
+                            if (item.page) navigate(`/${item.page}`);
+                            else if (item.href) navigate(item.href);
+                          }}
+                        >
+                          {item.icon}
+                          <ListItemText primary={item.label} sx={{ ml: 1 }} />
                         </ListItemButton>
                       </ListItem>
-                      {section.items.map((item) => (
-                        <ListItem key={item.label} disablePadding sx={{ pl: 4 }}>
-                          <ListItemButton
-                            selected={location.pathname === `/${item.page || item.href}`}
-                            onClick={() => {
-                              handleMobileMenuClose();
-                              if (item.page) {
-                                navigate(`/${item.page}`);
-                              } else if (item.href) {
-                                navigate(item.href);
-                              }
-                            }}
-                          >
-                            {item.icon}
-                            <ListItemText primary={item.label} sx={{ ml: 1 }} />
-                          </ListItemButton>
-                        </ListItem>
-                      ))}
-                    </Box>
-                  ))}
-                </Collapse>
-              </>
-            )}
-            {/* QR-Code teilen */}
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => {
-                  handleMobileMenuClose();
-                  onOpenQRShare();
-                }}
-              >
-                <Box sx={{ mr: 1.5, display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
-                  <QrCode2Icon fontSize="small" />
-                </Box>
-                <ListItemText primary="Registrierungs-QR-Code" />
-              </ListItemButton>
-            </ListItem>
-          </List>
-        </Box>
+                    ))}
+                  </Box>
+                ))}
+              </Collapse>
+            </>
+          )}
+
+          {/* QR-Code */}
+          <Divider sx={{ my: 0.5 }} />
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => { handleMobileMenuClose(); onOpenQRShare(); }}>
+              <ListItemIcon sx={{ minWidth: 36, color: 'text.secondary' }}>
+                <QrCode2Icon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Registrierungs-QR-Code teilen" />
+            </ListItemButton>
+          </ListItem>
+        </List>
       </Drawer>
+
+      {/* Mobile Bottom Navigation Bar */}
+      {isMobile && isAuthenticated && (
+        <Paper
+          sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1100 }}
+          elevation={4}
+        >
+          <BottomNavigation
+            showLabels
+            value={['home', 'calendar', 'games', 'dashboard'].find(k => isNavItemActive(k)) ?? (mobileMenuOpen ? 'more' : false)}
+            sx={{ height: 56 }}
+          >
+            <BottomNavigationAction
+              label="Home"
+              value="home"
+              icon={<HomeIcon />}
+              onClick={() => { handleMobileMenuClose(); navigate('/'); }}
+            />
+            <BottomNavigationAction
+              label="Kalender"
+              value="calendar"
+              icon={<CalendarMonthIcon />}
+              onClick={() => { handleMobileMenuClose(); navigate('/calendar'); }}
+            />
+            <BottomNavigationAction
+              label="Spiele"
+              value="games"
+              icon={<SportsSoccerIcon />}
+              onClick={() => { handleMobileMenuClose(); navigate('/games'); }}
+            />
+            <BottomNavigationAction
+              label="Dashboard"
+              value="dashboard"
+              icon={<DashboardIcon />}
+              onClick={() => { handleMobileMenuClose(); navigate('/dashboard'); }}
+            />
+            <BottomNavigationAction
+              label="Mehr"
+              value="more"
+              icon={<MoreHorizIcon />}
+              onClick={handleMobileMenuToggle}
+            />
+          </BottomNavigation>
+        </Paper>
+      )}
 
       {/* User Menu */}
       <Menu
@@ -827,6 +891,12 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
             }} />
           Profil
         </MenuItem>
+        {userRelations.length === 0 && (
+          <MenuItem onClick={() => { handleClose(); setShowRelationModal(true); }}>
+            <LinkIcon fontSize="small" sx={{ color: 'warning.main', mr: 1 }} />
+            Verknüpfung anfragen
+          </MenuItem>
+        )}
         <MenuItem onClick={() => { handleClose(); onOpenQRShare(); }}>
           <QrCode2Icon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} />
           Registrierungs-QR-Code
@@ -848,6 +918,11 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
         notification={selectedNotification}
         open={Boolean(selectedNotification)}
         onClose={closeNotificationDetail}
+      />
+
+      <RegistrationContextDialog
+        open={showRelationModal}
+        onClose={() => setShowRelationModal(false)}
       />
     </>
   );
