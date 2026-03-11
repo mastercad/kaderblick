@@ -51,12 +51,25 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import PollIcon from '@mui/icons-material/Poll';
 import SettingsIcon from '@mui/icons-material/Settings';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import NewsIcon from '@mui/icons-material/Article';
+import MessageIcon from '@mui/icons-material/Message';
+import EventIcon from '@mui/icons-material/Event';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import EventBusyIcon from '@mui/icons-material/EventBusy';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import Badge from '@mui/material/Badge';
 import React, { useState, useMemo } from 'react';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
 import { useHomeScroll } from '../context/HomeScrollContext';
-import { NotificationCenter } from './NotificationCenter';
+import { useNotifications } from '../context/NotificationContext';
+import { AppNotification } from '../types/notifications';
+import { NotificationDetailModal } from './NotificationDetailModal';
 import NavigationMessagesButton from './NavigationMessagesButton';
 import { BACKEND_URL } from '../../config';
 import UserAvatar from './UserAvatar';
@@ -67,6 +80,22 @@ interface NavigationProps {
   onOpenProfile: () => void;
   onOpenQRShare: () => void;
 }
+
+const getNotificationIcon = (type: AppNotification['type']) => {
+  switch (type) {
+    case 'news': return <NewsIcon fontSize="small" />;
+    case 'message': return <MessageIcon fontSize="small" />;
+    case 'participation': return <EventIcon fontSize="small" />;
+    case 'team_ride':
+    case 'team_ride_booking':
+    case 'team_ride_cancel':
+    case 'team_ride_deleted':
+      return <DirectionsCarIcon fontSize="small" />;
+    case 'event_cancelled': return <EventBusyIcon fontSize="small" />;
+    case 'feedback': return <FeedbackIcon fontSize="small" />;
+    default: return <NotificationsNoneIcon fontSize="small" />;
+  }
+};
 
 export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }: NavigationProps) {
   const { user, isAuthenticated, logout, isSuperAdmin } = useAuth();
@@ -185,6 +214,16 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
       ],
     },
   ];
+
+  const {
+    notifications,
+    unreadCount,
+    markAllAsRead,
+    clearAll,
+    selectedNotification,
+    openNotificationDetail,
+    closeNotificationDetail,
+  } = useNotifications();
 
   const [adminMenuAnchor, setAdminMenuAnchor] = useState<null | HTMLElement>(null);
   const handleAdminMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -517,8 +556,6 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
 
               {/* Common Controls */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <NotificationCenter />
-                
                 <IconButton
                   size="large"
                   aria-label="account of current user"
@@ -529,8 +566,16 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
                     color: isHome
                       ? '#fff'
                       : theme.palette.primary.contrastText,
+                    p: 0.5,
                   }}
                 >
+                  <Badge
+                    badgeContent={unreadCount}
+                    color="error"
+                    max={99}
+                    overlap="circular"
+                    sx={{ '& .MuiBadge-badge': { fontSize: '0.65rem', minWidth: 16, height: 16 } }}
+                  >
                     <UserAvatar
                       icon={user?.avatarFile || undefined}
                       name=""
@@ -540,6 +585,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
                       svgFrameOffsetY={0}
                       level={user?.level?.level}
                     />
+                  </Badge>
                 </IconButton>
               </Box>
             </>
@@ -707,18 +753,72 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
         open={Boolean(anchorEl)}
         onClose={handleClose}
       >
-        <MenuItem disabled>
+        {/* User info */}
+        <MenuItem disabled sx={{ opacity: '1 !important' }}>
           <Box>
             <Typography variant="subtitle2">{user?.name}</Typography>
-            <Typography variant="caption" 
-              sx={{
-                color: 'text.primary',
-                }}
-            >
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {user?.email}
             </Typography>
           </Box>
         </MenuItem>
+        <Divider />
+
+        {/* Benachrichtigungen */}
+        <Box sx={{ px: 1, py: 0.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ px: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Benachrichtigungen{unreadCount > 0 ? ` (${unreadCount})` : ''}
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {unreadCount > 0 && (
+              <IconButton size="small" onClick={(e) => { e.stopPropagation(); markAllAsRead(); }} title="Alle gelesen">
+                <DoneAllIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            )}
+            {notifications.length > 0 && (
+              <IconButton size="small" onClick={(e) => { e.stopPropagation(); clearAll(); }} title="Alle löschen">
+                <DeleteIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            )}
+          </Box>
+        </Box>
+
+        {notifications.length === 0 ? (
+          <MenuItem disabled dense>
+            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+              Keine Benachrichtigungen
+            </Typography>
+          </MenuItem>
+        ) : (
+          <Box sx={{ maxHeight: 260, overflowY: 'auto' }}>
+            {notifications.slice(0, 6).map((notification) => (
+              <MenuItem
+                key={notification.id}
+                dense
+                onClick={() => { handleClose(); openNotificationDetail(notification); }}
+                sx={{
+                  alignItems: 'flex-start',
+                  gap: 1,
+                  py: 0.75,
+                  backgroundColor: notification.read ? 'transparent' : alpha(theme.palette.primary.main, 0.06),
+                  '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.12) },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 28, mt: 0.2, color: notification.read ? 'text.secondary' : 'primary.main' }}>
+                  {getNotificationIcon(notification.type)}
+                </ListItemIcon>
+                <ListItemText
+                  primary={notification.title}
+                  secondary={notification.message}
+                  primaryTypographyProps={{ variant: 'body2', fontWeight: notification.read ? 400 : 600, noWrap: true }}
+                  secondaryTypographyProps={{ variant: 'caption', noWrap: true }}
+                />
+              </MenuItem>
+            ))}
+          </Box>
+        )}
+        <Divider />
+
         <MenuItem onClick={() => { handleClose(); onOpenProfile(); }}>
           <AccountCircleIcon fontSize="small" 
             sx={{
@@ -743,6 +843,12 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
           Logout
         </MenuItem>
       </Menu>
+
+      <NotificationDetailModal
+        notification={selectedNotification}
+        open={Boolean(selectedNotification)}
+        onClose={closeNotificationDetail}
+      />
     </>
   );
 }
