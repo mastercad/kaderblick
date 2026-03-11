@@ -641,9 +641,9 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
         </Box>
 
         <List dense>
-          {/* Sekundäre Nav-Items (Mein Team, Neuigkeiten, …) */}
+          {/* Sekundäre Nav-Items (Neuigkeiten, …) */}
           {navigationItems
-            .filter(item => !['home', 'calendar', 'games', 'dashboard'].includes(item.key))
+            .filter(item => !['home', 'dashboard', 'my-team', 'calendar', 'games'].includes(item.key))
             .map((item) => (
               <ListItem key={item.key} disablePadding>
                 <ListItemButton
@@ -759,19 +759,34 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
       {/* Mobile Bottom Navigation Bar */}
       {isMobile && isAuthenticated && (
         <Paper
-          sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1100 }}
-          elevation={4}
+          sx={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1100,
+            ...(isHome && {
+              background: 'transparent',
+              boxShadow: 'none',
+              '& .MuiBottomNavigation-root': {
+                backgroundColor: 'transparent',
+              },
+              '& .MuiBottomNavigationAction-root': {
+                color: 'rgba(255,255,255,0.7)',
+              },
+              '& .MuiBottomNavigationAction-root.Mui-selected': {
+                color: '#fff',
+              },
+            }),
+          }}
+          elevation={isHome ? 0 : 4}
         >
           <BottomNavigation
             showLabels
-            value={['home', 'calendar', 'games', 'dashboard'].find(k => isNavItemActive(k)) ?? (mobileMenuOpen ? 'more' : false)}
+            value={['dashboard', 'my-team', 'calendar', 'games'].find(k => isNavItemActive(k)) ?? (mobileMenuOpen ? 'more' : false)}
             sx={{ height: 56 }}
           >
             <BottomNavigationAction
-              label="Home"
-              value="home"
-              icon={<HomeIcon />}
-              onClick={() => { handleMobileMenuClose(); navigate('/'); }}
+              label="Dashboard"
+              value="dashboard"
+              icon={<DashboardIcon />}
+              onClick={() => { handleMobileMenuClose(); navigate('/dashboard'); }}
             />
             <BottomNavigationAction
               label="Kalender"
@@ -786,10 +801,10 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
               onClick={() => { handleMobileMenuClose(); navigate('/games'); }}
             />
             <BottomNavigationAction
-              label="Dashboard"
-              value="dashboard"
-              icon={<DashboardIcon />}
-              onClick={() => { handleMobileMenuClose(); navigate('/dashboard'); }}
+              label="Mein Team"
+              value="my-team"
+              icon={<GroupsIcon />}
+              onClick={() => { handleMobileMenuClose(); navigate('/my-team'); }}
             />
             <BottomNavigationAction
               label="Mehr"

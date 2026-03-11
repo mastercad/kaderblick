@@ -265,7 +265,7 @@ export function AdminTable<T>({ columns, data, getKey, onRowClick, renderActions
     <TableContainer
       component={Paper}
       elevation={1}
-      sx={{ borderRadius: 2, overflow: 'hidden' }}
+      sx={{ borderRadius: 2, overflowX: 'auto' }}
     >
       <Table>
         <TableHead>

@@ -1,5 +1,6 @@
 import CalendarFab from '../components/CalendarFab';
 import { useFabStack } from '../components/FabStackProvider';
+import { MobileCalendar } from '../components/MobileCalendar';
 // ErrorBoundary für bessere Fehlerdiagnose
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -1341,8 +1342,8 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
             </Box>
           )}
           
-          {/* Mobile Navigation */}
-          {isMobile && (
+          {/* Mobile Navigation — only shown for Day/Agenda view; Month view has its own built-in nav */}
+          {isMobile && view !== 'month' && (
             <Paper elevation={1} sx={{ p: 2, mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
               <IconButton onClick={navigateBack} size="small">
@@ -1350,7 +1351,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
               </IconButton>
               
               <Typography variant="h6" component="div" sx={{ textAlign: 'center', flex: 1 }}>
-                {moment(date).format('MMMM YYYY')}
+                {moment(date).format(view === 'day' ? 'ddd, D. MMM YYYY' : 'MMMM YYYY')}
               </Typography>
               
               <IconButton onClick={navigateForward} size="small">
@@ -1378,9 +1379,54 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
             </Box>
           </Paper>
           )}
+
+          {/* Mobile Month view: compact mini-grid with event list */}
+          {isMobile && view === 'month' && (
+            <Box sx={{ mb: 1 }}>
+              {/* View switcher for mobile month view */}
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+                <ButtonGroup variant="outlined" size="small">
+                  {availableViews.map((v) => (
+                    <Button
+                      key={v}
+                      variant={view === v ? 'contained' : 'outlined'}
+                      onClick={() => setView(v as any)}
+                      size="small"
+                    >
+                      {getViewLabel(v)}
+                    </Button>
+                  ))}
+                </ButtonGroup>
+              </Box>
+              <MobileCalendar
+                date={date}
+                onNavigate={setDate}
+                events={filteredEvents}
+                onEventClick={handleEventClick}
+                onDateClick={(d) => {
+                  if (!eventTypes.createAndEditAllowed) return;
+                  const clickedDate = moment(d).format('YYYY-MM-DD');
+                  setEventFormData({
+                    title: '',
+                    date: clickedDate,
+                    time: '',
+                    eventType: '',
+                    locationId: '',
+                    description: '',
+                    permissionType: 'public',
+                    taskOffset: 0,
+                  });
+                  setEditingEventId(null);
+                  setEditingEventPermissions(null);
+                  setEventModalOpen(true);
+                }}
+                canCreate={eventTypes.createAndEditAllowed}
+              />
+            </Box>
+          )}
         </Box>
         
-        <Box sx={calendarStyle}>
+        <Box sx={isMobile && view === 'month' ? { display: 'none' } : calendarStyle}>
           <BigCalendar
             localizer={localizer}
             events={filteredEvents}
