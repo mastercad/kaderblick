@@ -35,29 +35,100 @@ class UserContactService
 
     /**
      * Returns ALL enabled/verified users except $me – for ROLE_SUPERADMIN.
-     * No team/club filtering is applied; context is left empty.
+     * Each entry carries a human-readable `context` string (role + team/club)
+     * built from the user's own active assignments.
      *
      * @return array<int, array{id: int, fullName: string, context: string}>
      */
     public function findAllUsers(User $me): array
     {
-        /** @var User[] $users */
-        $users = $this->entityManager->getRepository(User::class)
-            ->createQueryBuilder('u')
+        /** @var UserRelation[] $allRelations */
+        $allRelations = $this->entityManager->createQueryBuilder()
+            ->select('ur, u, p, co')
+            ->from(UserRelation::class, 'ur')
+            ->join('ur.user', 'u')
+            ->leftJoin('ur.player', 'p')
+            ->leftJoin('ur.coach', 'co')
             ->where('u != :me')
             ->andWhere('u.isEnabled = true')
             ->andWhere('u.isVerified = true')
-            ->orderBy('u.firstName', 'ASC')
-            ->addOrderBy('u.lastName', 'ASC')
             ->setParameter('me', $me)
             ->getQuery()
             ->getResult();
 
-        return array_map(static fn (User $u) => [
-            'id' => $u->getId(),
-            'fullName' => $u->getFullName(),
-            'context' => '',
-        ], $users);
+        $now = new DateTimeImmutable();
+
+        /** @var array<int, array{id: int, fullName: string, contexts: string[]}> $byUser */
+        $byUser = [];
+
+        foreach ($allRelations as $relation) {
+            $uid = $relation->getUser()->getId();
+
+            if (!isset($byUser[$uid])) {
+                $byUser[$uid] = [
+                    'id' => $uid,
+                    'fullName' => $relation->getUser()->getFullName(),
+                    'contexts' => [],
+                ];
+            }
+
+            if (null !== $relation->getPlayer()) {
+                foreach ($relation->getPlayer()->getPlayerTeamAssignments() as $pta) {
+                    if ($this->isActive($pta->getStartDate(), $pta->getEndDate(), $now)) {
+                        $byUser[$uid]['contexts'][] = 'Spieler · ' . $pta->getTeam()->getName();
+                    }
+                }
+                foreach ($relation->getPlayer()->getPlayerClubAssignments() as $pca) {
+                    if ($pca->getClub() && $this->isActive($pca->getStartDate(), $pca->getEndDate(), $now)) {
+                        $byUser[$uid]['contexts'][] = 'Spieler · ' . $pca->getClub()->getName();
+                    }
+                }
+            }
+
+            if (null !== $relation->getCoach()) {
+                foreach ($relation->getCoach()->getCoachTeamAssignments() as $cta) {
+                    if ($this->isActive($cta->getStartDate(), $cta->getEndDate(), $now)) {
+                        $byUser[$uid]['contexts'][] = 'Trainer · ' . $cta->getTeam()->getName();
+                    }
+                }
+                foreach ($relation->getCoach()->getCoachClubAssignments() as $cca) {
+                    if ($cca->getClub() && $this->isActive($cca->getStartDate(), $cca->getEndDate(), $now)) {
+                        $byUser[$uid]['contexts'][] = 'Trainer · ' . $cca->getClub()->getName();
+                    }
+                }
+            }
+        }
+
+        // Also include users without any UserRelation (they get an empty context)
+        /** @var User[] $allUsers */
+        $allUsers = $this->entityManager->getRepository(User::class)
+            ->createQueryBuilder('u')
+            ->where('u != :me')
+            ->andWhere('u.isEnabled = true')
+            ->andWhere('u.isVerified = true')
+            ->setParameter('me', $me)
+            ->getQuery()
+            ->getResult();
+
+        foreach ($allUsers as $u) {
+            if (!isset($byUser[$u->getId()])) {
+                $byUser[$u->getId()] = [
+                    'id' => $u->getId(),
+                    'fullName' => $u->getFullName(),
+                    'contexts' => [],
+                ];
+            }
+        }
+
+        $result = array_map(static fn (array $u) => [
+            'id' => $u['id'],
+            'fullName' => $u['fullName'],
+            'context' => implode(' | ', array_values(array_unique($u['contexts']))),
+        ], array_values($byUser));
+
+        usort($result, static fn ($a, $b) => strcmp($a['fullName'], $b['fullName']));
+
+        return $result;
     }
 
     /**

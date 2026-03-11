@@ -198,16 +198,41 @@ class MyTeamController extends AbstractController
         $nextMonth = (clone $now)->modify('+30 days');
         $allEvents = $calendarEventRepository->findBetweenDates($now, $nextMonth);
 
-        // Filtere auf Team-relevante Events (über CalendarEventPermissions)
+        // Filtere auf Team-relevante Events (über CalendarEventPermissions, Spiele, Turniere)
         $upcomingEvents = [];
         foreach ($allEvents as $event) {
             // Prüfe ob Event einem der Teams des Nutzers zugeordnet ist
             $eventTeam = null;
+
+            // 1. Über CalendarEventPermissions (z. B. Training)
             foreach ($event->getPermissions() as $permission) {
                 $permTeam = $permission->getTeam();
                 if (null !== $permTeam && in_array($permTeam->getId(), $teamIds, true)) {
                     $eventTeam = $permTeam;
                     break;
+                }
+            }
+
+            // 2. Über verknüpftes Spiel (homeTeam / awayTeam)
+            if (null === $eventTeam && null !== $event->getGame()) {
+                $game = $event->getGame();
+                $homeTeam = $game->getHomeTeam();
+                $awayTeam = $game->getAwayTeam();
+                if (null !== $homeTeam && in_array($homeTeam->getId(), $teamIds, true)) {
+                    $eventTeam = $homeTeam;
+                } elseif (null !== $awayTeam && in_array($awayTeam->getId(), $teamIds, true)) {
+                    $eventTeam = $awayTeam;
+                }
+            }
+
+            // 3. Über verknüpftes Turnier (TournamentTeam-Einträge)
+            if (null === $eventTeam && null !== $event->getTournament()) {
+                foreach ($event->getTournament()->getTeams() as $tournamentTeam) {
+                    $team = $tournamentTeam->getTeam();
+                    if (null !== $team && in_array($team->getId(), $teamIds, true)) {
+                        $eventTeam = $team;
+                        break;
+                    }
                 }
             }
 

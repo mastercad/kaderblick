@@ -44,7 +44,7 @@ final class TeamVoter extends Voter
 
         switch ($attribute) {
             case self::CREATE:
-                // Neue Teams anlegen: nur ADMIN/SUPERADMIN (SUPERADMIN oben bereits abgefangen)
+                // Neue Teams anlegen: nur ADMIN
                 return in_array('ROLE_ADMIN', $user->getRoles());
 
             case self::EDIT:

@@ -53,7 +53,9 @@ jest.mock('@mui/material', () => {
             data-testid={`autocomplete-option-${o.id}`}
             onClick={() => props.onChange?.(null, o)}
           >
-            {props.getOptionLabel(o)}
+            {props.renderOption
+              ? props.renderOption({}, o)
+              : props.getOptionLabel(o)}
           </div>
         ))}
       </div>
@@ -94,11 +96,11 @@ jest.mock('../../utils/api', () => ({
 // ────── Fixtures ──────
 const mockContextData = {
   players: [
-    { id: 1, fullName: 'Max Mustermann' },
+    { id: 1, fullName: 'Max Mustermann', teams: ['U17', 'U15'] },
     { id: 2, fullName: 'Anna Schmidt' },
   ],
   coaches: [
-    { id: 10, fullName: 'Hans Trainer' },
+    { id: 10, fullName: 'Hans Trainer', teams: ['1. Mannschaft'] },
   ],
   relationTypes: [
     { id: 1, identifier: 'parent', name: 'Elternteil', category: 'player' },
@@ -519,6 +521,51 @@ describe('RegistrationContextDialog', () => {
 
       fireEvent.click(screen.getByText('Schließen'));
       expect(onClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // ────── Team-Anzeige im Autocomplete ──────
+  describe('Team-Anzeige im Autocomplete', () => {
+    const navigateToPersonStep = async () => {
+      await act(async () => {
+        render(<RegistrationContextDialog open={true} onClose={jest.fn()} />);
+      });
+      await waitFor(() => screen.getByTestId('Stepper'));
+      await act(async () => { fireEvent.click(screen.getByTestId('toggle-player')); });
+      await act(async () => { fireEvent.click(screen.getByText('Weiter')); });
+      await waitFor(() => screen.getByTestId('Autocomplete'));
+    };
+
+    it('zeigt Team-Namen in den renderOption-Inhalten für Spieler mit Teams', async () => {
+      await navigateToPersonStep();
+
+      const option1 = screen.getByTestId('autocomplete-option-1');
+      expect(option1).toHaveTextContent('Max Mustermann');
+      expect(option1).toHaveTextContent('U17');
+      expect(option1).toHaveTextContent('U15');
+    });
+
+    it('zeigt keine Team-Namen für Spieler ohne Teams', async () => {
+      await navigateToPersonStep();
+
+      const option2 = screen.getByTestId('autocomplete-option-2');
+      expect(option2).toHaveTextContent('Anna Schmidt');
+      // No team text — only the name present
+      expect(option2.textContent).toBe('Anna Schmidt');
+    });
+
+    it('zeigt Team-Namen in renderOption für Coach-Typ', async () => {
+      await act(async () => {
+        render(<RegistrationContextDialog open={true} onClose={jest.fn()} />);
+      });
+      await waitFor(() => screen.getByTestId('Stepper'));
+      await act(async () => { fireEvent.click(screen.getByTestId('toggle-coach')); });
+      await act(async () => { fireEvent.click(screen.getByText('Weiter')); });
+      await waitFor(() => screen.getByTestId('Autocomplete'));
+
+      const coachOption = screen.getByTestId('autocomplete-option-10');
+      expect(coachOption).toHaveTextContent('Hans Trainer');
+      expect(coachOption).toHaveTextContent('1. Mannschaft');
     });
   });
 });

@@ -196,12 +196,20 @@ class UserManagementController extends AbstractController
             'players' => array_map(fn (Player $player) => [
                 'id' => $player->getId(),
                 'fullName' => $player->getFullName(),
-                'email' => $player->getEmail()
+                'email' => $player->getEmail(),
+                'teams' => array_values(array_unique(array_map(
+                    fn ($pta) => $pta->getTeam()->getName(),
+                    $player->getPlayerTeamAssignments()->toArray()
+                ))),
             ], $players),
             'coaches' => array_map(fn (Coach $coach) => [
                 'id' => $coach->getId(),
                 'fullName' => $coach->getFullName(),
-                'email' => $coach->getEmail()
+                'email' => $coach->getEmail(),
+                'teams' => array_values(array_unique(array_map(
+                    fn ($cta) => $cta->getTeam()->getName(),
+                    $coach->getCoachTeamAssignments()->toArray()
+                ))),
             ], $coaches),
             'currentAssignments' => $currentAssignments,
             'relationTypes' => $groupedRelationTypes,
