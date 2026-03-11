@@ -1,0 +1,18 @@
+# Staging-spezifische Overrides
+# Verwendung: docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging up
+#
+# Zweck:
+#   - Eigenes Docker-Volume für var/ (Cache, Logs, Sessions) – kein Konflikt mit Production
+#   - Production-Container laufen vom selben Release-Verzeichnis, teilen sich aber NICHT var/
+
+services:
+  api:
+    volumes:
+      # Überschreibt var/ aus dem Host-Mount ./api:/var/www/symfony mit einem eigenen Volume.
+      # Docker wertet spezifischere Pfade bevorzugt aus, daher übernimmt dieses
+      # Volume den Unterordner /var/www/symfony/var.
+      - kaderblick-staging-api-var:/var/www/symfony/var
+
+volumes:
+  kaderblick-staging-api-var:
+    name: kaderblick-staging-api-var

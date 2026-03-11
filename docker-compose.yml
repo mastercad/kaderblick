@@ -10,9 +10,9 @@ services:
       - ./api:/var/www/symfony
       - ./public/uploads:/var/www/symfony/public/uploads
     environment:
-      DATABASE_URL: mysql://kaderblick:kaderblick@db:3306/kaderblick
-      XDEBUG_MODE: develop,debug
-      XDEBUG_CONFIG: "client_host=host.docker.internal client_port=9003"
+      DATABASE_URL: ${DATABASE_URL:-mysql://kaderblick:kaderblick@db:3306/kaderblick}
+      XDEBUG_MODE: ${XDEBUG_MODE:-develop,debug}
+      XDEBUG_CONFIG: ${XDEBUG_CONFIG:-"client_host=host.docker.internal client_port=9003"}
       XDEBUG_LOG: /tmp/xdebug.log
     extra_hosts:
       - "host.docker.internal:host-gateway"
