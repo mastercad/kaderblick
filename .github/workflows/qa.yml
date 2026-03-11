@@ -199,7 +199,7 @@ jobs:
         id: phpunit-coverage
         run: |
           docker compose exec -T -e XDEBUG_MODE=coverage api ./vendor/bin/phpunit \
-            --coverage-clover var/coverage-clover.xml \
+            --coverage-cobertura var/coverage-cobertura.xml \
             --coverage-text 2>&1 | tee phpunit-output.txt
 
           # Extract line coverage percentage
@@ -210,7 +210,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: api/var/coverage-clover.xml
+          filename: api/var/coverage-cobertura.xml
           badge: true
           format: markdown
           output: both

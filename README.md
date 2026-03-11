@@ -42,10 +42,10 @@ Eine einzige Plattform — im Browser, auf dem Handy, ohne App-Store — die all
 <td width="50%" valign="top">
 
 ### 📅 Kalender & Teilnahme
-Vier Ansichten (Monat, Woche, Tag, Agenda), farbige Termintypen, Filter-Chips und **Ein-Klick-Zu-/Absagen**. Kein Hin-und-Her-Schreiben mehr — der Trainer sieht sofort, wer kommt.
+Vier Ansichten (Monat, Woche, Tag, Agenda), farbige Termintypen, Filter-Chips und **Ein-Klick-Zu-/Absagen**. Kein Hin-und-Her-Schreiben mehr — der Trainer sieht sofort, wer kommt
 
 ### ⚽ Live-Spielverwaltung
-Tore, Karten, Auswechslungen — alles in Echtzeit erfassen. Mit **13+ Ereignistypen**, Auswechslungsgründen (Taktik, Verletzung, Debüt, Abschied …) und automatischer Ergebnis-Aktualisierung.
+Tore, Karten, Auswechslungen — alles in Echtzeit erfassen. Mit **120+ Ereignistypen**, Auswechslungsgründen (Taktik, Verletzung, Debüt, Abschied …) und automatischer Ergebnis-Aktualisierung.
 
 ### 🎬 Video-Analyse
 YouTube-Videos einbetten, **Spielereignisse auf der Zeitleiste** markieren, per Fine-Tuning (±10 Sek.) exakt positionieren und im **Schnitt-Modus** Highlight-Clips erstellen. Inklusive CSV-Export.
