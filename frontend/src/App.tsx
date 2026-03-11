@@ -241,7 +241,11 @@ function App() {
                 onClose={() => setShowRegistrationContext(false)}
               />
               <QRCodeShareModal open={showQRShare} onClose={() => setShowQRShare(false)} />
-              {!isHome && (user ? (<FooterWithContact />) : (<Footer />))}
+              {!isHome && (user ? (
+                <Box sx={{ pb: { xs: '56px', md: 0 } }}><FooterWithContact /></Box>
+              ) : (
+                <Footer />
+              ))}
             </Box>
             </PullToRefresh>
           </FabStackRoot>

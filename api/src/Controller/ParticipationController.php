@@ -217,6 +217,83 @@ class ParticipationController extends AbstractController
         ]);
     }
 
+    /**
+     * Returns all event teams with all their members and each member's participation status.
+     * Used for the "who has/hasn't responded" overview in the frontend.
+     */
+    #[Route('/event/{id}/overview', name: 'overview', methods: ['GET'])]
+    public function getEventOverview(CalendarEvent $event): JsonResponse
+    {
+        /** @var User|null $currentUser */
+        $currentUser = $this->getUser();
+
+        if ($currentUser instanceof User && !in_array('ROLE_SUPERADMIN', $currentUser->getRoles())) {
+            if (!$this->teamMembershipService->canUserParticipateInEvent($currentUser, $event)) {
+                return $this->json(['error' => 'Keine Berechtigung für dieses Event'], 403);
+            }
+        }
+
+        // Build a map of userId → participation for fast lookup
+        $participationMap = [];
+        foreach ($this->participationRepository->findBy(['event' => $event]) as $participation) {
+            $participationMap[$participation->getUser()->getId()] = $participation;
+        }
+
+        // Get all teams involved in this event
+        $teams = $this->teamMembershipService->getEventTeams($event);
+
+        // Determine which team(s) the current user belongs to
+        $myTeamId = null;
+        if ($currentUser instanceof User) {
+            foreach ($teams as $team) {
+                if ($this->teamMembershipService->isUserInTeam($currentUser, $team)) {
+                    $myTeamId = $team->getId();
+                    break;
+                }
+            }
+        }
+
+        $teamsData = [];
+        foreach ($teams as $team) {
+            $members = $this->teamMembershipService->resolveTeamMembers($team);
+            $membersData = [];
+            foreach ($members as $member) {
+                $participation = $participationMap[$member->getId()] ?? null;
+                $membersData[] = [
+                    'user_id' => $member->getId(),
+                    'user_name' => $member->getFirstName() . ' ' . $member->getLastName(),
+                    'participation' => $participation ? [
+                        'status_id' => $participation->getStatus()->getId(),
+                        'status_name' => $participation->getStatus()->getName(),
+                        'status_code' => $participation->getStatus()->getCode(),
+                        'status_color' => $participation->getStatus()->getColor(),
+                        'note' => $participation->getNote(),
+                    ] : null,
+                ];
+            }
+            // Sort: responded first (by status name), then unresponded alphabetically
+            usort($membersData, static function (array $a, array $b): int {
+                $aHas = null !== $a['participation'];
+                $bHas = null !== $b['participation'];
+                if ($aHas !== $bHas) {
+                    return $aHas ? -1 : 1;
+                }
+
+                return strcmp($a['user_name'], $b['user_name']);
+            });
+            $teamsData[] = [
+                'id' => $team->getId(),
+                'name' => $team->getName(),
+                'members' => $membersData,
+            ];
+        }
+
+        return $this->json([
+            'teams' => $teamsData,
+            'my_team_id' => $myTeamId,
+        ]);
+    }
+
     #[Route('/statuses', name: 'statuses', methods: ['GET'])]
     public function getParticipationStatuses(): JsonResponse
     {

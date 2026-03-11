@@ -229,7 +229,7 @@ export default function Home() {
             </Box>
           );
         })}
-        <Box sx={{ backgroundColor: '#4e4e4e', scrollSnapAlign: 'end' }}>
+        <Box sx={{ backgroundColor: '#4e4e4e', scrollSnapAlign: 'end', pb: { xs: user ? '56px' : 0, md: 0 } }}>
           <Footer />
         </Box>
       </Box>
