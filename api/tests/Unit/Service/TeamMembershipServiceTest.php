@@ -11,6 +11,7 @@ use App\Entity\Tournament;
 use App\Entity\TournamentTeam;
 use App\Entity\User;
 use App\Enum\CalendarEventPermissionType;
+use App\Repository\ParticipationRepository;
 use App\Service\TeamMembershipService;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -34,7 +35,8 @@ class TeamMembershipServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
-        $this->service = new TeamMembershipService($this->entityManager);
+        $participationRepository = $this->createMock(ParticipationRepository::class);
+        $this->service = new TeamMembershipService($this->entityManager, $participationRepository);
     }
 
     // ─── isUserTeamMemberForEvent ────────────────────────────────────────────

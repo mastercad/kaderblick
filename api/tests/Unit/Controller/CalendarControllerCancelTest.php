@@ -32,6 +32,7 @@ class CalendarControllerCancelTest extends TestCase
     private User&MockObject $user;
     private AuthorizationCheckerInterface&MockObject $authChecker;
     private ParticipationRepository&MockObject $participationRepo;
+    private TeamMembershipService&MockObject $teamMembershipService;
 
     protected function setUp(): void
     {
@@ -40,7 +41,7 @@ class CalendarControllerCancelTest extends TestCase
         $this->participationRepo = $this->createMock(ParticipationRepository::class);
         $calendarEventService = $this->createMock(CalendarEventService::class);
         $this->notificationService = $this->createMock(NotificationService::class);
-        $teamMembershipService = $this->createMock(TeamMembershipService::class);
+        $this->teamMembershipService = $this->createMock(TeamMembershipService::class);
 
         // Default repository stub: findBy() → [], getResult() → [] to prevent
         // foreach-null PHP warnings when tests don't set up an explicit repo mock.
@@ -68,7 +69,7 @@ class CalendarControllerCancelTest extends TestCase
             $this->participationRepo,
             $calendarEventService,
             $this->notificationService,
-            $teamMembershipService,
+            $this->teamMembershipService,
             $this->createMock(\Symfony\Component\EventDispatcher\EventDispatcherInterface::class),
         );
 
@@ -219,6 +220,10 @@ class CalendarControllerCancelTest extends TestCase
         $this->authChecker->method('isGranted')->willReturn(true);
         $this->entityManager->method('flush');
 
+        // The controller delegates recipient resolution to TeamMembershipService
+        $this->teamMembershipService->method('resolveEventRecipients')
+            ->willReturn([$recipientUser]);
+
         $this->notificationService->expects($this->once())
             ->method('createNotificationForUsers')
             ->with(
@@ -349,6 +354,10 @@ class CalendarControllerCancelTest extends TestCase
         $this->authChecker->method('isGranted')->willReturn(true);
         $this->entityManager->method('flush');
 
+        // The controller delegates recipient resolution to TeamMembershipService
+        $this->teamMembershipService->method('resolveEventRecipients')
+            ->willReturn([$recipientUser]);
+
         $this->notificationService->expects($this->once())
             ->method('createNotificationForUsers')
             ->with(
@@ -409,22 +418,12 @@ class CalendarControllerCancelTest extends TestCase
         $participantUser = $this->createMock(User::class);
         $participantUser->method('getId')->willReturn(77);
 
-        $mockParticipation = $this->createMock(\App\Entity\Participation::class);
-        $mockParticipation->method('getUser')->willReturn($participantUser);
-
-        // Mock the QueryBuilder chain on participationRepo
-        $qb = $this->createMock(QueryBuilder::class);
-        $query = $this->createMock(Query::class);
-        $qb->method('innerJoin')->willReturnSelf();
-        $qb->method('where')->willReturnSelf();
-        $qb->method('andWhere')->willReturnSelf();
-        $qb->method('setParameter')->willReturnSelf();
-        $qb->method('getQuery')->willReturn($query);
-        $query->method('getResult')->willReturn([$mockParticipation]);
-        $this->participationRepo->method('createQueryBuilder')->willReturn($qb);
-
         $this->authChecker->method('isGranted')->willReturn(true);
         $this->entityManager->method('flush');
+
+        // The controller delegates recipient resolution to TeamMembershipService
+        $this->teamMembershipService->method('resolveEventRecipients')
+            ->willReturn([$participantUser]);
 
         $this->notificationService->expects($this->once())
             ->method('createNotificationForUsers')
