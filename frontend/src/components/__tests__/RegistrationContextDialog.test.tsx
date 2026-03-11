@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import RegistrationContextDialog from '../RegistrationContextDialog';
+import RegistrationContextDialog from '../../modals/RegistrationContextDialog';
 
 // ────── MUI Mock ──────
 jest.mock('@mui/material', () => {
@@ -468,7 +468,7 @@ describe('RegistrationContextDialog', () => {
         // Step 3 always shows an info Alert + an error Alert = two Alerts
         const alerts = screen.getAllByTestId('Alert');
         const hasError = alerts.some(a =>
-          a.textContent?.includes('Der Antrag konnte nicht gesendet werden')
+          a.textContent?.includes('Network error')
         );
         expect(hasError).toBe(true);
       });

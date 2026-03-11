@@ -62,6 +62,8 @@ import { useTheme as useMuiTheme } from '@mui/material/styles';
 import { pushHealthMonitor, type PushHealthReport, type PushHealthStatus } from '../services/pushHealthMonitor';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import AddIcon from '@mui/icons-material/Add';
+import RegistrationContextDialog from './RegistrationContextDialog';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -243,7 +245,7 @@ export interface ProfileModalProps {
 // ─── ProfileModal ─────────────────────────────────────────────────────────────
 
 const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) => {
-  const { checkAuthStatus } = useAuth();
+  const { checkAuthStatus, user } = useAuth();
   const { mode, toggleTheme } = useTheme();
   const muiTheme = useMuiTheme();
   const isDark = muiTheme.palette.mode === 'dark';
@@ -270,6 +272,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
   const [message, setMessage] = React.useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [relations, setRelations] = React.useState<UserRelation[]>([]);
   const [relationsOpen, setRelationsOpen] = React.useState(false);
+  const [showRelationEditModal, setShowRelationEditModal] = React.useState(false);
   const [xpModalOpen, setXpModalOpen] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState(0);
 
@@ -646,15 +649,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
 
           {/* Quick action icons */}
           <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
-            <Tooltip title={relations.length > 0 ? `${relations.length} Verknüpfung(en)` : 'Keine Verknüpfungen'}>
-              <span>
-                <IconButton size="small"
-                  onClick={() => relations.length > 0 && setRelationsOpen(true)}
-                  disabled={relations.length === 0}
-                  sx={{ color: relations.length > 0 ? 'success.main' : 'text.disabled' }}>
-                  <LinkIcon />
-                </IconButton>
-              </span>
+            <Tooltip title={relations.length > 0 ? `${relations.length} Verknüpfung(en)` : 'Verknüpfung anfragen'}>
+              <IconButton size="small"
+                onClick={() => relations.length > 0 ? setRelationsOpen(true) : setShowRelationEditModal(true)}
+                sx={{ color: relations.length > 0 ? 'success.main' : 'text.secondary' }}>
+                <LinkIcon />
+              </IconButton>
             </Tooltip>
           </Box>
         </Box>
@@ -1096,7 +1096,19 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
         onClose={() => setRelationsOpen(false)}
         title="Verknüpfte Profile"
         maxWidth="sm"
-        actions={<Button onClick={() => setRelationsOpen(false)} variant="contained">Schließen</Button>}
+        actions={
+          <Stack direction="row" spacing={1.5} sx={{ width: '100%' }}>
+            <Button
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={() => { setRelationsOpen(false); setShowRelationEditModal(true); }}
+              fullWidth
+            >
+              Weitere Verknüpfung
+            </Button>
+            <Button onClick={() => setRelationsOpen(false)} variant="contained" fullWidth>Schließen</Button>
+          </Stack>
+        }
       >
         {relations.length === 0 ? (
           <Typography color="text.secondary">Keine Verknüpfungen vorhanden.</Typography>
@@ -1113,6 +1125,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
           </Stack>
         )}
       </BaseModal>
+      <RegistrationContextDialog
+        open={showRelationEditModal}
+        onClose={() => setShowRelationEditModal(false)}
+      />
     </>
   );
 };

@@ -66,7 +66,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import { PullToRefresh } from './components/PullToRefresh';
 import { PushWarningBanner } from './components/PushWarningBanner';
-import RegistrationContextDialog from './components/RegistrationContextDialog';
+import RegistrationContextDialog from './modals/RegistrationContextDialog';
 import QRCodeShareModal from './modals/QRCodeShareModal';
 
 
@@ -179,7 +179,7 @@ function App() {
                   onOpenQRShare={() => setShowQRShare(true)}
                 />
                 {!isHome && <PushWarningBanner />}
-              <Box component="main" sx={{ flex: 1, width: '100%', position: 'relative' }}>
+              <Box component="main" sx={{ flex: 1, width: '100%', position: 'relative', pb: { xs: user ? '64px' : 0, md: 0 } }}>
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/verify-email/:token" element={<VerifyEmail />} />
