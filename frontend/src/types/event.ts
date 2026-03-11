@@ -3,6 +3,8 @@ export interface User {
   fullName?: string;
   firstName?: string;
   lastName?: string;
+  /** Team/club context for disambiguation, e.g. "U17 · 1. Mannschaft" */
+  context?: string;
 }
 
 export interface EventData {

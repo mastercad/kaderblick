@@ -17,6 +17,7 @@ use DateTime;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\TestCase;
@@ -447,8 +448,213 @@ class UserContactServiceTest extends TestCase
     }
 
     // =========================================================================
+    // findAllUsers – context built from own assignments
+    // =========================================================================
+
+    public function testFindAllUsersReturnsEmptyWhenNoRelationsAndNoUsers(): void
+    {
+        $em = $this->buildEmForFindAllUsers([], []);
+        $service = new UserContactService($em);
+
+        $result = $service->findAllUsers($this->createMock(User::class));
+
+        $this->assertSame([], $result);
+    }
+
+    public function testFindAllUsersIncludesUserWithoutRelationWithEmptyContext(): void
+    {
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn(7);
+        $user->method('getFullName')->willReturn('Standalone User');
+
+        $em = $this->buildEmForFindAllUsers([], [$user]);
+        $service = new UserContactService($em);
+
+        $result = $service->findAllUsers($this->createMock(User::class));
+
+        $this->assertCount(1, $result);
+        $this->assertSame(7, $result[0]['id']);
+        $this->assertSame('Standalone User', $result[0]['fullName']);
+        $this->assertSame('', $result[0]['context']);
+    }
+
+    public function testFindAllUsersBuildsPlayerContextFromActiveTeamAssignment(): void
+    {
+        $team = $this->makeTeam(1, 'U17');
+        $pta = $this->makePTA($team, null, null);
+
+        $player = $this->createMock(Player::class);
+        $player->method('getPlayerTeamAssignments')->willReturn(new ArrayCollection([$pta]));
+        $player->method('getPlayerClubAssignments')->willReturn(new ArrayCollection());
+
+        $userMock = $this->createMock(User::class);
+        $userMock->method('getId')->willReturn(42);
+        $userMock->method('getFullName')->willReturn('Max Mustermann');
+
+        $relation = $this->createMock(UserRelation::class);
+        $relation->method('getUser')->willReturn($userMock);
+        $relation->method('getPlayer')->willReturn($player);
+        $relation->method('getCoach')->willReturn(null);
+
+        $em = $this->buildEmForFindAllUsers([$relation], [$userMock]);
+        $result = (new UserContactService($em))->findAllUsers($this->createMock(User::class));
+
+        $this->assertCount(1, $result);
+        $this->assertSame('Spieler · U17', $result[0]['context']);
+    }
+
+    public function testFindAllUsersBuildsCoachContextFromActiveTeamAssignment(): void
+    {
+        $team = $this->makeTeam(2, '1. Mannschaft');
+        $cta = $this->makeCTA($team, null, null);
+
+        $coach = $this->createMock(Coach::class);
+        $coach->method('getCoachTeamAssignments')->willReturn(new ArrayCollection([$cta]));
+        $coach->method('getCoachClubAssignments')->willReturn(new ArrayCollection());
+
+        $userMock = $this->createMock(User::class);
+        $userMock->method('getId')->willReturn(55);
+        $userMock->method('getFullName')->willReturn('Klaus Trainer');
+
+        $relation = $this->createMock(UserRelation::class);
+        $relation->method('getUser')->willReturn($userMock);
+        $relation->method('getPlayer')->willReturn(null);
+        $relation->method('getCoach')->willReturn($coach);
+
+        $em = $this->buildEmForFindAllUsers([$relation], [$userMock]);
+        $result = (new UserContactService($em))->findAllUsers($this->createMock(User::class));
+
+        $this->assertCount(1, $result);
+        $this->assertSame('Trainer · 1. Mannschaft', $result[0]['context']);
+    }
+
+    public function testFindAllUsersExcludesExpiredTeamAssignment(): void
+    {
+        $team = $this->makeTeam(3, 'U15');
+        $pta = $this->makePTA($team, new DateTime('-2 months'), new DateTime('-1 day'));
+
+        $player = $this->createMock(Player::class);
+        $player->method('getPlayerTeamAssignments')->willReturn(new ArrayCollection([$pta]));
+        $player->method('getPlayerClubAssignments')->willReturn(new ArrayCollection());
+
+        $userMock = $this->createMock(User::class);
+        $userMock->method('getId')->willReturn(77);
+        $userMock->method('getFullName')->willReturn('Alt Spieler');
+
+        $relation = $this->createMock(UserRelation::class);
+        $relation->method('getUser')->willReturn($userMock);
+        $relation->method('getPlayer')->willReturn($player);
+        $relation->method('getCoach')->willReturn(null);
+
+        $em = $this->buildEmForFindAllUsers([$relation], [$userMock]);
+        $result = (new UserContactService($em))->findAllUsers($this->createMock(User::class));
+
+        $this->assertCount(1, $result);
+        $this->assertSame('', $result[0]['context'], 'Expired assignment must not appear in context');
+    }
+
+    public function testFindAllUsersDeduplicatesIdenticalContextStrings(): void
+    {
+        $team = $this->makeTeam(1, 'U17');
+
+        $player = $this->createMock(Player::class);
+        $player->method('getPlayerTeamAssignments')->willReturn(new ArrayCollection([
+            $this->makePTA($team, null, null),
+            $this->makePTA($team, null, null), // duplicate
+        ]));
+        $player->method('getPlayerClubAssignments')->willReturn(new ArrayCollection());
+
+        $userMock = $this->createMock(User::class);
+        $userMock->method('getId')->willReturn(10);
+        $userMock->method('getFullName')->willReturn('Doppel User');
+
+        $relation = $this->createMock(UserRelation::class);
+        $relation->method('getUser')->willReturn($userMock);
+        $relation->method('getPlayer')->willReturn($player);
+        $relation->method('getCoach')->willReturn(null);
+
+        $em = $this->buildEmForFindAllUsers([$relation], [$userMock]);
+        $result = (new UserContactService($em))->findAllUsers($this->createMock(User::class));
+
+        $this->assertSame('Spieler · U17', $result[0]['context'], 'Duplicate contexts must be collapsed');
+    }
+
+    public function testFindAllUsersCombinesMultipleContextsWithPipe(): void
+    {
+        $teamA = $this->makeTeam(1, 'U17');
+        $teamB = $this->makeTeam(2, 'Reservemannschaft');
+
+        $player = $this->createMock(Player::class);
+        $player->method('getPlayerTeamAssignments')->willReturn(new ArrayCollection([
+            $this->makePTA($teamA, null, null),
+            $this->makePTA($teamB, null, null),
+        ]));
+        $player->method('getPlayerClubAssignments')->willReturn(new ArrayCollection());
+
+        $userMock = $this->createMock(User::class);
+        $userMock->method('getId')->willReturn(20);
+        $userMock->method('getFullName')->willReturn('Multi Team User');
+
+        $relation = $this->createMock(UserRelation::class);
+        $relation->method('getUser')->willReturn($userMock);
+        $relation->method('getPlayer')->willReturn($player);
+        $relation->method('getCoach')->willReturn(null);
+
+        $em = $this->buildEmForFindAllUsers([$relation], [$userMock]);
+        $result = (new UserContactService($em))->findAllUsers($this->createMock(User::class));
+
+        $this->assertStringContainsString('Spieler · U17', $result[0]['context']);
+        $this->assertStringContainsString('Spieler · Reservemannschaft', $result[0]['context']);
+        $this->assertStringContainsString(' | ', $result[0]['context']);
+    }
+
+    public function testFindAllUsersSortedAlphabetically(): void
+    {
+        $userZ = $this->createMock(User::class);
+        $userZ->method('getId')->willReturn(1);
+        $userZ->method('getFullName')->willReturn('Zara');
+
+        $userA = $this->createMock(User::class);
+        $userA->method('getId')->willReturn(2);
+        $userA->method('getFullName')->willReturn('Anna');
+
+        $em = $this->buildEmForFindAllUsers([], [$userZ, $userA]);
+        $result = (new UserContactService($em))->findAllUsers($this->createMock(User::class));
+
+        $this->assertSame(['Anna', 'Zara'], array_column($result, 'fullName'));
+    }
+
+    // =========================================================================
     // Factories
     // =========================================================================
+
+    /**
+     * @param UserRelation[] $relations
+     * @param User[]         $users
+     */
+    private function buildEmForFindAllUsers(array $relations, array $users): EntityManagerInterface
+    {
+        $relQuery = $this->createMock(Query::class);
+        $relQuery->method('getResult')->willReturn($relations);
+        $relQb = $this->buildQbMock($relQuery);
+
+        $userQuery = $this->createMock(Query::class);
+        $userQuery->method('getResult')->willReturn($users);
+        $userQb = $this->createMock(QueryBuilder::class);
+        $userQb->method('where')->willReturnSelf();
+        $userQb->method('andWhere')->willReturnSelf();
+        $userQb->method('setParameter')->willReturnSelf();
+        $userQb->method('getQuery')->willReturn($userQuery);
+
+        $userRepo = $this->createMock(EntityRepository::class);
+        $userRepo->method('createQueryBuilder')->willReturn($userQb);
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('createQueryBuilder')->willReturn($relQb);
+        $em->method('getRepository')->willReturn($userRepo);
+
+        return $em;
+    }
 
     /** @param UserRelation[] $relations */
     private function makeUser(array $relations): User

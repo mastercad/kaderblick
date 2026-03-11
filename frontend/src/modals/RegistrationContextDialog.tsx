@@ -30,6 +30,7 @@ import { apiJson } from '../utils/api';
 interface EntityOption {
     id: number;
     fullName: string;
+    teams?: string[];
 }
 
 interface RelationType {
@@ -238,6 +239,18 @@ export default function RegistrationContextDialog({ open, onClose }: Props) {
                                     getOptionLabel={(o) => o.fullName}
                                     value={selectedEntity}
                                     onChange={(_, val) => setSelectedEntity(val)}
+                                    renderOption={(props, option) => (
+                                        <Box component="li" {...props}>
+                                            <Box>
+                                                <Typography variant="body2">{option.fullName}</Typography>
+                                                {option.teams && option.teams.length > 0 && (
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {option.teams.join(' · ')}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </Box>
+                                    )}
                                     renderInput={(params) => (
                                         <TextField
                                             {...params}

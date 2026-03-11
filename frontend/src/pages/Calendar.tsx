@@ -368,7 +368,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         setSearchParams({}, { replace: true });
       });
   }, [deepLinkEventId, events]);
-  const [users, setUsers] = useState<{ id: string | number; fullName?: string; firstName?: string; lastName?: string }[]>([]);
+  const [users, setUsers] = useState<{ id: string | number; fullName?: string; firstName?: string; lastName?: string; context?: string }[]>([]);
 
   // Filter State - Set mit aktiven Event-Type-IDs (standardmäßig alle aktiv)
   const [activeEventTypeIds, setActiveEventTypeIds] = useState<Set<number>>(new Set());
@@ -435,7 +435,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       apiJson<TeamsApiResponse[]>('/api/teams/list?context=match').catch(() => []),
       apiJson<{ createAndEditAllowed: boolean; entries: GameType[] }>('/api/game-types').catch(() => ({ createAndEditAllowed: false, entries: [] })),
       apiJson<LocationsApiResponse>('/api/locations').catch(() => ({ locations: [], permissions: { canCreate: false, canEdit: false, canView: false, canDelete: false } })),
-      apiJson<{ users: { id: string; firstName: string; lastName: string }[] }>('/api/users').catch(() => ({ users: [] }))
+      apiJson<{ users: { id: string; fullName: string; context?: string }[] }>('/api/users/contacts').catch(() => ({ users: [] }))
     ]).then(([eventTypesData, teamsData, allTeamsData, gameTypesData, locationsData, usersData]) => {
       // Defensive: handle possible error objects
       if ('error' in eventTypesData) {

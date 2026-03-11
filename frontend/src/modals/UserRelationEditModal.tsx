@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useToast } from '../context/ToastContext';
 import {
 	Button, Box, Typography, IconButton, TextField, MenuItem,
 	Checkbox, FormControlLabel, FormGroup, Divider, Chip,
@@ -20,8 +19,8 @@ export type RelationType = {
 	name: string;
 	category: 'player' | 'coach';
 };
-export type Player = { id: number; fullName: string };
-export type Coach = { id: number; fullName: string };
+export type Player = { id: number; fullName: string; teams?: string[] };
+export type Coach = { id: number; fullName: string; teams?: string[] };
 export type Relation = {
 	id?: string;
 	relationType: RelationType | null;
@@ -230,7 +229,16 @@ const UserRelationEditModal: React.FC<UserRelationEditModalProps> = ({ open, onC
 						helperText={!rel.relationType ? 'Bitte zuerst die Rolle auswählen' : undefined}
 					>
 						{entityOptions.map(p => (
-							<MenuItem key={p.id} value={p.id}>{p.fullName}</MenuItem>
+							<MenuItem key={p.id} value={p.id}>
+								<Box sx={{ lineHeight: 1.3 }}>
+									<div>{p.fullName}</div>
+									{p.teams && p.teams.length > 0 && (
+										<Box component="span" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+											{p.teams.join(' · ')}
+										</Box>
+									)}
+								</Box>
+							</MenuItem>
 						))}
 					</TextField>
 

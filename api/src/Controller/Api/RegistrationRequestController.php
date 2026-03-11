@@ -42,10 +42,18 @@ class RegistrationRequestController extends AbstractController
             'players' => array_map(fn (Player $p) => [
                 'id' => $p->getId(),
                 'fullName' => $p->getFullName(),
+                'teams' => array_values(array_unique(array_map(
+                    fn ($pta) => $pta->getTeam()->getName(),
+                    $p->getPlayerTeamAssignments()->toArray()
+                ))),
             ], $players),
             'coaches' => array_map(fn (Coach $c) => [
                 'id' => $c->getId(),
                 'fullName' => $c->getFullName(),
+                'teams' => array_values(array_unique(array_map(
+                    fn ($cta) => $cta->getTeam()->getName(),
+                    $c->getCoachTeamAssignments()->toArray()
+                ))),
             ], $coaches),
             'relationTypes' => array_map(fn (RelationType $rt) => [
                 'id' => $rt->getId(),
