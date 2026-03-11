@@ -26,13 +26,13 @@ jobs:
       # ------------------------------
       # Checkout repository
       # ------------------------------
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # ------------------------------
       # Cache Composer vendors
       # ------------------------------
       - name: Cache Composer vendors
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
