@@ -6,6 +6,10 @@ on:
   pull_request:
   workflow_call:
 
+permissions:
+  contents: read
+  pull-requests: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -17,9 +21,6 @@ jobs:
   frontend-qa:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      contents: read
-      pull-requests: write
 
     defaults:
       run:
@@ -88,9 +89,6 @@ jobs:
     needs: frontend-qa
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    permissions:
-      contents: read
-      pull-requests: write
 
     steps:
       - uses: actions/checkout@v3

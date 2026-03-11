@@ -10,6 +10,9 @@ jobs:
   quality-assurance:
     uses: ./.github/workflows/qa.yml
     secrets: inherit
+    permissions:
+      contents: read
+      pull-requests: write
 
   deployment:
     runs-on: ubuntu-latest
