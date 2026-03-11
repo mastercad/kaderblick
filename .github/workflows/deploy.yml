@@ -405,6 +405,10 @@ jobs:
             mkdir -p "$PROD_CURRENT/api/var"
             chmod -R 777 "$PROD_CURRENT/api/var"
 
+            # Composer install (vendor/ ist nicht im Image enthalten, liegt auf dem Volume)
+            docker compose -p production exec -T api \
+              composer install --no-dev --optimize-autoloader
+
             # Migrations auf Produktionsdatenbank
             docker compose -p production exec -T api \
               bin/console doctrine:migrations:migrate --no-interaction --env=prod
