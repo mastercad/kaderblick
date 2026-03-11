@@ -372,6 +372,7 @@ jobs:
             chmod -R 775 "$SHARED_UPLOADS"
 
             for DIR in "$PROD_DIR" "$STAGING_DIR"; do
+              mkdir -p "$DIR/public"
               rm -rf "$DIR/public/uploads"
               ln -s "$SHARED_UPLOADS" "$DIR/public/uploads"
             done
