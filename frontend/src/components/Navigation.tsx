@@ -50,6 +50,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import PollIcon from '@mui/icons-material/Poll';
 import SettingsIcon from '@mui/icons-material/Settings';
+import QrCode2Icon from '@mui/icons-material/QrCode2';
 import React, { useState, useMemo } from 'react';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
@@ -64,9 +65,10 @@ import { getAvatarFrameUrl } from '../utils/avatarFrame';
 interface NavigationProps {
   onOpenAuth: () => void;
   onOpenProfile: () => void;
+  onOpenQRShare: () => void;
 }
 
-export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProps) {
+export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }: NavigationProps) {
   const { user, isAuthenticated, logout, isSuperAdmin } = useAuth();
   const { isOnHeroSection } = useHomeScroll();
   const theme = useTheme();
@@ -671,6 +673,20 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
                 </Collapse>
               </>
             )}
+            {/* QR-Code teilen */}
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => {
+                  handleMobileMenuClose();
+                  onOpenQRShare();
+                }}
+              >
+                <Box sx={{ mr: 1.5, display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
+                  <QrCode2Icon fontSize="small" />
+                </Box>
+                <ListItemText primary="Registrierungs-QR-Code" />
+              </ListItemButton>
+            </ListItem>
           </List>
         </Box>
       </Drawer>
@@ -710,6 +726,10 @@ export default function Navigation({ onOpenAuth, onOpenProfile }: NavigationProp
               mr: 1
             }} />
           Profil
+        </MenuItem>
+        <MenuItem onClick={() => { handleClose(); onOpenQRShare(); }}>
+          <QrCode2Icon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} />
+          Registrierungs-QR-Code
         </MenuItem>
         <NavigationMessagesButton 
           variant="icon-with-text" 

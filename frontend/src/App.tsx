@@ -67,6 +67,7 @@ import ResetPassword from './pages/ResetPassword';
 import { PullToRefresh } from './components/PullToRefresh';
 import { PushWarningBanner } from './components/PushWarningBanner';
 import RegistrationContextDialog from './components/RegistrationContextDialog';
+import QRCodeShareModal from './modals/QRCodeShareModal';
 
 
 function App() {
@@ -76,10 +77,12 @@ function App() {
   const muiTheme = useMuiTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const [showAuth, setShowAuth] = useState(false);
+  const [authInitialTab, setAuthInitialTab] = useState<'login' | 'register'>('login');
   const [showProfile, setShowProfile] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
   const [messagesInitialId, setMessagesInitialId] = useState<string | undefined>();
   const [showRegistrationContext, setShowRegistrationContext] = useState(false);
+  const [showQRShare, setShowQRShare] = useState(false);
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isOnHeroSection } = useHomeScroll();
@@ -88,6 +91,7 @@ function App() {
   const showLoginButton = !isHome || (isHome && isOnHeroSection);
 
   // Deep-link: push notification with ?modal=messages&messageId=X
+  // Deep-link: ?modal=register → opens AuthModal on register tab
   useEffect(() => {
     const modal     = searchParams.get('modal');
     const messageId = searchParams.get('messageId');
@@ -98,6 +102,14 @@ function App() {
         const next = new URLSearchParams(prev.toString());
         next.delete('modal');
         next.delete('messageId');
+        return next;
+      }, { replace: true });
+    } else if (modal === 'register' && !user) {
+      setAuthInitialTab('register');
+      setShowAuth(true);
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev.toString());
+        next.delete('modal');
         return next;
       }, { replace: true });
     }
@@ -162,8 +174,9 @@ function App() {
             >
               <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
                 <Navigation
-                  onOpenAuth={() => setShowAuth(true)}
+                  onOpenAuth={() => { setAuthInitialTab('login'); setShowAuth(true); }}
                   onOpenProfile={() => setShowProfile(true)}
+                  onOpenQRShare={() => setShowQRShare(true)}
                 />
                 {!isHome && <PushWarningBanner />}
               <Box component="main" sx={{ flex: 1, width: '100%', position: 'relative' }}>
@@ -216,7 +229,7 @@ function App() {
                   <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
               </Box>
-              <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
+              <AuthModal open={showAuth} onClose={() => setShowAuth(false)} initialTab={authInitialTab} />
               <ProfileModal open={showProfile} onClose={() => setShowProfile(false)} />
               <MessagesModal
                 open={showMessages}
@@ -227,6 +240,7 @@ function App() {
                 open={showRegistrationContext}
                 onClose={() => setShowRegistrationContext(false)}
               />
+              <QRCodeShareModal open={showQRShare} onClose={() => setShowQRShare(false)} />
               {!isHome && (user ? (<FooterWithContact />) : (<Footer />))}
             </Box>
             </PullToRefresh>
