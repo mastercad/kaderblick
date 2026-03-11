@@ -396,12 +396,14 @@ jobs:
 
             # Symlink auf neues Production-Release setzen
             ln -sfn "${{ steps.release.outputs.prod_dir }}" "$PROD_CURRENT"
-            chmod -R 777 "$PROD_CURRENT/api/var"
 
             # Production-Container mit getaggten Images starten (kein --build)
             cd "$PROD_CURRENT"
             DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
             docker compose -p production up -d --force-recreate api frontend
+
+            mkdir -p "$PROD_CURRENT/api/var"
+            chmod -R 777 "$PROD_CURRENT/api/var"
 
             # Migrations auf Produktionsdatenbank
             docker compose -p production exec -T api \
