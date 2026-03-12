@@ -284,6 +284,8 @@ jobs:
             ln -sfn "${{ steps.release.outputs.staging_dir }}" "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
             mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/cache" \
                      "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/log"
+            chown -R www-data:www-data "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
+            chmod -R 775 "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
 
       # ------------------------------
       # Deploy Staging containers (persistent)
@@ -320,6 +322,8 @@ jobs:
               up -d --build --force-recreate api frontend
 
             mkdir -p "$STAGING_CURRENT/api/var"
+            chown -R www-data:www-data "$STAGING_CURRENT/api/var"
+            chmod -R 775 "$STAGING_CURRENT/api/var"
 
       # ------------------------------
       # Staging: Composer, Migrations, Secrets, JWT
@@ -380,10 +384,6 @@ jobs:
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
               exec -T --user www-data api bin/console cache:warmup --env=staging
 
-            # Rechte erst NACH allen Console-Befehlen setzen – sonst überschreibt root sie wieder
-            chown -R www-data:www-data "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
-            chmod -R 775 "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
-
       # ------------------------------
       # Prepare shared uploads symlinks (Production und Staging)
       # ------------------------------
@@ -426,8 +426,9 @@ jobs:
             PROD_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
             OLD_PROD=$(readlink "$PROD_CURRENT" 2>/dev/null || echo "")
             NEW_PROD="${{ steps.release.outputs.prod_dir }}"
+            MAINTENANCE_FLAG="${{ secrets.MAIN_PROJECT_PATH }}/maintenance.flag"
 
-            # Rollback-Funktion: wird bei jedem Fehler (trap EXIT) aufgerufen
+            # Rollback-Funktion: wird bei jedem Script-Exit aufgerufen (Erfolg UND Fehler)
             rollback() {
               local EXIT_CODE=$?
               if [ $EXIT_CODE -ne 0 ]; then
@@ -444,8 +445,16 @@ jobs:
                   echo "FEHLER (Exit $EXIT_CODE) – kein vorheriges Release zum Rollback vorhanden."
                 fi
               fi
+              # Maintenance-Flag immer entfernen – egal ob Erfolg oder Fehler
+              rm -f "$MAINTENANCE_FLAG"
+              echo "Maintenance-Modus deaktiviert."
             }
             trap rollback EXIT
+
+            # Maintenance-Modus aktivieren: Nginx leitet ab sofort auf Port 8083 um
+            echo "Aktiviere Maintenance-Modus..."
+            touch "$MAINTENANCE_FLAG"
+            chmod 644 "$MAINTENANCE_FLAG"
 
             # Alte Production-Container stoppen
             docker compose -p production down --remove-orphans api frontend 2>/dev/null || true
@@ -453,6 +462,8 @@ jobs:
             # Symlink auf neues Production-Release setzen
             ln -sfn "$NEW_PROD" "$PROD_CURRENT"
             mkdir -p "$PROD_CURRENT/api/var/cache" "$PROD_CURRENT/api/var/log"
+            chown -R www-data:www-data "$PROD_CURRENT/api/var"
+            chmod -R 775 "$PROD_CURRENT/api/var"
 
             # Production-Container mit eigenem Build starten
             # VITE_BACKEND_URL wird zur Build-Zeit ins JS-Bundle eingebettet → muss korrekt sein!
@@ -486,10 +497,6 @@ jobs:
               cp api/config/jwt/private.pem "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/private.pem" || true
               cp api/config/jwt/public.pem "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/public.pem" || true
             fi
-
-            # Rechte erst NACH allen Console-Befehlen setzen – sonst überschreibt root sie wieder
-            chown -R www-data:www-data "$PROD_CURRENT/api/var"
-            chmod -R 775 "$PROD_CURRENT/api/var"
 
             # Healthcheck: API muss innerhalb von 60s antworten
             echo "Warte auf API-Bereitschaft..."
