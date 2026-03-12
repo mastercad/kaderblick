@@ -235,7 +235,7 @@ jobs:
 
             # Secrets in .env.staging.local
             mkdir -p "$STAGING_DIR/api/config/secrets/staging"
-            echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > "$STAGING_DIR/api/config/secrets/staging/staging.decrypt.private.php"
+            echo '${{ secrets.STAGING_DECRYPT_KEY }}' | base64 -d > "$STAGING_DIR/api/config/secrets/staging/staging.decrypt.private.php"
             chmod 655 "$STAGING_DIR/api/config/secrets/staging/staging.decrypt.private.php"
             echo "VITE_BACKEND_URL=https://staging-api.kaderblick.de" > "$STAGING_DIR/frontend/.env"
 
