@@ -49,6 +49,22 @@ jobs:
       - uses: actions/checkout@v4
 
       # ------------------------------
+      # Enable maintenance mode
+      # Ab jetzt leitet Nginx alle Anfragen auf den Maintenance-Container um.
+      # Wird am Ende (if: always()) wieder entfernt.
+      # ------------------------------
+      - name: Enable maintenance mode
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            touch "${{ secrets.MAIN_PROJECT_PATH }}/maintenance.flag"
+            chmod 644 "${{ secrets.MAIN_PROJECT_PATH }}/maintenance.flag"
+            echo "Maintenance-Modus aktiviert."
+
+      # ------------------------------
       # Generate release directory names (Production & Staging)
       # Gleicher Timestamp → leicht zuzuordnen
       # ------------------------------
@@ -341,23 +357,23 @@ jobs:
               exec -T api chmod -R 775 /var/www/symfony/var
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api composer install --no-dev --optimize-autoloader
+              exec -T --user www-data api composer install --no-dev --optimize-autoloader
 
             # Secrets zuerst entschlüsseln, damit cache:warmup alle Env-Werte kennt
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api bin/console secrets:decrypt-to-local --force --env=staging
+              exec -T --user www-data api bin/console secrets:decrypt-to-local --force --env=staging
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
               exec -T --user www-data api bin/console cache:warmup --env=staging
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=staging
+              exec -T --user www-data api bin/console doctrine:migrations:migrate --no-interaction --env=staging
 
             # JWT-Keys: PKCS#1-Format (BEGIN RSA PRIVATE KEY) ist nicht kompatibel mit OpenSSL 3.x
             if [ ! -f api/config/jwt/private.pem ] || ! grep -q "BEGIN PRIVATE KEY" api/config/jwt/private.pem; then
               echo "JWT-Keys fehlen oder im PKCS#1-Format – regeneriere als PKCS#8..."
               docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-                exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
+                exec -T --user www-data api php bin/console lexik:jwt:generate-keypair --overwrite
             fi
 
       # ------------------------------
@@ -374,13 +390,13 @@ jobs:
             cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api env APP_ENV=dev composer install
+              exec -T --user www-data api env APP_ENV=dev composer install
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
               exec -T --user www-data api bin/console doctrine:fixtures:load --env=dev --no-interaction --append --group=master
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api composer install --no-dev --optimize-autoloader
+              exec -T --user www-data api composer install --no-dev --optimize-autoloader
 
             # Cache nach Dev-Reinstall neu aufbauen
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
@@ -428,7 +444,6 @@ jobs:
             PROD_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
             OLD_PROD=$(readlink "$PROD_CURRENT" 2>/dev/null || echo "")
             NEW_PROD="${{ steps.release.outputs.prod_dir }}"
-            MAINTENANCE_FLAG="${{ secrets.MAIN_PROJECT_PATH }}/maintenance.flag"
 
             # Rollback-Funktion: wird bei jedem Script-Exit aufgerufen (Erfolg UND Fehler)
             rollback() {
@@ -447,16 +462,8 @@ jobs:
                   echo "FEHLER (Exit $EXIT_CODE) – kein vorheriges Release zum Rollback vorhanden."
                 fi
               fi
-              # Maintenance-Flag immer entfernen – egal ob Erfolg oder Fehler
-              rm -f "$MAINTENANCE_FLAG"
-              echo "Maintenance-Modus deaktiviert."
             }
             trap rollback EXIT
-
-            # Maintenance-Modus aktivieren: Nginx leitet ab sofort auf Port 8083 um
-            echo "Aktiviere Maintenance-Modus..."
-            touch "$MAINTENANCE_FLAG"
-            chmod 644 "$MAINTENANCE_FLAG"
 
             # Alte Production-Container stoppen
             docker compose -p production down --remove-orphans api frontend 2>/dev/null || true
@@ -479,24 +486,24 @@ jobs:
               chmod -R 775 /var/www/symfony/var
 
             # Composer, Migrations, Secrets, JWT
-            docker compose -p production exec -T api \
+            docker compose -p production exec -T --user www-data api \
               composer install --no-dev --optimize-autoloader
 
             # Secrets zuerst entschlüsseln, damit cache:warmup alle Env-Werte kennt
-            docker compose -p production exec -T api \
+            docker compose -p production exec -T --user www-data api \
               bin/console secrets:decrypt-to-local --force --env=prod
 
             docker compose -p production exec -T --user www-data api \
               bin/console cache:warmup --env=prod
 
-            docker compose -p production exec -T api \
+            docker compose -p production exec -T --user www-data api \
               bin/console doctrine:migrations:migrate --no-interaction --env=prod
 
             # JWT-Keys: PKCS#1-Format (BEGIN RSA PRIVATE KEY) ist nicht kompatibel mit OpenSSL 3.x
             # Bei fehlendem oder veraltetem Format: neue PKCS#8-Keys generieren und persistent speichern
             if [ ! -f api/config/jwt/private.pem ] || ! grep -q "BEGIN PRIVATE KEY" api/config/jwt/private.pem; then
               echo "JWT-Keys fehlen oder im PKCS#1-Format – regeneriere als PKCS#8..."
-              docker compose -p production exec -T api \
+              docker compose -p production exec -T --user www-data api \
                 php bin/console lexik:jwt:generate-keypair --overwrite
               # Neue PKCS#8-Keys persistent im ROOT_DIR ablegen → wird beim nächsten Deploy kopiert
               mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt"
@@ -547,3 +554,18 @@ jobs:
             if [ -d "$BASE/staging_releases" ]; then
               cd "$BASE/staging_releases" && ls -1dt * | tail -n +4 | xargs -r rm -rf
             fi
+
+      # ------------------------------
+      # Disable maintenance mode
+      # Läuft immer – auch bei Fehlern in vorherigen Steps.
+      # ------------------------------
+      - name: Disable maintenance mode
+        if: always()
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            rm -f "${{ secrets.MAIN_PROJECT_PATH }}/maintenance.flag"
+            echo "Maintenance-Modus deaktiviert."
