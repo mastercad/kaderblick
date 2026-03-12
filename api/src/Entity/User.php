@@ -95,6 +95,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTime $apiTokenCreatedAt = null;
 
+    /**
+     * Zeitstempel der letzten API-Aktivität des Benutzers.
+     * Wird vom UserActivitySubscriber bei jedem authentifizierten Request (max. alle 5 Min.) aktualisiert.
+     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?DateTime $lastActivityAt = null;
+
     #[ORM\OneToOne(mappedBy: 'user', targetEntity: UserLevel::class, cascade: ['persist', 'remove'])]
     private ?UserLevel $userLevel = null;
 
@@ -485,6 +492,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setApiTokenCreatedAt(?DateTime $apiTokenCreatedAt): self
     {
         $this->apiTokenCreatedAt = $apiTokenCreatedAt;
+
+        return $this;
+    }
+
+    public function getLastActivityAt(): ?DateTime
+    {
+        return $this->lastActivityAt;
+    }
+
+    public function setLastActivityAt(?DateTime $lastActivityAt): self
+    {
+        $this->lastActivityAt = $lastActivityAt;
 
         return $this;
     }

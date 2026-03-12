@@ -297,21 +297,33 @@ class TeamsController extends AbstractController
         $players = $team->getCurrentPlayers();
         $result = [];
         foreach ($players as $player) {
-            $shirtNumber = '';
+            $shirtNumber = null;
             foreach ($player->getPlayerTeamAssignments() as $pta) {
                 if ($pta->getTeam()->getId() === $team->getId()) {
                     $shirtNumber = $pta->getShirtNumber();
                     break;
                 }
             }
-            $result[$shirtNumber] = [
+            $result[] = [
                 'id' => $player->getId(),
                 'fullName' => $player->getFirstName() . ' ' . $player->getLastName(),
                 'shirtNumber' => $shirtNumber,
             ];
         }
 
-        ksort($result);
+        usort($result, static function (array $a, array $b): int {
+            if ($a['shirtNumber'] === $b['shirtNumber']) {
+                return strcmp((string) $a['fullName'], (string) $b['fullName']);
+            }
+            if (null === $a['shirtNumber']) {
+                return 1;
+            }
+            if (null === $b['shirtNumber']) {
+                return -1;
+            }
+
+            return (int) $a['shirtNumber'] <=> (int) $b['shirtNumber'];
+        });
 
         return $this->json($result);
     }

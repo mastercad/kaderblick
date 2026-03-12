@@ -50,6 +50,24 @@ export async function fetchSubstitutionReasons(): Promise<SubstitutionReason[]> 
   return apiJson<SubstitutionReason[]>('/api/substitution-reasons');
 }
 
+// Squad (bestätigter Kader) für ein Spiel laden
+export interface SquadPlayer {
+  id: number;
+  fullName: string;
+  shirtNumber: number | null;
+  teamId: number;
+}
+
+export interface GameSquadData {
+  squad: SquadPlayer[];
+  /** true wenn überhaupt Teilnahme-Daten für den CalendarEvent existieren */
+  hasParticipationData: boolean;
+}
+
+export async function fetchGameSquad(gameId: number): Promise<GameSquadData> {
+  return apiJson<GameSquadData>(`/api/games/${gameId}/squad`);
+}
+
 // Turnier-Details laden
 export async function fetchTournamentDetails(tournamentId: number): Promise<TournamentDetail> {
   return apiJson<TournamentDetail>(`/api/tournaments/${tournamentId}`);
