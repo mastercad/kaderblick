@@ -16,7 +16,7 @@ services:
     container_name: kaderblick-maintenance
     restart: unless-stopped
     ports:
-      - "${MAINTENANCE_PORT:-8082}:80"
+      - "${MAINTENANCE_PORT:-8083}:80"
     networks:
       - kaderblick-net
 
