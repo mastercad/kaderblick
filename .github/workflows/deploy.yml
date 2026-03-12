@@ -225,7 +225,7 @@ jobs:
             echo "DB-Klon abgeschlossen."
 
       # ------------------------------
-      # Set staging_current symlink (vor Container-Start, damit Restart-Policies stimmen)
+      # Set staging_current symlink
       # ------------------------------
       - name: Set staging_current symlink
         uses: appleboy/ssh-action@master
@@ -274,6 +274,9 @@ jobs:
               -f docker-compose.staging.yml \
               -p staging \
               up -d --build --force-recreate api frontend
+
+            mkdir -p "$STAGING_CURRENT/api/var"
+            chmod -R 777 "$STAGING_CURRENT/api/var"
 
       # ------------------------------
       # Staging: Composer, Migrations, Secrets, JWT
@@ -344,6 +347,7 @@ jobs:
             chmod -R 775 "$SHARED_UPLOADS"
 
             for DIR in "$PROD_DIR" "$STAGING_DIR"; do
+              mkdir -p "$DIR/public"
               rm -rf "$DIR/public/uploads"
               ln -s "$SHARED_UPLOADS" "$DIR/public/uploads"
             done
