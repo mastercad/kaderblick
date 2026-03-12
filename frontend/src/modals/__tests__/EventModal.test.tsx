@@ -19,6 +19,7 @@ jest.mock('../BaseModal', () => ({
 jest.mock('../../hooks/useEventData', () => ({
   useTournamentMatches: () => ({ tournamentMatches: [], setTournamentMatches: jest.fn() }),
   useLeagues: () => [],
+  useCups: () => [],
   useReloadTournamentMatches: () => jest.fn(),
 }));
 
