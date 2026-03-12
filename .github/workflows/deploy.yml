@@ -218,7 +218,7 @@ jobs:
             cp "$PROD_DIR/api/.env.dist" "$PROD_DIR/api/.env"
             sed -i 's/^APP_ENV=.*$/APP_ENV=prod/' "$PROD_DIR/api/.env"
             echo "APP_DEBUG=0" >> "$PROD_DIR/api/.env"
-            printf "APP_SECRET=${{ secrets.APP_SECRET }}\n" > "$PROD_DIR/api/.env"
+            printf "APP_SECRET=${{ secrets.APP_SECRET }}\n" >> "$PROD_DIR/api/.env"
 
             # Secrets in .env.prod.local
             mkdir -p "$PROD_DIR/api/config/secrets/prod"
@@ -231,7 +231,7 @@ jobs:
             cp "$STAGING_DIR/api/.env.dist" "$STAGING_DIR/api/.env"
             sed -i 's/^APP_ENV=.*$/APP_ENV=staging/' "$STAGING_DIR/api/.env"
             echo "APP_DEBUG=0" >> "$STAGING_DIR/api/.env"
-            printf "APP_SECRET=${{ secrets.APP_SECRET }}\n" > "$STAGING_DIR/api/.env"
+            printf "APP_SECRET=${{ secrets.APP_SECRET }}\n" >> "$STAGING_DIR/api/.env"
 
             # Secrets in .env.staging.local
             mkdir -p "$STAGING_DIR/api/config/secrets/staging"
