@@ -284,8 +284,6 @@ jobs:
             ln -sfn "${{ steps.release.outputs.staging_dir }}" "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
             mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/cache" \
                      "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/log"
-            chown -R www-data:www-data "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
-            chmod -R 775 "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
 
       # ------------------------------
       # Deploy Staging containers (persistent)
@@ -322,8 +320,6 @@ jobs:
               up -d --build --force-recreate api frontend
 
             mkdir -p "$STAGING_CURRENT/api/var"
-            chown -R www-data:www-data "$STAGING_CURRENT/api/var"
-            chmod -R 775 "$STAGING_CURRENT/api/var"
 
       # ------------------------------
       # Staging: Composer, Migrations, Secrets, JWT
@@ -337,6 +333,12 @@ jobs:
           script: |
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
+
+            # Rechte im Container setzen – www-data-UID stimmt garantiert mit dem Container überein
+            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
+              exec -T api chown -R www-data:www-data /var/www/symfony/var
+            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
+              exec -T api chmod -R 775 /var/www/symfony/var
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
               exec -T api composer install --no-dev --optimize-autoloader
@@ -462,8 +464,6 @@ jobs:
             # Symlink auf neues Production-Release setzen
             ln -sfn "$NEW_PROD" "$PROD_CURRENT"
             mkdir -p "$PROD_CURRENT/api/var/cache" "$PROD_CURRENT/api/var/log"
-            chown -R www-data:www-data "$PROD_CURRENT/api/var"
-            chmod -R 775 "$PROD_CURRENT/api/var"
 
             # Production-Container mit eigenem Build starten
             # VITE_BACKEND_URL wird zur Build-Zeit ins JS-Bundle eingebettet → muss korrekt sein!
@@ -471,6 +471,12 @@ jobs:
             DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
             VITE_BACKEND_URL=https://api.kaderblick.de \
             docker compose -p production up -d --build --force-recreate api frontend
+
+            # Rechte im Container setzen – www-data-UID stimmt garantiert mit dem Container überein
+            docker compose -p production exec -T api \
+              chown -R www-data:www-data /var/www/symfony/var
+            docker compose -p production exec -T api \
+              chmod -R 775 /var/www/symfony/var
 
             # Composer, Migrations, Secrets, JWT
             docker compose -p production exec -T api \
