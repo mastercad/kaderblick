@@ -4,6 +4,7 @@ import { useEventTypeFlags } from './useEventTypeFlags';
 import {
   STEP_BASE,
   STEP_DETAILS,
+  STEP_TIMING,
   STEP_MATCHES,
   STEP_PERMISSIONS,
   STEP_DESCRIPTION,
@@ -78,6 +79,7 @@ export function useEventWizard({
     if (isMatchEvent || isTournament) {
       s.push({ key: STEP_DETAILS, label: 'Spieldetails' });
       if (isTournament) s.push({ key: STEP_MATCHES, label: 'Begegnungen' });
+      if (!isTournament) s.push({ key: STEP_TIMING, label: 'Spielzeiten' });
     } else if (isTask) {
       s.push({ key: STEP_DETAILS, label: 'Aufgabe' });
     } else if (isTraining) {

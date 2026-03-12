@@ -409,4 +409,99 @@ class TeamsControllerTest extends ApiWebTestCase
         $this->assertEquals(1, $data['page']);
         $this->assertEquals(3, $data['limit']);
     }
+
+    // ────────────────────────────── Timing Defaults ──────────────────────────────
+
+    public function testShowIncludesTimingDefaultsFields(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com'); // ROLE_ADMIN
+
+        // Get a valid team id from the list
+        $client->request('GET', '/api/teams?page=1&limit=1');
+        $listData = json_decode($client->getResponse()->getContent(), true);
+        $this->assertNotEmpty($listData['teams'], 'Need at least one team fixture');
+        $teamId = $listData['teams'][0]['id'];
+
+        $client->request('GET', "/api/teams/{$teamId}/details");
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+
+        $this->assertArrayHasKey('team', $data);
+        $this->assertArrayHasKey('defaultHalfDuration', $data['team']);
+        $this->assertArrayHasKey('defaultHalftimeBreakDuration', $data['team']);
+    }
+
+    public function testListIncludesTimingDefaultsFields(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com'); // ROLE_ADMIN
+
+        $client->request('GET', '/api/teams/list?context=match');
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $this->assertNotEmpty($data['teams'], 'Need at least one team fixture');
+
+        $firstTeam = $data['teams'][0];
+        $this->assertArrayHasKey('defaultHalfDuration', $firstTeam);
+        $this->assertArrayHasKey('defaultHalftimeBreakDuration', $firstTeam);
+    }
+
+    public function testPatchTimingDefaultsSucceedsForAdmin(): void
+    {
+        $client = static::createClient();
+        $this->authenticateUser($client, 'user16@example.com'); // ROLE_ADMIN
+
+        // Get a team id
+        $client->request('GET', '/api/teams?page=1&limit=1');
+        $listData = json_decode($client->getResponse()->getContent(), true);
+        $this->assertNotEmpty($listData['teams'], 'Need at least one team fixture');
+        $teamId = $listData['teams'][0]['id'];
+
+        $client->request(
+            'PATCH',
+            "/api/teams/{$teamId}/timing-defaults",
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['defaultHalfDuration' => 40, 'defaultHalftimeBreakDuration' => 10])
+        );
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $this->assertTrue($data['success']);
+        $this->assertSame(40, $data['defaultHalfDuration']);
+        $this->assertSame(10, $data['defaultHalftimeBreakDuration']);
+
+        // Verify persisted: re-fetch details
+        $client->request('GET', "/api/teams/{$teamId}/details");
+        $detailsData = json_decode($client->getResponse()->getContent(), true);
+        $this->assertSame(40, $detailsData['team']['defaultHalfDuration']);
+        $this->assertSame(10, $detailsData['team']['defaultHalftimeBreakDuration']);
+    }
+
+    public function testPatchTimingDefaultsForbiddenForRegularUser(): void
+    {
+        $client = static::createClient();
+        // user16 is admin, get team first with admin
+        $this->authenticateUser($client, 'user16@example.com');
+        $client->request('GET', '/api/teams?page=1&limit=1');
+        $listData = json_decode($client->getResponse()->getContent(), true);
+        $this->assertNotEmpty($listData['teams'], 'Need at least one team fixture');
+        $teamId = $listData['teams'][0]['id'];
+
+        // Now switch to a regular user who is not a coach of this team
+        // user1@example.com is a player (no coach role)
+        $this->authenticateUser($client, 'user1@example.com');
+        $client->request(
+            'PATCH',
+            "/api/teams/{$teamId}/timing-defaults",
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['defaultHalfDuration' => 99])
+        );
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+    }
 }

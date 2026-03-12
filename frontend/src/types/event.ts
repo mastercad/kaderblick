@@ -51,6 +51,11 @@ export interface EventData {
   trainingWeekdays?: number[];  // 0=So, 1=Mo, 2=Di, 3=Mi, 4=Do, 5=Fr, 6=Sa
   trainingEndDate?: string;     // YYYY-MM-DD — end of recurring series
   trainingDuration?: number;    // Duration in minutes (default: 90)
+  // Game timing fields (only for Spiel events, not tournaments)
+  gameHalfDuration?: number;
+  gameHalftimeBreakDuration?: number;
+  gameFirstHalfExtraTime?: number | null;
+  gameSecondHalfExtraTime?: number | null;
   // Tournament fields
   tournamentId?: string;
   tournamentMatchId?: string;

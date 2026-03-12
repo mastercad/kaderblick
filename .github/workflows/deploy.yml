@@ -11,14 +11,16 @@ env:
 
 # Ablauf:
 #   1. Release-Verzeichnisse für Production (production_releases/) und Staging (staging_releases/)
-#      werden separat angelegt – beide bekommen denselben Build
+#      werden separat angelegt
 #   2. Produktionsdatenbank nach kaderblick_staging klonen
-#   3. Staging-Container starten (persistent, staging_current, Staging-DB)
+#   3. Staging-Container mit eigenem Build starten (VITE_BACKEND_URL=staging-api)
 #   4. Staging: Composer, Migrations, Secrets, Fixtures
-#   5. Images taggen (Staging-Build für Production wiederverwenden)
-#   6. Production-Container tauschen (production_current → neues Production-Release)
-#   7. Production: Migrations
-#   8. Alte Releases aufräumen
+#   5. Production-Container mit EIGENEM Build starten (VITE_BACKEND_URL=api.kaderblick.de)
+#   6. Production: Composer, Migrations, Secrets
+#   7. Alte Releases aufräumen
+#
+# WICHTIG: Staging und Production werden GETRENNT gebaut, da VITE_BACKEND_URL
+# zur Build-Zeit ins JS-Bundle eingebettet wird und sich unterscheidet!
 #
 # Serverstruktur:
 #   MAIN_PROJECT_PATH/
@@ -234,7 +236,10 @@ jobs:
           script: |
             set -e
             ln -sfn "${{ steps.release.outputs.staging_dir }}" "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
-            chmod -R 777 "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
+            mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/cache" \
+                     "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/log"
+            chown -R www-data:www-data "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
+            chmod -R 775 "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
 
       # ------------------------------
       # Deploy Staging containers (persistent)
@@ -320,37 +325,6 @@ jobs:
               exec -T api composer install --no-dev --optimize-autoloader
 
       # ------------------------------
-      # Tag Staging-Images als Production-Images
-      # Production startet ohne --build und nutzt diese Images direkt
-      # ------------------------------
-      - name: Tag Staging images as Production images
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            set -e
-
-            API_IMAGE_ID=$(docker images staging-api:latest --format "{{.ID}}" | head -n 1)
-            if [ -n "$API_IMAGE_ID" ]; then
-              docker tag "$API_IMAGE_ID" production-api:latest
-              echo "API-Image getaggt: $API_IMAGE_ID → production-api:latest"
-            else
-              echo "FEHLER: staging-api:latest nicht gefunden!" >&2
-              exit 1
-            fi
-
-            FRONTEND_IMAGE_ID=$(docker images staging-frontend:latest --format "{{.ID}}" | head -n 1)
-            if [ -n "$FRONTEND_IMAGE_ID" ]; then
-              docker tag "$FRONTEND_IMAGE_ID" production-frontend:latest
-              echo "Frontend-Image getaggt: $FRONTEND_IMAGE_ID → production-frontend:latest"
-            else
-              echo "FEHLER: staging-frontend:latest nicht gefunden!" >&2
-              exit 1
-            fi
-
-      # ------------------------------
       # Prepare shared uploads symlinks (Production und Staging)
       # ------------------------------
       - name: Prepare uploads symlinks
@@ -375,8 +349,10 @@ jobs:
             done
 
       # ------------------------------
-      # Deploy Production
-      # Kein --build: nutzt die vorher getaggten production-*:latest Images
+      # Deploy Production + Setup + Healthcheck + Rollback
+      # Eigener --build mit VITE_BACKEND_URL=https://api.kaderblick.de
+      # Bei Fehler: automatischer Rollback auf vorheriges Release
+      # HINWEIS: DB-Migrations lassen sich nicht automatisch rollbacken!
       # ------------------------------
       - name: Deploy Production
         uses: appleboy/ssh-action@master
@@ -387,22 +363,76 @@ jobs:
           script: |
             set -e
             PROD_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
+            OLD_PROD=$(readlink "$PROD_CURRENT" 2>/dev/null || echo "")
+            NEW_PROD="${{ steps.release.outputs.prod_dir }}"
+
+            # Rollback-Funktion: wird bei jedem Fehler (trap EXIT) aufgerufen
+            rollback() {
+              local EXIT_CODE=$?
+              if [ $EXIT_CODE -ne 0 ]; then
+                if [ -n "$OLD_PROD" ] && [ -d "$OLD_PROD" ]; then
+                  echo "FEHLER (Exit $EXIT_CODE) – Starte Rollback auf $OLD_PROD ..."
+                  docker compose -p production down --remove-orphans api frontend 2>/dev/null || true
+                  ln -sfn "$OLD_PROD" "$PROD_CURRENT"
+                  cd "$OLD_PROD"
+                  DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
+                  VITE_BACKEND_URL=https://api.kaderblick.de \
+                  docker compose -p production up -d --force-recreate api frontend 2>/dev/null || true
+                  echo "Rollback abgeschlossen → $OLD_PROD"
+                else
+                  echo "FEHLER (Exit $EXIT_CODE) – kein vorheriges Release zum Rollback vorhanden."
+                fi
+              fi
+            }
+            trap rollback EXIT
 
             # Alte Production-Container stoppen
             docker compose -p production down --remove-orphans api frontend 2>/dev/null || true
 
             # Symlink auf neues Production-Release setzen
-            ln -sfn "${{ steps.release.outputs.prod_dir }}" "$PROD_CURRENT"
-            chmod -R 777 "$PROD_CURRENT/api/var"
+            ln -sfn "$NEW_PROD" "$PROD_CURRENT"
+            mkdir -p "$PROD_CURRENT/api/var/cache" "$PROD_CURRENT/api/var/log"
+            chown -R www-data:www-data "$PROD_CURRENT/api/var"
+            chmod -R 775 "$PROD_CURRENT/api/var"
 
-            # Production-Container mit getaggten Images starten (kein --build)
+            # Production-Container mit eigenem Build starten
+            # VITE_BACKEND_URL wird zur Build-Zeit ins JS-Bundle eingebettet → muss korrekt sein!
             cd "$PROD_CURRENT"
             DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
-            docker compose -p production up -d --force-recreate api frontend
+            VITE_BACKEND_URL=https://api.kaderblick.de \
+            docker compose -p production up -d --build --force-recreate api frontend
 
-            # Migrations auf Produktionsdatenbank
+            # Composer, Migrations, Secrets, JWT
+            docker compose -p production exec -T api \
+              composer install --no-dev --optimize-autoloader
+
             docker compose -p production exec -T api \
               bin/console doctrine:migrations:migrate --no-interaction --env=prod
+
+            docker compose -p production exec -T api \
+              bin/console secrets:decrypt-to-local --force --env=prod
+
+            if [ ! -f api/config/jwt/private.pem ] || [ ! -f api/config/jwt/public.pem ]; then
+              docker compose -p production exec -T api \
+                php bin/console lexik:jwt:generate-keypair --overwrite
+            fi
+
+            # Healthcheck: API muss innerhalb von 60s antworten
+            echo "Warte auf API-Bereitschaft..."
+            for i in $(seq 1 12); do
+              HTTP_CODE=$(docker compose -p production exec -T api \
+                curl -s -o /dev/null -w "%{http_code}" http://localhost/ 2>/dev/null || echo "000")
+              if [ "$HTTP_CODE" != "000" ] && [ "$HTTP_CODE" != "500" ] && [ "$HTTP_CODE" != "502" ] && [ "$HTTP_CODE" != "503" ]; then
+                echo "API antwortet mit HTTP $HTTP_CODE – Deployment erfolgreich."
+                break
+              fi
+              if [ "$i" -eq 12 ]; then
+                echo "FEHLER: API antwortet nach 60s nicht korrekt (HTTP $HTTP_CODE)" >&2
+                exit 1
+              fi
+              echo "Warte... ($i/12, HTTP $HTTP_CODE)"
+              sleep 5
+            done
 
       # ------------------------------
       # Cleanup: alte Releases (letzte 3 behalten, jeweils getrennt)

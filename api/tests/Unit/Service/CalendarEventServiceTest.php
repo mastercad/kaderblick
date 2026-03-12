@@ -513,4 +513,176 @@ class CalendarEventServiceTest extends TestCase
         $this->assertNotNull($result);
         $this->assertStringContainsString('Turnier', $result);
     }
+
+    // ────────────── Game Timing Fields ──────────────────────────────────────
+
+    public function testGameTimingFieldsAppliedWhenSpielEventCreated(): void
+    {
+        $spielType = $this->createConfiguredMock(CalendarEventType::class, ['getId' => 1]);
+
+        $repo = $this->getMockBuilder(\Doctrine\ORM\EntityRepository::class)
+            ->disableOriginalConstructor()->onlyMethods(['findOneBy'])->getMock();
+        $repo->method('findOneBy')->willReturnCallback(fn (array $c) => match ($c['name'] ?? '') {
+            'Spiel'  => $spielType,
+            default  => null,
+        });
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('getRepository')->willReturn($repo);
+        $em->method('getReference')->willReturn($spielType);
+        $em->method('flush');
+
+        $security = $this->createMock(Security::class);
+        $security->method('getUser')->willReturn($this->createMock(User::class));
+        $validator = $this->createMock(ValidatorInterface::class);
+        $validator->method('validate')->willReturn(new ConstraintViolationList());
+
+        $service = new CalendarEventService(
+            $em,
+            $validator,
+            $this->createMock(EventDispatcherInterface::class),
+            $this->createMock(TaskEventGeneratorService::class),
+            $security,
+            $this->createMock(TeamMembershipService::class),
+        );
+
+        // CalendarEvent partial mock: only mock what we need, leave game/startDate real
+        $calendarEvent = $this->getMockBuilder(CalendarEvent::class)
+            ->onlyMethods(['getId', 'setTitle', 'setDescription', 'setCreatedBy', 'setCalendarEventType', 'setLocation', 'getCalendarEventType'])
+            ->getMock();
+        $calendarEvent->method('getId')->willReturn(null);
+        $calendarEvent->method('getCalendarEventType')->willReturn(null);
+
+        $data = [
+            'title'       => 'Testspiel',
+            'description' => '',
+            'startDate'   => '2025-06-01T15:00:00',
+            'eventTypeId' => 1,
+            'game'        => [
+                'halfDuration'          => 30,
+                'halftimeBreakDuration' => 10,
+                'firstHalfExtraTime'    => 2,
+                'secondHalfExtraTime'   => 3,
+            ],
+        ];
+
+        $service->updateEventFromData($calendarEvent, $data);
+
+        $game = $calendarEvent->getGame();
+        $this->assertNotNull($game, 'A Game entity should have been created');
+        $this->assertSame(30, $game->getHalfDuration());
+        $this->assertSame(10, $game->getHalftimeBreakDuration());
+        $this->assertSame(2, $game->getFirstHalfExtraTime());
+        $this->assertSame(3, $game->getSecondHalfExtraTime());
+    }
+
+    public function testAutoEndDateCalculatedFromTimingWhenNoEndDateProvided(): void
+    {
+        $spielType = $this->createConfiguredMock(CalendarEventType::class, ['getId' => 1]);
+
+        $repo = $this->getMockBuilder(\Doctrine\ORM\EntityRepository::class)
+            ->disableOriginalConstructor()->onlyMethods(['findOneBy'])->getMock();
+        $repo->method('findOneBy')->willReturnCallback(fn (array $c) => match ($c['name'] ?? '') {
+            'Spiel'  => $spielType,
+            default  => null,
+        });
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('getRepository')->willReturn($repo);
+        $em->method('getReference')->willReturn($spielType);
+        $em->method('flush');
+
+        $security = $this->createMock(Security::class);
+        $security->method('getUser')->willReturn($this->createMock(User::class));
+        $validator = $this->createMock(ValidatorInterface::class);
+        $validator->method('validate')->willReturn(new ConstraintViolationList());
+
+        $service = new CalendarEventService(
+            $em,
+            $validator,
+            $this->createMock(EventDispatcherInterface::class),
+            $this->createMock(TaskEventGeneratorService::class),
+            $security,
+            $this->createMock(TeamMembershipService::class),
+        );
+
+        $calendarEvent = $this->getMockBuilder(CalendarEvent::class)
+            ->onlyMethods(['getId', 'setTitle', 'setDescription', 'setCreatedBy', 'setCalendarEventType', 'setLocation', 'getCalendarEventType'])
+            ->getMock();
+        $calendarEvent->method('getId')->willReturn(null);
+        $calendarEvent->method('getCalendarEventType')->willReturn(null);
+
+        // No 'endDate' in data → service should auto-calculate from 45+15+45 = 105 min
+        $data = [
+            'title'       => 'Testspiel Endzeit',
+            'description' => '',
+            'startDate'   => '2025-06-01T19:00:00',
+            'eventTypeId' => 1,
+            'game'        => [
+                'halfDuration'          => 45,
+                'halftimeBreakDuration' => 15,
+            ],
+        ];
+
+        $service->updateEventFromData($calendarEvent, $data);
+
+        $endDate = $calendarEvent->getEndDate();
+        $this->assertNotNull($endDate, 'End date should have been auto-calculated');
+        $this->assertSame('2025-06-01 20:45:00', $endDate->format('Y-m-d H:i:s'));
+    }
+
+    public function testExplicitEndDateNotOverriddenByTimingAutoCalc(): void
+    {
+        $spielType = $this->createConfiguredMock(CalendarEventType::class, ['getId' => 1]);
+
+        $repo = $this->getMockBuilder(\Doctrine\ORM\EntityRepository::class)
+            ->disableOriginalConstructor()->onlyMethods(['findOneBy'])->getMock();
+        $repo->method('findOneBy')->willReturnCallback(fn (array $c) => match ($c['name'] ?? '') {
+            'Spiel'  => $spielType,
+            default  => null,
+        });
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('getRepository')->willReturn($repo);
+        $em->method('getReference')->willReturn($spielType);
+        $em->method('flush');
+
+        $security = $this->createMock(Security::class);
+        $security->method('getUser')->willReturn($this->createMock(User::class));
+        $validator = $this->createMock(ValidatorInterface::class);
+        $validator->method('validate')->willReturn(new ConstraintViolationList());
+
+        $service = new CalendarEventService(
+            $em,
+            $validator,
+            $this->createMock(EventDispatcherInterface::class),
+            $this->createMock(TaskEventGeneratorService::class),
+            $security,
+            $this->createMock(TeamMembershipService::class),
+        );
+
+        $calendarEvent = $this->getMockBuilder(CalendarEvent::class)
+            ->onlyMethods(['getId', 'setTitle', 'setDescription', 'setCreatedBy', 'setCalendarEventType', 'setLocation', 'getCalendarEventType'])
+            ->getMock();
+        $calendarEvent->method('getId')->willReturn(null);
+        $calendarEvent->method('getCalendarEventType')->willReturn(null);
+
+        $data = [
+            'title'       => 'Testspiel mit Endzeit',
+            'description' => '',
+            'startDate'   => '2025-06-01T19:00:00',
+            'endDate'     => '2025-06-01T22:00:00',  // explicit end time
+            'eventTypeId' => 1,
+            'game'        => [
+                'halfDuration'          => 45,
+                'halftimeBreakDuration' => 15,
+            ],
+        ];
+
+        $service->updateEventFromData($calendarEvent, $data);
+
+        $endDate = $calendarEvent->getEndDate();
+        $this->assertNotNull($endDate, 'EndDate should be set');
+        $this->assertSame('2025-06-01 22:00:00', $endDate->format('Y-m-d H:i:s'));
+    }
 }

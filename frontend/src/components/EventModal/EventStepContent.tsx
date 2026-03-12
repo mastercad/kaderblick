@@ -4,6 +4,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { EventBaseForm } from './EventBaseForm';
 import { GameEventFields } from './GameEventFields';
+import { GameTimingFields } from './GameTimingFields';
 import { TaskEventFields } from './TaskEventFields';
 import { TrainingEventFields } from './TrainingEventFields';
 import { PermissionFields } from './PermissionFields';
@@ -17,6 +18,7 @@ import { LocationField } from './LocationField';
 import {
   STEP_BASE,
   STEP_DETAILS,
+  STEP_TIMING,
   STEP_MATCHES,
   STEP_PERMISSIONS,
   STEP_DESCRIPTION,
@@ -61,6 +63,8 @@ interface EventStepContentProps {
   onSaveMatch: () => void;
   onCancelEdit: () => void;
   onDeleteMatch: (matchId: string | number) => void;
+  /** Per-team timing defaults, keyed by team id string. Used in STEP_TIMING. */
+  teamDefaultsMap?: Record<string, { defaultHalfDuration?: number | null; defaultHalftimeBreakDuration?: number | null }>;
 }
 
 /**
@@ -102,6 +106,7 @@ export const EventStepContent: React.FC<EventStepContentProps> = ({
   onSaveMatch,
   onCancelEdit,
   onDeleteMatch,
+  teamDefaultsMap = {},
 }) => {
   const selectedGameTypeLabel = gameTypes.find(gt => gt.value === event.gameType)?.label?.toLowerCase() ?? '';
   const isLiga  = selectedGameTypeLabel.includes('liga');
@@ -194,6 +199,18 @@ export const EventStepContent: React.FC<EventStepContentProps> = ({
           )}
         </Box>
       );
+
+    case STEP_TIMING: {
+      const homeTeamDefaults = event.homeTeam ? (teamDefaultsMap[event.homeTeam] ?? {}) : {};
+      return (
+        <GameTimingFields
+          formData={event}
+          onChange={handleChange}
+          teamDefaultHalfDuration={homeTeamDefaults.defaultHalfDuration}
+          teamDefaultHalftimeBreakDuration={homeTeamDefaults.defaultHalftimeBreakDuration}
+        />
+      );
+    }
 
     case STEP_MATCHES:
       return (

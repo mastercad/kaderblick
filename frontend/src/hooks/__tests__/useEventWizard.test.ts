@@ -55,15 +55,16 @@ describe('useEventWizard', () => {
     expect(result.current.steps[1].label).toBe('Aufgabe');
   });
 
-  it('spiel event has 3 steps: Basisdaten, Spieldetails, Beschreibung', () => {
+  it('spiel event has 4 steps: Basisdaten, Spieldetails, Spielzeiten, Beschreibung', () => {
     const { result } = renderHook(() =>
       useEventWizard(makeParams({ eventType: 'spiel' })),
     );
-    expect(result.current.steps.map(s => s.key)).toEqual(['base', 'details', 'description']);
+    expect(result.current.steps.map(s => s.key)).toEqual(['base', 'details', 'timing', 'description']);
     expect(result.current.steps[1].label).toBe('Spieldetails');
+    expect(result.current.steps[2].label).toBe('Spielzeiten');
   });
 
-  it('turnier event has 4 steps incl. Begegnungen', () => {
+  it('turnier event has 4 steps incl. Begegnungen but not Spielzeiten', () => {
     const { result } = renderHook(() =>
       useEventWizard(makeParams({ eventType: 'turnier' })),
     );

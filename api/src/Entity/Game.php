@@ -114,6 +114,36 @@ class Game
     private ?string $fussballDeUrl = null;
 
     /**
+     * Reguläre Halbzeitdauer in Minuten (z.B. 45 bei Erwachsenen, 30/35 bei Jugend).
+     */
+    #[Groups(['game:read', 'game:write'])]
+    #[ORM\Column(type: 'smallint', options: ['default' => 45])]
+    private int $halfDuration = 45;
+
+    /**
+     * Nachspielzeit der 1. Halbzeit in Minuten (nullable = nicht erfasst).
+     */
+    #[Groups(['game:read', 'game:write'])]
+    #[ORM\Column(type: 'smallint', nullable: true)]
+    private ?int $firstHalfExtraTime = null;
+
+    /**
+     * Nachspielzeit der 2. Halbzeit in Minuten (nullable = nicht erfasst).
+     */
+    #[Groups(['game:read', 'game:write'])]
+    #[ORM\Column(type: 'smallint', nullable: true)]
+    private ?int $secondHalfExtraTime = null;
+
+    /**
+     * Dauer der Halbzeitpause in Minuten.
+     * Wird für die Video-Timeline-Berechnung benötigt, da die Pause nicht in den
+     * Video-Aufnahmen enthalten ist, aber in den absoluten Event-Timestamps schon.
+     */
+    #[Groups(['game:read', 'game:write'])]
+    #[ORM\Column(type: 'smallint', options: ['default' => 15])]
+    private int $halftimeBreakDuration = 15;
+
+    /**
      * @var Collection<int, Video>
      */
     #[ORM\OneToMany(targetEntity: Video::class, mappedBy: 'game', orphanRemoval: true)]
@@ -384,7 +414,63 @@ class Game
         return $this;
     }
 
-    public function __toString()
+    public function getHalfDuration(): int
+    {
+        return $this->halfDuration;
+    }
+
+    public function setHalfDuration(int $halfDuration): self
+    {
+        $this->halfDuration = $halfDuration;
+
+        return $this;
+    }
+
+    public function getFirstHalfExtraTime(): ?int
+    {
+        return $this->firstHalfExtraTime;
+    }
+
+    public function setFirstHalfExtraTime(?int $firstHalfExtraTime): self
+    {
+        $this->firstHalfExtraTime = $firstHalfExtraTime;
+
+        return $this;
+    }
+
+    public function getSecondHalfExtraTime(): ?int
+    {
+        return $this->secondHalfExtraTime;
+    }
+
+    public function setSecondHalfExtraTime(?int $secondHalfExtraTime): self
+    {
+        $this->secondHalfExtraTime = $secondHalfExtraTime;
+
+        return $this;
+    }
+
+    public function getHalftimeBreakDuration(): int
+    {
+        return $this->halftimeBreakDuration;
+    }
+
+    public function setHalftimeBreakDuration(int $halftimeBreakDuration): self
+    {
+        $this->halftimeBreakDuration = $halftimeBreakDuration;
+
+        return $this;
+    }
+
+    /**
+     * Gibt die tatsächliche Dauer der 1. Halbzeit inkl. Nachspielzeit in Sekunden zurück.
+     */
+    public function getFirstHalfTotalSeconds(): int
+    {
+        return ($this->halfDuration + ($this->firstHalfExtraTime ?? 0)) * 60;
+    }
+
+    public function __toString(): string
     {
         return $this->getHomeTeam()?->getName() . ' : ' . $this->getAwayTeam()?->getName();
     }

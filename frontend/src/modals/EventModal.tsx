@@ -38,6 +38,7 @@ interface EventModalProps {
   users?: User[];
   loading?: boolean;
   onChange: (field: string, value: any) => void;
+  teamDefaultsMap?: Record<string, { defaultHalfDuration?: number | null; defaultHalftimeBreakDuration?: number | null }>;
 }
 
 /**
@@ -64,6 +65,7 @@ export const EventModal: React.FC<EventModalProps> = ({
   users = [],
   loading = false,
   onChange,
+  teamDefaultsMap = {},
 }) => {
   // For match/tournament events every team must be selectable as an opponent.
   // For training/permission fields only the user's own assigned teams are relevant.
@@ -238,6 +240,7 @@ export const EventModal: React.FC<EventModalProps> = ({
             onSaveMatch={matchHandlers.handleSaveMatch}
             onCancelEdit={matchHandlers.handleCancelEdit}
             onDeleteMatch={matchHandlers.handleDeleteMatch}
+            teamDefaultsMap={teamDefaultsMap}
           />
         </Box>
       </BaseModal>
