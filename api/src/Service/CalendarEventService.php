@@ -339,6 +339,32 @@ class CalendarEventService
             } elseif (array_key_exists('cupId', $data) && !$data['cupId']) {
                 $calendarEvent->getGame()?->setCup(null);
             }
+
+            // Game timing fields
+            if (isset($data['game']['halfDuration'])) {
+                $calendarEvent->getGame()?->setHalfDuration((int) $data['game']['halfDuration']);
+            }
+            if (isset($data['game']['halftimeBreakDuration'])) {
+                $calendarEvent->getGame()?->setHalftimeBreakDuration((int) $data['game']['halftimeBreakDuration']);
+            }
+            if (array_key_exists('firstHalfExtraTime', $data['game'] ?? [])) {
+                $val = $data['game']['firstHalfExtraTime'];
+                $calendarEvent->getGame()?->setFirstHalfExtraTime(null !== $val && '' !== $val ? (int) $val : null);
+            }
+            if (array_key_exists('secondHalfExtraTime', $data['game'] ?? [])) {
+                $val = $data['game']['secondHalfExtraTime'];
+                $calendarEvent->getGame()?->setSecondHalfExtraTime(null !== $val && '' !== $val ? (int) $val : null);
+            }
+        }
+
+        // Auto-calculate end date for Spiel events if not provided in payload
+        if ($isGameEvent && !$isTournamentPayload && !isset($data['endDate']) && null !== $calendarEvent->getStartDate()) {
+            $halfDur = $calendarEvent->getGame()?->getHalfDuration() ?? 45;
+            $breakDur = $calendarEvent->getGame()?->getHalftimeBreakDuration() ?? 15;
+            $totalMinutes = 2 * $halfDur + $breakDur;
+            $endDt = DateTime::createFromInterface($calendarEvent->getStartDate());
+            $endDt->modify("+{$totalMinutes} minutes");
+            $calendarEvent->setEndDate($endDt);
         }
 
         if (isset($data['task']) && is_array($data['task'])) {
@@ -784,7 +810,7 @@ class CalendarEventService
         $eventType = $calendarEvent->getCalendarEventType();
 
         // Für Spiel- und Aufgaben-Events keine Standard-Permissions erstellen
-        if (in_array($eventType->getName(), ['Spiel', 'Aufgabe'])) {
+        if (null === $eventType || in_array($eventType->getName(), ['Spiel', 'Aufgabe'])) {
             return;
         }
 

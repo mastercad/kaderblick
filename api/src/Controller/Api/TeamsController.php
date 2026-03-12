@@ -67,6 +67,8 @@ class TeamsController extends AbstractController
                     'id' => $team['league_id'],
                     'name' => $team['league_name'],
                 ],
+                'defaultHalfDuration' => isset($team['default_half_duration']) ? (int) $team['default_half_duration'] : null,
+                'defaultHalftimeBreakDuration' => isset($team['default_halftime_break_duration']) ? (int) $team['default_halftime_break_duration'] : null,
                 'permissions' => [
                     'canView' => true,
                     'canEdit' => $isAdmin || in_array($team['id'], $coachTeamIds),
@@ -140,6 +142,10 @@ class TeamsController extends AbstractController
                     'id' => $team->getLeague()?->getId(),
                     'name' => $team->getLeague()?->getName(),
                 ],
+                'defaultHalfDuration' => $team->getDefaultHalfDuration(),
+                'defaultHalftimeBreakDuration' => $team->getDefaultHalftimeBreakDuration(),
+                'fussballDeId' => $team->getFussballDeId(),
+                'fussballDeUrl' => $team->getFussballDeUrl(),
                 'permissions' => [
                     'canView' => $this->isGranted(TeamVoter::VIEW, $team),
                     'canEdit' => $this->isGranted(TeamVoter::EDIT, $team),
@@ -147,6 +153,42 @@ class TeamsController extends AbstractController
                     'canCreate' => $this->isGranted(TeamVoter::CREATE, $team)
                 ]
             ]
+        ]);
+    }
+
+    #[Route('/{id}/timing-defaults', name: 'api_team_timing_defaults', methods: ['PATCH'])]
+    public function updateTimingDefaults(Team $team, Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $isAdmin = $this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPERADMIN');
+        $coachTeamIds = array_keys($this->coachTeamPlayerService->collectCoachTeams($user));
+        $isCoachOfTeam = in_array($team->getId(), $coachTeamIds, true);
+
+        if (!$isAdmin && !$isCoachOfTeam) {
+            return $this->json(['error' => 'Zugriff verweigert'], Response::HTTP_FORBIDDEN);
+        }
+
+        $data = json_decode($request->getContent(), true) ?? [];
+
+        if (array_key_exists('defaultHalfDuration', $data)) {
+            $val = $data['defaultHalfDuration'];
+            $team->setDefaultHalfDuration(null !== $val && '' !== $val ? (int) $val : null);
+        }
+
+        if (array_key_exists('defaultHalftimeBreakDuration', $data)) {
+            $val = $data['defaultHalftimeBreakDuration'];
+            $team->setDefaultHalftimeBreakDuration(null !== $val && '' !== $val ? (int) $val : null);
+        }
+
+        $this->entityManager->persist($team);
+        $this->entityManager->flush();
+
+        return $this->json([
+            'success' => true,
+            'defaultHalfDuration' => $team->getDefaultHalfDuration(),
+            'defaultHalftimeBreakDuration' => $team->getDefaultHalftimeBreakDuration(),
         ]);
     }
 
@@ -178,6 +220,16 @@ class TeamsController extends AbstractController
             if ($league) {
                 $team->setLeague($league);
             }
+        }
+
+        if (array_key_exists('defaultHalfDuration', $teamData)) {
+            $val = $teamData['defaultHalfDuration'];
+            $team->setDefaultHalfDuration(null !== $val && '' !== $val ? (int) $val : null);
+        }
+
+        if (array_key_exists('defaultHalftimeBreakDuration', $teamData)) {
+            $val = $teamData['defaultHalftimeBreakDuration'];
+            $team->setDefaultHalftimeBreakDuration(null !== $val && '' !== $val ? (int) $val : null);
         }
 
         $this->entityManager->persist($team);

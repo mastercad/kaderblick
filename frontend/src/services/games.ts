@@ -116,3 +116,24 @@ export async function finishGame(gameId: number): Promise<{
     method: 'POST'
   });
 }
+
+// Zeitangaben für ein Spiel aktualisieren
+export interface GameTimingData {
+  halfDuration?: number;
+  halftimeBreakDuration?: number;
+  firstHalfExtraTime?: number | null;
+  secondHalfExtraTime?: number | null;
+}
+
+export async function updateGameTiming(gameId: number, data: GameTimingData): Promise<{
+  success: boolean;
+  halfDuration: number;
+  halftimeBreakDuration: number;
+  firstHalfExtraTime: number | null;
+  secondHalfExtraTime: number | null;
+}> {
+  return apiJson(`/api/games/${gameId}/timing`, {
+    method: 'PATCH',
+    body: data,
+  });
+}

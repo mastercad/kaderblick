@@ -135,6 +135,8 @@ type CalendarEventType = {
 type Team = {
   id: number;
   name: string;
+  defaultHalfDuration?: number | null;
+  defaultHalftimeBreakDuration?: number | null;
 };
 
 type GameType = {
@@ -233,6 +235,11 @@ type EventFormData = {
   trainingEndDate?: string;
   trainingDuration?: number;
   trainingSeriesId?: string;
+  // Game timing fields (only for Spiel events)
+  gameHalfDuration?: number;
+  gameHalftimeBreakDuration?: number;
+  gameFirstHalfExtraTime?: number | null;
+  gameSecondHalfExtraTime?: number | null;
 };
 
 const messages = {
@@ -792,12 +799,26 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         : `${eventFormData.date}T00:00:00`;
       
       // End-DateTime zusammenbauen (falls vorhanden)
-      let endDateTime = startDateTime;
+      let endDateTime: string | undefined;
       if (eventFormData.endDate) {
         endDateTime = eventFormData.endTime 
           ? `${eventFormData.endDate}T${eventFormData.endTime}:00`
           : `${eventFormData.endDate}T23:59:59`;
       }
+
+      // For Spiel events without explicit end time: auto-compute from timing fields
+      if (!endDateTime && isMatchEvent && !isTournament) {
+        const halfDur  = typeof eventFormData.gameHalfDuration === 'number' ? eventFormData.gameHalfDuration : 45;
+        const breakDur = typeof eventFormData.gameHalftimeBreakDuration === 'number' ? eventFormData.gameHalftimeBreakDuration : 15;
+        const totalMins = 2 * halfDur + breakDur;
+        const startDate = new Date(startDateTime);
+        startDate.setMinutes(startDate.getMinutes() + totalMins);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        endDateTime = `${startDate.getFullYear()}-${pad(startDate.getMonth() + 1)}-${pad(startDate.getDate())}T${pad(startDate.getHours())}:${pad(startDate.getMinutes())}:00`;
+      }
+
+      // Fallback: keep endDate = startDate for events without explicit end time
+      if (!endDateTime) endDateTime = startDateTime;
 
       const payload: any = {
         title: eventFormData.title,
@@ -818,7 +839,11 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         if (!isTournament && eventFormData.homeTeam && eventFormData.awayTeam) {
           payload.game = {
             homeTeamId: parseInt(eventFormData.homeTeam),
-            awayTeamId: parseInt(eventFormData.awayTeam)
+            awayTeamId: parseInt(eventFormData.awayTeam),
+            halfDuration: typeof eventFormData.gameHalfDuration === 'number' ? eventFormData.gameHalfDuration : undefined,
+            halftimeBreakDuration: typeof eventFormData.gameHalftimeBreakDuration === 'number' ? eventFormData.gameHalftimeBreakDuration : undefined,
+            firstHalfExtraTime: eventFormData.gameFirstHalfExtraTime ?? undefined,
+            secondHalfExtraTime: eventFormData.gameSecondHalfExtraTime ?? undefined,
           };
         }
 
@@ -1234,6 +1259,16 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
     () => allTeams.map(team => ({ value: team.id.toString(), label: team.name })),
     [allTeams]
   );
+
+  const teamDefaultsMap = useMemo(
+    () => Object.fromEntries(
+      allTeams.map(t => [t.id.toString(), {
+        defaultHalfDuration: t.defaultHalfDuration ?? null,
+        defaultHalftimeBreakDuration: t.defaultHalftimeBreakDuration ?? null,
+      }])
+    ),
+    [allTeams]
+  );
   
   const gameTypesOptions = useMemo(
     () => gameTypes.entries.map(gt => ({ value: gt.id.toString(), label: gt.name })),
@@ -1557,6 +1592,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
         users={users}
         onChange={handleFormChange}
         loading={eventSaving}
+        teamDefaultsMap={teamDefaultsMap}
       />
 
       {/* Alert Modal */}

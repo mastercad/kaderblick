@@ -21,6 +21,9 @@ import {
   Divider,
   alpha,
   useTheme,
+  TextField,
+  Collapse,
+  Tooltip,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -37,6 +40,10 @@ import {
   AccessTime as TimeIcon,
   CheckCircle as CheckCircleIcon,
   SportsScore as SportsScoreIcon,
+  Timer as TimerIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  Save as SaveIcon,
 } from '@mui/icons-material';
 import { 
   fetchGameDetails, 
@@ -44,6 +51,7 @@ import {
   deleteGameEvent, 
   syncFussballDe,
   finishGame,
+  updateGameTiming,
 } from '../services/games';
 import { fetchVideos, saveVideo, deleteVideo, Video, YoutubeLink, Camera } from '../services/videos';
 import { getApiErrorMessage } from '../utils/api';
@@ -182,6 +190,14 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
   const [isFinished, setIsFinished] = useState(false);
   const [confirmFinishOpen, setConfirmFinishOpen] = useState(false);
 
+  // Timing state
+  const [halfDuration, setHalfDuration] = useState<number>(45);
+  const [halftimeBreakDuration, setHalftimeBreakDuration] = useState<number>(15);
+  const [firstHalfExtraTime, setFirstHalfExtraTime] = useState<string>('');
+  const [secondHalfExtraTime, setSecondHalfExtraTime] = useState<string>('');
+  const [timingSaving, setTimingSaving] = useState(false);
+  const [timingExpanded, setTimingExpanded] = useState(false);
+
   useEffect(() => {
     if (!gameId) {
       setError('Keine Spiel-ID angegeben');
@@ -288,6 +304,11 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       setAwayScore(result.awayScore);
       setGameStartDate(result.game?.calendarEvent?.startDate ?? null);
       setIsFinished(result.game?.isFinished ?? false);
+      // Initialize timing state from game
+      setHalfDuration(result.game?.halfDuration ?? 45);
+      setHalftimeBreakDuration(result.game?.halftimeBreakDuration ?? 15);
+      setFirstHalfExtraTime(result.game?.firstHalfExtraTime != null ? String(result.game.firstHalfExtraTime) : '');
+      setSecondHalfExtraTime(result.game?.secondHalfExtraTime != null ? String(result.game.secondHalfExtraTime) : '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Laden der Spieldetails');
     } finally {
@@ -345,6 +366,25 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
       showToast(getApiErrorMessage(err), 'error');
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleSaveTiming = async () => {
+    if (!gameId) return;
+    setTimingSaving(true);
+    try {
+      await updateGameTiming(gameId, {
+        halfDuration,
+        halftimeBreakDuration,
+        firstHalfExtraTime: firstHalfExtraTime !== '' ? parseInt(firstHalfExtraTime, 10) : null,
+        secondHalfExtraTime: secondHalfExtraTime !== '' ? parseInt(secondHalfExtraTime, 10) : null,
+      });
+      showToast('Spielzeiten wurden gespeichert.', 'success');
+      await loadGameDetails();
+    } catch (err) {
+      showToast(getApiErrorMessage(err), 'error');
+    } finally {
+      setTimingSaving(false);
     }
   };
 
@@ -1165,8 +1205,152 @@ function GameDetailsInner({ gameId: propGameId, onBack }: GameDetailsProps) {
         </CardContent>
       </Card>
 
-      {/* Video Play Modal */}
-      <VideoPlayModal
+      {/* ══════════════════════════════════════════════════
+          SPIELZEITEN
+         ══════════════════════════════════════════════════ */}
+      {(game.permissions?.can_edit_timing || game.halfDuration != null) && (
+        <Card sx={{ mb: 3, overflow: 'hidden' }}>
+          {/* Section Header */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              px: { xs: 2, sm: 3 },
+              py: 1.5,
+              borderBottom: timingExpanded ? '1px solid' : 'none',
+              borderColor: 'divider',
+              bgcolor: alpha(theme.palette.primary.main, 0.03),
+              cursor: 'pointer',
+              userSelect: 'none',
+            }}
+            onClick={() => setTimingExpanded((v) => !v)}
+            data-testid="timing-section-header"
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TimerIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+              <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.05rem' } }}>
+                Spielzeiten
+              </Typography>
+              <Tooltip title="Halbzeitdauer, Pause und Nachspielzeiten für die Video-Timeline">
+                <Chip
+                  label={`${game.halfDuration ?? 45} min`}
+                  size="small"
+                  sx={{
+                    height: 22,
+                    fontWeight: 600,
+                    fontSize: '0.75rem',
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    color: 'primary.main',
+                  }}
+                />
+              </Tooltip>
+            </Box>
+            <IconButton size="small" sx={{ p: 0.5 }}>
+              {timingExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            </IconButton>
+          </Box>
+
+          <Collapse in={timingExpanded}>
+            <CardContent sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.5 } }}>
+              {game.permissions?.can_edit_timing ? (
+                <Box
+                  component="form"
+                  onSubmit={(e) => { e.preventDefault(); handleSaveTiming(); }}
+                  data-testid="timing-edit-form"
+                >
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr 1fr 1fr' },
+                      gap: 2,
+                      mb: 2,
+                    }}
+                  >
+                    <TextField
+                      label="Halbzeitdauer (Min)"
+                      type="number"
+                      value={halfDuration}
+                      onChange={(e) => setHalfDuration(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                      inputProps={{ min: 1, max: 90, 'data-testid': 'input-halfDuration' }}
+                      size="small"
+                      fullWidth
+                      helperText="z.B. 45 (Erwachsene)"
+                    />
+                    <TextField
+                      label="Halbzeitpause (Min)"
+                      type="number"
+                      value={halftimeBreakDuration}
+                      onChange={(e) => setHalftimeBreakDuration(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      inputProps={{ min: 0, max: 60, 'data-testid': 'input-halftimeBreakDuration' }}
+                      size="small"
+                      fullWidth
+                      helperText="z.B. 15"
+                    />
+                    <TextField
+                      label="Nachspielzeit HZ1 (Min)"
+                      type="number"
+                      value={firstHalfExtraTime}
+                      onChange={(e) => setFirstHalfExtraTime(e.target.value)}
+                      inputProps={{ min: 0, max: 30, 'data-testid': 'input-firstHalfExtraTime' }}
+                      size="small"
+                      fullWidth
+                      helperText="leer = nicht erfasst"
+                    />
+                    <TextField
+                      label="Nachspielzeit HZ2 (Min)"
+                      type="number"
+                      value={secondHalfExtraTime}
+                      onChange={(e) => setSecondHalfExtraTime(e.target.value)}
+                      inputProps={{ min: 0, max: 30, 'data-testid': 'input-secondHalfExtraTime' }}
+                      size="small"
+                      fullWidth
+                      helperText="leer = nicht erfasst"
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      startIcon={<SaveIcon />}
+                      size="small"
+                      disabled={timingSaving}
+                      data-testid="btn-save-timing"
+                    >
+                      {timingSaving ? 'Speichern…' : 'Speichern'}
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Halbzeitdauer</Typography>
+                    <Typography variant="body2" fontWeight={600}>{game.halfDuration ?? 45} min</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Halbzeitpause</Typography>
+                    <Typography variant="body2" fontWeight={600}>{game.halftimeBreakDuration ?? 15} min</Typography>
+                  </Box>
+                  {game.firstHalfExtraTime != null && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Nachspielzeit HZ1</Typography>
+                      <Typography variant="body2" fontWeight={600}>{game.firstHalfExtraTime} min</Typography>
+                    </Box>
+                  )}
+                  {game.secondHalfExtraTime != null && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Nachspielzeit HZ2</Typography>
+                      <Typography variant="body2" fontWeight={600}>{game.secondHalfExtraTime} min</Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
+            </CardContent>
+          </Collapse>
+        </Card>
+      )}
+
+      {/* Video Play Modal */}      <VideoPlayModal
         ref={videoPlayerRef}
         open={playVideoModalOpen}
         onClose={handleClosePlayVideo}

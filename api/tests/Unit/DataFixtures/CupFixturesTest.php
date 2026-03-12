@@ -32,7 +32,7 @@ class CupFixturesTest extends TestCase
         $manager->method('getRepository')->willReturn($repository);
 
         $persistedNames = [];
-        $manager->expects($this->exactly(13))
+        $manager->expects($this->exactly(15))
             ->method('persist')
             ->willReturnCallback(function (object $entity) use (&$persistedNames): void {
                 $this->assertInstanceOf(Cup::class, $entity);
@@ -56,6 +56,8 @@ class CupFixturesTest extends TestCase
         $this->assertContains('UEFA Europa League', $persistedNames);
         $this->assertContains('UEFA Conference League', $persistedNames);
         $this->assertContains('DFL-Supercup', $persistedNames);
+        $this->assertContains('Sparkassenpokal', $persistedNames);
+        $this->assertContains('Sparkassenkreispokal', $persistedNames);
     }
 
     // -------------------------------------------------------------------------
@@ -76,8 +78,8 @@ class CupFixturesTest extends TestCase
         $manager = $this->createMock(ObjectManager::class);
         $manager->method('getRepository')->willReturn($repository);
 
-        // Only 12 of the 13 cups should be persisted (DFB-Pokal is skipped)
-        $manager->expects($this->exactly(12))->method('persist');
+        // Only 14 of the 15 cups should be persisted (DFB-Pokal is skipped)
+        $manager->expects($this->exactly(14))->method('persist');
         $manager->expects($this->once())->method('flush');
 
         (new CupFixtures())->load($manager);

@@ -125,6 +125,54 @@ class GamesController extends ApiController
         ]);
     }
 
+    /**
+     * Update timing fields for a game (halfDuration, halftimeBreakDuration, firstHalfExtraTime, secondHalfExtraTime).
+     */
+    #[Route('/{id}/timing', name: 'timing', requirements: ['id' => '\d+'], methods: ['PATCH'])]
+    public function timing(Game $game, Request $request): JsonResponse
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        $data = json_decode($request->getContent(), true) ?? [];
+
+        if (isset($data['halfDuration'])) {
+            $half = (int) $data['halfDuration'];
+            if ($half < 1 || $half > 90) {
+                return $this->json(['error' => 'halfDuration muss zwischen 1 und 90 Minuten liegen.'], 400);
+            }
+            $game->setHalfDuration($half);
+        }
+
+        if (array_key_exists('halftimeBreakDuration', $data)) {
+            $break = (int) $data['halftimeBreakDuration'];
+            if ($break < 0 || $break > 60) {
+                return $this->json(['error' => 'halftimeBreakDuration muss zwischen 0 und 60 Minuten liegen.'], 400);
+            }
+            $game->setHalftimeBreakDuration($break);
+        }
+
+        if (array_key_exists('firstHalfExtraTime', $data)) {
+            $extra = null !== $data['firstHalfExtraTime'] ? (int) $data['firstHalfExtraTime'] : null;
+            $game->setFirstHalfExtraTime($extra);
+        }
+
+        if (array_key_exists('secondHalfExtraTime', $data)) {
+            $extra = null !== $data['secondHalfExtraTime'] ? (int) $data['secondHalfExtraTime'] : null;
+            $game->setSecondHalfExtraTime($extra);
+        }
+
+        $this->entityManager->persist($game);
+        $this->entityManager->flush();
+
+        return $this->json([
+            'success' => true,
+            'halfDuration' => $game->getHalfDuration(),
+            'halftimeBreakDuration' => $game->getHalftimeBreakDuration(),
+            'firstHalfExtraTime' => $game->getFirstHalfExtraTime(),
+            'secondHalfExtraTime' => $game->getSecondHalfExtraTime(),
+        ]);
+    }
+
     #[Route('/{id}/details', name: 'details', requirements: ['id' => '\d+'], methods: ['GET'])]
     public function details(
         Game $game,
@@ -177,9 +225,14 @@ class GamesController extends ApiController
                 'fussballDeUrl' => method_exists($game, 'getFussballDeUrl') ? $game->getFussballDeUrl() : null,
                 'isFinished' => $game->isFinished(),
                 'tournamentId' => $game->getTournamentMatch()?->getTournament()?->getId(),
+                'halfDuration' => $game->getHalfDuration(),
+                'halftimeBreakDuration' => $game->getHalftimeBreakDuration(),
+                'firstHalfExtraTime' => $game->getFirstHalfExtraTime(),
+                'secondHalfExtraTime' => $game->getSecondHalfExtraTime(),
                 'permissions' => [
                     'can_create_videos' => $this->isGranted(VideoVoter::CREATE, $game->getHomeTeam()) || $this->isGranted(VideoVoter::CREATE, $game->getAwayTeam()),
-                    'can_create_game_events' => $this->isGranted(GameEventVoter::CREATE, $game)
+                    'can_create_game_events' => $this->isGranted(GameEventVoter::CREATE, $game),
+                    'can_edit_timing' => $this->isGranted('ROLE_ADMIN'),
                 ]
             ];
         };

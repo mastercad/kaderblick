@@ -5,6 +5,7 @@ ENV TZ=Europe/Berlin
 RUN apt-get update && apt-get install -yqq \
     git \
     unzip \
+    curl \
     libicu-dev \
     libonig-dev \
     libzip-dev \
@@ -38,8 +39,10 @@ RUN echo "xdebug.mode=debug" > /usr/local/etc/php/conf.d/xdebug.ini && \
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 COPY cron_wrapper.sh /usr/local/bin/cron_wrapper.sh
+COPY entrypoint.sh /entrypoint.sh
 
-RUN chmod +x /usr/local/bin/cron_wrapper.sh
+RUN chmod +x /usr/local/bin/cron_wrapper.sh \
+    && chmod +x /entrypoint.sh
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN echo "date.timezone=$TZ" > /usr/local/etc/php/conf.d/timezone.ini
@@ -84,5 +87,5 @@ RUN echo "SHELL=/bin/bash" > /etc/cron.d/symfony-crons \
     && echo "*/30 * * * * www-data /bin/bash -lc 'cd /var/www/symfony && . /var/www/symfony/.env 2>/dev/null || true && . /var/www/symfony/.env.local 2>/dev/null || true && . /var/www/symfony/.env.$APP_ENV 2>/dev/null || true && . /var/www/symfony/.env.$APP_ENV.local 2>/dev/null || true && /usr/local/bin/cron_wrapper.sh app:surveys:send-reminders' 2>&1" >> /etc/cron.d/symfony-crons \
     && chmod 0644 /etc/cron.d/symfony-crons
 
-
-CMD cron && apache2-foreground
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["sh", "-c", "cron && apache2-foreground"]

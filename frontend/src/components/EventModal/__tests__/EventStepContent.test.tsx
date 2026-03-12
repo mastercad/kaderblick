@@ -5,6 +5,7 @@ import { EventStepContent } from '../EventStepContent';
 import {
   STEP_BASE,
   STEP_DETAILS,
+  STEP_TIMING,
   STEP_MATCHES,
   STEP_PERMISSIONS,
   STEP_DESCRIPTION,
@@ -19,6 +20,7 @@ jest.mock('@mui/material/TextField', () => (props: any) => (
 
 jest.mock('../EventBaseForm',      () => ({ EventBaseForm:      () => <div data-testid="EventBaseForm" />      }));
 jest.mock('../GameEventFields',    () => ({ GameEventFields:    () => <div data-testid="GameEventFields" />    }));
+jest.mock('../GameTimingFields',   () => ({ GameTimingFields:   () => <div data-testid="GameTimingFields" />   }));
 jest.mock('../TaskEventFields',    () => ({ TaskEventFields:    () => <div data-testid="TaskEventFields" />    }));
 jest.mock('../TrainingEventFields',() => ({ TrainingEventFields:() => <div data-testid="TrainingEventFields" />}));
 jest.mock('../PermissionFields',   () => ({ PermissionFields:   () => <div data-testid="PermissionFields" />   }));
@@ -141,6 +143,21 @@ describe('EventStepContent', () => {
   it('renders hint text when no event type is selected on STEP_DETAILS', () => {
     render(<EventStepContent {...base} currentStepKey={STEP_DETAILS} />);
     expect(screen.getByText(/Bitte zuerst den Event-Typ/i)).toBeInTheDocument();
+  });
+
+  // ── STEP_TIMING ─────────────────────────────────────────────────────────
+
+  it('renders GameTimingFields on STEP_TIMING for match events', () => {
+    render(
+      <EventStepContent
+        {...base}
+        currentStepKey={STEP_TIMING}
+        isMatchEvent={true}
+        event={{ homeTeam: '1' } as any}
+        teamDefaultsMap={{ '1': { defaultHalfDuration: 40, defaultHalftimeBreakDuration: 10 } }}
+      />
+    );
+    expect(screen.getByTestId('GameTimingFields')).toBeInTheDocument();
   });
 
   // ── STEP_MATCHES ──────────────────────────────────────────────────────────

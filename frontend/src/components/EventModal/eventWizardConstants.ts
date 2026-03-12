@@ -5,6 +5,7 @@
  */
 export const STEP_BASE        = 'base';
 export const STEP_DETAILS     = 'details';
+export const STEP_TIMING      = 'timing';
 export const STEP_MATCHES     = 'matches';
 export const STEP_PERMISSIONS = 'permissions';
 export const STEP_DESCRIPTION = 'description';
@@ -12,6 +13,7 @@ export const STEP_DESCRIPTION = 'description';
 export type WizardStepKey =
   | typeof STEP_BASE
   | typeof STEP_DETAILS
+  | typeof STEP_TIMING
   | typeof STEP_MATCHES
   | typeof STEP_PERMISSIONS
   | typeof STEP_DESCRIPTION;
