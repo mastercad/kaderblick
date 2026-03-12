@@ -331,6 +331,7 @@ jobs:
 
             DATABASE_URL="$STAGING_DB_URL" XDEBUG_MODE=off \
             PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 \
+            HOST_UID=$(id -u kaderblick-ftp-admin) HOST_GID=$(id -g kaderblick-ftp-admin) \
             docker compose \
               -f docker-compose.yml \
               -f docker-compose.staging.yml \
@@ -352,14 +353,8 @@ jobs:
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
 
-            # Rechte im Container setzen – www-data-UID stimmt garantiert mit dem Container überein
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api chown -R www-data:www-data /var/www/symfony/var
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api chmod -R 775 /var/www/symfony/var
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T --user www-data api composer install --no-dev --optimize-autoloader
+              exec -T api composer install --no-dev --optimize-autoloader
 
             # Secrets zuerst entschlüsseln, damit cache:warmup alle Env-Werte kennt
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
@@ -392,13 +387,13 @@ jobs:
             cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T --user www-data api env APP_ENV=dev composer install
+              exec -T api env APP_ENV=dev composer install
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
               exec -T --user www-data api bin/console doctrine:fixtures:load --env=dev --no-interaction --append --group=master
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T --user www-data api composer install --no-dev --optimize-autoloader
+              exec -T api composer install --no-dev --optimize-autoloader
 
             # Cache nach Dev-Reinstall neu aufbauen
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
@@ -477,18 +472,15 @@ jobs:
             # Production-Container mit eigenem Build starten
             # VITE_BACKEND_URL wird zur Build-Zeit ins JS-Bundle eingebettet → muss korrekt sein!
             cd "$PROD_CURRENT"
+            HOST_UID=$(id -u kaderblick-ftp-admin)
+            HOST_GID=$(id -g kaderblick-ftp-admin)
             DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
             VITE_BACKEND_URL=https://api.kaderblick.de \
+            HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" \
             docker compose -p production up -d --build --force-recreate api frontend
 
-            # Rechte im Container setzen – www-data-UID stimmt garantiert mit dem Container überein
-            docker compose -p production exec -T api \
-              chown -R www-data:www-data /var/www/symfony/var
-            docker compose -p production exec -T api \
-              chmod -R 775 /var/www/symfony/var
-
             # Composer, Migrations, Secrets, JWT
-            docker compose -p production exec -T --user www-data api \
+            docker compose -p production exec -T api \
               composer install --no-dev --optimize-autoloader
 
             # Secrets zuerst entschlüsseln, damit cache:warmup alle Env-Werte kennt
