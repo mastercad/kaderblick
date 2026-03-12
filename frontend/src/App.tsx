@@ -55,6 +55,7 @@ import MyTeam from './pages/MyTeam';
 import Nationalities from './pages/Nationalities';
 import CoachLicenses from './pages/CoachLicenses';
 import Leagues from './pages/Leagues';
+import Cups from './pages/Cups';
 import Cameras from './pages/Cameras';
 import VideoTypes from './pages/VideoTypes';
 import Imprint from './pages/Imprint';
@@ -219,6 +220,7 @@ function App() {
                   <Route path="tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
                   <Route path="nationalities" element={<ProtectedRoute><Nationalities /></ProtectedRoute>} />
                   <Route path="leagues" element={<ProtectedRoute><Leagues /></ProtectedRoute>} />
+                  <Route path="cups" element={<ProtectedRoute><Cups /></ProtectedRoute>} />
                   <Route path="teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
                   <Route path="coachLicenses" element={<ProtectedRoute><CoachLicenses /></ProtectedRoute>} />
                   <Route path="cameras" element={<ProtectedRoute><Cameras /></ProtectedRoute>} />

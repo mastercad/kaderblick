@@ -47,6 +47,7 @@ interface WizardStep1Props {
   teams: SelectOption[];
   gameTypes: SelectOption[];
   leagues: SelectOption[];
+  cups: SelectOption[];
   tournaments: SelectOption[];
   users: User[];
   isMatchEvent: boolean;
@@ -67,6 +68,7 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
   teams,
   gameTypes,
   leagues,
+  cups,
   tournaments,
   users,
   isMatchEvent,
@@ -80,6 +82,9 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
   onGeneratorOpen = () => {},
   onClearMatches = () => {},
 }) => {
+  const selectedGameTypeLabel = gameTypes.find(gt => gt.value === formData.gameType)?.label?.toLowerCase() ?? '';
+  const isLiga  = selectedGameTypeLabel.includes('liga');
+  const isPokal = selectedGameTypeLabel.includes('pokal');
   return (
     <>
       {/* Match events: Location, Game fields, Tournament config */}
@@ -113,8 +118,11 @@ export const WizardStep1: React.FC<WizardStep1Props> = ({
             teams={teams}
             gameTypes={gameTypes}
             leagues={leagues}
+            cups={cups}
             isTournament={isTournament}
             isTournamentEventType={isTournamentEventType}
+            isLiga={isLiga}
+            isPokal={isPokal}
             handleChange={onChange}
           />
 
