@@ -246,6 +246,8 @@ jobs:
             # APP_ENV/APP_DEBUG direkt in .env
             cp "$STAGING_DIR/api/.env.dist" "$STAGING_DIR/api/.env"
             sed -i 's/^APP_ENV=.*$/APP_ENV=staging/' "$STAGING_DIR/api/.env"
+            sed -i 's|^GOOGLE_REDIRECT_URI=.*$|GOOGLE_REDIRECT_URI=https://staging.kaderblick.de/oauth2callback|' "$STAGING_DIR/api/.env"
+            sed -i 's|^FRONTEND_URL=.*$|FRONTEND_URL=https://staging.kaderblick.de|' "$STAGING_DIR/api/.env"
             echo "APP_DEBUG=0" >> "$STAGING_DIR/api/.env"
             printf "APP_SECRET=${{ secrets.APP_SECRET }}\n" >> "$STAGING_DIR/api/.env"
 
