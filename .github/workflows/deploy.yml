@@ -284,8 +284,6 @@ jobs:
             ln -sfn "${{ steps.release.outputs.staging_dir }}" "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
             mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/cache" \
                      "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/log"
-            chown -R www-data:www-data "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
-            chmod -R 775 "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
 
       # ------------------------------
       # Deploy Staging containers (persistent)
@@ -322,7 +320,6 @@ jobs:
               up -d --build --force-recreate api frontend
 
             mkdir -p "$STAGING_CURRENT/api/var"
-            chmod -R 777 "$STAGING_CURRENT/api/var"
 
       # ------------------------------
       # Staging: Composer, Migrations, Secrets, JWT
@@ -345,7 +342,7 @@ jobs:
               exec -T api bin/console secrets:decrypt-to-local --force --env=staging
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api bin/console cache:warmup --env=staging
+              exec -T --user www-data api bin/console cache:warmup --env=staging
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
               exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=staging
@@ -374,14 +371,18 @@ jobs:
               exec -T api env APP_ENV=dev composer install
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api bin/console doctrine:fixtures:load --env=dev --no-interaction --append --group=master
+              exec -T --user www-data api bin/console doctrine:fixtures:load --env=dev --no-interaction --append --group=master
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
               exec -T api composer install --no-dev --optimize-autoloader
 
             # Cache nach Dev-Reinstall neu aufbauen
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api bin/console cache:warmup --env=staging
+              exec -T --user www-data api bin/console cache:warmup --env=staging
+
+            # Rechte erst NACH allen Console-Befehlen setzen – sonst überschreibt root sie wieder
+            chown -R www-data:www-data "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
+            chmod -R 775 "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
 
       # ------------------------------
       # Prepare shared uploads symlinks (Production und Staging)
@@ -452,8 +453,6 @@ jobs:
             # Symlink auf neues Production-Release setzen
             ln -sfn "$NEW_PROD" "$PROD_CURRENT"
             mkdir -p "$PROD_CURRENT/api/var/cache" "$PROD_CURRENT/api/var/log"
-            chown -R www-data:www-data "$PROD_CURRENT/api/var"
-            chmod -R 775 "$PROD_CURRENT/api/var"
 
             # Production-Container mit eigenem Build starten
             # VITE_BACKEND_URL wird zur Build-Zeit ins JS-Bundle eingebettet → muss korrekt sein!
@@ -470,7 +469,7 @@ jobs:
             docker compose -p production exec -T api \
               bin/console secrets:decrypt-to-local --force --env=prod
 
-            docker compose -p production exec -T api \
+            docker compose -p production exec -T --user www-data api \
               bin/console cache:warmup --env=prod
 
             docker compose -p production exec -T api \
@@ -487,6 +486,10 @@ jobs:
               cp api/config/jwt/private.pem "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/private.pem" || true
               cp api/config/jwt/public.pem "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/public.pem" || true
             fi
+
+            # Rechte erst NACH allen Console-Befehlen setzen – sonst überschreibt root sie wieder
+            chown -R www-data:www-data "$PROD_CURRENT/api/var"
+            chmod -R 775 "$PROD_CURRENT/api/var"
 
             # Healthcheck: API muss innerhalb von 60s antworten
             echo "Warte auf API-Bereitschaft..."
