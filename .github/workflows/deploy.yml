@@ -179,8 +179,10 @@ jobs:
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
             set -e
-            COMPOSE_DIR="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
-            [ -d "$COMPOSE_DIR" ] || COMPOSE_DIR="${{ steps.release.outputs.prod_dir }}"
+            # Immer das frisch hochgeladene Release-Verzeichnis verwenden,
+            # da production_current noch auf ein altes Release zeigen kann,
+            # das docker-compose.maintenance.yml noch nicht enthält.
+            COMPOSE_DIR="${{ steps.release.outputs.prod_dir }}"
 
             if docker ps --filter "name=kaderblick-maintenance" --filter "status=running" | grep -q kaderblick-maintenance; then
               echo "Maintenance-Container läuft bereits."
