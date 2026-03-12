@@ -92,6 +92,10 @@ class Game
     #[ORM\JoinColumn(name: 'league_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
     private ?League $league = null;
 
+    #[ORM\ManyToOne(targetEntity: Cup::class)]
+    #[ORM\JoinColumn(name: 'cup_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    private ?Cup $cup = null;
+
     #[Groups(['game:read', 'game:write'])]
     #[ORM\OneToOne(targetEntity: CalendarEvent::class, inversedBy: 'game', cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(name: 'calendar_event_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
@@ -364,6 +368,18 @@ class Game
     public function setLeague(?League $league): self
     {
         $this->league = $league;
+
+        return $this;
+    }
+
+    public function getCup(): ?Cup
+    {
+        return $this->cup;
+    }
+
+    public function setCup(?Cup $cup): self
+    {
+        $this->cup = $cup;
 
         return $this;
     }

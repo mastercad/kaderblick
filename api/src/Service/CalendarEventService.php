@@ -6,6 +6,7 @@ use App\Entity\CalendarEvent;
 use App\Entity\CalendarEventPermission;
 use App\Entity\CalendarEventType;
 use App\Entity\Club;
+use App\Entity\Cup;
 use App\Entity\Game;
 use App\Entity\GameEvent;
 use App\Entity\GameEventType;
@@ -328,6 +329,15 @@ class CalendarEventService
             if (isset($data['leagueId']) && $data['leagueId']) {
                 $league = $this->entityManager->getReference(League::class, (int) $data['leagueId']);
                 $calendarEvent->getGame()?->setLeague($league);
+            } elseif (array_key_exists('leagueId', $data) && !$data['leagueId']) {
+                $calendarEvent->getGame()?->setLeague(null);
+            }
+
+            if (isset($data['cupId']) && $data['cupId']) {
+                $cup = $this->entityManager->getReference(Cup::class, (int) $data['cupId']);
+                $calendarEvent->getGame()?->setCup($cup);
+            } elseif (array_key_exists('cupId', $data) && !$data['cupId']) {
+                $calendarEvent->getGame()?->setCup(null);
             }
         }
 

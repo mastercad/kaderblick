@@ -132,6 +132,10 @@ class CalendarController extends AbstractController
                     'league' => [
                         'id' => $calendarEvent->getGame()->getLeague()?->getId(),
                         'name' => $calendarEvent->getGame()->getLeague()?->getName()
+                    ],
+                    'cup' => [
+                        'id' => $calendarEvent->getGame()->getCup()?->getId(),
+                        'name' => $calendarEvent->getGame()->getCup()?->getName()
                     ]
                 ] : null,
                 'task' => $taskFromAssignment,

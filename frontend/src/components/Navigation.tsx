@@ -35,6 +35,7 @@ import NewspaperIcon from '@mui/icons-material/Newspaper';
 import SearchIcon from '@mui/icons-material/Search';
 import GroupWorkIcon from '@mui/icons-material/GroupWork';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
@@ -192,6 +193,7 @@ export default function Navigation({ onOpenAuth, onOpenProfile, onOpenQRShare }:
       items: [
         { label: 'Altersgruppen', page: 'ageGroups', icon: <GroupsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
         { label: 'Ligen', page: 'leagues', icon: <EmojiEventsIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
+        { label: 'Pokale', page: 'cups', icon: <WorkspacePremiumIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
         { label: 'Positionen', page: 'positions', icon: <CenterFocusStrongIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
         { label: 'Füße', page: 'strongFeets', icon: <DirectionsRunIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },
         { label: 'Beläge', page: 'surfaceTypes', icon: <LayersIcon fontSize="small" sx={{ color: 'text.primary', mr: 1 }} /> },

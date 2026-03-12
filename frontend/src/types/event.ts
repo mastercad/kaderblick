@@ -20,6 +20,7 @@ export interface EventData {
   awayTeam?: string;
   gameType?: string;
   leagueId?: string;
+  cupId?: string;
   permissionType?: string;
   permissionTeams?: string[];
   permissionClubs?: string[];
