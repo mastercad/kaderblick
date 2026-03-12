@@ -214,19 +214,24 @@ jobs:
             STAGING_DIR="${{ steps.release.outputs.staging_dir }}"
 
             # Production
+            # APP_ENV/APP_DEBUG direkt in .env – bootEnv() braucht das um .env.prod.local zu finden
             cp "$PROD_DIR/api/.env.dist" "$PROD_DIR/api/.env"
             sed -i 's/^APP_ENV=.*$/APP_ENV=prod/' "$PROD_DIR/api/.env"
-            echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> "$PROD_DIR/api/.env"
+            echo "APP_DEBUG=0" >> "$PROD_DIR/api/.env"
+            # Secrets in .env.prod.local (höchste Priorität, nicht im Repo)
+            printf "APP_SECRET=${{ secrets.APP_SECRET }}\n" > "$PROD_DIR/api/.env.prod.local"
             mkdir -p "$PROD_DIR/api/config/secrets/prod"
             echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > "$PROD_DIR/api/config/secrets/prod/prod.decrypt.private.php"
             chmod 655 "$PROD_DIR/api/config/secrets/prod/prod.decrypt.private.php"
             echo "VITE_BACKEND_URL=https://api.kaderblick.de" > "$PROD_DIR/frontend/.env"
 
-            # Staging (Secrets-Vault liegt unter config/secrets/staging/)
+            # Staging 
+            # APP_ENV/APP_DEBUG direkt in .env – bootEnv() braucht das um .env.staging.local zu finden
             cp "$STAGING_DIR/api/.env.dist" "$STAGING_DIR/api/.env"
             sed -i 's/^APP_ENV=.*$/APP_ENV=staging/' "$STAGING_DIR/api/.env"
             echo "APP_DEBUG=0" >> "$STAGING_DIR/api/.env"
-            echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> "$STAGING_DIR/api/.env"
+            # Secrets in .env.staging.local (höchste Priorität, nicht im Repo)
+            printf "APP_SECRET=${{ secrets.APP_SECRET }}\n" > "$STAGING_DIR/api/.env.staging.local"
             mkdir -p "$STAGING_DIR/api/config/secrets/staging"
             echo '${{ secrets.STAGING_DECRYPT_KEY }}' | base64 -d > "$STAGING_DIR/api/config/secrets/staging/staging.decrypt.private.php"
             chmod 655 "$STAGING_DIR/api/config/secrets/staging/staging.decrypt.private.php"
