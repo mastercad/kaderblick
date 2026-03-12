@@ -67,7 +67,7 @@ jobs:
           mkdir -p build
           sh ./frontend/scripts/set-publish-date.sh
           sh ./frontend/scripts/write-buildinfo.sh
-          cp -r docker-compose.yml docker-compose.staging.yml docker-compose.db.yml .docker api frontend build/
+          cp -r docker-compose.yml docker-compose.staging.yml docker-compose.db.yml docker-compose.maintenance.yml .docker api frontend build/
 
       # ------------------------------
       # Create release directories on server
@@ -164,6 +164,31 @@ jobs:
               docker compose -f "$COMPOSE_DIR/docker-compose.db.yml" -p production up -d db
               echo "Warte auf DB-Bereitschaft..."
               until docker exec kaderblick-db mysqladmin ping -uroot -proot --silent 2>/dev/null; do sleep 3; done
+            fi
+
+      # ------------------------------
+      # Ensure maintenance container is running
+      # Persistenter Container – wird durch Deployments nie gestoppt.
+      # Plesk-Nginx leitet bei 502/503/504 auf Port 8082 um.
+      # ------------------------------
+      - name: Ensure maintenance container is running
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            COMPOSE_DIR="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
+            [ -d "$COMPOSE_DIR" ] || COMPOSE_DIR="${{ steps.release.outputs.prod_dir }}"
+
+            if docker ps --filter "name=kaderblick-maintenance" --filter "status=running" | grep -q kaderblick-maintenance; then
+              echo "Maintenance-Container läuft bereits."
+            else
+              echo "Starte Maintenance-Container..."
+              cd "$COMPOSE_DIR"
+              docker compose -f docker-compose.maintenance.yml -p maintenance up -d --build
+              echo "Maintenance-Container gestartet."
             fi
 
       # ------------------------------
@@ -298,7 +323,7 @@ jobs:
               exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api bin/console secrets:decrypt-to-local --force --env=prod
+              exec -T api bin/console secrets:decrypt-to-local --force --env=staging
 
             if [ ! -f api/config/jwt/private.pem ] || [ ! -f api/config/jwt/public.pem ]; then
               docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \

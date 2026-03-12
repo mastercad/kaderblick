@@ -12,6 +12,7 @@ use App\Entity\User;
 use App\Repository\CameraRepository;
 use App\Repository\GameEventRepository;
 use App\Repository\GameRepository;
+use App\Repository\ParticipationRepository;
 use App\Repository\TeamRepository;
 use App\Security\Voter\GameEventVoter;
 use App\Security\Voter\GameVoter;
@@ -20,6 +21,7 @@ use App\Service\CoachTeamPlayerService;
 use App\Service\TournamentAdvancementService;
 use App\Service\UserTitleService;
 use App\Service\VideoTimelineService;
+use DateTime;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -571,6 +573,112 @@ class GamesController extends ApiController
             'userDefaultTeamId' => $userDefaultTeamId,
             'noTeamAssignment' => $noTeamAssignment,
             'availableTeams' => $allTeams,
+        ]);
+    }
+
+    /**
+     * Returns confirmed squad players for a game (attending/late participations only),
+     * filtered to real players (self_player relation) in the game's teams.
+     * Parents, siblings etc. are excluded via the relationType identifier.
+     */
+    #[Route('/{id}/squad', name: 'squad', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function squad(
+        Game $game,
+        ParticipationRepository $participationRepo,
+    ): JsonResponse {
+        if (!$this->isGranted(GameVoter::VIEW, $game)) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
+        $calendarEvent = $game->getCalendarEvent();
+        if (!$calendarEvent) {
+            return $this->json(['squad' => [], 'hasParticipationData' => false]);
+        }
+
+        $teamIds = [];
+        if ($game->getHomeTeam()) {
+            $teamIds[] = $game->getHomeTeam()->getId();
+        }
+        if ($game->getAwayTeam()) {
+            $teamIds[] = $game->getAwayTeam()->getId();
+        }
+
+        if (empty($teamIds)) {
+            return $this->json(['squad' => [], 'hasParticipationData' => false]);
+        }
+
+        $participations = $participationRepo->findByEvent($calendarEvent);
+        $hasParticipationData = count($participations) > 0;
+
+        // Collect user IDs that confirmed (attending) or are coming late
+        $confirmedUserIds = [];
+        foreach ($participations as $participation) {
+            $code = $participation->getStatus()->getCode();
+            if (in_array($code, ['attending', 'late'], true)) {
+                $confirmedUserIds[] = $participation->getUser()->getId();
+            }
+        }
+
+        if (empty($confirmedUserIds)) {
+            return $this->json(['squad' => [], 'hasParticipationData' => $hasParticipationData]);
+        }
+
+        // Query players linked via self_player UserRelation to the confirmed users,
+        // restricted to active assignments in the game's home/away teams.
+        // Parents/guardians are excluded because they have a different relationType identifier.
+        $rows = $this->entityManager->createQuery(
+            'SELECT p.id, p.firstName, p.lastName, pta.shirtNumber, IDENTITY(pta.team) as teamId
+            FROM App\Entity\Player p
+            INNER JOIN p.userRelations ur
+            INNER JOIN ur.relationType rt
+            INNER JOIN p.playerTeamAssignments pta
+            WHERE IDENTITY(ur.user) IN (:userIds)
+              AND rt.identifier = :relationType
+              AND IDENTITY(pta.team) IN (:teamIds)
+              AND (pta.endDate IS NULL OR pta.endDate >= :today)
+            ORDER BY pta.shirtNumber ASC'
+        )
+            ->setParameter('userIds', $confirmedUserIds)
+            ->setParameter('relationType', 'self_player')
+            ->setParameter('teamIds', $teamIds)
+            ->setParameter('today', new DateTime('today'))
+            ->getArrayResult();
+
+        // Deduplicate: a player may have multiple active assignments to the same team
+        $seen = [];
+        $squad = [];
+        foreach ($rows as $row) {
+            $key = $row['id'] . '_' . $row['teamId'];
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $squad[] = [
+                'id' => $row['id'],
+                'fullName' => $row['firstName'] . ' ' . $row['lastName'],
+                'shirtNumber' => $row['shirtNumber'],
+                'teamId' => (int) $row['teamId'],
+            ];
+        }
+
+        // Sort: shirtNumber ASC, nulls last, then alphabetically
+        usort($squad, static function (array $a, array $b): int {
+            if ($a['shirtNumber'] === $b['shirtNumber']) {
+                return strcmp((string) $a['fullName'], (string) $b['fullName']);
+            }
+            if (null === $a['shirtNumber']) {
+                return 1;
+            }
+            if (null === $b['shirtNumber']) {
+                return -1;
+            }
+
+            return (int) $a['shirtNumber'] <=> (int) $b['shirtNumber'];
+        });
+
+        return $this->json([
+            'squad' => $squad,
+            'hasParticipationData' => $hasParticipationData,
         ]);
     }
 

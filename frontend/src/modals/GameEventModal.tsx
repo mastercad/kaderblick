@@ -17,6 +17,8 @@ import {
   fetchSubstitutionReasons,
   createGameEvent,
   updateGameEvent,
+  fetchGameSquad,
+  type SquadPlayer,
 } from '../services/games';
 import { Game, GameEvent, GameEventType, Player, SubstitutionReason } from '../types/games';
 import { getGameEventIconByCode } from '../constants/gameEventIcons';
@@ -108,6 +110,11 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
   const [substitutionReasons, setSubstitutionReasons] = useState<SubstitutionReason[]>([]);
   const [teamPlayers, setTeamPlayers] = useState<Player[]>([]);
   const [formData, setFormData] = useState(getInitialFormData);
+  /** Squad (Zugesagte) pro teamId, leer wenn keine Participation-Daten */
+  const [squadByTeam, setSquadByTeam] = useState<Record<number, SquadPlayer[]>>({});
+  const [hasParticipationData, setHasParticipationData] = useState(false);
+  /** Wenn true: alle Teamspieler statt nur Zugesagte anzeigen */
+  const [showAllPlayers, setShowAllPlayers] = useState(false);
   const prevOpen = useRef(false);
 
   // ── Uhr ───────────────────────────────────────────────────────────────────
@@ -157,17 +164,29 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
 
   useEffect(() => {
     if (formData.team) {
-      apiJson(`/api/teams/${formData.team}/players`).then(p => setTeamPlayers(p));
+      const teamId = Number(formData.team);
+      const squadForTeam = squadByTeam[teamId] ?? [];
+      if (squadForTeam.length > 0 && !showAllPlayers) {
+        // Nur zugesagte Spieler (Kader) anzeigen
+        setTeamPlayers(squadForTeam as unknown as Player[]);
+      } else {
+        // Fallback: alle aktiven Teamspieler laden
+        apiJson(`/api/teams/${formData.team}/players`).then(p => {
+          const arr = Array.isArray(p) ? p : Object.values(p as Record<string, unknown>);
+          setTeamPlayers(arr as Player[]);
+        });
+      }
     } else {
       setTeamPlayers([]);
     }
-  }, [formData.team]);
+  }, [formData.team, squadByTeam, showAllPlayers]);
 
   const loadInitialData = async () => {
     try {
-      const [eventTypesRaw, reasonsData] = await Promise.all([
+      const [eventTypesRaw, reasonsData, squadData] = await Promise.all([
         fetchGameEventTypes(),
         fetchSubstitutionReasons(),
+        fetchGameSquad(gameId).catch(() => ({ squad: [], hasParticipationData: false })),
       ]);
       const eventTypesData = Array.isArray(eventTypesRaw)
         ? eventTypesRaw
@@ -175,6 +194,15 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
       setEventTypes(eventTypesData);
       setPlayers([]);
       setSubstitutionReasons(reasonsData);
+
+      // Squad nach teamId gruppieren
+      const byTeam: Record<number, SquadPlayer[]> = {};
+      for (const p of squadData.squad) {
+        if (!byTeam[p.teamId]) byTeam[p.teamId] = [];
+        byTeam[p.teamId].push(p);
+      }
+      setSquadByTeam(byTeam);
+      setHasParticipationData(squadData.hasParticipationData);
     } catch (error) {
       console.error('Error loading initial data:', error);
     }
@@ -184,6 +212,7 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
   const handleInputChange = (field: string, value: string | number) => {
     if (field === 'team') {
       setFormData(prev => ({ ...prev, team: String(value), player: '', relatedPlayer: '' }));
+      setShowAllPlayers(false);
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
@@ -421,6 +450,34 @@ export const GameEventModal: React.FC<GameEventModalProps> = ({
             ))}
           </Select>
         </FormControl>
+
+        {/* ── Kader-Indikator: Nur bei Team-Auswahl mit vorhandenen Zusagen ── */}
+        {formData.team && (() => {
+          const teamId = Number(formData.team);
+          const squadCount = squadByTeam[teamId]?.length ?? 0;
+          if (!hasParticipationData) return null;
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+              <Chip
+                size="small"
+                color={!showAllPlayers && squadCount > 0 ? 'success' : 'default'}
+                variant={!showAllPlayers && squadCount > 0 ? 'filled' : 'outlined'}
+                label={
+                  squadCount > 0
+                    ? (showAllPlayers ? 'Alle Spieler' : `${squadCount} zugesagt`)
+                    : 'Keine Zusagen'
+                }
+                onClick={squadCount > 0 ? () => setShowAllPlayers(v => !v) : undefined}
+                sx={{ cursor: squadCount > 0 ? 'pointer' : 'default', fontSize: '0.75rem' }}
+              />
+              {!showAllPlayers && squadCount > 0 && (
+                <Typography variant="caption" color="text.secondary">
+                  Tippe zum Umschalten auf alle Teamspieler
+                </Typography>
+              )}
+            </Box>
+          );
+        })()}
 
         <FormControl fullWidth required sx={{ mb: 2 }}>
           <InputLabel>Spieler</InputLabel>

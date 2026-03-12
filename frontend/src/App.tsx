@@ -38,6 +38,7 @@ import GithubIssueDetail from './pages/GithubIssueDetail';
 import MyFeedback from './pages/MyFeedback';
 import MyFeedbackDetail from './pages/MyFeedbackDetail';
 import AdminTitleXpOverview from './pages/admin/AdminTitleXpOverview';
+import ActivityOverview from './pages/admin/ActivityOverview';
 import SystemSettings from './pages/admin/SystemSettings';
 import XpConfig from './pages/admin/XpConfig';
 import FabStackRoot from './components/FabStackRoot';
@@ -205,6 +206,7 @@ function App() {
                   <Route path="/admin/title-xp-overview" element={<ProtectedRoute><AdminTitleXpOverview /></ProtectedRoute>} />
                   <Route path="/admin/xp-config" element={<ProtectedRoute><XpConfig /></ProtectedRoute>} />
                   <Route path="/admin/system-settings" element={<ProtectedRoute><SystemSettings /></ProtectedRoute>} />
+                  <Route path="/admin/activity" element={<ProtectedRoute><ActivityOverview /></ProtectedRoute>} />
                   <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
                   <Route path="/news/:id" element={<ProtectedRoute><NewsDetail /></ProtectedRoute>} />
                   <Route path="locations" element={<ProtectedRoute><Locations /></ProtectedRoute>} />
