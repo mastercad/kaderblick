@@ -174,12 +174,12 @@ class TeamsController extends AbstractController
 
         if (array_key_exists('defaultHalfDuration', $data)) {
             $val = $data['defaultHalfDuration'];
-            $team->setDefaultHalfDuration($val !== null && $val !== '' ? (int) $val : null);
+            $team->setDefaultHalfDuration(null !== $val && '' !== $val ? (int) $val : null);
         }
 
         if (array_key_exists('defaultHalftimeBreakDuration', $data)) {
             $val = $data['defaultHalftimeBreakDuration'];
-            $team->setDefaultHalftimeBreakDuration($val !== null && $val !== '' ? (int) $val : null);
+            $team->setDefaultHalftimeBreakDuration(null !== $val && '' !== $val ? (int) $val : null);
         }
 
         $this->entityManager->persist($team);
@@ -224,12 +224,12 @@ class TeamsController extends AbstractController
 
         if (array_key_exists('defaultHalfDuration', $teamData)) {
             $val = $teamData['defaultHalfDuration'];
-            $team->setDefaultHalfDuration($val !== null && $val !== '' ? (int) $val : null);
+            $team->setDefaultHalfDuration(null !== $val && '' !== $val ? (int) $val : null);
         }
 
         if (array_key_exists('defaultHalftimeBreakDuration', $teamData)) {
             $val = $teamData['defaultHalftimeBreakDuration'];
-            $team->setDefaultHalftimeBreakDuration($val !== null && $val !== '' ? (int) $val : null);
+            $team->setDefaultHalftimeBreakDuration(null !== $val && '' !== $val ? (int) $val : null);
         }
 
         $this->entityManager->persist($team);

@@ -523,8 +523,8 @@ class CalendarEventServiceTest extends TestCase
         $repo = $this->getMockBuilder(\Doctrine\ORM\EntityRepository::class)
             ->disableOriginalConstructor()->onlyMethods(['findOneBy'])->getMock();
         $repo->method('findOneBy')->willReturnCallback(fn (array $c) => match ($c['name'] ?? '') {
-            'Spiel'  => $spielType,
-            default  => null,
+            'Spiel' => $spielType,
+            default => null,
         });
 
         $em = $this->createMock(EntityManagerInterface::class);
@@ -554,15 +554,15 @@ class CalendarEventServiceTest extends TestCase
         $calendarEvent->method('getCalendarEventType')->willReturn(null);
 
         $data = [
-            'title'       => 'Testspiel',
+            'title' => 'Testspiel',
             'description' => '',
-            'startDate'   => '2025-06-01T15:00:00',
+            'startDate' => '2025-06-01T15:00:00',
             'eventTypeId' => 1,
-            'game'        => [
-                'halfDuration'          => 30,
+            'game' => [
+                'halfDuration' => 30,
                 'halftimeBreakDuration' => 10,
-                'firstHalfExtraTime'    => 2,
-                'secondHalfExtraTime'   => 3,
+                'firstHalfExtraTime' => 2,
+                'secondHalfExtraTime' => 3,
             ],
         ];
 
@@ -583,8 +583,8 @@ class CalendarEventServiceTest extends TestCase
         $repo = $this->getMockBuilder(\Doctrine\ORM\EntityRepository::class)
             ->disableOriginalConstructor()->onlyMethods(['findOneBy'])->getMock();
         $repo->method('findOneBy')->willReturnCallback(fn (array $c) => match ($c['name'] ?? '') {
-            'Spiel'  => $spielType,
-            default  => null,
+            'Spiel' => $spielType,
+            default => null,
         });
 
         $em = $this->createMock(EntityManagerInterface::class);
@@ -614,12 +614,12 @@ class CalendarEventServiceTest extends TestCase
 
         // No 'endDate' in data → service should auto-calculate from 45+15+45 = 105 min
         $data = [
-            'title'       => 'Testspiel Endzeit',
+            'title' => 'Testspiel Endzeit',
             'description' => '',
-            'startDate'   => '2025-06-01T19:00:00',
+            'startDate' => '2025-06-01T19:00:00',
             'eventTypeId' => 1,
-            'game'        => [
-                'halfDuration'          => 45,
+            'game' => [
+                'halfDuration' => 45,
                 'halftimeBreakDuration' => 15,
             ],
         ];
@@ -638,8 +638,8 @@ class CalendarEventServiceTest extends TestCase
         $repo = $this->getMockBuilder(\Doctrine\ORM\EntityRepository::class)
             ->disableOriginalConstructor()->onlyMethods(['findOneBy'])->getMock();
         $repo->method('findOneBy')->willReturnCallback(fn (array $c) => match ($c['name'] ?? '') {
-            'Spiel'  => $spielType,
-            default  => null,
+            'Spiel' => $spielType,
+            default => null,
         });
 
         $em = $this->createMock(EntityManagerInterface::class);
@@ -668,13 +668,13 @@ class CalendarEventServiceTest extends TestCase
         $calendarEvent->method('getCalendarEventType')->willReturn(null);
 
         $data = [
-            'title'       => 'Testspiel mit Endzeit',
+            'title' => 'Testspiel mit Endzeit',
             'description' => '',
-            'startDate'   => '2025-06-01T19:00:00',
-            'endDate'     => '2025-06-01T22:00:00',  // explicit end time
+            'startDate' => '2025-06-01T19:00:00',
+            'endDate' => '2025-06-01T22:00:00',  // explicit end time
             'eventTypeId' => 1,
-            'game'        => [
-                'halfDuration'          => 45,
+            'game' => [
+                'halfDuration' => 45,
                 'halftimeBreakDuration' => 15,
             ],
         ];

@@ -349,20 +349,20 @@ class CalendarEventService
             }
             if (array_key_exists('firstHalfExtraTime', $data['game'] ?? [])) {
                 $val = $data['game']['firstHalfExtraTime'];
-                $calendarEvent->getGame()?->setFirstHalfExtraTime($val !== null && $val !== '' ? (int) $val : null);
+                $calendarEvent->getGame()?->setFirstHalfExtraTime(null !== $val && '' !== $val ? (int) $val : null);
             }
             if (array_key_exists('secondHalfExtraTime', $data['game'] ?? [])) {
                 $val = $data['game']['secondHalfExtraTime'];
-                $calendarEvent->getGame()?->setSecondHalfExtraTime($val !== null && $val !== '' ? (int) $val : null);
+                $calendarEvent->getGame()?->setSecondHalfExtraTime(null !== $val && '' !== $val ? (int) $val : null);
             }
         }
 
         // Auto-calculate end date for Spiel events if not provided in payload
-        if ($isGameEvent && !$isTournamentPayload && !isset($data['endDate']) && $calendarEvent->getStartDate() !== null) {
+        if ($isGameEvent && !$isTournamentPayload && !isset($data['endDate']) && null !== $calendarEvent->getStartDate()) {
             $halfDur = $calendarEvent->getGame()?->getHalfDuration() ?? 45;
             $breakDur = $calendarEvent->getGame()?->getHalftimeBreakDuration() ?? 15;
             $totalMinutes = 2 * $halfDur + $breakDur;
-            $endDt = \DateTime::createFromInterface($calendarEvent->getStartDate());
+            $endDt = DateTime::createFromInterface($calendarEvent->getStartDate());
             $endDt->modify("+{$totalMinutes} minutes");
             $calendarEvent->setEndDate($endDt);
         }
@@ -810,7 +810,7 @@ class CalendarEventService
         $eventType = $calendarEvent->getCalendarEventType();
 
         // Für Spiel- und Aufgaben-Events keine Standard-Permissions erstellen
-        if ($eventType === null || in_array($eventType->getName(), ['Spiel', 'Aufgabe'])) {
+        if (null === $eventType || in_array($eventType->getName(), ['Spiel', 'Aufgabe'])) {
             return;
         }
 
