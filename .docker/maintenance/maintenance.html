@@ -103,7 +103,7 @@
       /* Tablet */
       @media (max-width: 1200px) {
         .title   { font-size: clamp(3rem, 9vw, 9rem); }
-        .subtitle { font-size: clamp(1.5rem, 4.5vw, 4.5rem); }
+        .subtitle { font-size: clamp(1.5rem, 4.5vw, 5.5rem); }
       }
 
       /* Mobile */
@@ -151,5 +151,27 @@
         </p>
       </div>
     </div>
+  <script>
+    function equalizeWidths() {
+      const title    = document.querySelector('.title');
+      const subtitle = document.querySelector('.subtitle');
+
+      // Reset any previous inline override so we measure the natural size
+      subtitle.style.fontSize = '';
+
+      // Only equalize when text is on one line (nowrap mode)
+      if (getComputedStyle(title).whiteSpace !== 'nowrap') return;
+
+      const titleWidth    = title.getBoundingClientRect().width;
+      const subtitleWidth = subtitle.getBoundingClientRect().width;
+      if (!subtitleWidth) return;
+
+      const natural = parseFloat(getComputedStyle(subtitle).fontSize);
+      subtitle.style.fontSize = (natural * titleWidth / subtitleWidth) + 'px';
+    }
+
+    window.addEventListener('load',   equalizeWidths);
+    window.addEventListener('resize', equalizeWidths);
+  </script>
   </body>
 </html>

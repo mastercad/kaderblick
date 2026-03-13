@@ -13,11 +13,15 @@ env:
 #   1. Release-Verzeichnisse für Production (production_releases/) und Staging (staging_releases/)
 #      werden separat angelegt
 #   2. Produktionsdatenbank nach kaderblick_staging klonen
-#   3. Staging-Container mit eigenem Build starten (VITE_BACKEND_URL=staging-api)
-#   4. Staging: Composer, Migrations, Secrets, Fixtures
-#   5. Production-Container mit EIGENEM Build starten (VITE_BACKEND_URL=api.kaderblick.de)
-#   6. Production: Composer, Migrations, Secrets
-#   7. Alte Releases aufräumen
+#   3. Staging-Symlink setzen
+#   4. Staging-Container mit eigenem Build starten (VITE_BACKEND_URL=staging-api)
+#   5. Staging: Composer, Migrations, Secrets, Fixtures
+#   6. Production-Symlink setzen (speichert altes Release für Rollback)
+#   7. Production-Container mit EIGENEM Build starten (VITE_BACKEND_URL=api.kaderblick.de)
+#   8. Production: Composer, Migrations, Secrets
+#   9. Production-Healthcheck
+#  10. Bei Fehler: automatischer Rollback auf vorheriges Release
+#  11. Alte Releases aufräumen
 #
 # WICHTIG: Staging und Production werden GETRENNT gebaut, da VITE_BACKEND_URL
 # zur Build-Zeit ins JS-Bundle eingebettet wird und sich unterscheidet!
@@ -425,12 +429,11 @@ jobs:
             done
 
       # ------------------------------
-      # Deploy Production + Setup + Healthcheck + Rollback
-      # Eigener --build mit VITE_BACKEND_URL=https://api.kaderblick.de
-      # Bei Fehler: automatischer Rollback auf vorheriges Release
+      # Set production_current symlink
+      # Speichert das alte Release-Verzeichnis für einen möglichen Rollback.
       # HINWEIS: DB-Migrations lassen sich nicht automatisch rollbacken!
       # ------------------------------
-      - name: Deploy Production
+      - name: Set production_current symlink
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -439,39 +442,35 @@ jobs:
           script: |
             set -e
             PROD_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
-            OLD_PROD=$(readlink "$PROD_CURRENT" 2>/dev/null || echo "")
             NEW_PROD="${{ steps.release.outputs.prod_dir }}"
 
-            # Rollback-Funktion: wird bei jedem Script-Exit aufgerufen (Erfolg UND Fehler)
-            rollback() {
-              local EXIT_CODE=$?
-              if [ $EXIT_CODE -ne 0 ]; then
-                if [ -n "$OLD_PROD" ] && [ -d "$OLD_PROD" ]; then
-                  echo "FEHLER (Exit $EXIT_CODE) – Starte Rollback auf $OLD_PROD ..."
-                  docker compose -p production down --remove-orphans api frontend 2>/dev/null || true
-                  ln -sfn "$OLD_PROD" "$PROD_CURRENT"
-                  cd "$OLD_PROD"
-                  DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
-                  VITE_BACKEND_URL=https://api.kaderblick.de \
-                  docker compose -p production up -d --force-recreate api frontend 2>/dev/null || true
-                  echo "Rollback abgeschlossen → $OLD_PROD"
-                else
-                  echo "FEHLER (Exit $EXIT_CODE) – kein vorheriges Release zum Rollback vorhanden."
-                fi
-              fi
-            }
-            trap rollback EXIT
+            # Altes Release merken (für Rollback)
+            OLD_PROD=$(readlink "$PROD_CURRENT" 2>/dev/null || echo "")
+            echo "$OLD_PROD" > "${{ secrets.MAIN_PROJECT_PATH }}/.rollback_to"
 
-            # Alte Production-Container stoppen
+            ln -sfn "$NEW_PROD" "$PROD_CURRENT"
+            mkdir -p "$PROD_CURRENT/api/var/cache" \
+                     "$PROD_CURRENT/api/var/log"
+
+      # ------------------------------
+      # Deploy Production containers (persistent)
+      # Ports: 8080 (frontend) / 8081 (api)
+      # Eigener --build mit VITE_BACKEND_URL=https://api.kaderblick.de
+      # VITE_BACKEND_URL wird zur Build-Zeit ins JS-Bundle eingebettet → muss korrekt sein!
+      # ------------------------------
+      - name: Deploy Production containers
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            PROD_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
+            cd "$PROD_CURRENT"
+
             docker compose -p production down --remove-orphans api frontend 2>/dev/null || true
 
-            # Symlink auf neues Production-Release setzen
-            ln -sfn "$NEW_PROD" "$PROD_CURRENT"
-            mkdir -p "$PROD_CURRENT/api/var/cache" "$PROD_CURRENT/api/var/log"
-
-            # Production-Container mit eigenem Build starten
-            # VITE_BACKEND_URL wird zur Build-Zeit ins JS-Bundle eingebettet → muss korrekt sein!
-            cd "$PROD_CURRENT"
             HOST_UID=$(id -u kaderblick-ftp-admin)
             HOST_GID=$(id -g kaderblick-ftp-admin)
             DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
@@ -479,7 +478,21 @@ jobs:
             HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" \
             docker compose -p production up -d --build --force-recreate api frontend
 
-            # Composer, Migrations, Secrets, JWT
+            mkdir -p "$PROD_CURRENT/api/var"
+
+      # ------------------------------
+      # Production setup: Composer, Migrations, Secrets, JWT
+      # ------------------------------
+      - name: Production setup
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            cd "${{ secrets.MAIN_PROJECT_PATH }}/production_current"
+
             docker compose -p production exec -T api \
               composer install --no-dev --optimize-autoloader
 
@@ -505,7 +518,18 @@ jobs:
               cp api/config/jwt/public.pem "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/public.pem" || true
             fi
 
-            # Healthcheck: API muss innerhalb von 60s antworten
+      # ------------------------------
+      # Production healthcheck
+      # API muss innerhalb von 60s antworten
+      # ------------------------------
+      - name: Production healthcheck
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
             echo "Warte auf API-Bereitschaft..."
             for i in $(seq 1 12); do
               RESPONSE=$(docker compose -p production exec -T api \
@@ -528,6 +552,36 @@ jobs:
               echo "Warte... ($i/12, HTTP $HTTP_CODE)"
               sleep 5
             done
+
+      # ------------------------------
+      # Rollback Production
+      # Läuft nur bei Fehler in vorherigen Steps – stellt das letzte bekannte Release wieder her.
+      # HINWEIS: DB-Migrations lassen sich nicht automatisch rollbacken!
+      # ------------------------------
+      - name: Rollback Production
+        if: failure()
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            PROD_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
+            OLD_PROD=$(cat "${{ secrets.MAIN_PROJECT_PATH }}/.rollback_to" 2>/dev/null || echo "")
+
+            if [ -n "$OLD_PROD" ] && [ -d "$OLD_PROD" ]; then
+              echo "Starte Rollback auf $OLD_PROD ..."
+              docker compose -p production down --remove-orphans api frontend 2>/dev/null || true
+              ln -sfn "$OLD_PROD" "$PROD_CURRENT"
+              cd "$OLD_PROD"
+              DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
+              VITE_BACKEND_URL=https://api.kaderblick.de \
+              docker compose -p production up -d --force-recreate api frontend 2>/dev/null || true
+              echo "Rollback abgeschlossen → $OLD_PROD"
+            else
+              echo "Kein vorheriges Release zum Rollback vorhanden."
+            fi
+            rm -f "${{ secrets.MAIN_PROJECT_PATH }}/.rollback_to"
 
       # ------------------------------
       # Cleanup: alte Releases (letzte 3 behalten, jeweils getrennt)
