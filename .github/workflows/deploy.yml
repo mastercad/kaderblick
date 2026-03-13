@@ -247,6 +247,7 @@ jobs:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
+          command_timeout: 30m
           script: |
             set -e
 
@@ -295,6 +296,7 @@ jobs:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
+          command_timeout: 30m
           script: |
             set -e
             STAGING_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
@@ -329,6 +331,7 @@ jobs:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
+          command_timeout: 30m
           script: |
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
@@ -362,6 +365,7 @@ jobs:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
+          command_timeout: 30m
           script: |
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
@@ -470,6 +474,7 @@ jobs:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
+          command_timeout: 30m
           script: |
             set -e
             PROD_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
@@ -495,6 +500,7 @@ jobs:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
+          command_timeout: 30m
           script: |
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/production_current"
@@ -533,6 +539,7 @@ jobs:
           host: ${{ secrets.PLESK_HOST }}
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
+          command_timeout: 30m
           script: |
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/production_current"

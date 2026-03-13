@@ -7,8 +7,8 @@ WORKDIR /app
 # package.json und package-lock.json kopieren
 COPY ./frontend/package*.json ./
 
-# Abhängigkeiten installieren
-RUN npm install
+# Abhängigkeiten installieren (npm ci ist schneller & deterministisch im CI)
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 # Quellcode kopieren
 COPY ./frontend .
