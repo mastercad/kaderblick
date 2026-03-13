@@ -64,6 +64,7 @@ import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import AddIcon from '@mui/icons-material/Add';
 import RegistrationContextDialog from './RegistrationContextDialog';
+import CalendarIntegrationsTab from '../components/CalendarIntegrationsTab';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -676,6 +677,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
             <Tab icon={<SettingsIcon fontSize="small" />} iconPosition="start" label="Einstellungen" />
             <Tab icon={<NotificationsIcon fontSize="small" />} iconPosition="start" label="Benachrichtigungen" />
             <Tab icon={<VpnKeyIcon fontSize="small" />} iconPosition="start" label="API-Token" />
+            <Tab icon={<CalendarMonthIcon fontSize="small" />} iconPosition="start" label="Kalender" />
           </Tabs>
         </Box>
 
@@ -973,6 +975,11 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose, onSave }) =>
                 </Box>
               </Stack>
             </SectionCard>
+          </TabPanel>
+
+          {/* ── Tab 5: Kalender-Integration ───────────────────────────────── */}
+          <TabPanel value={activeTab} index={5}>
+            <CalendarIntegrationsTab />
           </TabPanel>
         </Box>
       </BaseModal>

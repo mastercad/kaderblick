@@ -95,6 +95,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTime $apiTokenCreatedAt = null;
 
+    /** Token für öffentliche iCal-Feeds (persönlich / Verein / Plattform) */
+    #[ORM\Column(length: 64, nullable: true, unique: true)]
+    private ?string $calendarToken = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?DateTime $calendarTokenCreatedAt = null;
+
+    /**
+     * @var Collection<int, ExternalCalendar>
+     */
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: ExternalCalendar::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $externalCalendars;
+
     /**
      * Zeitstempel der letzten API-Aktivität des Benutzers.
      * Wird vom UserActivitySubscriber bei jedem authentifizierten Request (max. alle 5 Min.) aktualisiert.
@@ -185,6 +198,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->videoSegments = new ArrayCollection();
         $this->videoSegments = new ArrayCollection();
         $this->userXpEvents = new ArrayCollection();
+        $this->externalCalendars = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -494,6 +508,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->apiTokenCreatedAt = $apiTokenCreatedAt;
 
         return $this;
+    }
+
+    public function getCalendarToken(): ?string
+    {
+        return $this->calendarToken;
+    }
+
+    public function setCalendarToken(?string $calendarToken): self
+    {
+        $this->calendarToken = $calendarToken;
+
+        return $this;
+    }
+
+    public function getCalendarTokenCreatedAt(): ?DateTime
+    {
+        return $this->calendarTokenCreatedAt;
+    }
+
+    public function setCalendarTokenCreatedAt(?DateTime $calendarTokenCreatedAt): self
+    {
+        $this->calendarTokenCreatedAt = $calendarTokenCreatedAt;
+
+        return $this;
+    }
+
+    /** @return Collection<int, ExternalCalendar> */
+    public function getExternalCalendars(): Collection
+    {
+        return $this->externalCalendars;
     }
 
     public function getLastActivityAt(): ?DateTime
