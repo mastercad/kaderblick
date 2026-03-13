@@ -163,11 +163,12 @@ jobs:
             fi
 
       # ------------------------------
-      # Ensure maintenance container is running
-      # Persistenter Container – wird durch Deployments nie gestoppt.
-      # Plesk-Nginx leitet bei 502/503/504 auf Port 8082 um.
+      # Rebuild & restart maintenance container
+      # Bei jedem Deployment neu bauen, damit Änderungen an nginx.conf
+      # oder maintenance.html sofort übernommen werden.
+      # Plesk-Nginx leitet bei Maintenance-Flag auf Port 8083 um.
       # ------------------------------
-      - name: Ensure maintenance container is running
+      - name: Rebuild maintenance container
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -179,20 +180,10 @@ jobs:
             # da production_current noch auf ein altes Release zeigen kann,
             # das docker-compose.maintenance.yml noch nicht enthält.
             COMPOSE_DIR="${{ steps.release.outputs.prod_dir }}"
-
-            if docker ps --filter "name=kaderblick-maintenance" --filter "status=running" | grep -q kaderblick-maintenance; then
-              echo "Maintenance-Container läuft bereits."
-            else
-              # Container existiert, läuft aber nicht (z.B. Created/Exited) → entfernen
-              if docker ps -a --filter "name=kaderblick-maintenance" | grep -q kaderblick-maintenance; then
-                echo "Entferne nicht-laufenden Maintenance-Container..."
-                docker rm -f kaderblick-maintenance
-              fi
-              echo "Starte Maintenance-Container..."
-              cd "$COMPOSE_DIR"
-              docker compose -f docker-compose.maintenance.yml -p maintenance up -d --build
-              echo "Maintenance-Container gestartet."
-            fi
+            cd "$COMPOSE_DIR"
+            echo "Baue Maintenance-Container neu..."
+            docker compose -f docker-compose.maintenance.yml -p maintenance up -d --build --force-recreate
+            echo "Maintenance-Container neu gestartet."
 
       # ------------------------------
       # Prepare .env files (Production und Staging)
