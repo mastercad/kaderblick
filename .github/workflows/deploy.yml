@@ -531,7 +531,7 @@ jobs:
             fi
 
       # ------------------------------
-      # Production: Load fixtures (auf kaderblick_production)
+      # Production: Load fixtures (auf kaderblick)
       # ------------------------------
       - name: Load fixtures on production
         uses: appleboy/ssh-action@master
