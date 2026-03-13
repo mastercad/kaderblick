@@ -3,6 +3,7 @@
 #
 # Zweck:
 #   - Eigenes Docker-Volume für var/ (Cache, Logs, Sessions) – kein Konflikt mit Production
+#   - Frontend-Image mit staging-spezifischer VITE_BACKEND_URL (staging-api.kaderblick.de)
 #   - Production-Container laufen vom selben Release-Verzeichnis, teilen sich aber NICHT var/
 
 services:
@@ -12,6 +13,10 @@ services:
       # Docker wertet spezifischere Pfade bevorzugt aus, daher übernimmt dieses
       # Volume den Unterordner /var/www/symfony/var.
       - kaderblick-staging-api-var:/var/www/symfony/var
+
+  frontend:
+    # Staging-Image hat VITE_BACKEND_URL=https://staging-api.kaderblick.de eingebettet
+    image: ghcr.io/mastercad/kaderblick/frontend-staging:${IMAGE_TAG:-latest}
 
 volumes:
   kaderblick-staging-api-var:

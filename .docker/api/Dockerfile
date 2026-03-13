@@ -25,7 +25,7 @@ RUN sed -ri -e 's!/var/www/html!/var/www/symfony/public!g' /etc/apache2/sites-av
 
 RUN echo "openssl.cafile=/etc/ssl/certs/ca-certificates.crt" > /usr/local/etc/php/conf.d/99-ca-certificates.ini
 
-COPY conf.d/upload-limits.ini /usr/local/etc/php/conf.d/
+COPY .docker/api/conf.d/upload-limits.ini /usr/local/etc/php/conf.d/
 
 RUN pecl install xdebug && docker-php-ext-enable xdebug
 
@@ -38,8 +38,8 @@ RUN echo "xdebug.mode=debug" > /usr/local/etc/php/conf.d/xdebug.ini && \
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-COPY cron_wrapper.sh /usr/local/bin/cron_wrapper.sh
-COPY entrypoint.sh /entrypoint.sh
+COPY .docker/api/cron_wrapper.sh /usr/local/bin/cron_wrapper.sh
+COPY .docker/api/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /usr/local/bin/cron_wrapper.sh \
     && chmod +x /entrypoint.sh
@@ -49,20 +49,15 @@ RUN echo "date.timezone=$TZ" > /usr/local/etc/php/conf.d/timezone.ini
 
 WORKDIR /var/www/symfony
 
-RUN mkdir -p config/secrets/prod \
-    && mkdir -p config/jwt \
-    && mkdir -p var/cache \
-    && mkdir -p var/log \
-    && chmod -R 777 config/secrets config/jwt var
-
-RUN mkdir -p var/log \
-    && chown -R www-data:www-data var/log \
-    && chmod -R 775 var/log
-
-# RUN composer install --no-interaction --optimize-autoloader --no-dev
-
-#RUN chown -R www-data:www-data /var/www/symfony/var /var/www/symfony/vendor
-RUN chown -R www-data:www-data /var/www/symfony/var
+# Source-Code und Composer-Abhängigkeiten ins Image einbetten.
+# api/vendor/ ist gitignored und wird nicht per SCP auf den Server kopiert.
+# Durch das Einbetten hier entfällt das langsame 'composer install' auf dem Server.
+COPY api/ /var/www/symfony/
+RUN composer install --no-interaction --optimize-autoloader --no-dev \
+    && mkdir -p var/cache var/log config/secrets/prod config/secrets/staging config/jwt \
+    && chown -R www-data:www-data var/ vendor/ \
+    && chmod -R 755 vendor/ \
+    && chmod -R 775 var/
 
 EXPOSE 80
 

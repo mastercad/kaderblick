@@ -20,13 +20,126 @@ jobs:
   deployment:
     runs-on: ubuntu-latest
     needs: quality-assurance
-    timeout-minutes: 30
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       # ------------------------------
       # Checkout repository
       # ------------------------------
       - uses: actions/checkout@v4
+
+      # ------------------------------
+      # Login to GitHub Container Registry (GHCR)
+      # GITHUB_TOKEN hat automatisch 'packages: write' (siehe Job-Permissions oben).
+      # Der Server braucht GHCR_TOKEN (GitHub PAT mit 'read:packages'-Scope) zum Pullen.
+      # ------------------------------
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ------------------------------
+      # Build-Metadaten vorbereiten (Publish-Datum, Build-Info)
+      # Muss vor dem Docker-Build laufen, damit die Änderungen ins Image eingebettet werden.
+      # ------------------------------
+      - name: Prepare build metadata
+        run: |
+          sh ./frontend/scripts/set-publish-date.sh
+          sh ./frontend/scripts/write-buildinfo.sh
+
+      # ------------------------------
+      # Erkennen welche Bereiche sich geändert haben.
+      # Bei unveränderten Images wird nur das bestehende 'latest'-Image
+      # mit dem neuen SHA neu getaggt (pull → retag → push) statt neu gebaut.
+      # ------------------------------
+      - name: Detect changed paths
+        id: changes
+        run: |
+          git fetch --depth=2 origin
+          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          if echo "$CHANGED" | grep -qE '^(api/|\.docker/api/)'; then
+            echo "api_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "api_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED" | grep -qE '^(frontend/|\.docker/frontend/)'; then
+            echo "frontend_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "frontend_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      # ------------------------------
+      # Docker Images in CI bauen und nach GHCR pushen
+      # API: Source-Code + vendor/ (composer install) eingebettet – kein Build mehr auf dem Server
+      # frontend-prod:    VITE_BACKEND_URL=https://api.kaderblick.de eingebettet
+      # frontend-staging: VITE_BACKEND_URL=https://staging-api.kaderblick.de eingebettet
+      # Bei unverändertem Bereich: 'latest' neu taggen statt neu bauen (~Sekunden statt Minuten).
+      # ------------------------------
+      - name: Build and push API image
+        run: |
+          if [ "${{ steps.changes.outputs.api_changed }}" = "true" ]; then
+            echo "API hat sich geändert – baue neu..."
+            docker build \
+              -f .docker/api/Dockerfile \
+              -t ghcr.io/mastercad/kaderblick/api:${{ github.sha }} \
+              -t ghcr.io/mastercad/kaderblick/api:latest \
+              .
+            docker push ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/api:latest
+          else
+            echo "API unverändert – tagge 'latest' als ${{ github.sha }}..."
+            docker pull ghcr.io/mastercad/kaderblick/api:latest
+            docker tag ghcr.io/mastercad/kaderblick/api:latest ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
+          fi
+
+      - name: Build and push frontend production image
+        run: |
+          if [ "${{ steps.changes.outputs.frontend_changed }}" = "true" ]; then
+            echo "Frontend hat sich geändert – baue neu..."
+            echo "VITE_BACKEND_URL=https://api.kaderblick.de" > frontend/.env
+            docker build \
+              -f .docker/frontend/Dockerfile \
+              -t ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }} \
+              -t ghcr.io/mastercad/kaderblick/frontend-prod:latest \
+              .
+            docker push ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/frontend-prod:latest
+          else
+            echo "Frontend unverändert – tagge 'latest' als ${{ github.sha }}..."
+            docker pull ghcr.io/mastercad/kaderblick/frontend-prod:latest
+            docker tag ghcr.io/mastercad/kaderblick/frontend-prod:latest ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
+          fi
+
+      - name: Build and push frontend staging image
+        run: |
+          if [ "${{ steps.changes.outputs.frontend_changed }}" = "true" ]; then
+            echo "Frontend hat sich geändert – baue neu..."
+            echo "VITE_BACKEND_URL=https://staging-api.kaderblick.de" > frontend/.env
+            docker build \
+              -f .docker/frontend/Dockerfile \
+              -t ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }} \
+              -t ghcr.io/mastercad/kaderblick/frontend-staging:latest \
+              .
+            docker push ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/frontend-staging:latest
+            rm -f frontend/.env
+          else
+            echo "Frontend unverändert – tagge 'latest' als ${{ github.sha }}..."
+            docker pull ghcr.io/mastercad/kaderblick/frontend-staging:latest
+            docker tag ghcr.io/mastercad/kaderblick/frontend-staging:latest ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
+          fi
 
       # ------------------------------
       # Enable staging maintenance mode
@@ -61,8 +174,6 @@ jobs:
       - name: Prepare files
         run: |
           mkdir -p build
-          sh ./frontend/scripts/set-publish-date.sh
-          sh ./frontend/scripts/write-buildinfo.sh
           cp -r docker-compose.yml docker-compose.staging.yml docker-compose.db.yml docker-compose.maintenance.yml .docker api frontend build/
 
       # ------------------------------
@@ -296,12 +407,19 @@ jobs:
             # Staging-DATABASE_URL: Datenbankname kaderblick → kaderblick_staging
             STAGING_DB_URL=$(echo "${{ secrets.DATABASE_URL }}" | sed 's|3306/kaderblick|3306/kaderblick_staging|')
 
+            # GHCR-Login auf Server (GHCR_TOKEN = GitHub PAT mit 'read:packages'-Scope)
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
+
+            docker pull ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
+            docker pull ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
+
             docker compose \
               -f docker-compose.yml \
               -f docker-compose.staging.yml \
               -p staging \
               down --remove-orphans api frontend 2>/dev/null || true
 
+            IMAGE_TAG=${{ github.sha }} \
             DATABASE_URL="$STAGING_DB_URL" XDEBUG_MODE=off \
             PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 \
             HOST_UID=$(id -u kaderblick-ftp-admin) HOST_GID=$(id -g kaderblick-ftp-admin) \
@@ -309,7 +427,7 @@ jobs:
               -f docker-compose.yml \
               -f docker-compose.staging.yml \
               -p staging \
-              up -d --build --force-recreate api frontend
+              up -d --no-build --force-recreate api frontend
 
             mkdir -p "$STAGING_CURRENT/api/var"
 
@@ -327,10 +445,8 @@ jobs:
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
 
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api composer install --no-dev --optimize-autoloader
-
             # Secrets zuerst entschlüsseln, damit cache:warmup alle Env-Werte kennt
+            # composer install entfällt – vendor/ ist bereits im GHCR-Image enthalten
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
               exec -T --user www-data api bin/console secrets:decrypt-to-local --force --env=staging
 
@@ -456,8 +572,8 @@ jobs:
       # ------------------------------
       # Deploy Production containers (persistent)
       # Ports: 8080 (frontend) / 8081 (api)
-      # Eigener --build mit VITE_BACKEND_URL=https://api.kaderblick.de
-      # VITE_BACKEND_URL wird zur Build-Zeit ins JS-Bundle eingebettet → muss korrekt sein!
+      # Images werden aus GHCR gepullt – kein docker build mehr auf dem Server.
+      # VITE_BACKEND_URL ist bereits zur CI-Build-Zeit im frontend-prod-Image eingebettet.
       # ------------------------------
       - name: Deploy Production containers
         uses: appleboy/ssh-action@master
@@ -471,14 +587,20 @@ jobs:
             PROD_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
             cd "$PROD_CURRENT"
 
-            docker compose -p production down --remove-orphans api frontend 2>/dev/null || true
+            # GHCR-Login auf Server (GHCR_TOKEN = GitHub PAT mit 'read:packages'-Scope)
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
+
+            docker pull ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
+            docker pull ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
+
+            docker compose -f docker-compose.yml -p production down --remove-orphans api frontend 2>/dev/null || true
 
             HOST_UID=$(id -u kaderblick-ftp-admin)
             HOST_GID=$(id -g kaderblick-ftp-admin)
+            IMAGE_TAG=${{ github.sha }} \
             DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
-            VITE_BACKEND_URL=https://api.kaderblick.de \
             HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" \
-            docker compose -p production up -d --build --force-recreate api frontend
+            docker compose -f docker-compose.yml -p production up -d --no-build --force-recreate api frontend
 
             mkdir -p "$PROD_CURRENT/api/var"
 
@@ -496,24 +618,22 @@ jobs:
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/production_current"
 
-            docker compose -p production exec -T api \
-              composer install --no-dev --optimize-autoloader
-
             # Secrets zuerst entschlüsseln, damit cache:warmup alle Env-Werte kennt
-            docker compose -p production exec -T --user www-data api \
+            # composer install entfällt – vendor/ ist bereits im GHCR-Image enthalten
+            docker compose -f docker-compose.yml -p production exec -T --user www-data api \
               bin/console secrets:decrypt-to-local --force --env=prod
 
-            docker compose -p production exec -T --user www-data api \
+            docker compose -f docker-compose.yml -p production exec -T --user www-data api \
               bin/console cache:warmup --env=prod
 
-            docker compose -p production exec -T --user www-data api \
+            docker compose -f docker-compose.yml -p production exec -T --user www-data api \
               bin/console doctrine:migrations:migrate --no-interaction --env=prod
 
             # JWT-Keys: PKCS#1-Format (BEGIN RSA PRIVATE KEY) ist nicht kompatibel mit OpenSSL 3.x
             # Bei fehlendem oder veraltetem Format: neue PKCS#8-Keys generieren und persistent speichern
             if [ ! -f api/config/jwt/private.pem ] || ! grep -q "BEGIN PRIVATE KEY" api/config/jwt/private.pem; then
               echo "JWT-Keys fehlen oder im PKCS#1-Format – regeneriere als PKCS#8..."
-              docker compose -p production exec -T --user www-data api \
+              docker compose -f docker-compose.yml -p production exec -T --user www-data api \
                 php bin/console lexik:jwt:generate-keypair --overwrite
               # Neue PKCS#8-Keys persistent im ROOT_DIR ablegen → wird beim nächsten Deploy kopiert
               mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt"
@@ -535,18 +655,18 @@ jobs:
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/production_current"
 
-            docker compose -f docker-compose.yml -f docker-compose.production.yml -p production \
+            docker compose -f docker-compose.yml -p production \
               exec -T api env APP_ENV=dev composer install
 
-            docker compose -f docker-compose.yml -f docker-compose.production.yml -p production \
+            docker compose -f docker-compose.yml -p production \
               exec -T --user www-data api bin/console doctrine:fixtures:load --env=dev --no-interaction --append --group=master
 
-            docker compose -f docker-compose.yml -f docker-compose.production.yml -p production \
+            docker compose -f docker-compose.yml -p production \
               exec -T api composer install --no-dev --optimize-autoloader
 
             # Cache nach Dev-Reinstall neu aufbauen
-            docker compose -f docker-compose.yml -f docker-compose.production.yml -p production \
-              exec -T --user www-data api bin/console cache:warmup --env=production
+            docker compose -f docker-compose.yml -p production \
+              exec -T --user www-data api bin/console cache:warmup --env=prod
 
       # ------------------------------
       # Production healthcheck
@@ -604,9 +724,9 @@ jobs:
               docker compose -p production down --remove-orphans api frontend 2>/dev/null || true
               ln -sfn "$OLD_PROD" "$PROD_CURRENT"
               cd "$OLD_PROD"
+              IMAGE_TAG=latest \
               DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
-              VITE_BACKEND_URL=https://api.kaderblick.de \
-              docker compose -p production up -d --force-recreate api frontend 2>/dev/null || true
+              docker compose -f docker-compose.yml -p production up -d --no-build --force-recreate api frontend 2>/dev/null || true
               echo "Rollback abgeschlossen → $OLD_PROD"
             else
               echo "Kein vorheriges Release zum Rollback vorhanden."
@@ -632,6 +752,38 @@ jobs:
             if [ -d "$BASE/staging_releases" ]; then
               cd "$BASE/staging_releases" && ls -1dt * | tail -n +4 | xargs -r rm -rf
             fi
+
+      # ------------------------------
+      # Cleanup: alte GHCR-Images (letzte 5 Versionen behalten)
+      # 'latest' wird nie gelöscht (untagged=false).
+      # Läuft immer – auch bei Fehlern, damit sich keine Altlasten aufbauen.
+      # ------------------------------
+      - name: Cleanup old GHCR images (api)
+        if: always()
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: kaderblick/api
+          package-type: container
+          min-versions-to-keep: 5
+          ignore-versions: latest
+
+      - name: Cleanup old GHCR images (frontend-prod)
+        if: always()
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: kaderblick/frontend-prod
+          package-type: container
+          min-versions-to-keep: 5
+          ignore-versions: latest
+
+      - name: Cleanup old GHCR images (frontend-staging)
+        if: always()
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: kaderblick/frontend-staging
+          package-type: container
+          min-versions-to-keep: 5
+          ignore-versions: latest
 
       # ------------------------------
       # Disable production maintenance mode
