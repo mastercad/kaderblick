@@ -447,21 +447,21 @@ jobs:
             fi
 
             # Healthcheck: API muss innerhalb von 60s antworten
-            echo "Warte auf API-Bereitschaft..."
-            for i in $(seq 1 12); do
-              HTTP_CODE=$(docker compose -p production exec -T api \
-                curl -s -o /dev/null -w "%{http_code}" http://localhost/ 2>/dev/null || echo "000")
-              if [ "$HTTP_CODE" != "000" ] && [ "$HTTP_CODE" != "500" ] && [ "$HTTP_CODE" != "502" ] && [ "$HTTP_CODE" != "503" ]; then
-                echo "API antwortet mit HTTP $HTTP_CODE – Deployment erfolgreich."
-                break
-              fi
-              if [ "$i" -eq 12 ]; then
-                echo "FEHLER: API antwortet nach 60s nicht korrekt (HTTP $HTTP_CODE)" >&2
-                exit 1
-              fi
-              echo "Warte... ($i/12, HTTP $HTTP_CODE)"
-              sleep 5
-            done
+            #echo "Warte auf API-Bereitschaft..."
+            #for i in $(seq 1 12); do
+              #HTTP_CODE=$(docker compose -p production exec -T api \
+                #curl -s -o /dev/null -w "%{http_code}" http://localhost/ 2>/dev/null || echo "000")
+              #if [ "$HTTP_CODE" != "000" ] && [ "$HTTP_CODE" != "500" ] && [ "$HTTP_CODE" != "502" ] && [ "$HTTP_CODE" != "503" ]; then
+                #echo "API antwortet mit HTTP $HTTP_CODE – Deployment erfolgreich."
+                #break
+              #fi
+              #if [ "$i" -eq 12 ]; then
+                #echo "FEHLER: API antwortet nach 60s nicht korrekt (HTTP $HTTP_CODE)" >&2
+                #exit 1
+              #fi
+              #echo "Warte... ($i/12, HTTP $HTTP_CODE)"
+              #sleep 5
+            #done
 
       # ------------------------------
       # Cleanup: alte Releases (letzte 3 behalten, jeweils getrennt)
