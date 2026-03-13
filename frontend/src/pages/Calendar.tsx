@@ -124,6 +124,11 @@ type CalendarEvent = {
   cancelled?: boolean;
   cancelReason?: string;
   cancelledBy?: string;
+  // Externe Kalender-Events (importiert via iCal)
+  isExternal?: boolean;
+  externalCalendarId?: number;
+  externalCalendarName?: string;
+  externalCalendarColor?: string;
 };
 
 type CalendarEventType = {
@@ -287,6 +292,7 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [externalEvents, setExternalEvents] = useState<CalendarEvent[]>([]);
   
   // Event Modal State
   const [eventModalOpen, setEventModalOpen] = useState(false);
@@ -571,6 +577,29 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
       });
   }, [date, view]);
 
+  // Externe Kalender-Events laden (einmal beim Mounten + bei Bedarf)
+  useEffect(() => {
+    apiJson('/api/profile/calendar/external/events/all')
+      .then((data: any) => {
+        if (!Array.isArray(data)) return;
+        const mapped: CalendarEvent[] = data.map((ev: any, idx: number) => ({
+          id: -(idx + 1),  // negative IDs um Konflikte mit echten Events zu vermeiden
+          title: ev.title || 'Externer Termin',
+          start: new Date(ev.start),
+          end: new Date(ev.end),
+          description: ev.description || '',
+          isExternal: true,
+          externalCalendarId: ev.calendarId,
+          externalCalendarName: ev.calendarName,
+          externalCalendarColor: ev.calendarColor,
+        }));
+        setExternalEvents(mapped);
+      })
+      .catch(() => {
+        // Fehler beim Laden externer Kalender → still ignorieren
+      });
+  }, []);
+
   // Event-Handler für das Erstellen neuer Events
   const handleDateClick = (slotInfo: any) => {
     if (!eventTypes.createAndEditAllowed) return;
@@ -592,6 +621,10 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
 
   // Event-Handler für das Bearbeiten existierender Events
   const handleEventClick = (info: any) => {
+    // Externe Events sind schreibgeschützt – kein EventDetailsModal öffnen
+    if (info?.isExternal) {
+      return;
+    }
     setSelectedEvent(info);
   };
 
@@ -1078,19 +1111,22 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
 
   // Custom Event-Styling basierend auf dem Event-Type
   const eventStyleGetter = (event: any) => {
-    // Verwende die Farbe des Event-Types, falls vorhanden
-    let backgroundColor = event.eventType?.color || theme.palette.primary.main;
+    // Externe Events: Farbe des externen Kalenders verwenden
+    let backgroundColor = event.isExternal
+      ? (event.externalCalendarColor || '#607d8b')
+      : (event.eventType?.color || theme.palette.primary.main);
     
     return {
       style: {
         backgroundColor,
         borderRadius: '4px',
-        opacity: event.cancelled ? 0.45 : 0.9,
+        opacity: event.cancelled ? 0.45 : (event.isExternal ? 0.75 : 0.9),
         color: 'white',
-        border: event.cancelled ? '2px dashed rgba(255,255,255,0.5)' : '0px',
+        border: event.cancelled ? '2px dashed rgba(255,255,255,0.5)' : (event.isExternal ? '1px dashed rgba(255,255,255,0.6)' : '0px'),
         display: 'block',
         fontWeight: 'bold',
-        fontSize: isMobile ? '0.75rem' : '0.875rem'
+        fontSize: isMobile ? '0.75rem' : '0.875rem',
+        cursor: event.isExternal ? 'default' : 'pointer',
       }
     };
   };
@@ -1222,13 +1258,15 @@ function CalendarInner({ setCalendarFabHandler }: CalendarProps) {
 
   // Gefilterte Events basierend auf den aktiven Event-Types
   const filteredEvents = useMemo(() => {
-    return events.filter(event => {
+    const platformEvents = events.filter(event => {
       // Events ohne eventType sind immer sichtbar
       if (!event.eventType?.id) return true;
       // Nur Events mit aktiven Event-Types anzeigen
       return activeEventTypeIds.has(event.eventType.id);
     });
-  }, [events, activeEventTypeIds]);
+    // Externe Events immer anhängen (sie haben keinen eventType)
+    return [...platformEvents, ...externalEvents];
+  }, [events, activeEventTypeIds, externalEvents]);
 
   // Toggle-Funktion für Event-Type-Filter
   const toggleEventType = (eventTypeId: number) => {
