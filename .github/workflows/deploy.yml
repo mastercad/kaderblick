@@ -552,7 +552,8 @@ jobs:
 
       # ------------------------------
       # Production healthcheck
-      # API muss innerhalb von 60s antworten
+      # Curl vom Host auf den exponierten API-Port – prüft ob der Container
+      # von außen erreichbar ist und ein valides JSON zurückgibt.
       # ------------------------------
       - name: Production healthcheck
         uses: appleboy/ssh-action@master
@@ -564,20 +565,19 @@ jobs:
             set -e
             echo "Warte auf API-Bereitschaft..."
             for i in $(seq 1 12); do
-              RESPONSE=$(docker compose -p production exec -T api \
-                curl -s -o /tmp/healthcheck_body.txt -w "%{http_code}" http://localhost/ 2>/dev/null || echo "000")
+              RESPONSE=$(curl -s -o /tmp/healthcheck_body.txt -w "%{http_code}" \
+                http://localhost:8081/api/health 2>/dev/null || echo "000")
               HTTP_CODE="$RESPONSE"
-              if [ "$HTTP_CODE" != "000" ] && [ "$HTTP_CODE" != "500" ] && [ "$HTTP_CODE" != "502" ] && [ "$HTTP_CODE" != "503" ]; then
-                echo "API antwortet mit HTTP $HTTP_CODE – Deployment erfolgreich."
+              if [ "$HTTP_CODE" = "200" ]; then
+                echo "API antwortet mit HTTP 200 – Deployment erfolgreich."
+                cat /tmp/healthcheck_body.txt
                 break
               fi
               if [ "$i" -eq 12 ]; then
                 echo "FEHLER: API antwortet nach 60s nicht korrekt (HTTP $HTTP_CODE)" >&2
                 echo "--- Response Body ---"
-                docker compose -p production exec -T api cat /tmp/healthcheck_body.txt 2>/dev/null || true
+                cat /tmp/healthcheck_body.txt 2>/dev/null || true
                 echo "--- Symfony prod.log (letzte 30 Zeilen) ---"
-                docker compose -p production exec -T api tail -n 30 var/log/prod.log 2>/dev/null || true
-                echo "--- Docker Container Logs (letzte 30 Zeilen) ---"
                 docker compose -p production logs --tail=30 api 2>/dev/null || true
                 exit 1
               fi
