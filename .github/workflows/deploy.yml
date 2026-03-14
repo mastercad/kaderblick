@@ -9,26 +9,6 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-# Ablauf:
-#   1. Release-Verzeichnisse für Production (production_releases/) und Staging (staging_releases/)
-#      werden separat angelegt
-#   2. Produktionsdatenbank nach kaderblick_staging klonen
-#   3. Staging-Container mit eigenem Build starten (VITE_BACKEND_URL=staging-api)
-#   4. Staging: Composer, Migrations, Secrets, Fixtures
-#   5. Production-Container mit EIGENEM Build starten (VITE_BACKEND_URL=api.kaderblick.de)
-#   6. Production: Composer, Migrations, Secrets
-#   7. Alte Releases aufräumen
-#
-# WICHTIG: Staging und Production werden GETRENNT gebaut, da VITE_BACKEND_URL
-# zur Build-Zeit ins JS-Bundle eingebettet wird und sich unterscheidet!
-#
-# Serverstruktur:
-#   MAIN_PROJECT_PATH/
-#     production_releases/TIMESTAMP/  ← Production-Releases
-#     staging_releases/TIMESTAMP/     ← Staging-Releases (eigene Kopie)
-#     production_current               → production_releases/TIMESTAMP
-#     staging_current              → staging_releases/TIMESTAMP
-
 jobs:
   quality-assurance:
     uses: ./.github/workflows/qa.yml
@@ -49,7 +29,7 @@ jobs:
       - uses: actions/checkout@v4
 
       # ------------------------------
-      # Generate release directory names (Production & Staging)
+      # Generate release directory names
       # Gleicher Timestamp → leicht zuzuordnen
       # ------------------------------
       - name: Generate release directory names
@@ -57,7 +37,6 @@ jobs:
         run: |
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           echo "prod_dir=${{ secrets.MAIN_PROJECT_PATH }}/production_releases/$TIMESTAMP" >> $GITHUB_OUTPUT
-          echo "staging_dir=${{ secrets.MAIN_PROJECT_PATH }}/staging_releases/$TIMESTAMP" >> $GITHUB_OUTPUT
 
       # ------------------------------
       # Prepare build files
@@ -67,7 +46,7 @@ jobs:
           mkdir -p build
           sh ./frontend/scripts/set-publish-date.sh
           sh ./frontend/scripts/write-buildinfo.sh
-          cp -r docker-compose.yml docker-compose.staging.yml docker-compose.db.yml docker-compose.maintenance.yml .docker api frontend build/
+          cp -r docker-compose.yml docker-compose.db.yml docker-compose.maintenance.yml .docker api frontend build/
 
       # ------------------------------
       # Create release directories on server
@@ -98,23 +77,7 @@ jobs:
           strip_components: 1
 
       # ------------------------------
-      # Copy production release → staging release directory (eigenständige Kopie)
-      # ------------------------------
-      - name: Create staging release directory
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            set -e
-            mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/staging_releases"
-            cp -r "${{ steps.release.outputs.prod_dir }}" "${{ steps.release.outputs.staging_dir }}"
-            chmod 755 "${{ steps.release.outputs.staging_dir }}"
-            chown -R ${{ secrets.PLESK_USERNAME }}:psacln "${{ steps.release.outputs.staging_dir }}"
-
-      # ------------------------------
-      # Deploy secrets & JWT keys (Production und Staging)
+      # Deploy secrets & JWT keys
       # ------------------------------
       - name: Deploy secrets & JWT
         uses: appleboy/ssh-action@master
@@ -125,10 +88,9 @@ jobs:
           script: |
             set -e
             PROD_DIR="${{ steps.release.outputs.prod_dir }}"
-            STAGING_DIR="${{ steps.release.outputs.staging_dir }}"
             ROOT_DIR="${{ secrets.MAIN_PROJECT_PATH }}"
 
-            for DIR in "$PROD_DIR" "$STAGING_DIR"; do
+            for DIR in "$PROD_DIR" ; do
               mkdir -p "$DIR/api/config/secrets/prod"
               mkdir -p "$DIR/api/config/jwt"
 
@@ -192,7 +154,7 @@ jobs:
             fi
 
       # ------------------------------
-      # Prepare .env files (Production und Staging)
+      # Prepare .env files
       # DATABASE_URL wird nicht in .env geschrieben – wird als Docker-Env-Variable übergeben
       # ------------------------------
       - name: Prepare .env files
@@ -204,9 +166,8 @@ jobs:
           script: |
             set -e
             PROD_DIR="${{ steps.release.outputs.prod_dir }}"
-            STAGING_DIR="${{ steps.release.outputs.staging_dir }}"
 
-            for DIR in "$PROD_DIR" "$STAGING_DIR"; do
+            for DIR in "$PROD_DIR" ; do
               cp "$DIR/api/.env.dist" "$DIR/api/.env"
               sed -i 's/^APP_ENV=.*$/APP_ENV=prod/' "$DIR/api/.env"
               echo "APP_SECRET=${{ secrets.APP_SECRET }}" >> "$DIR/api/.env"
@@ -216,144 +177,9 @@ jobs:
             done
 
             echo "VITE_BACKEND_URL=https://api.kaderblick.de" > "$PROD_DIR/frontend/.env"
-            echo "VITE_BACKEND_URL=https://staging-api.kaderblick.de" > "$STAGING_DIR/frontend/.env"
 
       # ------------------------------
-      # Clone production DB → kaderblick_staging
-      # Container: kaderblick-db, Credentials: root/root
-      # ------------------------------
-      - name: Clone production DB to staging
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            set -e
-
-            echo "Lösche kaderblick_staging (falls vorhanden)..."
-            docker exec kaderblick-db mysql -uroot -proot \
-              -e "DROP DATABASE IF EXISTS kaderblick_staging;"
-
-            echo "Erstelle kaderblick_staging..."
-            docker exec kaderblick-db mysql -uroot -proot \
-              -e "CREATE DATABASE kaderblick_staging CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-            echo "Vergebe Rechte für kaderblick-User..."
-            docker exec kaderblick-db mysql -uroot -proot \
-              -e "GRANT ALL PRIVILEGES ON kaderblick_staging.* TO 'kaderblick'@'%'; FLUSH PRIVILEGES;"
-
-            echo "Kopiere kaderblick → kaderblick_staging..."
-            docker exec kaderblick-db sh -c \
-              "mysqldump -uroot -proot --single-transaction --quick kaderblick | mysql -uroot -proot kaderblick_staging"
-
-            echo "DB-Klon abgeschlossen."
-
-      # ------------------------------
-      # Set staging_current symlink
-      # ------------------------------
-      - name: Set staging_current symlink
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            set -e
-            ln -sfn "${{ steps.release.outputs.staging_dir }}" "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
-            mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/cache" \
-                     "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/log"
-            chown -R www-data:www-data "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
-            chmod -R 775 "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var"
-
-      # ------------------------------
-      # Deploy Staging containers (persistent)
-      # Ports: 18080 (frontend) / 18081 (api)
-      # Eigenes var/-Volume via docker-compose.staging.yml
-      # DATABASE_URL: kaderblick_staging (aus production-URL abgeleitet)
-      # ------------------------------
-      - name: Deploy Staging containers
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            set -e
-            STAGING_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
-            cd "$STAGING_CURRENT"
-
-            # Staging-DATABASE_URL: Datenbankname kaderblick → kaderblick_staging
-            STAGING_DB_URL=$(echo "${{ secrets.DATABASE_URL }}" | sed 's|3306/kaderblick|3306/kaderblick_staging|')
-
-            docker compose \
-              -f docker-compose.yml \
-              -f docker-compose.staging.yml \
-              -p staging \
-              down --remove-orphans api frontend 2>/dev/null || true
-
-            DATABASE_URL="$STAGING_DB_URL" XDEBUG_MODE=off \
-            PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 \
-            docker compose \
-              -f docker-compose.yml \
-              -f docker-compose.staging.yml \
-              -p staging \
-              up -d --build --force-recreate api frontend
-
-            mkdir -p "$STAGING_CURRENT/api/var"
-            chmod -R 777 "$STAGING_CURRENT/api/var"
-
-      # ------------------------------
-      # Staging: Composer, Migrations, Secrets, JWT
-      # ------------------------------
-      - name: Staging setup
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            set -e
-            cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api composer install --no-dev --optimize-autoloader
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api bin/console doctrine:migrations:migrate --no-interaction --env=prod
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api bin/console secrets:decrypt-to-local --force --env=staging
-
-            if [ ! -f api/config/jwt/private.pem ] || [ ! -f api/config/jwt/public.pem ]; then
-              docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-                exec -T api php bin/console lexik:jwt:generate-keypair --overwrite
-            fi
-
-      # ------------------------------
-      # Staging: Load fixtures (auf kaderblick_staging)
-      # ------------------------------
-      - name: Load fixtures on staging
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            set -e
-            cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api env APP_ENV=dev composer install
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api bin/console doctrine:fixtures:load --env=dev --no-interaction --append --group=master
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api composer install --no-dev --optimize-autoloader
-
-      # ------------------------------
-      # Prepare shared uploads symlinks (Production und Staging)
+      # Prepare shared uploads symlinks
       # ------------------------------
       - name: Prepare uploads symlinks
         uses: appleboy/ssh-action@master
@@ -364,14 +190,13 @@ jobs:
           script: |
             set -e
             PROD_DIR="${{ steps.release.outputs.prod_dir }}"
-            STAGING_DIR="${{ steps.release.outputs.staging_dir }}"
             SHARED_UPLOADS="${{ secrets.MAIN_PROJECT_PATH }}/public/uploads"
 
             mkdir -p "$SHARED_UPLOADS"
             chown -R www-data:www-data "$SHARED_UPLOADS"
             chmod -R 775 "$SHARED_UPLOADS"
 
-            for DIR in "$PROD_DIR" "$STAGING_DIR"; do
+            for DIR in "$PROD_DIR"; do
               mkdir -p "$DIR/public"
               rm -rf "$DIR/public/uploads"
               ln -s "$SHARED_UPLOADS" "$DIR/public/uploads"
@@ -479,6 +304,3 @@ jobs:
               cd "$BASE/production_releases" && ls -1dt * | tail -n +4 | xargs -r rm -rf
             fi
 
-            if [ -d "$BASE/staging_releases" ]; then
-              cd "$BASE/staging_releases" && ls -1dt * | tail -n +4 | xargs -r rm -rf
-            fi
