@@ -314,7 +314,7 @@ jobs:
               echo "Starte DB-Container..."
               COMPOSE_DIR="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
               [ -d "$COMPOSE_DIR" ] || COMPOSE_DIR="${{ steps.release.outputs.prod_dir }}"
-              docker compose -f "$COMPOSE_DIR/docker-compose.db.yml" -p production up -d db
+              docker compose -f "$COMPOSE_DIR/docker-compose.db.yml" -p kaderblick-db up -d db
               echo "Warte auf DB-Bereitschaft..."
               until docker exec kaderblick-db mysqladmin ping -uroot -proot --silent 2>/dev/null; do sleep 3; done
             fi
@@ -806,6 +806,7 @@ jobs:
       # ------------------------------
       - name: Cleanup old GHCR images (api)
         if: always()
+        continue-on-error: true
         uses: actions/delete-package-versions@v5
         with:
           package-name: kaderblick/api
@@ -815,6 +816,7 @@ jobs:
 
       - name: Cleanup old GHCR images (frontend-prod)
         if: always()
+        continue-on-error: true
         uses: actions/delete-package-versions@v5
         with:
           package-name: kaderblick/frontend-prod
@@ -824,6 +826,7 @@ jobs:
 
       - name: Cleanup old GHCR images (frontend-staging)
         if: always()
+        continue-on-error: true
         uses: actions/delete-package-versions@v5
         with:
           package-name: kaderblick/frontend-staging
@@ -833,6 +836,7 @@ jobs:
 
       - name: Cleanup old GHCR images (maintenance)
         if: always()
+        continue-on-error: true
         uses: actions/delete-package-versions@v5
         with:
           package-name: kaderblick/maintenance
