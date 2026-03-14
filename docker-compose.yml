@@ -4,8 +4,9 @@ services:
   api:
     # Produktions-Image aus GHCR. Enthält Source-Code + vendor/ (composer install gebaked).
     # IMAGE_TAG wird beim Deploy auf den git-SHA gesetzt: IMAGE_TAG=${{ github.sha }}
+    # API_IMAGE_TAG kann abweichen (z.B. test-<sha> in QA). Fallback: IMAGE_TAG, dann latest.
     # Für lokale Entwicklung: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-    image: ghcr.io/mastercad/kaderblick/api:${IMAGE_TAG:-latest}
+    image: ghcr.io/mastercad/kaderblick/api:${API_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${API_PORT:-8081}:80"
