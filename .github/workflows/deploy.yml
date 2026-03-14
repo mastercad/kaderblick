@@ -209,6 +209,7 @@ jobs:
       # HINWEIS: DB-Migrations lassen sich nicht automatisch rollbacken!
       # ------------------------------
       - name: Deploy Production
+        timeout-minutes: 60
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
