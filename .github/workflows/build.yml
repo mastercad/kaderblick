@@ -81,25 +81,10 @@ jobs:
             -t ghcr.io/mastercad/kaderblick/maintenance:latest \
             --push .
 
-      # Prüfen welche Packages bereits in GHCR existieren, bevor Cleanup läuft.
-      # Verhindert "Package not found"-Annotations wenn ein Package noch nie gepusht wurde.
-      - name: Check which GHCR packages exist
-        if: always()
-        id: pkg_check
-        env:
-          GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
-        run: |
-          pkg_exists() {
-            gh api "users/mastercad/packages/container/$(echo "$1" | sed 's|/|%2F|g')" --silent 2>/dev/null && echo "true" || echo "false"
-          }
-          echo "api=$(pkg_exists 'kaderblick/api')"                         >> $GITHUB_OUTPUT
-          echo "frontend_prod=$(pkg_exists 'kaderblick/frontend-prod')"     >> $GITHUB_OUTPUT
-          echo "frontend_staging=$(pkg_exists 'kaderblick/frontend-staging')" >> $GITHUB_OUTPUT
-          echo "maintenance=$(pkg_exists 'kaderblick/maintenance')"         >> $GITHUB_OUTPUT
-
       # Alte GHCR-Images aufräumen (letzte 5 behalten, 'latest' nie löschen)
       - name: Cleanup old GHCR images (api)
-        if: always() && steps.pkg_check.outputs.api == 'true'
+        if: always()
+        continue-on-error: true
         uses: actions/delete-package-versions@v5
         with:
           package-name: kaderblick/api
@@ -108,7 +93,8 @@ jobs:
           ignore-versions: latest
 
       - name: Cleanup old GHCR images (frontend-prod)
-        if: always() && steps.pkg_check.outputs.frontend_prod == 'true'
+        if: always()
+        continue-on-error: true
         uses: actions/delete-package-versions@v5
         with:
           package-name: kaderblick/frontend-prod
@@ -117,7 +103,8 @@ jobs:
           ignore-versions: latest
 
       - name: Cleanup old GHCR images (frontend-staging)
-        if: always() && steps.pkg_check.outputs.frontend_staging == 'true'
+        if: always()
+        continue-on-error: true
         uses: actions/delete-package-versions@v5
         with:
           package-name: kaderblick/frontend-staging
@@ -126,7 +113,8 @@ jobs:
           ignore-versions: latest
 
       - name: Cleanup old GHCR images (maintenance)
-        if: always() && steps.pkg_check.outputs.maintenance == 'true'
+        if: always()
+        continue-on-error: true
         uses: actions/delete-package-versions@v5
         with:
           package-name: kaderblick/maintenance
