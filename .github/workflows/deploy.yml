@@ -524,17 +524,7 @@ jobs:
             cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
 
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api env APP_ENV=dev composer install
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T --user www-data api bin/console doctrine:fixtures:load --env=dev --no-interaction --append --group=master
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T api composer install --no-dev --optimize-autoloader
-
-            # Cache nach Dev-Reinstall neu aufbauen
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T --user www-data api bin/console cache:warmup --env=staging
+              exec -T --user www-data api bin/console doctrine:fixtures:load --env=staging --no-interaction --append --group=master
 
       # ------------------------------
       # Disable staging maintenance mode
@@ -702,17 +692,7 @@ jobs:
             cd "${{ secrets.MAIN_PROJECT_PATH }}/production_current"
 
             docker compose -f docker-compose.yml -p production \
-              exec -T api env APP_ENV=dev composer install
-
-            docker compose -f docker-compose.yml -p production \
-              exec -T --user www-data api bin/console doctrine:fixtures:load --env=dev --no-interaction --append --group=master
-
-            docker compose -f docker-compose.yml -p production \
-              exec -T api composer install --no-dev --optimize-autoloader
-
-            # Cache nach Dev-Reinstall neu aufbauen
-            docker compose -f docker-compose.yml -p production \
-              exec -T --user www-data api bin/console cache:warmup --env=prod
+              exec -T --user www-data api bin/console doctrine:fixtures:load --env=prod --no-interaction --append --group=master
 
       # ------------------------------
       # Production healthcheck
