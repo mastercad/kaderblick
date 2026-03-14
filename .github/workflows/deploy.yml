@@ -227,11 +227,18 @@ jobs:
 
       # ------------------------------
       # Prepare build files
+      # Nur docker-compose-Dateien + minimale Konfiguration werden auf den Server kopiert.
+      # Source-Code (api/, frontend/) ist im Docker-Image – nicht auf dem Server nötig.
+      # api/.env.dist wird für das Erstellen der .env-Datei auf dem Server benötigt.
       # ------------------------------
       - name: Prepare files
         run: |
-          mkdir -p build
-          cp -r docker-compose.yml docker-compose.staging.yml docker-compose.db.yml docker-compose.maintenance.yml .docker api frontend build/
+          mkdir -p build/api/config
+          mkdir -p build/frontend
+          cp docker-compose.yml docker-compose.staging.yml docker-compose.db.yml docker-compose.maintenance.yml build/
+          cp -r .docker build/
+          cp api/.env.dist build/api/
+          cp -r api/config/packages api/config/routes api/config/routes.yaml api/config/services.yaml api/config/bundles.php build/api/config/ 2>/dev/null || true
 
       # ------------------------------
       # Create release directories on server
