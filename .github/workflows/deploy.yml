@@ -229,7 +229,7 @@ jobs:
                   docker compose -p production down --remove-orphans api frontend 2>/dev/null || true
                   ln -sfn "$OLD_PROD" "$PROD_CURRENT"
                   cd "$OLD_PROD"
-                  DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
+                  DOCKER_BUILDKIT=0 DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
                   VITE_BACKEND_URL=https://api.kaderblick.de \
                   docker compose -p production up -d --force-recreate api frontend 2>/dev/null || true
                   echo "Rollback abgeschlossen → $OLD_PROD"
@@ -251,10 +251,9 @@ jobs:
 
             # Production-Container mit eigenem Build starten
             # VITE_BACKEND_URL wird zur Build-Zeit ins JS-Bundle eingebettet → muss korrekt sein!
+            # DOCKER_BUILDKIT=0 vermeidet "no such job"-Fehler bei kaputtem BuildKit-Daemon
             cd "$PROD_CURRENT"
-            # BuildKit-Cache leeren um "no such job"-Fehler zu vermeiden
-            docker builder prune -f
-            DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
+            DOCKER_BUILDKIT=0 DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
             VITE_BACKEND_URL=https://api.kaderblick.de \
             docker compose -p production up -d --build --force-recreate api frontend
 
