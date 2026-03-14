@@ -223,6 +223,10 @@ jobs:
           cp -r .docker build/
           cp api/.env.dist build/api/
           cp -r api/config/packages api/config/routes api/config/routes.yaml api/config/services.yaml api/config/bundles.php build/api/config/ 2>/dev/null || true
+          # Verschlüsselte Secrets mitkopieren (Decrypt-Keys sind .gitignore'd und daher nicht im Checkout).
+          # Ohne diese Dateien überdeckt das Volume-Mount die verschlüsselten Secrets aus dem Image,
+          # sodass secrets:decrypt-to-local kein JWT_PASSPHRASE schreiben kann.
+          cp -r api/config/secrets build/api/config/ 2>/dev/null || true
 
       # ------------------------------
       # Create release directories on server
@@ -519,7 +523,7 @@ jobs:
                 exec -T api sh -c 'grep -q "BEGIN PRIVATE KEY" /var/www/symfony/config/jwt/private.pem 2>/dev/null'; then
               echo "JWT-Keys fehlen oder im PKCS#1-Format – regeneriere als PKCS#8..."
               docker compose -f docker-compose.yml -p production exec -T --user www-data api \
-                php bin/console lexik:jwt:generate-keypair --overwrite
+                php bin/console lexik:jwt:generate-keypair --overwrite --env=prod
               # Neue PKCS#8-Keys persistent im ROOT_DIR ablegen → wird beim nächsten Deploy kopiert
               mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt"
               docker compose -f docker-compose.yml -p production exec -T api \
@@ -717,7 +721,7 @@ jobs:
                 exec -T api sh -c 'grep -q "BEGIN PRIVATE KEY" /var/www/symfony/config/jwt/private.pem 2>/dev/null'; then
               echo "JWT-Keys fehlen oder im PKCS#1-Format – regeneriere als PKCS#8..."
               docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-                exec -T --user www-data api php bin/console lexik:jwt:generate-keypair --overwrite
+                exec -T --user www-data api php bin/console lexik:jwt:generate-keypair --overwrite --env=staging
               # Neue PKCS#8-Keys persistent im ROOT_DIR ablegen → wird beim nächsten Deploy kopiert
               mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt"
               docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging exec -T api \

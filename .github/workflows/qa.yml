@@ -181,6 +181,11 @@ jobs:
           echo "Decrypt secrets"
           docker compose exec -T api bin/console secrets:decrypt-to-local --env=test --force
 
+          # SMTP ist von GitHub Actions nicht erreichbar – MAILER_DSN nach dem Decrypt überschreiben.
+          # secrets:decrypt-to-local schreibt in .env.test.local (höhere Priorität als .env).
+          docker compose exec -T api sh -c \
+            'sed -i "s|^MAILER_DSN=.*|MAILER_DSN=null://null|" /var/www/symfony/.env.test.local 2>/dev/null || true; echo "MAILER_DSN=null://null" >> /var/www/symfony/.env.test.local'
+
           mkdir -p "api/config/jwt"
 
           if [ ! -f api/config/jwt/private.pem ] || [ ! -f api/config/jwt/public.pem ]; then
@@ -203,6 +208,7 @@ jobs:
       - name: run PHPUnit with coverage
         id: phpunit-coverage
         run: |
+          set -o pipefail
           docker compose exec -T -e XDEBUG_MODE=coverage api ./vendor/bin/phpunit \
             --coverage-cobertura var/coverage-cobertura.xml \
             --coverage-text 2>&1 | tee phpunit-output.txt
