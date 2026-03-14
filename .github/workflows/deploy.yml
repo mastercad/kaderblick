@@ -252,6 +252,8 @@ jobs:
             # Production-Container mit eigenem Build starten
             # VITE_BACKEND_URL wird zur Build-Zeit ins JS-Bundle eingebettet → muss korrekt sein!
             cd "$PROD_CURRENT"
+            # BuildKit-Cache leeren um "no such job"-Fehler zu vermeiden
+            docker builder prune -f
             DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
             VITE_BACKEND_URL=https://api.kaderblick.de \
             docker compose -p production up -d --build --force-recreate api frontend
