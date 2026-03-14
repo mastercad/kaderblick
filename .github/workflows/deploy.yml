@@ -75,6 +75,12 @@ jobs:
             echo "frontend_changed=false" >> $GITHUB_OUTPUT
           fi
 
+          if echo "$CHANGED" | grep -qE '^(\.docker/maintenance/|frontend/public/images/)'; then
+            echo "maintenance_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "maintenance_changed=false" >> $GITHUB_OUTPUT
+          fi
+
       # ------------------------------
       # Docker Images in CI bauen und nach GHCR pushen
       # API: Source-Code + vendor/ (composer install) eingebettet – kein Build mehr auf dem Server
@@ -129,6 +135,30 @@ jobs:
               .
             docker push ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
             docker push ghcr.io/mastercad/kaderblick/frontend-prod:latest
+          fi
+
+      - name: Build and push maintenance image
+        run: |
+          if [ "${{ steps.changes.outputs.maintenance_changed }}" = "true" ]; then
+            echo "Maintenance hat sich geändert – baue neu..."
+            BUILD_MAINTENANCE=true
+          elif docker pull ghcr.io/mastercad/kaderblick/maintenance:latest 2>/dev/null; then
+            echo "Maintenance unverändert – tagge 'latest' als ${{ github.sha }}..."
+            docker tag ghcr.io/mastercad/kaderblick/maintenance:latest ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }}
+            BUILD_MAINTENANCE=false
+          else
+            echo "Maintenance 'latest' nicht gefunden – baue erstmalig..."
+            BUILD_MAINTENANCE=true
+          fi
+          if [ "$BUILD_MAINTENANCE" = "true" ]; then
+            docker build \
+              -f .docker/maintenance/Dockerfile \
+              -t ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }} \
+              -t ghcr.io/mastercad/kaderblick/maintenance:latest \
+              .
+            docker push ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/maintenance:latest
           fi
 
       - name: Build and push frontend staging image
@@ -303,13 +333,13 @@ jobs:
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
             set -e
-            # Immer das frisch hochgeladene Release-Verzeichnis verwenden,
-            # da production_current noch auf ein altes Release zeigen kann,
-            # das docker-compose.maintenance.yml noch nicht enthält.
             COMPOSE_DIR="${{ steps.release.outputs.prod_dir }}"
             cd "$COMPOSE_DIR"
-            echo "Baue Maintenance-Container neu..."
-            docker compose -f docker-compose.maintenance.yml -p maintenance up -d --build --force-recreate
+            echo "Lade Maintenance-Image aus GHCR..."
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
+            docker pull ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }}
+            IMAGE_TAG=${{ github.sha }} \
+            docker compose -f docker-compose.maintenance.yml -p maintenance up -d --no-build --force-recreate
             echo "Maintenance-Container neu gestartet."
 
       # ------------------------------
@@ -797,6 +827,15 @@ jobs:
         uses: actions/delete-package-versions@v5
         with:
           package-name: kaderblick/frontend-staging
+          package-type: container
+          min-versions-to-keep: 5
+          ignore-versions: latest
+
+      - name: Cleanup old GHCR images (maintenance)
+        if: always()
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: kaderblick/maintenance
           package-type: container
           min-versions-to-keep: 5
           ignore-versions: latest
