@@ -427,6 +427,29 @@ jobs:
             rm -f "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_staging.flag"
 
       # ============================================================
+      # NACH ERFOLGREICHEM DEPLOY: :latest Tag in GHCR setzen
+      # Erst hier, nach bestandener QA und erfolgreichem Deploy.
+      # ============================================================
+
+      - name: Login to GHCR
+        if: success()
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Retag SHA → latest
+        if: success()
+        run: |
+          TAG="${{ inputs.image_tag || github.sha }}"
+          for IMAGE in api frontend-prod frontend-staging maintenance; do
+            docker pull ghcr.io/mastercad/kaderblick/${IMAGE}:${TAG}
+            docker tag  ghcr.io/mastercad/kaderblick/${IMAGE}:${TAG} ghcr.io/mastercad/kaderblick/${IMAGE}:latest
+            docker push ghcr.io/mastercad/kaderblick/${IMAGE}:latest
+          done
+
+      # ============================================================
       # FEHLERBEHANDLUNG & CLEANUP
       # ============================================================
 
