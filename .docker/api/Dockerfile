@@ -55,7 +55,7 @@ WORKDIR /var/www/symfony
 COPY api/ /var/www/symfony/
 RUN composer install --no-interaction --optimize-autoloader --no-dev \
     && mkdir -p var/cache var/log config/secrets/prod config/secrets/staging config/jwt \
-    && chown -R www-data:www-data var/ vendor/ \
+    && chown -R www-data:www-data /var/www/symfony \
     && chmod -R 755 vendor/ \
     && chmod -R 775 var/
 
