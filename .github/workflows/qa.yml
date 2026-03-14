@@ -1,15 +1,12 @@
 name: Quality Assurance
 
 on:
-#  push:
-#    branches: [main]
-  pull_request:
   workflow_call:
     inputs:
       image_tag:
-        description: 'Docker image tag to test (should match the just-built image)'
+        description: 'Docker image tag to test (muss in GHCR vorhanden sein).'
         type: string
-        default: 'latest'
+        required: true
 
 permissions:
   contents: read
@@ -174,10 +171,9 @@ jobs:
           "
           
           echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
-          docker pull ghcr.io/mastercad/kaderblick/api:${{ inputs.image_tag || 'latest' }}
-          IMAGE_TAG=${{ inputs.image_tag || 'latest' }} docker compose up -d --force-recreate api frontend
-
-          docker compose exec -T api composer install
+          docker pull ghcr.io/mastercad/kaderblick/api:${{ inputs.image_tag }}
+          docker pull ghcr.io/mastercad/kaderblick/frontend-prod:${{ inputs.image_tag }}
+          IMAGE_TAG=${{ inputs.image_tag }} docker compose up -d --no-build --force-recreate api frontend
 
           mkdir -p api/config/secrets/test
           # echo "<?php return \"${{ secrets.DEV_DECRYPT_KEY }}\"; ?>" > api/config/secrets/test/test.decrypt.private.php

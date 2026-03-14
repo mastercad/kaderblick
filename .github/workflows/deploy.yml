@@ -15,6 +15,17 @@ name: Deploy to Server
 
 on:
   workflow_call:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to deploy'
+        type: string
+        default: 'latest'
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to deploy (default: latest)'
+        type: string
+        default: 'latest'
 
 jobs:
   deploy:
@@ -191,8 +202,8 @@ jobs:
           script: |
             set -e
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
-            docker pull ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }}
-            IMAGE_TAG=${{ github.sha }} docker compose \
+            docker pull ghcr.io/mastercad/kaderblick/maintenance:${{ inputs.image_tag || github.sha }}
+            IMAGE_TAG=${{ inputs.image_tag || github.sha }} docker compose \
               -f "${{ steps.release.outputs.prod_dir }}/docker-compose.maintenance.yml" \
               -p maintenance up -d --no-build --force-recreate
 
@@ -234,10 +245,10 @@ jobs:
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/production_current"
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
-            docker pull ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
-            docker pull ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
+            docker pull ghcr.io/mastercad/kaderblick/api:${{ inputs.image_tag || github.sha }}
+            docker pull ghcr.io/mastercad/kaderblick/frontend-prod:${{ inputs.image_tag || github.sha }}
             docker compose -f docker-compose.yml -p production down --remove-orphans api frontend 2>/dev/null || true
-            IMAGE_TAG=${{ github.sha }} \
+            IMAGE_TAG=${{ inputs.image_tag || github.sha }} \
             DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
             HOST_UID=$(id -u kaderblick-ftp-admin) HOST_GID=$(id -g kaderblick-ftp-admin) \
             docker compose -f docker-compose.yml -p production up -d --no-build --force-recreate api frontend
@@ -357,12 +368,12 @@ jobs:
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
-            docker pull ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
-            docker pull ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
+            docker pull ghcr.io/mastercad/kaderblick/api:${{ inputs.image_tag || github.sha }}
+            docker pull ghcr.io/mastercad/kaderblick/frontend-staging:${{ inputs.image_tag || github.sha }}
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
               down --remove-orphans api frontend 2>/dev/null || true
             STAGING_DB_URL=$(echo "${{ secrets.DATABASE_URL }}" | sed 's|3306/kaderblick|3306/kaderblick_staging|')
-            IMAGE_TAG=${{ github.sha }} DATABASE_URL="$STAGING_DB_URL" XDEBUG_MODE=off \
+            IMAGE_TAG=${{ inputs.image_tag || github.sha }} DATABASE_URL="$STAGING_DB_URL" XDEBUG_MODE=off \
             PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 \
             HOST_UID=$(id -u kaderblick-ftp-admin) HOST_GID=$(id -g kaderblick-ftp-admin) \
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
