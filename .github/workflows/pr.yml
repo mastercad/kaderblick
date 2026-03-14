@@ -27,3 +27,4 @@ jobs:
       packages: read
     with:
       image_tag: ${{ github.sha }}
+      is_pull_request: true
