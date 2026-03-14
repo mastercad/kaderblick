@@ -199,22 +199,6 @@ jobs:
           fi
 
       # ------------------------------
-      # Enable staging maintenance mode
-      # Ab jetzt leitet Nginx Anfragen auf staging.kaderblick.de / staging-api
-      # auf den Maintenance-Container um. Wird nach dem Staging-Deploy wieder entfernt.
-      # ------------------------------
-      - name: Enable staging maintenance
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            touch "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_staging.flag"
-            chmod 644 "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_staging.flag"
-            echo "Staging-Maintenance aktiviert."
-
-      # ------------------------------
       # Generate release directory names (Production & Staging)
       # Gleicher Timestamp → leicht zuzuordnen
       # ------------------------------
@@ -404,161 +388,8 @@ jobs:
             echo "VITE_BACKEND_URL=https://staging-api.kaderblick.de" > "$STAGING_DIR/frontend/.env"
 
       # ------------------------------
-      # Clone production DB → kaderblick_staging
-      # Container: kaderblick-db, Credentials: root/root
-      # ------------------------------
-      - name: Clone production DB to staging
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          command_timeout: 30m
-          script: |
-            set -e
-
-            echo "Lösche kaderblick_staging (falls vorhanden)..."
-            docker exec kaderblick-db mysql -uroot -proot \
-              -e "DROP DATABASE IF EXISTS kaderblick_staging;"
-
-            echo "Erstelle kaderblick_staging..."
-            docker exec kaderblick-db mysql -uroot -proot \
-              -e "CREATE DATABASE kaderblick_staging CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-            echo "Vergebe Rechte für kaderblick-User..."
-            docker exec kaderblick-db mysql -uroot -proot \
-              -e "GRANT ALL PRIVILEGES ON kaderblick_staging.* TO 'kaderblick'@'%'; FLUSH PRIVILEGES;"
-
-            echo "Kopiere kaderblick → kaderblick_staging..."
-            docker exec kaderblick-db sh -c \
-              "mysqldump -uroot -proot --single-transaction --quick kaderblick | mysql -uroot -proot kaderblick_staging"
-
-            echo "DB-Klon abgeschlossen."
-
-      # ------------------------------
-      # Set staging_current symlink
-      # ------------------------------
-      - name: Set staging_current symlink
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            set -e
-            ln -sfn "${{ steps.release.outputs.staging_dir }}" "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
-            mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/cache" \
-                     "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/log"
-
-      # ------------------------------
-      # Deploy Staging containers (persistent)
-      # Ports: 18080 (frontend) / 18081 (api)
-      # Eigenes var/-Volume via docker-compose.staging.yml
-      # DATABASE_URL: kaderblick_staging (aus production-URL abgeleitet)
-      # ------------------------------
-      - name: Deploy Staging containers
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          command_timeout: 30m
-          script: |
-            set -e
-            STAGING_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
-            cd "$STAGING_CURRENT"
-
-            # Staging-DATABASE_URL: Datenbankname kaderblick → kaderblick_staging
-            STAGING_DB_URL=$(echo "${{ secrets.DATABASE_URL }}" | sed 's|3306/kaderblick|3306/kaderblick_staging|')
-
-            # GHCR-Login auf Server (GHCR_TOKEN = GitHub PAT mit 'read:packages'-Scope)
-            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
-
-            docker pull ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
-            docker pull ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
-
-            docker compose \
-              -f docker-compose.yml \
-              -f docker-compose.staging.yml \
-              -p staging \
-              down --remove-orphans api frontend 2>/dev/null || true
-
-            IMAGE_TAG=${{ github.sha }} \
-            DATABASE_URL="$STAGING_DB_URL" XDEBUG_MODE=off \
-            PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 \
-            HOST_UID=$(id -u kaderblick-ftp-admin) HOST_GID=$(id -g kaderblick-ftp-admin) \
-            docker compose \
-              -f docker-compose.yml \
-              -f docker-compose.staging.yml \
-              -p staging \
-              up -d --no-build --force-recreate api frontend
-
-            mkdir -p "$STAGING_CURRENT/api/var"
-
-      # ------------------------------
-      # Staging: Composer, Migrations, Secrets, JWT
-      # ------------------------------
-      - name: Staging setup
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          command_timeout: 30m
-          script: |
-            set -e
-            cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
-
-            # Secrets zuerst entschlüsseln, damit cache:warmup alle Env-Werte kennt
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T --user www-data api bin/console secrets:decrypt-to-local --force --env=staging
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T --user www-data api bin/console cache:warmup --env=staging
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T --user www-data api bin/console doctrine:migrations:migrate --no-interaction --env=staging
-
-            # JWT-Keys: PKCS#1-Format (BEGIN RSA PRIVATE KEY) ist nicht kompatibel mit OpenSSL 3.x
-            if [ ! -f api/config/jwt/private.pem ] || ! grep -q "BEGIN PRIVATE KEY" api/config/jwt/private.pem; then
-              echo "JWT-Keys fehlen oder im PKCS#1-Format – regeneriere als PKCS#8..."
-              docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-                exec -T --user www-data api php bin/console lexik:jwt:generate-keypair --overwrite
-            fi
-
-      # ------------------------------
-      # Staging: Load fixtures (auf kaderblick_staging)
-      # ------------------------------
-      - name: Load fixtures on staging
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          command_timeout: 30m
-          script: |
-            set -e
-            cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T --user www-data api bin/console doctrine:fixtures:load --env=staging --no-interaction --append --group=master
-
-      # ------------------------------
-      # Disable staging maintenance mode
-      # Staging ist ab hier wieder erreichbar – Production wird noch nicht angefasst.
-      # ------------------------------
-      - name: Disable staging maintenance
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            rm -f "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_staging.flag"
-            echo "Staging-Maintenance deaktiviert."
-
-      # ------------------------------
       # Prepare shared uploads symlinks (Production und Staging)
+      # Werden vor dem Production-Deploy gesetzt; beide Release-Dirs existieren bereits.
       # ------------------------------
       - name: Prepare uploads symlinks
         uses: appleboy/ssh-action@master
@@ -683,14 +514,18 @@ jobs:
 
             # JWT-Keys: PKCS#1-Format (BEGIN RSA PRIVATE KEY) ist nicht kompatibel mit OpenSSL 3.x
             # Bei fehlendem oder veraltetem Format: neue PKCS#8-Keys generieren und persistent speichern
-            if [ ! -f api/config/jwt/private.pem ] || ! grep -q "BEGIN PRIVATE KEY" api/config/jwt/private.pem; then
+            # Prüfung im Container – host-seitig liegen die Keys nicht mehr im Release-Verzeichnis
+            if ! docker compose -f docker-compose.yml -p production \
+                exec -T api sh -c 'grep -q "BEGIN PRIVATE KEY" /var/www/symfony/config/jwt/private.pem 2>/dev/null'; then
               echo "JWT-Keys fehlen oder im PKCS#1-Format – regeneriere als PKCS#8..."
               docker compose -f docker-compose.yml -p production exec -T --user www-data api \
                 php bin/console lexik:jwt:generate-keypair --overwrite
               # Neue PKCS#8-Keys persistent im ROOT_DIR ablegen → wird beim nächsten Deploy kopiert
               mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt"
-              cp api/config/jwt/private.pem "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/private.pem" || true
-              cp api/config/jwt/public.pem "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/public.pem" || true
+              docker compose -f docker-compose.yml -p production exec -T api \
+                sh -c 'cat /var/www/symfony/config/jwt/private.pem' > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/private.pem" || true
+              docker compose -f docker-compose.yml -p production exec -T api \
+                sh -c 'cat /var/www/symfony/config/jwt/public.pem' > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/public.pem" || true
             fi
 
       # ------------------------------
@@ -744,6 +579,183 @@ jobs:
               echo "Warte... ($i/12, HTTP $HTTP_CODE)"
               sleep 5
             done
+
+      # ------------------------------
+      # Clone production DB → kaderblick_staging
+      # Läuft NACH dem Production-Healthcheck, damit Staging den migrierten Stand bekommt.
+      # Container: kaderblick-db, Credentials: root/root
+      # ------------------------------
+      - name: Clone production DB to staging
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          command_timeout: 30m
+          script: |
+            set -e
+
+            echo "Lösche kaderblick_staging (falls vorhanden)..."
+            docker exec kaderblick-db mysql -uroot -proot \
+              -e "DROP DATABASE IF EXISTS kaderblick_staging;"
+
+            echo "Erstelle kaderblick_staging..."
+            docker exec kaderblick-db mysql -uroot -proot \
+              -e "CREATE DATABASE kaderblick_staging CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+            echo "Vergebe Rechte für kaderblick-User..."
+            docker exec kaderblick-db mysql -uroot -proot \
+              -e "GRANT ALL PRIVILEGES ON kaderblick_staging.* TO 'kaderblick'@'%'; FLUSH PRIVILEGES;"
+
+            echo "Kopiere kaderblick → kaderblick_staging..."
+            docker exec kaderblick-db sh -c \
+              "mysqldump -uroot -proot --single-transaction --quick kaderblick | mysql -uroot -proot kaderblick_staging"
+
+            echo "DB-Klon abgeschlossen."
+
+      # ------------------------------
+      # Enable staging maintenance mode
+      # ------------------------------
+      - name: Enable staging maintenance
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            touch "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_staging.flag"
+            chmod 644 "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_staging.flag"
+            echo "Staging-Maintenance aktiviert."
+
+      # ------------------------------
+      # Set staging_current symlink
+      # ------------------------------
+      - name: Set staging_current symlink
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            ln -sfn "${{ steps.release.outputs.staging_dir }}" "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
+            mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/cache" \
+                     "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/log"
+
+      # ------------------------------
+      # Deploy Staging containers (persistent)
+      # Ports: 18080 (frontend) / 18081 (api)
+      # Eigenes var/-Volume via docker-compose.staging.yml
+      # DATABASE_URL: kaderblick_staging (aus production-URL abgeleitet)
+      # ------------------------------
+      - name: Deploy Staging containers
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          command_timeout: 30m
+          script: |
+            set -e
+            STAGING_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
+            cd "$STAGING_CURRENT"
+
+            # Staging-DATABASE_URL: Datenbankname kaderblick → kaderblick_staging
+            STAGING_DB_URL=$(echo "${{ secrets.DATABASE_URL }}" | sed 's|3306/kaderblick|3306/kaderblick_staging|')
+
+            # GHCR-Login auf Server (GHCR_TOKEN = GitHub PAT mit 'read:packages'-Scope)
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
+
+            docker pull ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
+            docker pull ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
+
+            docker compose \
+              -f docker-compose.yml \
+              -f docker-compose.staging.yml \
+              -p staging \
+              down --remove-orphans api frontend 2>/dev/null || true
+
+            IMAGE_TAG=${{ github.sha }} \
+            DATABASE_URL="$STAGING_DB_URL" XDEBUG_MODE=off \
+            PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 \
+            HOST_UID=$(id -u kaderblick-ftp-admin) HOST_GID=$(id -g kaderblick-ftp-admin) \
+            docker compose \
+              -f docker-compose.yml \
+              -f docker-compose.staging.yml \
+              -p staging \
+              up -d --no-build --force-recreate api frontend
+
+            mkdir -p "$STAGING_CURRENT/api/var"
+
+      # ------------------------------
+      # Staging: Composer, Migrations, Secrets, JWT
+      # ------------------------------
+      - name: Staging setup
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          command_timeout: 30m
+          script: |
+            set -e
+            cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
+
+            # Secrets zuerst entschlüsseln, damit cache:warmup alle Env-Werte kennt
+            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
+              exec -T --user www-data api bin/console secrets:decrypt-to-local --force --env=staging
+
+            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
+              exec -T --user www-data api bin/console cache:warmup --env=staging
+
+            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
+              exec -T --user www-data api bin/console doctrine:migrations:migrate --no-interaction --env=staging
+
+            # JWT-Keys: PKCS#1-Format (BEGIN RSA PRIVATE KEY) ist nicht kompatibel mit OpenSSL 3.x
+            # Prüfung im Container – host-seitig liegen die Keys nicht mehr im Release-Verzeichnis
+            if ! docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
+                exec -T api sh -c 'grep -q "BEGIN PRIVATE KEY" /var/www/symfony/config/jwt/private.pem 2>/dev/null'; then
+              echo "JWT-Keys fehlen oder im PKCS#1-Format – regeneriere als PKCS#8..."
+              docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
+                exec -T --user www-data api php bin/console lexik:jwt:generate-keypair --overwrite
+              # Neue PKCS#8-Keys persistent im ROOT_DIR ablegen → wird beim nächsten Deploy kopiert
+              mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt"
+              docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging exec -T api \
+                sh -c 'cat /var/www/symfony/config/jwt/private.pem' > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/private.pem" || true
+              docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging exec -T api \
+                sh -c 'cat /var/www/symfony/config/jwt/public.pem' > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/public.pem" || true
+            fi
+
+      # ------------------------------
+      # Staging: Load fixtures (auf kaderblick_staging)
+      # ------------------------------
+      - name: Load fixtures on staging
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          command_timeout: 30m
+          script: |
+            set -e
+            cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
+
+            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
+              exec -T --user www-data api bin/console doctrine:fixtures:load --env=staging --no-interaction --append --group=master
+
+      # ------------------------------
+      # Disable staging maintenance mode
+      # Staging ist ab hier wieder erreichbar.
+      # ------------------------------
+      - name: Disable staging maintenance
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            rm -f "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_staging.flag"
+            echo "Staging-Maintenance deaktiviert."
 
       # ------------------------------
       # Rollback Production
