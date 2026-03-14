@@ -7,6 +7,7 @@ use App\Entity\Team;
 use App\Entity\User;
 use DateTime;
 use DateTimeInterface;
+use Throwable;
 
 class CoachTeamPlayerService
 {
@@ -55,14 +56,14 @@ class CoachTeamPlayerService
                 try {
                     $mainPos = $player->getMainPosition()->getShortName()
                         ?? $player->getMainPosition()->getName();
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     $mainPos = null;
                 }
                 try {
                     foreach ($player->getAlternativePositions() as $pos) {
                         $altPositions[] = $pos->getShortName() ?? $pos->getName();
                     }
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     $altPositions = [];
                 }
                 $players[] = [

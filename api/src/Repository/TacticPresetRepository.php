@@ -29,6 +29,7 @@ class TacticPresetRepository extends ServiceEntityRepository
      *   3. The user's own personal presets
      *
      * @param Club[] $userClubs
+     *
      * @return TacticPreset[]
      */
     public function findVisibleForUser(User $user, array $userClubs = []): array
@@ -44,7 +45,7 @@ class TacticPresetRepository extends ServiceEntityRepository
         $orParts[] = 'p.createdBy = :me';
 
         // Club presets
-        if ($userClubs !== []) {
+        if ([] !== $userClubs) {
             $orParts[] = 'c.id IN (:clubIds)';
         }
 
@@ -55,7 +56,7 @@ class TacticPresetRepository extends ServiceEntityRepository
             ->addOrderBy('p.category', 'ASC')
             ->addOrderBy('p.title', 'ASC');
 
-        if ($userClubs !== []) {
+        if ([] !== $userClubs) {
             $clubIds = array_values(array_filter(
                 array_map(fn (Club $c) => $c->getId(), $userClubs)
             ));
@@ -72,11 +73,11 @@ class TacticPresetRepository extends ServiceEntityRepository
     public function upsert(TacticPreset $preset): TacticPreset
     {
         $existing = $this->findOneBy([
-            'title'    => $preset->getTitle(),
+            'title' => $preset->getTitle(),
             'isSystem' => true,
         ]);
 
-        if ($existing !== null) {
+        if (null !== $existing) {
             // Update mutable fields so re-running fixtures stays idempotent
             $existing->setCategory($preset->getCategory());
             $existing->setDescription($preset->getDescription());

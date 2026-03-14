@@ -18,7 +18,7 @@ class TacticPresetTest extends TestCase
     {
         $before = new DateTimeImmutable();
         $preset = new TacticPreset();
-        $after  = new DateTimeImmutable();
+        $after = new DateTimeImmutable();
 
         $this->assertGreaterThanOrEqual($before, $preset->getCreatedAt());
         $this->assertLessThanOrEqual($after, $preset->getCreatedAt());
@@ -97,7 +97,7 @@ class TacticPresetTest extends TestCase
 
     public function testSetDataReturnsSelf(): void
     {
-        $data   = ['name' => 'Test', 'elements' => [], 'opponents' => []];
+        $data = ['name' => 'Test', 'elements' => [], 'opponents' => []];
         $preset = new TacticPreset();
         $result = $preset->setData($data);
 
@@ -107,7 +107,7 @@ class TacticPresetTest extends TestCase
 
     public function testSetClubReturnsSelf(): void
     {
-        $club   = $this->createMock(Club::class);
+        $club = $this->createMock(Club::class);
         $preset = new TacticPreset();
         $result = $preset->setClub($club);
 
@@ -126,7 +126,7 @@ class TacticPresetTest extends TestCase
 
     public function testSetCreatedByReturnsSelf(): void
     {
-        $user   = $this->createMock(User::class);
+        $user = $this->createMock(User::class);
         $preset = new TacticPreset();
         $result = $preset->setCreatedBy($user);
 
@@ -146,10 +146,10 @@ class TacticPresetTest extends TestCase
 
     public function testCategoriesContainsAllConstantValues(): void
     {
-        $this->assertContains(TacticPreset::CATEGORY_PRESSING,  TacticPreset::CATEGORIES);
-        $this->assertContains(TacticPreset::CATEGORY_ATTACK,    TacticPreset::CATEGORIES);
+        $this->assertContains(TacticPreset::CATEGORY_PRESSING, TacticPreset::CATEGORIES);
+        $this->assertContains(TacticPreset::CATEGORY_ATTACK, TacticPreset::CATEGORIES);
         $this->assertContains(TacticPreset::CATEGORY_STANDARDS, TacticPreset::CATEGORIES);
-        $this->assertContains(TacticPreset::CATEGORY_BUILD_UP,  TacticPreset::CATEGORIES);
+        $this->assertContains(TacticPreset::CATEGORY_BUILD_UP, TacticPreset::CATEGORIES);
         $this->assertContains(TacticPreset::CATEGORY_DEFENSIVE, TacticPreset::CATEGORIES);
     }
 
@@ -171,7 +171,7 @@ class TacticPresetTest extends TestCase
     public function testToArrayContainsRequiredKeys(): void
     {
         $preset = $this->buildFullPreset();
-        $arr    = $preset->toArray(null);
+        $arr = $preset->toArray(null);
 
         foreach (['id', 'title', 'category', 'description', 'isSystem', 'clubId', 'createdBy', 'canDelete', 'data', 'createdAt'] as $key) {
             $this->assertArrayHasKey($key, $arr, "Key '$key' missing from toArray()");

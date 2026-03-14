@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\TacticPresetRepository;
 use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -24,11 +25,11 @@ class TacticPreset
     // -----------------------------------------------------------------
     // Allowed category values (kept as class constants for easy extension)
     // -----------------------------------------------------------------
-    public const CATEGORY_PRESSING    = 'Pressing';
-    public const CATEGORY_ATTACK      = 'Angriff';
-    public const CATEGORY_STANDARDS   = 'Standards';
-    public const CATEGORY_BUILD_UP    = 'Spielaufbau';
-    public const CATEGORY_DEFENSIVE   = 'Defensive';
+    public const CATEGORY_PRESSING = 'Pressing';
+    public const CATEGORY_ATTACK = 'Angriff';
+    public const CATEGORY_STANDARDS = 'Standards';
+    public const CATEGORY_BUILD_UP = 'Spielaufbau';
+    public const CATEGORY_DEFENSIVE = 'Defensive';
 
     public const CATEGORIES = [
         self::CATEGORY_PRESSING,
@@ -198,31 +199,32 @@ class TacticPreset
 
     /**
      * @param User|null $requestingUser the authenticated user, used to decide
-     *                                   whether the preset may be deleted
+     *                                  whether the preset may be deleted
+     *
      * @return array<string, mixed>
      */
     public function toArray(?User $requestingUser = null): array
     {
         $canDelete = false;
 
-        if ($requestingUser !== null && !$this->isSystem) {
-            $canDelete = $this->createdBy !== null
+        if (null !== $requestingUser && !$this->isSystem) {
+            $canDelete = null !== $this->createdBy
                 && $this->createdBy->getId() === $requestingUser->getId();
         }
 
         return [
-            'id'          => $this->id,
-            'title'       => $this->title,
-            'category'    => $this->category,
+            'id' => $this->id,
+            'title' => $this->title,
+            'category' => $this->category,
             'description' => $this->description,
-            'isSystem'    => $this->isSystem,
-            'clubId'      => $this->club?->getId(),
-            'createdBy'   => $this->createdBy !== null
+            'isSystem' => $this->isSystem,
+            'clubId' => $this->club?->getId(),
+            'createdBy' => null !== $this->createdBy
                 ? ($this->createdBy->getFirstName() . ' ' . $this->createdBy->getLastName())
                 : null,
-            'canDelete'   => $canDelete,
-            'data'        => $this->data,
-            'createdAt'   => $this->createdAt->format(\DateTimeInterface::ATOM),
+            'canDelete' => $canDelete,
+            'data' => $this->data,
+            'createdAt' => $this->createdAt->format(DateTimeInterface::ATOM),
         ];
     }
 }

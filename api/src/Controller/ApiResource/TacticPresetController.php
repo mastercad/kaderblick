@@ -40,12 +40,12 @@ class TacticPresetController extends AbstractController
         /** @var User|null $user */
         $user = $this->getUser();
 
-        if ($user === null) {
+        if (null === $user) {
             return new JsonResponse(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
         }
 
-        $clubs    = $this->getUserClubs($user);
-        $presets  = $this->presetRepository->findVisibleForUser($user, $clubs);
+        $clubs = $this->getUserClubs($user);
+        $presets = $this->presetRepository->findVisibleForUser($user, $clubs);
 
         return new JsonResponse(
             array_map(fn (TacticPreset $p) => $p->toArray($user), $presets)
@@ -62,7 +62,7 @@ class TacticPresetController extends AbstractController
         /** @var User|null $user */
         $user = $this->getUser();
 
-        if ($user === null) {
+        if (null === $user) {
             return new JsonResponse(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -74,13 +74,13 @@ class TacticPresetController extends AbstractController
         }
 
         // --- Validate required fields ---
-        $title       = trim((string) ($body['title'] ?? ''));
-        $category    = trim((string) ($body['category'] ?? ''));
+        $title = trim((string) ($body['title'] ?? ''));
+        $category = trim((string) ($body['category'] ?? ''));
         $description = trim((string) ($body['description'] ?? ''));
         $shareWithClub = (bool) ($body['shareWithClub'] ?? false);
-        $data        = $body['data'] ?? null;
+        $data = $body['data'] ?? null;
 
-        if ($title === '' || $category === '' || !is_array($data)) {
+        if ('' === $title || '' === $category || !is_array($data)) {
             return new JsonResponse(
                 ['error' => 'title, category and data are required'],
                 Response::HTTP_BAD_REQUEST
@@ -106,7 +106,7 @@ class TacticPresetController extends AbstractController
         // Optionally share with the first club the user belongs to
         if ($shareWithClub) {
             $clubs = $this->getUserClubs($user);
-            if ($clubs !== []) {
+            if ([] !== $clubs) {
                 $preset->setClub($clubs[0]);
             }
         }
@@ -127,7 +127,7 @@ class TacticPresetController extends AbstractController
         /** @var User|null $user */
         $user = $this->getUser();
 
-        if ($user === null) {
+        if (null === $user) {
             return new JsonResponse(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -166,7 +166,7 @@ class TacticPresetController extends AbstractController
             foreach ($coach->getCoachClubAssignments() as $assignment) {
                 $club = $assignment->getClub();
 
-                if ($club !== null) {
+                if (null !== $club) {
                     $clubs[$club->getId() ?? 0] = $club;
                 }
             }

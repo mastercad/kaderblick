@@ -7,8 +7,8 @@ use App\Entity\TacticPreset;
 use App\Entity\User;
 use App\Repository\TacticPresetRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Query;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -24,15 +24,15 @@ use PHPUnit\Framework\TestCase;
 class TacticPresetRepositoryTest extends TestCase
 {
     private EntityManagerInterface&MockObject $em;
-    private QueryBuilder&MockObject            $qb;
-    private Query&MockObject                   $query;
+    private QueryBuilder&MockObject $qb;
+    private Query&MockObject $query;
     /** @var TacticPreset[] */ private array $queryResult = [];
-    private TacticPresetRepository             $repository;
+    private TacticPresetRepository $repository;
 
     protected function setUp(): void
     {
-        $this->em    = $this->createMock(EntityManagerInterface::class);
-        $this->qb    = $this->createMock(QueryBuilder::class);
+        $this->em = $this->createMock(EntityManagerInterface::class);
+        $this->qb = $this->createMock(QueryBuilder::class);
         $this->query = $this->createMock(Query::class);
 
         // All fluent QueryBuilder methods must return $this->qb.
@@ -45,7 +45,7 @@ class TacticPresetRepositoryTest extends TestCase
 
         $this->em->method('createQueryBuilder')->willReturn($this->qb);
 
-        $metadata       = $this->createMock(ClassMetadata::class);
+        $metadata = $this->createMock(ClassMetadata::class);
         $metadata->name = TacticPreset::class;
         $this->em->method('getClassMetadata')->willReturn($metadata);
 
@@ -80,9 +80,10 @@ class TacticPresetRepositoryTest extends TestCase
         $this->qb->expects($this->atLeastOnce())
             ->method('setParameter')
             ->willReturnCallback(function (string $key, mixed $value) {
-                if ($key === 'isSystem') {
+                if ('isSystem' === $key) {
                     $this->assertTrue($value, 'isSystem parameter must be true');
                 }
+
                 return $this->qb;
             });
 
@@ -96,9 +97,10 @@ class TacticPresetRepositoryTest extends TestCase
         $this->qb->expects($this->atLeastOnce())
             ->method('setParameter')
             ->willReturnCallback(function (string $key, mixed $value) use ($user) {
-                if ($key === 'me') {
+                if ('me' === $key) {
                     $this->assertSame($user, $value, 'me parameter must be the given User instance');
                 }
+
                 return $this->qb;
             });
 
@@ -117,6 +119,7 @@ class TacticPresetRepositoryTest extends TestCase
         $this->qb->method('setParameter')
             ->willReturnCallback(function (string $key) use (&$calledKeys) {
                 $calledKeys[] = $key;
+
                 return $this->qb;
             });
 
@@ -134,6 +137,7 @@ class TacticPresetRepositoryTest extends TestCase
         $this->qb->method('setParameter')
             ->willReturnCallback(function (string $key) use (&$calledKeys) {
                 $calledKeys[] = $key;
+
                 return $this->qb;
             });
 
@@ -148,7 +152,7 @@ class TacticPresetRepositoryTest extends TestCase
 
     public function testFindVisibleForUserWithClubsSetsClubIdsParameter(): void
     {
-        $user  = $this->createMock(User::class);
+        $user = $this->createMock(User::class);
         $club1 = $this->createMock(Club::class);
         $club2 = $this->createMock(Club::class);
         $club1->method('getId')->willReturn(10);
@@ -157,9 +161,10 @@ class TacticPresetRepositoryTest extends TestCase
         $capturedClubIds = null;
         $this->qb->method('setParameter')
             ->willReturnCallback(function (string $key, mixed $value) use (&$capturedClubIds) {
-                if ($key === 'clubIds') {
+                if ('clubIds' === $key) {
                     $capturedClubIds = $value;
                 }
+
                 return $this->qb;
             });
 
@@ -173,14 +178,15 @@ class TacticPresetRepositoryTest extends TestCase
 
     public function testFindVisibleForUserWithClubsSetsThreeParameters(): void
     {
-        $user  = $this->createMock(User::class);
-        $club  = $this->createMock(Club::class);
+        $user = $this->createMock(User::class);
+        $club = $this->createMock(Club::class);
         $club->method('getId')->willReturn(5);
 
         $calledKeys = [];
         $this->qb->method('setParameter')
             ->willReturnCallback(function (string $key) use (&$calledKeys) {
                 $calledKeys[] = $key;
+
                 return $this->qb;
             });
 
@@ -192,7 +198,7 @@ class TacticPresetRepositoryTest extends TestCase
 
     public function testFindVisibleForUserFiltersOutNullClubIds(): void
     {
-        $user  = $this->createMock(User::class);
+        $user = $this->createMock(User::class);
         $club1 = $this->createMock(Club::class);
         $club2 = $this->createMock(Club::class);
         $club1->method('getId')->willReturn(null); // unsaved club, no ID
@@ -201,9 +207,10 @@ class TacticPresetRepositoryTest extends TestCase
         $capturedClubIds = null;
         $this->qb->method('setParameter')
             ->willReturnCallback(function (string $key, mixed $value) use (&$capturedClubIds) {
-                if ($key === 'clubIds') {
+                if ('clubIds' === $key) {
                     $capturedClubIds = $value;
                 }
+
                 return $this->qb;
             });
 
@@ -225,11 +232,13 @@ class TacticPresetRepositoryTest extends TestCase
         $this->qb->method('orderBy')
             ->willReturnCallback(function (string $sort, string $dir) use (&$orderCalls) {
                 $orderCalls[] = [$sort, $dir];
+
                 return $this->qb;
             });
         $this->qb->method('addOrderBy')
             ->willReturnCallback(function (string $sort, string $dir) use (&$orderCalls) {
                 $orderCalls[] = [$sort, $dir];
+
                 return $this->qb;
             });
 
@@ -250,7 +259,7 @@ class TacticPresetRepositoryTest extends TestCase
         $preset2 = $this->createMock(TacticPreset::class);
         $this->queryResult = [$preset1, $preset2];
 
-        $user   = $this->createMock(User::class);
+        $user = $this->createMock(User::class);
         $result = $this->repository->findVisibleForUser($user, []);
 
         $this->assertCount(2, $result);
@@ -261,7 +270,7 @@ class TacticPresetRepositoryTest extends TestCase
     public function testFindVisibleForUserReturnsEmptyArrayWhenNoResult(): void
     {
         // $this->queryResult defaults to [] – no extra setup needed.
-        $user   = $this->createMock(User::class);
+        $user = $this->createMock(User::class);
         $result = $this->repository->findVisibleForUser($user, []);
 
         $this->assertSame([], $result);

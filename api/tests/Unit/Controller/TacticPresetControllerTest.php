@@ -4,11 +4,8 @@ namespace App\Tests\Unit\Controller;
 
 use App\Controller\ApiResource\TacticPresetController;
 use App\Entity\Club;
-use App\Entity\Coach;
-use App\Entity\CoachClubAssignment;
 use App\Entity\TacticPreset;
 use App\Entity\User;
-use App\Entity\UserRelation;
 use App\Repository\TacticPresetRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,8 +21,8 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 class TacticPresetControllerTest extends TestCase
 {
     private TacticPresetRepository&MockObject $presetRepository;
-    private EntityManagerInterface&MockObject  $entityManager;
-    private TacticPresetController             $controller;
+    private EntityManagerInterface&MockObject $entityManager;
+    private TacticPresetController $controller;
 
     // -----------------------------------------------------------------
     // Setup helpers
@@ -34,7 +31,7 @@ class TacticPresetControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->presetRepository = $this->createMock(TacticPresetRepository::class);
-        $this->entityManager    = $this->createMock(EntityManagerInterface::class);
+        $this->entityManager = $this->createMock(EntityManagerInterface::class);
 
         $this->controller = new TacticPresetController(
             $this->presetRepository,
@@ -47,7 +44,7 @@ class TacticPresetControllerTest extends TestCase
      */
     private function setAuthenticatedUser(?User $user): void
     {
-        if ($user === null) {
+        if (null === $user) {
             $token = null;
         } else {
             $token = $this->createMock(TokenInterface::class);
@@ -84,6 +81,9 @@ class TacticPresetControllerTest extends TestCase
     // Helpers: build Request
     // -----------------------------------------------------------------
 
+    /**
+     * @param array<string, mixed> $body
+     */
     private function jsonRequest(string $method, array $body): Request
     {
         $request = Request::create('/', $method, [], [], [], [], json_encode($body));
@@ -115,16 +115,16 @@ class TacticPresetControllerTest extends TestCase
 
         $preset = $this->createMock(TacticPreset::class);
         $preset->method('toArray')->willReturn([
-            'id'          => 1,
-            'title'       => 'Gegenpressing',
-            'category'    => 'Pressing',
+            'id' => 1,
+            'title' => 'Gegenpressing',
+            'category' => 'Pressing',
             'description' => '',
-            'isSystem'    => true,
-            'clubId'      => null,
-            'createdBy'   => null,
-            'canDelete'   => false,
-            'data'        => [],
-            'createdAt'   => '2026-03-14T10:00:00+00:00',
+            'isSystem' => true,
+            'clubId' => null,
+            'createdBy' => null,
+            'canDelete' => false,
+            'data' => [],
+            'createdAt' => '2026-03-14T10:00:00+00:00',
         ]);
 
         $this->presetRepository
@@ -226,9 +226,9 @@ class TacticPresetControllerTest extends TestCase
 
         $response = $this->controller->create(
             $this->jsonRequest('POST', [
-                'title'    => 'Vorlage',
+                'title' => 'Vorlage',
                 'category' => 'Ungueltig',
-                'data'     => ['name' => 'Vorlage', 'elements' => [], 'opponents' => []],
+                'data' => ['name' => 'Vorlage', 'elements' => [], 'opponents' => []],
             ])
         );
 
@@ -245,9 +245,9 @@ class TacticPresetControllerTest extends TestCase
 
         $response = $this->controller->create(
             $this->jsonRequest('POST', [
-                'title'    => 'Vorlage',
+                'title' => 'Vorlage',
                 'category' => 'Pressing',
-                'data'     => 'kein-array',
+                'data' => 'kein-array',
             ])
         );
 
@@ -264,11 +264,11 @@ class TacticPresetControllerTest extends TestCase
 
         $response = $this->controller->create(
             $this->jsonRequest('POST', [
-                'title'        => 'Meine Vorlage',
-                'category'     => TacticPreset::CATEGORY_ATTACK,
-                'description'  => 'Testbeschreibung',
-                'shareWithClub'=> false,
-                'data'         => ['name' => 'Meine Vorlage', 'elements' => [], 'opponents' => []],
+                'title' => 'Meine Vorlage',
+                'category' => TacticPreset::CATEGORY_ATTACK,
+                'description' => 'Testbeschreibung',
+                'shareWithClub' => false,
+                'data' => ['name' => 'Meine Vorlage', 'elements' => [], 'opponents' => []],
             ])
         );
 
@@ -293,9 +293,9 @@ class TacticPresetControllerTest extends TestCase
 
             $response = $this->controller->create(
                 $this->jsonRequest('POST', [
-                    'title'    => 'Taktik ' . $category,
+                    'title' => 'Taktik ' . $category,
                     'category' => $category,
-                    'data'     => ['name' => 'Taktik', 'elements' => [], 'opponents' => []],
+                    'data' => ['name' => 'Taktik', 'elements' => [], 'opponents' => []],
                 ])
             );
 

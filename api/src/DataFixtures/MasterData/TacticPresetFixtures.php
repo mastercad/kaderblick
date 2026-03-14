@@ -3,9 +3,9 @@
 namespace App\DataFixtures\MasterData;
 
 use App\Entity\TacticPreset;
-use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use App\Repository\TacticPresetRepository;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 
 /**
@@ -58,12 +58,12 @@ class TacticPresetFixtures extends Fixture implements FixtureGroupInterface
     private function buildPresets(): array
     {
         return [
-            $this->preset_gegenpressing(),
-            $this->preset_schnellerKonter(),
-            $this->preset_eckballKurz(),
-            $this->preset_freistossFlank(),
-            $this->preset_spielaufbauDreieck(),
-            $this->preset_mittelfeldblock(),
+            $this->presetGegenpressing(),
+            $this->presetSchnellerKonter(),
+            $this->presetEckballKurz(),
+            $this->presetFreistossFlank(),
+            $this->presetSpielaufbauDreieck(),
+            $this->presetMittelfeldblock(),
         ];
     }
 
@@ -88,15 +88,17 @@ class TacticPresetFixtures extends Fixture implements FixtureGroupInterface
     /** @return array<string, mixed> */
     private function arrow(
         string $id,
-        float $x1, float $y1,
-        float $x2, float $y2,
+        float $x1,
+        float $y1,
+        float $x2,
+        float $y2,
         string $color = '#facc15'
     ): array {
         return [
-            'id'    => $id,
-            'kind'  => 'arrow',
-            'x1'    => $x1, 'y1' => $y1,
-            'x2'    => $x2, 'y2' => $y2,
+            'id' => $id,
+            'kind' => 'arrow',
+            'x1' => $x1, 'y1' => $y1,
+            'x2' => $x2, 'y2' => $y2,
             'color' => $color,
         ];
     }
@@ -105,15 +107,17 @@ class TacticPresetFixtures extends Fixture implements FixtureGroupInterface
     /** @return array<string, mixed> */
     private function run(
         string $id,
-        float $x1, float $y1,
-        float $x2, float $y2,
+        float $x1,
+        float $y1,
+        float $x2,
+        float $y2,
         string $color = '#22c55e'
     ): array {
         return [
-            'id'    => $id,
-            'kind'  => 'run',
-            'x1'    => $x1, 'y1' => $y1,
-            'x2'    => $x2, 'y2' => $y2,
+            'id' => $id,
+            'kind' => 'run',
+            'x1' => $x1, 'y1' => $y1,
+            'x2' => $x2, 'y2' => $y2,
             'color' => $color,
         ];
     }
@@ -122,15 +126,17 @@ class TacticPresetFixtures extends Fixture implements FixtureGroupInterface
     /** @return array<string, mixed> */
     private function zone(
         string $id,
-        float $cx, float $cy, float $r,
+        float $cx,
+        float $cy,
+        float $r,
         string $color = '#ef4444'
     ): array {
         return [
-            'id'    => $id,
-            'kind'  => 'zone',
-            'cx'    => $cx,
-            'cy'    => $cy,
-            'r'     => $r,
+            'id' => $id,
+            'kind' => 'zone',
+            'cx' => $cx,
+            'cy' => $cy,
+            'r' => $r,
             'color' => $color,
         ];
     }
@@ -146,15 +152,15 @@ class TacticPresetFixtures extends Fixture implements FixtureGroupInterface
     // -----------------------------------------------------------------
 
     /** @return array<string, mixed> */
-    private function preset_gegenpressing(): array
+    private function presetGegenpressing(): array
     {
         return [
-            'title'       => 'Gegenpressing (4-3-3)',
-            'category'    => TacticPreset::CATEGORY_PRESSING,
+            'title' => 'Gegenpressing (4-3-3)',
+            'category' => TacticPreset::CATEGORY_PRESSING,
             'description' => 'Sofortiges Pressing nach Ballverlust. Stürmer schließen Pässe ab, Mittelfeldlinie schiebt hoch, Pressfalle im gegnerischen Aufbau.',
-            'data'        => [
-                'name'      => 'Gegenpressing (4-3-3)',
-                'elements'  => [
+            'data' => [
+                'name' => 'Gegenpressing (4-3-3)',
+                'elements' => [
                     // Stürmer presst Ballführenden
                     $this->arrow('a1', 57, 50, 32, 50, '#ef4444'),
                     // LW schließt Passlinie oben
@@ -182,15 +188,15 @@ class TacticPresetFixtures extends Fixture implements FixtureGroupInterface
     // -----------------------------------------------------------------
 
     /** @return array<string, mixed> */
-    private function preset_schnellerKonter(): array
+    private function presetSchnellerKonter(): array
     {
         return [
-            'title'       => 'Schneller Konter',
-            'category'    => TacticPreset::CATEGORY_ATTACK,
+            'title' => 'Schneller Konter',
+            'category' => TacticPreset::CATEGORY_ATTACK,
             'description' => 'Nach Ballgewinn sofort in die Tiefe. Außenstürmer sprinten auf die Lücken, Mittelstürmer läuft hinter die Linie.',
-            'data'        => [
-                'name'      => 'Schneller Konter',
-                'elements'  => [
+            'data' => [
+                'name' => 'Schneller Konter',
+                'elements' => [
                     // LW-Sprint (oben)
                     $this->run('a1', 72, 15, 12, 20, '#22c55e'),
                     // ST-Sprint (mitte)
@@ -218,27 +224,27 @@ class TacticPresetFixtures extends Fixture implements FixtureGroupInterface
     // -----------------------------------------------------------------
 
     /** @return array<string, mixed> */
-    private function preset_eckballKurz(): array
+    private function presetEckballKurz(): array
     {
         return [
-            'title'       => 'Eckball kurz',
-            'category'    => TacticPreset::CATEGORY_STANDARDS,
+            'title' => 'Eckball kurz',
+            'category' => TacticPreset::CATEGORY_STANDARDS,
             'description' => 'Kurze Ecke zur Überzahl am Eckpunkt, dann Kombination und Flanke in den gefährlichen Raum.',
-            'data'        => [
-                'name'      => 'Eckball kurz',
-                'elements'  => [
+            'data' => [
+                'name' => 'Eckball kurz',
+                'elements' => [
                     // Kurzer Anspiel
-                    $this->arrow('a1',  5,  4, 14, 10, '#facc15'),
+                    $this->arrow('a1', 5, 4, 14, 10, '#facc15'),
                     // Anläufer kommt zur kurzen Ecke
                     $this->run('a2', 18, 18, 14, 10, '#facc15'),
                     // Zweite Kombination
-                    $this->arrow('a3', 14, 10,  5, 22, '#facc15'),
+                    $this->arrow('a3', 14, 10, 5, 22, '#facc15'),
                     // Flanke in den Strafraum
-                    $this->arrow('a4',  5, 22, 12, 46, '#facc15'),
+                    $this->arrow('a4', 5, 22, 12, 46, '#facc15'),
                     // Vorderpfosten-Lauf
-                    $this->run('a5', 22, 60,  6, 42, '#22c55e'),
+                    $this->run('a5', 22, 60, 6, 42, '#22c55e'),
                     // Hinterpfosten nachrücken
-                    $this->run('a6', 24, 72,  9, 54, '#22c55e'),
+                    $this->run('a6', 24, 72, 9, 54, '#22c55e'),
                     // Gefahrenzone im Strafraum
                     $this->zone('z1', 8, 50, 12, '#ef4444'),
                 ],
@@ -252,23 +258,23 @@ class TacticPresetFixtures extends Fixture implements FixtureGroupInterface
     // -----------------------------------------------------------------
 
     /** @return array<string, mixed> */
-    private function preset_freistossFlank(): array
+    private function presetFreistossFlank(): array
     {
         return [
-            'title'       => 'Freistoß Flanke',
-            'category'    => TacticPreset::CATEGORY_STANDARDS,
+            'title' => 'Freistoß Flanke',
+            'category' => TacticPreset::CATEGORY_STANDARDS,
             'description' => 'Gestaffelte Raumläufe in den Strafraum. Vorderpfosten-, Elfmeter- und Hinterpfostenlauf bei Flanke vom halbrechten Freistoß.',
-            'data'        => [
-                'name'      => 'Freistoß Flanke',
-                'elements'  => [
+            'data' => [
+                'name' => 'Freistoß Flanke',
+                'elements' => [
                     // Flanke
-                    $this->arrow('a1', 28, 14,  7, 46, '#facc15'),
+                    $this->arrow('a1', 28, 14, 7, 46, '#facc15'),
                     // Vorderpfosten-Lauf
-                    $this->run('a2', 22, 58,  6, 40, '#22c55e'),
+                    $this->run('a2', 22, 58, 6, 40, '#22c55e'),
                     // Elfmeter-Lauf
-                    $this->run('a3', 22, 50,  8, 50, '#22c55e'),
+                    $this->run('a3', 22, 50, 8, 50, '#22c55e'),
                     // Hinterpfosten-Lauf
-                    $this->run('a4', 24, 68,  7, 56, '#22c55e'),
+                    $this->run('a4', 24, 68, 7, 56, '#22c55e'),
                     // Zielzone
                     $this->zone('z1', 7, 48, 12, '#ef4444'),
                 ],
@@ -288,15 +294,15 @@ class TacticPresetFixtures extends Fixture implements FixtureGroupInterface
     // -----------------------------------------------------------------
 
     /** @return array<string, mixed> */
-    private function preset_spielaufbauDreieck(): array
+    private function presetSpielaufbauDreieck(): array
     {
         return [
-            'title'       => 'Spielaufbau Dreieck',
-            'category'    => TacticPreset::CATEGORY_BUILD_UP,
+            'title' => 'Spielaufbau Dreieck',
+            'category' => TacticPreset::CATEGORY_BUILD_UP,
             'description' => 'Strukturierter Aufbau über Dreieck IV–Sechser–Außenverteidiger mit anschließendem Steilpass in den Halbraum.',
-            'data'        => [
-                'name'      => 'Spielaufbau Dreieck',
-                'elements'  => [
+            'data' => [
+                'name' => 'Spielaufbau Dreieck',
+                'elements' => [
                     // IV → LB
                     $this->arrow('a1', 83, 38, 72, 20, '#facc15'),
                     // LB → DM (Dreieck)
@@ -324,15 +330,15 @@ class TacticPresetFixtures extends Fixture implements FixtureGroupInterface
     // -----------------------------------------------------------------
 
     /** @return array<string, mixed> */
-    private function preset_mittelfeldblock(): array
+    private function presetMittelfeldblock(): array
     {
         return [
-            'title'       => '4-4-2 Mittelfeldblock',
-            'category'    => TacticPreset::CATEGORY_DEFENSIVE,
+            'title' => '4-4-2 Mittelfeldblock',
+            'category' => TacticPreset::CATEGORY_DEFENSIVE,
             'description' => 'Kompakter Mittelfeldblock in 4-4-2. Außen rücken ein, Stürmer schließen Halbräume, enge Abstände zwischen den Linien.',
-            'data'        => [
-                'name'      => '4-4-2 Mittelfeldblock',
-                'elements'  => [
+            'data' => [
+                'name' => '4-4-2 Mittelfeldblock',
+                'elements' => [
                     // LM rückt ein
                     $this->run('a1', 68, 18, 54, 30, '#facc15'),
                     // RM rückt ein
@@ -346,15 +352,15 @@ class TacticPresetFixtures extends Fixture implements FixtureGroupInterface
                     // Kompaktblock
                     $this->zone('z1', 57, 50, 18, '#3b82f6'),
                     // Flügelkorridore
-                    $this->zone('z2', 48, 22,  8, '#ef4444'),
-                    $this->zone('z3', 48, 78,  8, '#ef4444'),
+                    $this->zone('z2', 48, 22, 8, '#ef4444'),
+                    $this->zone('z3', 48, 78, 8, '#ef4444'),
                 ],
                 'opponents' => [
                     $this->opponent('o1', 42, 50, 10),
-                    $this->opponent('o2', 40, 30,  7),
+                    $this->opponent('o2', 40, 30, 7),
                     $this->opponent('o3', 40, 70, 11),
-                    $this->opponent('o4', 30, 22,  2),
-                    $this->opponent('o5', 30, 78,  3),
+                    $this->opponent('o4', 30, 22, 2),
+                    $this->opponent('o5', 30, 78, 3),
                 ],
             ],
         ];
