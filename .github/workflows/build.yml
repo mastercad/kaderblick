@@ -44,8 +44,8 @@ jobs:
         run: |
           docker buildx build \
             --target test \
-            --cache-from type=gha,scope=api \
-            --cache-to   type=gha,mode=max,scope=api \
+            --cache-from type=gha,scope=api-test \
+            --cache-to   type=gha,mode=max,scope=api-test \
             -f .docker/api/Dockerfile \
             -t ghcr.io/mastercad/kaderblick/api:test-${{ github.sha }} \
             --push .
@@ -54,7 +54,9 @@ jobs:
         run: |
           docker buildx build \
             --target prod \
-            --cache-from type=gha,scope=api \
+            --cache-from type=gha,scope=api-test \
+            --cache-from type=gha,scope=api-prod \
+            --cache-to   type=gha,mode=max,scope=api-prod \
             -f .docker/api/Dockerfile \
             -t ghcr.io/mastercad/kaderblick/api:${{ github.sha }} \
             --push .
