@@ -42,6 +42,13 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
 
       # ------------------------------
+      # Docker Buildx mit GitHub Actions Cache aktivieren
+      # Beschleunigt Folge-Builds erheblich (composer install, npm install etc.)
+      # ------------------------------
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ------------------------------
       # Build-Metadaten vorbereiten (Publish-Datum, Build-Info)
       # Muss vor dem Docker-Build laufen, damit die Änderungen ins Image eingebettet werden.
       # ------------------------------
@@ -103,13 +110,14 @@ jobs:
             BUILD_API=true
           fi
           if [ "$BUILD_API" = "true" ]; then
-            docker build \
+            docker buildx build \
+              --cache-from type=gha,scope=api \
+              --cache-to type=gha,mode=max,scope=api \
               -f .docker/api/Dockerfile \
               -t ghcr.io/mastercad/kaderblick/api:${{ github.sha }} \
               -t ghcr.io/mastercad/kaderblick/api:latest \
+              --push \
               .
-            docker push ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
-            docker push ghcr.io/mastercad/kaderblick/api:latest
           fi
 
       - name: Build and push frontend production image
@@ -128,13 +136,14 @@ jobs:
           fi
           if [ "$BUILD_FRONTEND_PROD" = "true" ]; then
             echo "VITE_BACKEND_URL=https://api.kaderblick.de" > frontend/.env
-            docker build \
+            docker buildx build \
+              --cache-from type=gha,scope=frontend \
+              --cache-to type=gha,mode=max,scope=frontend \
               -f .docker/frontend/Dockerfile \
               -t ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }} \
               -t ghcr.io/mastercad/kaderblick/frontend-prod:latest \
+              --push \
               .
-            docker push ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
-            docker push ghcr.io/mastercad/kaderblick/frontend-prod:latest
           fi
 
       - name: Build and push maintenance image
@@ -152,13 +161,14 @@ jobs:
             BUILD_MAINTENANCE=true
           fi
           if [ "$BUILD_MAINTENANCE" = "true" ]; then
-            docker build \
+            docker buildx build \
+              --cache-from type=gha,scope=maintenance \
+              --cache-to type=gha,mode=max,scope=maintenance \
               -f .docker/maintenance/Dockerfile \
               -t ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }} \
               -t ghcr.io/mastercad/kaderblick/maintenance:latest \
+              --push \
               .
-            docker push ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }}
-            docker push ghcr.io/mastercad/kaderblick/maintenance:latest
           fi
 
       - name: Build and push frontend staging image
@@ -177,13 +187,14 @@ jobs:
           fi
           if [ "$BUILD_FRONTEND_STAGING" = "true" ]; then
             echo "VITE_BACKEND_URL=https://staging-api.kaderblick.de" > frontend/.env
-            docker build \
+            docker buildx build \
+              --cache-from type=gha,scope=frontend \
+              --cache-to type=gha,mode=max,scope=frontend \
               -f .docker/frontend/Dockerfile \
               -t ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }} \
               -t ghcr.io/mastercad/kaderblick/frontend-staging:latest \
+              --push \
               .
-            docker push ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
-            docker push ghcr.io/mastercad/kaderblick/frontend-staging:latest
             rm -f frontend/.env
           fi
 
@@ -492,7 +503,6 @@ jobs:
             cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
 
             # Secrets zuerst entschlüsseln, damit cache:warmup alle Env-Werte kennt
-            # composer install entfällt – vendor/ ist bereits im GHCR-Image enthalten
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
               exec -T --user www-data api bin/console secrets:decrypt-to-local --force --env=staging
 
@@ -655,7 +665,6 @@ jobs:
             cd "${{ secrets.MAIN_PROJECT_PATH }}/production_current"
 
             # Secrets zuerst entschlüsseln, damit cache:warmup alle Env-Werte kennt
-            # composer install entfällt – vendor/ ist bereits im GHCR-Image enthalten
             docker compose -f docker-compose.yml -p production exec -T --user www-data api \
               bin/console secrets:decrypt-to-local --force --env=prod
 

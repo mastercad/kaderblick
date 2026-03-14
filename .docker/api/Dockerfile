@@ -49,12 +49,14 @@ RUN echo "date.timezone=$TZ" > /usr/local/etc/php/conf.d/timezone.ini
 
 WORKDIR /var/www/symfony
 
-# Source-Code und Composer-Abhängigkeiten ins Image einbetten.
-# api/vendor/ ist gitignored und wird nicht per SCP auf den Server kopiert.
-# Durch das Einbetten hier entfällt das langsame 'composer install' auf dem Server.
+# Erst nur composer.json + composer.lock kopieren – eigener Layer.
+# composer install läuft nur neu wenn sich die Lock-Datei ändert, nicht bei PHP-Änderungen.
+COPY api/composer.json api/composer.lock /var/www/symfony/
+RUN composer install --no-interaction --optimize-autoloader --no-dev
+
+# Restlichen Source-Code kopieren (invalidiert den composer-Layer nicht)
 COPY api/ /var/www/symfony/
-RUN composer install --no-interaction --optimize-autoloader --no-dev \
-    && mkdir -p var/cache var/log config/secrets/prod config/secrets/staging config/jwt \
+RUN mkdir -p var/cache var/log config/secrets/prod config/secrets/staging config/jwt \
     && chown -R www-data:www-data /var/www/symfony \
     && chmod -R 755 vendor/ \
     && chmod -R 775 var/
