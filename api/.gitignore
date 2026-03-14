@@ -49,4 +49,5 @@ phpstan.neon
 /public/bundles/
 /var/
 /vendor/
+composer.phar
 /public/uploads/*
