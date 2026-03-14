@@ -22,10 +22,16 @@ use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPasspor
  *
  * This authenticator only triggers when the Bearer value starts with "kbak_",
  * leaving regular JWT tokens entirely to the LexikJWTAuthenticationBundle.
+ *
+ * Kalender-Tokens (Präfix "kcal_") werden hier explizit abgelehnt – sie
+ * dürfen niemals zur Platform-Authentifizierung genutzt werden.
+ * Ein gestohlener Kalender-Token gewährt ausschließlich Lesezugriff auf
+ * die /ical/-Endpunkte, nicht aber auf die API.
  */
 class ApiTokenAuthenticator extends AbstractAuthenticator
 {
     public const TOKEN_PREFIX = 'kbak_';
+    public const CALENDAR_TOKEN_PREFIX = 'kcal_';
 
     public function __construct(private EntityManagerInterface $em)
     {
@@ -34,6 +40,12 @@ class ApiTokenAuthenticator extends AbstractAuthenticator
     public function supports(Request $request): ?bool
     {
         $auth = $request->headers->get('Authorization', '');
+
+        // Kalender-Tokens explizit ausschließen – sie dürfen niemals
+        // zur Authentifizierung auf der Platform verwendet werden.
+        if (str_starts_with($auth, 'Bearer ' . self::CALENDAR_TOKEN_PREFIX)) {
+            return false;
+        }
 
         return str_starts_with($auth, 'Bearer ' . self::TOKEN_PREFIX);
     }
