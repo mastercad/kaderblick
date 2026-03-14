@@ -265,12 +265,18 @@ jobs:
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/production_current"
             DC="docker compose -f docker-compose.yml -p production"
-            $DC exec -T --user www-data api bin/console secrets:decrypt-to-local --force --env=prod
+            $DC exec -T api sh -c 'touch /var/www/symfony/.env.prod.local && chown www-data:www-data /var/www/symfony/.env.prod.local && chmod 664 /var/www/symfony/.env.prod.local'
+            DECRYPT_OUT=$($DC exec -T --user www-data api bin/console secrets:decrypt-to-local --force --env=prod 2>&1) || true
+            echo "$DECRYPT_OUT"
+            if echo "$DECRYPT_OUT" | grep -qiE 'permission denied|failed to open stream|error'; then
+              echo "FEHLER: secrets:decrypt-to-local schlug fehl – Berechtigungsproblem!"
+              exit 1
+            fi
             $DC exec -T --user www-data api bin/console cache:warmup --env=prod
             $DC exec -T --user www-data api bin/console doctrine:migrations:migrate --no-interaction --env=prod
             if ! $DC exec -T api sh -c 'grep -q "BEGIN PRIVATE KEY" /var/www/symfony/config/jwt/private.pem 2>/dev/null'; then
               echo "JWT-Keys fehlen oder veraltet – regeneriere (PKCS#8)..."
-              $DC exec -T --user www-data api php bin/console lexik:jwt:generate-keypair --overwrite --env=prod
+              $DC exec -T --user www-data api php bin/console lexik:jwt:generate-keypair --overwrite --no-interaction --env=prod
               mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt"
               $DC exec -T api sh -c 'cat /var/www/symfony/config/jwt/private.pem' > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/private.pem" || true
               $DC exec -T api sh -c 'cat /var/www/symfony/config/jwt/public.pem'  > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/public.pem"  || true
@@ -391,12 +397,18 @@ jobs:
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
             DC="docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging"
-            $DC exec -T --user www-data api bin/console secrets:decrypt-to-local --force --env=staging
+            $DC exec -T api sh -c 'touch /var/www/symfony/.env.staging.local && chown www-data:www-data /var/www/symfony/.env.staging.local && chmod 664 /var/www/symfony/.env.staging.local'
+            DECRYPT_OUT=$($DC exec -T --user www-data api bin/console secrets:decrypt-to-local --force --env=staging 2>&1) || true
+            echo "$DECRYPT_OUT"
+            if echo "$DECRYPT_OUT" | grep -qiE 'permission denied|failed to open stream|error'; then
+              echo "FEHLER: secrets:decrypt-to-local schlug fehl – Berechtigungsproblem!"
+              exit 1
+            fi
             $DC exec -T --user www-data api bin/console cache:warmup --env=staging
             $DC exec -T --user www-data api bin/console doctrine:migrations:migrate --no-interaction --env=staging
             if ! $DC exec -T api sh -c 'grep -q "BEGIN PRIVATE KEY" /var/www/symfony/config/jwt/private.pem 2>/dev/null'; then
               echo "JWT-Keys fehlen oder veraltet – regeneriere (PKCS#8)..."
-              $DC exec -T --user www-data api php bin/console lexik:jwt:generate-keypair --overwrite --env=staging
+              $DC exec -T --user www-data api php bin/console lexik:jwt:generate-keypair --overwrite --no-interaction --env=staging
               mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt"
               $DC exec -T api sh -c 'cat /var/www/symfony/config/jwt/private.pem' > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/private.pem" || true
               $DC exec -T api sh -c 'cat /var/www/symfony/config/jwt/public.pem'  > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/public.pem"  || true
