@@ -42,7 +42,7 @@ class CoachTeamPlayerService
     /**
      * Ermittelt alle Spieler eines Teams, die aktuell aktiv sind.
      *
-     * @return list<array{player: array{id: int|null, name: string}, shirtNumber: int|null}>
+     * @return list<array{player: array{id: int|null, name: string}, shirtNumber: int|null, position?: string|null, alternativePositions?: string[]}>
      */
     public function collectTeamPlayers(Team $team): array
     {
