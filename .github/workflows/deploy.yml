@@ -86,6 +86,17 @@ jobs:
         run: |
           if [ "${{ steps.changes.outputs.api_changed }}" = "true" ]; then
             echo "API hat sich geändert – baue neu..."
+            BUILD_API=true
+          elif docker pull ghcr.io/mastercad/kaderblick/api:latest 2>/dev/null; then
+            echo "API unverändert – tagge 'latest' als ${{ github.sha }}..."
+            docker tag ghcr.io/mastercad/kaderblick/api:latest ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
+            BUILD_API=false
+          else
+            echo "API 'latest' nicht gefunden – baue erstmalig..."
+            BUILD_API=true
+          fi
+          if [ "$BUILD_API" = "true" ]; then
             docker build \
               -f .docker/api/Dockerfile \
               -t ghcr.io/mastercad/kaderblick/api:${{ github.sha }} \
@@ -93,17 +104,23 @@ jobs:
               .
             docker push ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
             docker push ghcr.io/mastercad/kaderblick/api:latest
-          else
-            echo "API unverändert – tagge 'latest' als ${{ github.sha }}..."
-            docker pull ghcr.io/mastercad/kaderblick/api:latest
-            docker tag ghcr.io/mastercad/kaderblick/api:latest ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
-            docker push ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
           fi
 
       - name: Build and push frontend production image
         run: |
           if [ "${{ steps.changes.outputs.frontend_changed }}" = "true" ]; then
             echo "Frontend hat sich geändert – baue neu..."
+            BUILD_FRONTEND_PROD=true
+          elif docker pull ghcr.io/mastercad/kaderblick/frontend-prod:latest 2>/dev/null; then
+            echo "Frontend unverändert – tagge 'latest' als ${{ github.sha }}..."
+            docker tag ghcr.io/mastercad/kaderblick/frontend-prod:latest ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
+            BUILD_FRONTEND_PROD=false
+          else
+            echo "Frontend-prod 'latest' nicht gefunden – baue erstmalig..."
+            BUILD_FRONTEND_PROD=true
+          fi
+          if [ "$BUILD_FRONTEND_PROD" = "true" ]; then
             echo "VITE_BACKEND_URL=https://api.kaderblick.de" > frontend/.env
             docker build \
               -f .docker/frontend/Dockerfile \
@@ -112,17 +129,23 @@ jobs:
               .
             docker push ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
             docker push ghcr.io/mastercad/kaderblick/frontend-prod:latest
-          else
-            echo "Frontend unverändert – tagge 'latest' als ${{ github.sha }}..."
-            docker pull ghcr.io/mastercad/kaderblick/frontend-prod:latest
-            docker tag ghcr.io/mastercad/kaderblick/frontend-prod:latest ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
-            docker push ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
           fi
 
       - name: Build and push frontend staging image
         run: |
           if [ "${{ steps.changes.outputs.frontend_changed }}" = "true" ]; then
             echo "Frontend hat sich geändert – baue neu..."
+            BUILD_FRONTEND_STAGING=true
+          elif docker pull ghcr.io/mastercad/kaderblick/frontend-staging:latest 2>/dev/null; then
+            echo "Frontend unverändert – tagge 'latest' als ${{ github.sha }}..."
+            docker tag ghcr.io/mastercad/kaderblick/frontend-staging:latest ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
+            BUILD_FRONTEND_STAGING=false
+          else
+            echo "Frontend-staging 'latest' nicht gefunden – baue erstmalig..."
+            BUILD_FRONTEND_STAGING=true
+          fi
+          if [ "$BUILD_FRONTEND_STAGING" = "true" ]; then
             echo "VITE_BACKEND_URL=https://staging-api.kaderblick.de" > frontend/.env
             docker build \
               -f .docker/frontend/Dockerfile \
@@ -132,11 +155,6 @@ jobs:
             docker push ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
             docker push ghcr.io/mastercad/kaderblick/frontend-staging:latest
             rm -f frontend/.env
-          else
-            echo "Frontend unverändert – tagge 'latest' als ${{ github.sha }}..."
-            docker pull ghcr.io/mastercad/kaderblick/frontend-staging:latest
-            docker tag ghcr.io/mastercad/kaderblick/frontend-staging:latest ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
-            docker push ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
           fi
 
       # ------------------------------
