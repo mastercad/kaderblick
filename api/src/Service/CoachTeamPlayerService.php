@@ -50,9 +50,26 @@ class CoachTeamPlayerService
         foreach ($team->getPlayerTeamAssignments() as $assignment) {
             if ($this->isCurrentAssignment($assignment->getStartDate(), $assignment->getEndDate())) {
                 $player = $assignment->getPlayer();
+                $mainPos = null;
+                $altPositions = [];
+                try {
+                    $mainPos = $player->getMainPosition()->getShortName()
+                        ?? $player->getMainPosition()->getName();
+                } catch (\Throwable) {
+                    $mainPos = null;
+                }
+                try {
+                    foreach ($player->getAlternativePositions() as $pos) {
+                        $altPositions[] = $pos->getShortName() ?? $pos->getName();
+                    }
+                } catch (\Throwable) {
+                    $altPositions = [];
+                }
                 $players[] = [
                     'player' => ['id' => $player->getId(), 'name' => $player->getFullName()],
-                    'shirtNumber' => $assignment->getShirtNumber()
+                    'shirtNumber' => $assignment->getShirtNumber(),
+                    'position' => $mainPos,
+                    'alternativePositions' => $altPositions,
                 ];
             }
         }

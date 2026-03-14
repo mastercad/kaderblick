@@ -160,6 +160,8 @@ class FormationController extends AbstractController
                 'id' => $player['id'],
                 'name' => $player['name'],
                 'shirtNumber' => $playerData['shirtNumber'],
+                'position' => $playerData['position'] ?? null,
+                'alternativePositions' => $playerData['alternativePositions'] ?? [],
             ];
         }, $players);
 
