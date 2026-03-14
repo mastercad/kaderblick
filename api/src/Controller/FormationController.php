@@ -155,7 +155,7 @@ class FormationController extends AbstractController
 
         $playersData = array_map(function ($playerData) {
             $player = $playerData['player'];
-            /** @var array{player: array{id: int|null, name: string}, shirtNumber: int|null, position?: string|null, alternativePositions?: string[]} $playerData */
+            /* @var array{player: array{id: int|null, name: string}, shirtNumber: int|null, position?: string|null, alternativePositions?: string[]} $playerData */
 
             return [
                 'id' => $player['id'],
