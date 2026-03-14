@@ -159,7 +159,7 @@ const SquadList: React.FC<SquadListProps> = ({
               }}
             >
               <Tooltip
-                title={buildPlayerTooltip(player.name, player.shirtNumber, player.position, player.alternativePositions)}
+                title={buildPlayerTooltip(player.name, player.shirtNumber, player.position ?? undefined, player.alternativePositions)}
                 placement="right"
                 disableInteractive
               >

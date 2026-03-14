@@ -69,7 +69,9 @@ describe('applyTemplate', () => {
 
     act(() => {
       hook.result.current.applyTemplate({
-        name: '4-4-2',
+        code: '4-4-2',
+        label: '4-4-2',
+        description: '',
         players: [
           { position: 'TW', x: 50, y: 88 },
           { position: 'IV', x: 50, y: 70 },
@@ -90,7 +92,9 @@ describe('applyTemplate', () => {
     const { hook } = setup([], [], []);
     act(() => {
       hook.result.current.applyTemplate({
-        name: '4-3-3',
+        code: '4-3-3',
+        label: '4-3-3',
+        description: '',
         players: Array.from({ length: 11 }, (_, i) => ({ position: 'POS', x: i * 5, y: i * 5 })),
       });
     });
