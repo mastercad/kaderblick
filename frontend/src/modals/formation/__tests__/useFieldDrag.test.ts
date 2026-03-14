@@ -34,7 +34,7 @@ const setup = (initialPlayers: PlayerData[], initialBench: PlayerData[] = []) =>
 };
 
 const mouseEvent = (clientX: number, clientY: number) =>
-  ({ clientX, clientY, stopPropagation: jest.fn() } as unknown as React.MouseEvent);
+  ({ clientX, clientY, stopPropagation: jest.fn(), preventDefault: jest.fn() } as unknown as React.MouseEvent);
 
 const touchEvent = (clientX: number, clientY: number) =>
   ({
