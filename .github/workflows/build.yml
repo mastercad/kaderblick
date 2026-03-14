@@ -38,11 +38,23 @@ jobs:
           sh ./frontend/scripts/set-publish-date.sh
           sh ./frontend/scripts/write-buildinfo.sh
 
-      - name: Build and push API image
+      # API: test-Stage (mit dev-deps, für QA) und prod-Stage (ohne dev-deps, für Deploy).
+      # Beide teilen den 'base'-Layer aus dem GHA-Cache → prod-Build ist nach test-Build sehr schnell.
+      - name: Build and push API test image
         run: |
           docker buildx build \
+            --target test \
             --cache-from type=gha,scope=api \
             --cache-to   type=gha,mode=max,scope=api \
+            -f .docker/api/Dockerfile \
+            -t ghcr.io/mastercad/kaderblick/api:test-${{ github.sha }} \
+            --push .
+
+      - name: Build and push API prod image
+        run: |
+          docker buildx build \
+            --target prod \
+            --cache-from type=gha,scope=api \
             -f .docker/api/Dockerfile \
             -t ghcr.io/mastercad/kaderblick/api:${{ github.sha }} \
             --push .

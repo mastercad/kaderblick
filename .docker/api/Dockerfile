@@ -1,4 +1,9 @@
-FROM php:8.3-apache
+# =============================================================================
+# Stage: base
+# Gemeinsame Grundlage für alle weiteren Stages.
+# Enthält: PHP-Extensions, Apache-Config, Xdebug, Composer, Timezone, Scripts.
+# =============================================================================
+FROM php:8.3-apache AS base
 
 ENV TZ=Europe/Berlin
 
@@ -49,13 +54,40 @@ RUN echo "date.timezone=$TZ" > /usr/local/etc/php/conf.d/timezone.ini
 
 WORKDIR /var/www/symfony
 
-# Erst nur composer.json + composer.lock kopieren – eigener Layer.
-# composer install läuft nur neu wenn sich die Lock-Datei ändert, nicht bei PHP-Änderungen.
+# Composer-Manifest vorab kopieren – eigener Layer, wird nur bei Lock-Änderungen invalidiert.
 COPY api/composer.json api/composer.lock /var/www/symfony/
+
+# =============================================================================
+# Stage: test
+# Für QA/CI: alle Dependencies inklusive dev (PHPUnit, PHPStan, PHP-CS-Fixer…).
+# Kein Cron. Wird NICHT deployed.
+# =============================================================================
+FROM base AS test
+
+RUN composer install --no-interaction --optimize-autoloader
+
+COPY api/ /var/www/symfony/
+
+RUN mkdir -p var/cache var/log config/secrets/prod config/secrets/staging config/jwt \
+    && chown -R www-data:www-data /var/www/symfony \
+    && chmod -R 755 vendor/ \
+    && chmod -R 775 var/
+
+EXPOSE 80
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["sh", "-c", "apache2-foreground"]
+
+# =============================================================================
+# Stage: prod
+# Für Deployment: nur prod-Dependencies, Cron-Jobs aktiv.
+# =============================================================================
+FROM base AS prod
+
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# Restlichen Source-Code kopieren (invalidiert den composer-Layer nicht)
 COPY api/ /var/www/symfony/
+
 RUN mkdir -p var/cache var/log config/secrets/prod config/secrets/staging config/jwt \
     && chown -R www-data:www-data /var/www/symfony \
     && chmod -R 755 vendor/ \

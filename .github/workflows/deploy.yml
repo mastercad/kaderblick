@@ -203,7 +203,7 @@ jobs:
             set -e
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
             docker pull ghcr.io/mastercad/kaderblick/maintenance:${{ inputs.image_tag || github.sha }}
-            IMAGE_TAG=${{ inputs.image_tag || github.sha }} docker compose \
+            API_IMAGE_TAG=${{ inputs.image_tag || github.sha }} IMAGE_TAG=${{ inputs.image_tag || github.sha }} docker compose \
               -f "${{ steps.release.outputs.prod_dir }}/docker-compose.maintenance.yml" \
               -p maintenance up -d --no-build --force-recreate
 
@@ -248,7 +248,7 @@ jobs:
             docker pull ghcr.io/mastercad/kaderblick/api:${{ inputs.image_tag || github.sha }}
             docker pull ghcr.io/mastercad/kaderblick/frontend-prod:${{ inputs.image_tag || github.sha }}
             docker compose -f docker-compose.yml -p production down --remove-orphans api frontend 2>/dev/null || true
-            IMAGE_TAG=${{ inputs.image_tag || github.sha }} \
+            API_IMAGE_TAG=${{ inputs.image_tag || github.sha }} IMAGE_TAG=${{ inputs.image_tag || github.sha }} \
             DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
             HOST_UID=$(id -u kaderblick-ftp-admin) HOST_GID=$(id -g kaderblick-ftp-admin) \
             docker compose -f docker-compose.yml -p production up -d --no-build --force-recreate api frontend
@@ -373,7 +373,7 @@ jobs:
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
               down --remove-orphans api frontend 2>/dev/null || true
             STAGING_DB_URL=$(echo "${{ secrets.DATABASE_URL }}" | sed 's|3306/kaderblick|3306/kaderblick_staging|')
-            IMAGE_TAG=${{ inputs.image_tag || github.sha }} DATABASE_URL="$STAGING_DB_URL" XDEBUG_MODE=off \
+            API_IMAGE_TAG=${{ inputs.image_tag || github.sha }} IMAGE_TAG=${{ inputs.image_tag || github.sha }} DATABASE_URL="$STAGING_DB_URL" XDEBUG_MODE=off \
             PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 \
             HOST_UID=$(id -u kaderblick-ftp-admin) HOST_GID=$(id -g kaderblick-ftp-admin) \
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
@@ -467,7 +467,7 @@ jobs:
               docker compose -p production down --remove-orphans api frontend 2>/dev/null || true
               ln -sfn "$OLD" "${{ secrets.MAIN_PROJECT_PATH }}/production_current"
               cd "$OLD"
-              IMAGE_TAG=latest DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
+              API_IMAGE_TAG=latest IMAGE_TAG=latest DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
               docker compose -f docker-compose.yml -p production up -d --no-build --force-recreate api frontend 2>/dev/null || true
               echo "Rollback auf $OLD abgeschlossen."
             else
