@@ -1,0 +1,175 @@
+name: Build Docker Images
+
+# Reusable workflow: baut alle Docker-Images und pusht sie nach GHCR.
+# Wird von ci.yml aufgerufen, bevor QA und Deploy-Jobs starten.
+#
+# Strategie bei unverändertem Code:
+#   Wenn sich ein Bereich (api/, frontend/, .docker/) nicht geändert hat,
+#   wird das bestehende 'latest'-Image nur neu getaggt (~Sekunden statt Minuten).
+#   Dadurch hat jeder Commit einen eindeutigen SHA-Tag, ohne unnötige Builds.
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build-Metadaten ins Frontend einbetten (Publish-Datum, Build-Info)
+      - name: Prepare build metadata
+        run: |
+          sh ./frontend/scripts/set-publish-date.sh
+          sh ./frontend/scripts/write-buildinfo.sh
+
+      # Erkennen welche Bereiche sich geändert haben.
+      # Bei unveränderten Bereichen: 'latest' neu taggen statt neu bauen.
+      - name: Detect changed paths
+        id: changes
+        run: |
+          git fetch --depth=2 origin
+          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+
+          echo "$CHANGED" | grep -qE '^(api/|\.docker/api/)'       && echo "api_changed=true"         >> $GITHUB_OUTPUT || echo "api_changed=false"         >> $GITHUB_OUTPUT
+          echo "$CHANGED" | grep -qE '^(frontend/|\.docker/frontend/)' && echo "frontend_changed=true"  >> $GITHUB_OUTPUT || echo "frontend_changed=false"  >> $GITHUB_OUTPUT
+          echo "$CHANGED" | grep -qE '^(\.docker/maintenance/|frontend/public/images/)' && echo "maintenance_changed=true" >> $GITHUB_OUTPUT || echo "maintenance_changed=false" >> $GITHUB_OUTPUT
+
+      - name: Build and push API image
+        run: |
+          if [ "${{ steps.changes.outputs.api_changed }}" = "true" ]; then
+            echo "API geändert – baue neu..."
+          elif docker pull ghcr.io/mastercad/kaderblick/api:latest 2>/dev/null; then
+            echo "API unverändert – retag latest → ${{ github.sha }}"
+            docker tag  ghcr.io/mastercad/kaderblick/api:latest ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
+            exit 0
+          else
+            echo "API 'latest' nicht gefunden – baue erstmalig..."
+          fi
+          docker buildx build \
+            --cache-from type=gha,scope=api \
+            --cache-to   type=gha,mode=max,scope=api \
+            -f .docker/api/Dockerfile \
+            -t ghcr.io/mastercad/kaderblick/api:${{ github.sha }} \
+            -t ghcr.io/mastercad/kaderblick/api:latest \
+            --push .
+
+      - name: Build and push frontend-prod image
+        run: |
+          if [ "${{ steps.changes.outputs.frontend_changed }}" = "true" ]; then
+            echo "Frontend geändert – baue neu..."
+          elif docker pull ghcr.io/mastercad/kaderblick/frontend-prod:latest 2>/dev/null; then
+            echo "Frontend unverändert – retag latest → ${{ github.sha }}"
+            docker tag  ghcr.io/mastercad/kaderblick/frontend-prod:latest ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
+            exit 0
+          else
+            echo "frontend-prod 'latest' nicht gefunden – baue erstmalig..."
+          fi
+          echo "VITE_BACKEND_URL=https://api.kaderblick.de" > frontend/.env
+          docker buildx build \
+            --cache-from type=gha,scope=frontend \
+            --cache-to   type=gha,mode=max,scope=frontend \
+            -f .docker/frontend/Dockerfile \
+            -t ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }} \
+            -t ghcr.io/mastercad/kaderblick/frontend-prod:latest \
+            --push .
+
+      - name: Build and push frontend-staging image
+        run: |
+          if [ "${{ steps.changes.outputs.frontend_changed }}" = "true" ]; then
+            echo "Frontend geändert – baue neu..."
+          elif docker pull ghcr.io/mastercad/kaderblick/frontend-staging:latest 2>/dev/null; then
+            echo "Frontend unverändert – retag latest → ${{ github.sha }}"
+            docker tag  ghcr.io/mastercad/kaderblick/frontend-staging:latest ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
+            exit 0
+          else
+            echo "frontend-staging 'latest' nicht gefunden – baue erstmalig..."
+          fi
+          echo "VITE_BACKEND_URL=https://staging-api.kaderblick.de" > frontend/.env
+          docker buildx build \
+            --cache-from type=gha,scope=frontend \
+            --cache-to   type=gha,mode=max,scope=frontend \
+            -f .docker/frontend/Dockerfile \
+            -t ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }} \
+            -t ghcr.io/mastercad/kaderblick/frontend-staging:latest \
+            --push .
+          rm -f frontend/.env
+
+      - name: Build and push maintenance image
+        run: |
+          if [ "${{ steps.changes.outputs.maintenance_changed }}" = "true" ]; then
+            echo "Maintenance geändert – baue neu..."
+          elif docker pull ghcr.io/mastercad/kaderblick/maintenance:latest 2>/dev/null; then
+            echo "Maintenance unverändert – retag latest → ${{ github.sha }}"
+            docker tag  ghcr.io/mastercad/kaderblick/maintenance:latest ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }}
+            docker push ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }}
+            exit 0
+          else
+            echo "Maintenance 'latest' nicht gefunden – baue erstmalig..."
+          fi
+          docker buildx build \
+            --cache-from type=gha,scope=maintenance \
+            --cache-to   type=gha,mode=max,scope=maintenance \
+            -f .docker/maintenance/Dockerfile \
+            -t ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }} \
+            -t ghcr.io/mastercad/kaderblick/maintenance:latest \
+            --push .
+
+      # Alte GHCR-Images aufräumen (letzte 5 behalten, 'latest' nie löschen)
+      - name: Cleanup old GHCR images (api)
+        if: always()
+        continue-on-error: true
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: kaderblick/api
+          package-type: container
+          min-versions-to-keep: 5
+          ignore-versions: latest
+
+      - name: Cleanup old GHCR images (frontend-prod)
+        if: always()
+        continue-on-error: true
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: kaderblick/frontend-prod
+          package-type: container
+          min-versions-to-keep: 5
+          ignore-versions: latest
+
+      - name: Cleanup old GHCR images (frontend-staging)
+        if: always()
+        continue-on-error: true
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: kaderblick/frontend-staging
+          package-type: container
+          min-versions-to-keep: 5
+          ignore-versions: latest
+
+      - name: Cleanup old GHCR images (maintenance)
+        if: always()
+        continue-on-error: true
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: kaderblick/maintenance
+          package-type: container
+          min-versions-to-keep: 5
+          ignore-versions: latest

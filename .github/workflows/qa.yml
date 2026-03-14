@@ -5,6 +5,11 @@ on:
 #    branches: [main]
   pull_request:
   workflow_call:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to test (should match the just-built image)'
+        type: string
+        default: 'latest'
 
 permissions:
   contents: read
@@ -169,7 +174,8 @@ jobs:
           "
           
           echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
-          docker compose up -d --force-recreate api frontend
+          docker pull ghcr.io/mastercad/kaderblick/api:${{ inputs.image_tag || 'latest' }}
+          IMAGE_TAG=${{ inputs.image_tag || 'latest' }} docker compose up -d --force-recreate api frontend
 
           docker compose exec -T api composer install
 

@@ -1,207 +1,36 @@
-name: Deploy to Alfahosting
+name: Deploy to Server
+
+# Reusable workflow: deployt die bereits in GHCR vorhandenen Images auf den Server.
+# Wird von ci.yml aufgerufen, nachdem Build und QA erfolgreich waren.
+#
+# Reihenfolge:
+#   1. Release-Verzeichnisse vorbereiten (Compose-Dateien, Configs, Secrets)
+#   2. DB + Maintenance-Container sicherstellen
+#   3. Production: Maintenance an → Deploy → Migrate → Healthcheck → Maintenance aus
+#   4. Production-DB → Staging klonen
+#   5. Staging: Maintenance an → Deploy → Migrate → Maintenance aus
+#   6. Cleanup alter Releases
+#
+# Bei Fehler: automatischer Rollback auf das letzte bekannte Production-Release.
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  workflow_call:
 
 jobs:
-#  quality-assurance:
-#    uses: ./.github/workflows/qa.yml
-#    secrets: inherit
-#    permissions:
-#      contents: read
-#      pull-requests: write
-
-  deployment:
+  deploy:
     runs-on: ubuntu-latest
-#    needs: quality-assurance
     timeout-minutes: 60
     permissions:
       contents: read
       packages: write
 
     steps:
-      # ------------------------------
-      # Checkout repository
-      # ------------------------------
       - uses: actions/checkout@v4
 
-      # ------------------------------
-      # Login to GitHub Container Registry (GHCR)
-      # ------------------------------
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+      # ============================================================
+      # VORBEREITUNG: Release-Verzeichnisse und Dateien
+      # ============================================================
 
-      # ------------------------------
-      # Docker Buildx mit GitHub Actions Cache aktivieren
-      # Beschleunigt Folge-Builds erheblich (composer install, npm install etc.)
-      # ------------------------------
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # ------------------------------
-      # Build-Metadaten vorbereiten (Publish-Datum, Build-Info)
-      # Muss vor dem Docker-Build laufen, damit die Änderungen ins Image eingebettet werden.
-      # ------------------------------
-      - name: Prepare build metadata
-        run: |
-          sh ./frontend/scripts/set-publish-date.sh
-          sh ./frontend/scripts/write-buildinfo.sh
-
-      # ------------------------------
-      # Erkennen welche Bereiche sich geändert haben.
-      # Bei unveränderten Images wird nur das bestehende 'latest'-Image
-      # mit dem neuen SHA neu getaggt (pull → retag → push) statt neu gebaut.
-      # ------------------------------
-      - name: Detect changed paths
-        id: changes
-        run: |
-          git fetch --depth=2 origin
-          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
-          echo "Changed files:"
-          echo "$CHANGED"
-
-          if echo "$CHANGED" | grep -qE '^(api/|\.docker/api/)'; then
-            echo "api_changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "api_changed=false" >> $GITHUB_OUTPUT
-          fi
-
-          if echo "$CHANGED" | grep -qE '^(frontend/|\.docker/frontend/)'; then
-            echo "frontend_changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "frontend_changed=false" >> $GITHUB_OUTPUT
-          fi
-
-          if echo "$CHANGED" | grep -qE '^(\.docker/maintenance/|frontend/public/images/)'; then
-            echo "maintenance_changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "maintenance_changed=false" >> $GITHUB_OUTPUT
-          fi
-
-      # ------------------------------
-      # Docker Images in CI bauen und nach GHCR pushen
-      # API: Source-Code + vendor/ (composer install) eingebettet – kein Build mehr auf dem Server
-      # frontend-prod:    VITE_BACKEND_URL=https://api.kaderblick.de eingebettet
-      # frontend-staging: VITE_BACKEND_URL=https://staging-api.kaderblick.de eingebettet
-      # Bei unverändertem Bereich: 'latest' neu taggen statt neu bauen (~Sekunden statt Minuten).
-      # ------------------------------
-      - name: Build and push API image
-        run: |
-          if [ "${{ steps.changes.outputs.api_changed }}" = "true" ]; then
-            echo "API hat sich geändert – baue neu..."
-            BUILD_API=true
-          elif docker pull ghcr.io/mastercad/kaderblick/api:latest 2>/dev/null; then
-            echo "API unverändert – tagge 'latest' als ${{ github.sha }}..."
-            docker tag ghcr.io/mastercad/kaderblick/api:latest ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
-            docker push ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
-            BUILD_API=false
-          else
-            echo "API 'latest' nicht gefunden – baue erstmalig..."
-            BUILD_API=true
-          fi
-          if [ "$BUILD_API" = "true" ]; then
-            docker buildx build \
-              --cache-from type=gha,scope=api \
-              --cache-to type=gha,mode=max,scope=api \
-              -f .docker/api/Dockerfile \
-              -t ghcr.io/mastercad/kaderblick/api:${{ github.sha }} \
-              -t ghcr.io/mastercad/kaderblick/api:latest \
-              --push \
-              .
-          fi
-
-      - name: Build and push frontend production image
-        run: |
-          if [ "${{ steps.changes.outputs.frontend_changed }}" = "true" ]; then
-            echo "Frontend hat sich geändert – baue neu..."
-            BUILD_FRONTEND_PROD=true
-          elif docker pull ghcr.io/mastercad/kaderblick/frontend-prod:latest 2>/dev/null; then
-            echo "Frontend unverändert – tagge 'latest' als ${{ github.sha }}..."
-            docker tag ghcr.io/mastercad/kaderblick/frontend-prod:latest ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
-            docker push ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
-            BUILD_FRONTEND_PROD=false
-          else
-            echo "Frontend-prod 'latest' nicht gefunden – baue erstmalig..."
-            BUILD_FRONTEND_PROD=true
-          fi
-          if [ "$BUILD_FRONTEND_PROD" = "true" ]; then
-            echo "VITE_BACKEND_URL=https://api.kaderblick.de" > frontend/.env
-            docker buildx build \
-              --cache-from type=gha,scope=frontend \
-              --cache-to type=gha,mode=max,scope=frontend \
-              -f .docker/frontend/Dockerfile \
-              -t ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }} \
-              -t ghcr.io/mastercad/kaderblick/frontend-prod:latest \
-              --push \
-              .
-          fi
-
-      - name: Build and push maintenance image
-        run: |
-          if [ "${{ steps.changes.outputs.maintenance_changed }}" = "true" ]; then
-            echo "Maintenance hat sich geändert – baue neu..."
-            BUILD_MAINTENANCE=true
-          elif docker pull ghcr.io/mastercad/kaderblick/maintenance:latest 2>/dev/null; then
-            echo "Maintenance unverändert – tagge 'latest' als ${{ github.sha }}..."
-            docker tag ghcr.io/mastercad/kaderblick/maintenance:latest ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }}
-            docker push ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }}
-            BUILD_MAINTENANCE=false
-          else
-            echo "Maintenance 'latest' nicht gefunden – baue erstmalig..."
-            BUILD_MAINTENANCE=true
-          fi
-          if [ "$BUILD_MAINTENANCE" = "true" ]; then
-            docker buildx build \
-              --cache-from type=gha,scope=maintenance \
-              --cache-to type=gha,mode=max,scope=maintenance \
-              -f .docker/maintenance/Dockerfile \
-              -t ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }} \
-              -t ghcr.io/mastercad/kaderblick/maintenance:latest \
-              --push \
-              .
-          fi
-
-      - name: Build and push frontend staging image
-        run: |
-          if [ "${{ steps.changes.outputs.frontend_changed }}" = "true" ]; then
-            echo "Frontend hat sich geändert – baue neu..."
-            BUILD_FRONTEND_STAGING=true
-          elif docker pull ghcr.io/mastercad/kaderblick/frontend-staging:latest 2>/dev/null; then
-            echo "Frontend unverändert – tagge 'latest' als ${{ github.sha }}..."
-            docker tag ghcr.io/mastercad/kaderblick/frontend-staging:latest ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
-            docker push ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
-            BUILD_FRONTEND_STAGING=false
-          else
-            echo "Frontend-staging 'latest' nicht gefunden – baue erstmalig..."
-            BUILD_FRONTEND_STAGING=true
-          fi
-          if [ "$BUILD_FRONTEND_STAGING" = "true" ]; then
-            echo "VITE_BACKEND_URL=https://staging-api.kaderblick.de" > frontend/.env
-            docker buildx build \
-              --cache-from type=gha,scope=frontend \
-              --cache-to type=gha,mode=max,scope=frontend \
-              -f .docker/frontend/Dockerfile \
-              -t ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }} \
-              -t ghcr.io/mastercad/kaderblick/frontend-staging:latest \
-              --push \
-              .
-            rm -f frontend/.env
-          fi
-
-      # ------------------------------
-      # Generate release directory names (Production & Staging)
-      # Gleicher Timestamp → leicht zuzuordnen
-      # ------------------------------
       - name: Generate release directory names
         id: release
         run: |
@@ -209,29 +38,21 @@ jobs:
           echo "prod_dir=${{ secrets.MAIN_PROJECT_PATH }}/production_releases/$TIMESTAMP" >> $GITHUB_OUTPUT
           echo "staging_dir=${{ secrets.MAIN_PROJECT_PATH }}/staging_releases/$TIMESTAMP" >> $GITHUB_OUTPUT
 
-      # ------------------------------
-      # Prepare build files
-      # Nur docker-compose-Dateien + minimale Konfiguration werden auf den Server kopiert.
-      # Source-Code (api/, frontend/) ist im Docker-Image – nicht auf dem Server nötig.
-      # api/.env.dist wird für das Erstellen der .env-Datei auf dem Server benötigt.
-      # ------------------------------
-      - name: Prepare files
+      # Nur docker-compose-Dateien + minimale Config auf den Server kopieren.
+      # Source-Code und vendor/ stecken im Docker-Image – nicht nötig auf dem Server.
+      - name: Prepare release files locally
         run: |
-          mkdir -p build/api/config
-          mkdir -p build/frontend
+          mkdir -p build/api/config build/frontend
           cp docker-compose.yml docker-compose.staging.yml docker-compose.db.yml docker-compose.maintenance.yml build/
           cp -r .docker build/
           cp api/.env.dist build/api/
-          cp -r api/config/packages api/config/routes api/config/routes.yaml api/config/services.yaml api/config/bundles.php build/api/config/ 2>/dev/null || true
-          # Verschlüsselte Secrets mitkopieren (Decrypt-Keys sind .gitignore'd und daher nicht im Checkout).
-          # Ohne diese Dateien überdeckt das Volume-Mount die verschlüsselten Secrets aus dem Image,
-          # sodass secrets:decrypt-to-local kein JWT_PASSPHRASE schreiben kann.
+          cp -r api/config/packages api/config/routes api/config/routes.yaml \
+                api/config/services.yaml api/config/bundles.php build/api/config/ 2>/dev/null || true
+          # Verschlüsselte Secrets mitkopieren – Volume-Mount würde sonst das Image-Verzeichnis
+          # overlayen und secrets:decrypt-to-local findet keine Quelldateien mehr.
           cp -r api/config/secrets build/api/config/ 2>/dev/null || true
 
-      # ------------------------------
-      # Create release directories on server
-      # ------------------------------
-      - name: Create release directories on server
+      - name: Create production release directory on server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -243,10 +64,7 @@ jobs:
             chmod 755 "${{ steps.release.outputs.prod_dir }}"
             chown -R ${{ secrets.PLESK_USERNAME }}:psacln "${{ steps.release.outputs.prod_dir }}"
 
-      # ------------------------------
-      # Copy build files to production release directory
-      # ------------------------------
-      - name: Copy files to server
+      - name: Copy release files to server
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -256,10 +74,7 @@ jobs:
           target: "${{ steps.release.outputs.prod_dir }}"
           strip_components: 1
 
-      # ------------------------------
-      # Copy production release → staging release directory
-      # ------------------------------
-      - name: Create staging release directory
+      - name: Create staging release directory on server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -272,10 +87,24 @@ jobs:
             chmod 755 "${{ steps.release.outputs.staging_dir }}"
             chown -R ${{ secrets.PLESK_USERNAME }}:psacln "${{ steps.release.outputs.staging_dir }}"
 
-      # ------------------------------
-      # Deploy secrets & JWT keys (Production und Staging)
-      # ------------------------------
-      - name: Deploy secrets & JWT
+      - name: Deploy JWT keys
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            ROOT_DIR="${{ secrets.MAIN_PROJECT_PATH }}"
+            for DIR in "${{ steps.release.outputs.prod_dir }}" "${{ steps.release.outputs.staging_dir }}"; do
+              mkdir -p "$DIR/api/config/jwt"
+              if [ -d "$ROOT_DIR/api/config/jwt" ]; then
+                cp -r "$ROOT_DIR/api/config/jwt/"* "$DIR/api/config/jwt/" 2>/dev/null || true
+              fi
+              chown -R kaderblick-ftp-admin:psacln "$DIR"
+            done
+
+      - name: Write .env and decrypt keys
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -285,23 +114,53 @@ jobs:
             set -e
             PROD_DIR="${{ steps.release.outputs.prod_dir }}"
             STAGING_DIR="${{ steps.release.outputs.staging_dir }}"
-            ROOT_DIR="${{ secrets.MAIN_PROJECT_PATH }}"
 
-            for DIR in "$PROD_DIR" "$STAGING_DIR"; do
-              mkdir -p "$DIR/api/config/secrets/prod"
-              mkdir -p "$DIR/api/config/jwt"
+            # --- Production ---
+            cp "$PROD_DIR/api/.env.dist" "$PROD_DIR/api/.env"
+            sed -i 's/^APP_ENV=.*$/APP_ENV=prod/'  "$PROD_DIR/api/.env"
+            echo "APP_DEBUG=0"                           >> "$PROD_DIR/api/.env"
+            echo "APP_SECRET=${{ secrets.APP_SECRET }}"  >> "$PROD_DIR/api/.env"
+            mkdir -p "$PROD_DIR/api/config/secrets/prod"
+            echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d \
+              > "$PROD_DIR/api/config/secrets/prod/prod.decrypt.private.php"
+            chmod 655 "$PROD_DIR/api/config/secrets/prod/prod.decrypt.private.php"
+            echo "VITE_BACKEND_URL=https://api.kaderblick.de" > "$PROD_DIR/frontend/.env"
 
-              if [ -d "$ROOT_DIR/api/config/jwt" ]; then
-                cp -r "$ROOT_DIR/api/config/jwt/"* "$DIR/api/config/jwt/" 2>/dev/null || true
-              fi
+            # --- Staging ---
+            cp "$STAGING_DIR/api/.env.dist" "$STAGING_DIR/api/.env"
+            sed -i 's/^APP_ENV=.*$/APP_ENV=staging/' "$STAGING_DIR/api/.env"
+            sed -i 's|^GOOGLE_REDIRECT_URI=.*$|GOOGLE_REDIRECT_URI=https://staging.kaderblick.de/oauth2callback|' "$STAGING_DIR/api/.env"
+            sed -i 's|^FRONTEND_URL=.*$|FRONTEND_URL=https://staging.kaderblick.de|' "$STAGING_DIR/api/.env"
+            echo "APP_DEBUG=0"                           >> "$STAGING_DIR/api/.env"
+            echo "APP_SECRET=${{ secrets.APP_SECRET }}"  >> "$STAGING_DIR/api/.env"
+            mkdir -p "$STAGING_DIR/api/config/secrets/staging"
+            echo '${{ secrets.STAGING_DECRYPT_KEY }}' | base64 -d \
+              > "$STAGING_DIR/api/config/secrets/staging/staging.decrypt.private.php"
+            chmod 655 "$STAGING_DIR/api/config/secrets/staging/staging.decrypt.private.php"
+            echo "VITE_BACKEND_URL=https://staging-api.kaderblick.de" > "$STAGING_DIR/frontend/.env"
 
-              chmod -R 755 "$DIR/api" "$DIR/frontend"
-              chown -R kaderblick-ftp-admin:psacln "$DIR"
+      - name: Prepare shared uploads symlinks
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            set -e
+            SHARED="${{ secrets.MAIN_PROJECT_PATH }}/public/uploads"
+            mkdir -p "$SHARED"
+            chown -R www-data:www-data "$SHARED"
+            chmod -R 775 "$SHARED"
+            for DIR in "${{ steps.release.outputs.prod_dir }}" "${{ steps.release.outputs.staging_dir }}"; do
+              mkdir -p "$DIR/public"
+              rm -rf "$DIR/public/uploads"
+              ln -s "$SHARED" "$DIR/public/uploads"
             done
 
-      # ------------------------------
-      # Ensure DB container is running
-      # ------------------------------
+      # ============================================================
+      # INFRASTRUKTUR: DB + Maintenance-Container
+      # ============================================================
+
       - name: Ensure DB container is running
         uses: appleboy/ssh-action@master
         with:
@@ -310,28 +169,20 @@ jobs:
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
             set -e
-            docker network inspect kaderblick-net >/dev/null 2>&1 || docker network create kaderblick-net
-            docker volume inspect kaderblick-data >/dev/null 2>&1 || docker volume create kaderblick-data
+            docker network inspect kaderblick-net    >/dev/null 2>&1 || docker network create kaderblick-net
+            docker volume inspect kaderblick-data    >/dev/null 2>&1 || docker volume create kaderblick-data
             docker volume inspect kaderblick-db-data >/dev/null 2>&1 || docker volume create kaderblick-db-data
-
             if docker ps --filter "name=kaderblick-db" --filter "status=running" | grep -q kaderblick-db; then
-              echo "DB-Container läuft bereits."
+              echo "DB läuft bereits."
             else
-              echo "Starte DB-Container..."
               COMPOSE_DIR="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
               [ -d "$COMPOSE_DIR" ] || COMPOSE_DIR="${{ steps.release.outputs.prod_dir }}"
               docker compose -f "$COMPOSE_DIR/docker-compose.db.yml" -p kaderblick-db up -d db
-              echo "Warte auf DB-Bereitschaft..."
               until docker exec kaderblick-db mysqladmin ping -uroot -proot --silent 2>/dev/null; do sleep 3; done
+              echo "DB bereit."
             fi
 
-      # ------------------------------
-      # Rebuild & restart maintenance container
-      # Bei jedem Deployment neu bauen, damit Änderungen an nginx.conf
-      # oder maintenance.html sofort übernommen werden.
-      # Plesk-Nginx leitet bei Maintenance-Flag auf Port 8083 um.
-      # ------------------------------
-      - name: Rebuild maintenance container
+      - name: Update maintenance container
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -339,89 +190,16 @@ jobs:
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
             set -e
-            COMPOSE_DIR="${{ steps.release.outputs.prod_dir }}"
-            cd "$COMPOSE_DIR"
-            echo "Lade Maintenance-Image aus GHCR..."
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
             docker pull ghcr.io/mastercad/kaderblick/maintenance:${{ github.sha }}
-            IMAGE_TAG=${{ github.sha }} \
-            docker compose -f docker-compose.maintenance.yml -p maintenance up -d --no-build --force-recreate
-            echo "Maintenance-Container neu gestartet."
+            IMAGE_TAG=${{ github.sha }} docker compose \
+              -f "${{ steps.release.outputs.prod_dir }}/docker-compose.maintenance.yml" \
+              -p maintenance up -d --no-build --force-recreate
 
-      # ------------------------------
-      # Prepare .env files (Production und Staging)
-      # DATABASE_URL wird nicht in .env geschrieben – wird als Docker-Env-Variable übergeben
-      # ------------------------------
-      - name: Prepare .env files
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            set -e
-            PROD_DIR="${{ steps.release.outputs.prod_dir }}"
-            STAGING_DIR="${{ steps.release.outputs.staging_dir }}"
+      # ============================================================
+      # PRODUCTION DEPLOYMENT
+      # ============================================================
 
-            # Production
-            # APP_ENV/APP_DEBUG direkt in .env
-            cp "$PROD_DIR/api/.env.dist" "$PROD_DIR/api/.env"
-            sed -i 's/^APP_ENV=.*$/APP_ENV=prod/' "$PROD_DIR/api/.env"
-            echo "APP_DEBUG=0" >> "$PROD_DIR/api/.env"
-            printf "APP_SECRET=${{ secrets.APP_SECRET }}\n" >> "$PROD_DIR/api/.env"
-
-            # Secrets in .env.prod.local
-            mkdir -p "$PROD_DIR/api/config/secrets/prod"
-            echo '${{ secrets.PROD_DECRYPT_KEY }}' | base64 -d > "$PROD_DIR/api/config/secrets/prod/prod.decrypt.private.php"
-            chmod 655 "$PROD_DIR/api/config/secrets/prod/prod.decrypt.private.php"
-            echo "VITE_BACKEND_URL=https://api.kaderblick.de" > "$PROD_DIR/frontend/.env"
-
-            # Staging 
-            # APP_ENV/APP_DEBUG direkt in .env
-            cp "$STAGING_DIR/api/.env.dist" "$STAGING_DIR/api/.env"
-            sed -i 's/^APP_ENV=.*$/APP_ENV=staging/' "$STAGING_DIR/api/.env"
-            sed -i 's|^GOOGLE_REDIRECT_URI=.*$|GOOGLE_REDIRECT_URI=https://staging.kaderblick.de/oauth2callback|' "$STAGING_DIR/api/.env"
-            sed -i 's|^FRONTEND_URL=.*$|FRONTEND_URL=https://staging.kaderblick.de|' "$STAGING_DIR/api/.env"
-            echo "APP_DEBUG=0" >> "$STAGING_DIR/api/.env"
-            printf "APP_SECRET=${{ secrets.APP_SECRET }}\n" >> "$STAGING_DIR/api/.env"
-
-            # Secrets in .env.staging.local
-            mkdir -p "$STAGING_DIR/api/config/secrets/staging"
-            echo '${{ secrets.STAGING_DECRYPT_KEY }}' | base64 -d > "$STAGING_DIR/api/config/secrets/staging/staging.decrypt.private.php"
-            chmod 655 "$STAGING_DIR/api/config/secrets/staging/staging.decrypt.private.php"
-            echo "VITE_BACKEND_URL=https://staging-api.kaderblick.de" > "$STAGING_DIR/frontend/.env"
-
-      # ------------------------------
-      # Prepare shared uploads symlinks (Production und Staging)
-      # Werden vor dem Production-Deploy gesetzt; beide Release-Dirs existieren bereits.
-      # ------------------------------
-      - name: Prepare uploads symlinks
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            set -e
-            PROD_DIR="${{ steps.release.outputs.prod_dir }}"
-            STAGING_DIR="${{ steps.release.outputs.staging_dir }}"
-            SHARED_UPLOADS="${{ secrets.MAIN_PROJECT_PATH }}/public/uploads"
-
-            mkdir -p "$SHARED_UPLOADS"
-            chown -R www-data:www-data "$SHARED_UPLOADS"
-            chmod -R 775 "$SHARED_UPLOADS"
-
-            for DIR in "$PROD_DIR" "$STAGING_DIR"; do
-              mkdir -p "$DIR/public"
-              rm -rf "$DIR/public/uploads"
-              ln -s "$SHARED_UPLOADS" "$DIR/public/uploads"
-            done
-
-      # ------------------------------
-      # Enable production maintenance mode
-      # Ab jetzt leitet Nginx Anfragen auf kaderblick.de / api.kaderblick.de
-      # auf den Maintenance-Container um. Wird am Ende (if: always()) wieder entfernt.
-      # ------------------------------
       - name: Enable production maintenance
         uses: appleboy/ssh-action@master
         with:
@@ -431,13 +209,7 @@ jobs:
           script: |
             touch "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_production.flag"
             chmod 644 "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_production.flag"
-            echo "Production-Maintenance aktiviert."
 
-      # ------------------------------
-      # Set production_current symlink
-      # Speichert das alte Release-Verzeichnis für einen möglichen Rollback.
-      # HINWEIS: DB-Migrations lassen sich nicht automatisch rollbacken!
-      # ------------------------------
       - name: Set production_current symlink
         uses: appleboy/ssh-action@master
         with:
@@ -447,23 +219,11 @@ jobs:
           script: |
             set -e
             PROD_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
-            NEW_PROD="${{ steps.release.outputs.prod_dir }}"
+            readlink "$PROD_CURRENT" 2>/dev/null > "${{ secrets.MAIN_PROJECT_PATH }}/.rollback_to" || echo "" > "${{ secrets.MAIN_PROJECT_PATH }}/.rollback_to"
+            ln -sfn "${{ steps.release.outputs.prod_dir }}" "$PROD_CURRENT"
+            mkdir -p "$PROD_CURRENT/api/var/cache" "$PROD_CURRENT/api/var/log"
 
-            # Altes Release merken (für Rollback)
-            OLD_PROD=$(readlink "$PROD_CURRENT" 2>/dev/null || echo "")
-            echo "$OLD_PROD" > "${{ secrets.MAIN_PROJECT_PATH }}/.rollback_to"
-
-            ln -sfn "$NEW_PROD" "$PROD_CURRENT"
-            mkdir -p "$PROD_CURRENT/api/var/cache" \
-                     "$PROD_CURRENT/api/var/log"
-
-      # ------------------------------
-      # Deploy Production containers (persistent)
-      # Ports: 8080 (frontend) / 8081 (api)
-      # Images werden aus GHCR gepullt – kein docker build mehr auf dem Server.
-      # VITE_BACKEND_URL ist bereits zur CI-Build-Zeit im frontend-prod-Image eingebettet.
-      # ------------------------------
-      - name: Deploy Production containers
+      - name: Deploy production containers
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -472,30 +232,18 @@ jobs:
           command_timeout: 30m
           script: |
             set -e
-            PROD_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
-            cd "$PROD_CURRENT"
-
-            # GHCR-Login auf Server (GHCR_TOKEN = GitHub PAT mit 'read:packages'-Scope)
+            cd "${{ secrets.MAIN_PROJECT_PATH }}/production_current"
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
-
             docker pull ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
             docker pull ghcr.io/mastercad/kaderblick/frontend-prod:${{ github.sha }}
-
             docker compose -f docker-compose.yml -p production down --remove-orphans api frontend 2>/dev/null || true
-
-            HOST_UID=$(id -u kaderblick-ftp-admin)
-            HOST_GID=$(id -g kaderblick-ftp-admin)
             IMAGE_TAG=${{ github.sha }} \
             DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
-            HOST_UID="$HOST_UID" HOST_GID="$HOST_GID" \
+            HOST_UID=$(id -u kaderblick-ftp-admin) HOST_GID=$(id -g kaderblick-ftp-admin) \
             docker compose -f docker-compose.yml -p production up -d --no-build --force-recreate api frontend
+            mkdir -p api/var
 
-            mkdir -p "$PROD_CURRENT/api/var"
-
-      # ------------------------------
-      # Production setup: Composer, Migrations, Secrets, JWT
-      # ------------------------------
-      - name: Production setup
+      - name: Production setup (secrets / cache / migrations / JWT)
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -505,37 +253,19 @@ jobs:
           script: |
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/production_current"
-
-            # Secrets zuerst entschlüsseln, damit cache:warmup alle Env-Werte kennt
-            docker compose -f docker-compose.yml -p production exec -T --user www-data api \
-              bin/console secrets:decrypt-to-local --force --env=prod
-
-            docker compose -f docker-compose.yml -p production exec -T --user www-data api \
-              bin/console cache:warmup --env=prod
-
-            docker compose -f docker-compose.yml -p production exec -T --user www-data api \
-              bin/console doctrine:migrations:migrate --no-interaction --env=prod
-
-            # JWT-Keys: PKCS#1-Format (BEGIN RSA PRIVATE KEY) ist nicht kompatibel mit OpenSSL 3.x
-            # Bei fehlendem oder veraltetem Format: neue PKCS#8-Keys generieren und persistent speichern
-            # Prüfung im Container – host-seitig liegen die Keys nicht mehr im Release-Verzeichnis
-            if ! docker compose -f docker-compose.yml -p production \
-                exec -T api sh -c 'grep -q "BEGIN PRIVATE KEY" /var/www/symfony/config/jwt/private.pem 2>/dev/null'; then
-              echo "JWT-Keys fehlen oder im PKCS#1-Format – regeneriere als PKCS#8..."
-              docker compose -f docker-compose.yml -p production exec -T --user www-data api \
-                php bin/console lexik:jwt:generate-keypair --overwrite --env=prod
-              # Neue PKCS#8-Keys persistent im ROOT_DIR ablegen → wird beim nächsten Deploy kopiert
+            DC="docker compose -f docker-compose.yml -p production"
+            $DC exec -T --user www-data api bin/console secrets:decrypt-to-local --force --env=prod
+            $DC exec -T --user www-data api bin/console cache:warmup --env=prod
+            $DC exec -T --user www-data api bin/console doctrine:migrations:migrate --no-interaction --env=prod
+            if ! $DC exec -T api sh -c 'grep -q "BEGIN PRIVATE KEY" /var/www/symfony/config/jwt/private.pem 2>/dev/null'; then
+              echo "JWT-Keys fehlen oder veraltet – regeneriere (PKCS#8)..."
+              $DC exec -T --user www-data api php bin/console lexik:jwt:generate-keypair --overwrite --env=prod
               mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt"
-              docker compose -f docker-compose.yml -p production exec -T api \
-                sh -c 'cat /var/www/symfony/config/jwt/private.pem' > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/private.pem" || true
-              docker compose -f docker-compose.yml -p production exec -T api \
-                sh -c 'cat /var/www/symfony/config/jwt/public.pem' > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/public.pem" || true
+              $DC exec -T api sh -c 'cat /var/www/symfony/config/jwt/private.pem' > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/private.pem" || true
+              $DC exec -T api sh -c 'cat /var/www/symfony/config/jwt/public.pem'  > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/public.pem"  || true
             fi
 
-      # ------------------------------
-      # Production: Load fixtures (auf kaderblick)
-      # ------------------------------
-      - name: Load fixtures on production
+      - name: Load master fixtures on production
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -545,15 +275,10 @@ jobs:
           script: |
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/production_current"
-
             docker compose -f docker-compose.yml -p production \
-              exec -T --user www-data api bin/console doctrine:fixtures:load --env=prod --no-interaction --append --group=master
+              exec -T --user www-data api \
+              bin/console doctrine:fixtures:load --env=prod --no-interaction --append --group=master
 
-      # ------------------------------
-      # Production healthcheck
-      # Curl vom Host auf den exponierten API-Port – prüft ob der Container
-      # von außen erreichbar ist und ein valides JSON zurückgibt.
-      # ------------------------------
       - name: Production healthcheck
         uses: appleboy/ssh-action@master
         with:
@@ -562,33 +287,28 @@ jobs:
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
             set -e
-            echo "Warte auf API-Bereitschaft..."
             for i in $(seq 1 12); do
-              RESPONSE=$(curl -s -o /tmp/healthcheck_body.txt -w "%{http_code}" \
-                http://localhost:8081/api/health 2>/dev/null || echo "000")
-              HTTP_CODE="$RESPONSE"
-              if [ "$HTTP_CODE" = "200" ]; then
-                echo "API antwortet mit HTTP 200 – Deployment erfolgreich."
-                cat /tmp/healthcheck_body.txt
-                break
-              fi
-              if [ "$i" -eq 12 ]; then
-                echo "FEHLER: API antwortet nach 60s nicht korrekt (HTTP $HTTP_CODE)" >&2
-                echo "--- Response Body ---"
-                cat /tmp/healthcheck_body.txt 2>/dev/null || true
-                echo "--- Symfony prod.log (letzte 30 Zeilen) ---"
-                docker compose -p production logs --tail=30 api 2>/dev/null || true
-                exit 1
-              fi
-              echo "Warte... ($i/12, HTTP $HTTP_CODE)"
-              sleep 5
+              HTTP=$(curl -s -o /tmp/hc_body.txt -w "%{http_code}" http://localhost:8081/api/health 2>/dev/null || echo "000")
+              if [ "$HTTP" = "200" ]; then echo "Production bereit (HTTP 200)."; cat /tmp/hc_body.txt; exit 0; fi
+              [ "$i" -eq 12 ] && { echo "FEHLER: API nicht bereit nach 60s (HTTP $HTTP)"; cat /tmp/hc_body.txt; docker compose -p production logs --tail=30 api; exit 1; }
+              echo "Warte... ($i/12, HTTP $HTTP)"; sleep 5
             done
 
-      # ------------------------------
-      # Clone production DB → kaderblick_staging
-      # Läuft NACH dem Production-Healthcheck, damit Staging den migrierten Stand bekommt.
-      # Container: kaderblick-db, Credentials: root/root
-      # ------------------------------
+      - name: Disable production maintenance
+        if: always()
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PLESK_HOST }}
+          username: ${{ secrets.ROOT_USER }}
+          password: ${{ secrets.ROOT_PASSWORD }}
+          script: |
+            rm -f "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_production.flag"
+            rm -f "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_staging.flag"
+
+      # ============================================================
+      # STAGING DEPLOYMENT (nach erfolgreichem Production-Healthcheck)
+      # ============================================================
+
       - name: Clone production DB to staging
         uses: appleboy/ssh-action@master
         with:
@@ -598,28 +318,12 @@ jobs:
           command_timeout: 30m
           script: |
             set -e
-
-            echo "Lösche kaderblick_staging (falls vorhanden)..."
-            docker exec kaderblick-db mysql -uroot -proot \
-              -e "DROP DATABASE IF EXISTS kaderblick_staging;"
-
-            echo "Erstelle kaderblick_staging..."
-            docker exec kaderblick-db mysql -uroot -proot \
-              -e "CREATE DATABASE kaderblick_staging CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-            echo "Vergebe Rechte für kaderblick-User..."
-            docker exec kaderblick-db mysql -uroot -proot \
-              -e "GRANT ALL PRIVILEGES ON kaderblick_staging.* TO 'kaderblick'@'%'; FLUSH PRIVILEGES;"
-
-            echo "Kopiere kaderblick → kaderblick_staging..."
-            docker exec kaderblick-db sh -c \
-              "mysqldump -uroot -proot --single-transaction --quick kaderblick | mysql -uroot -proot kaderblick_staging"
-
+            docker exec kaderblick-db mysql -uroot -proot -e "DROP DATABASE IF EXISTS kaderblick_staging;"
+            docker exec kaderblick-db mysql -uroot -proot -e "CREATE DATABASE kaderblick_staging CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+            docker exec kaderblick-db mysql -uroot -proot -e "GRANT ALL PRIVILEGES ON kaderblick_staging.* TO 'kaderblick'@'%'; FLUSH PRIVILEGES;"
+            docker exec kaderblick-db sh -c "mysqldump -uroot -proot --single-transaction --quick kaderblick | mysql -uroot -proot kaderblick_staging"
             echo "DB-Klon abgeschlossen."
 
-      # ------------------------------
-      # Enable staging maintenance mode
-      # ------------------------------
       - name: Enable staging maintenance
         uses: appleboy/ssh-action@master
         with:
@@ -629,11 +333,7 @@ jobs:
           script: |
             touch "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_staging.flag"
             chmod 644 "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_staging.flag"
-            echo "Staging-Maintenance aktiviert."
 
-      # ------------------------------
-      # Set staging_current symlink
-      # ------------------------------
       - name: Set staging_current symlink
         uses: appleboy/ssh-action@master
         with:
@@ -646,13 +346,7 @@ jobs:
             mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/cache" \
                      "${{ secrets.MAIN_PROJECT_PATH }}/staging_current/api/var/log"
 
-      # ------------------------------
-      # Deploy Staging containers (persistent)
-      # Ports: 18080 (frontend) / 18081 (api)
-      # Eigenes var/-Volume via docker-compose.staging.yml
-      # DATABASE_URL: kaderblick_staging (aus production-URL abgeleitet)
-      # ------------------------------
-      - name: Deploy Staging containers
+      - name: Deploy staging containers
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -661,40 +355,21 @@ jobs:
           command_timeout: 30m
           script: |
             set -e
-            STAGING_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
-            cd "$STAGING_CURRENT"
-
-            # Staging-DATABASE_URL: Datenbankname kaderblick → kaderblick_staging
-            STAGING_DB_URL=$(echo "${{ secrets.DATABASE_URL }}" | sed 's|3306/kaderblick|3306/kaderblick_staging|')
-
-            # GHCR-Login auf Server (GHCR_TOKEN = GitHub PAT mit 'read:packages'-Scope)
+            cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u mastercad --password-stdin
-
             docker pull ghcr.io/mastercad/kaderblick/api:${{ github.sha }}
             docker pull ghcr.io/mastercad/kaderblick/frontend-staging:${{ github.sha }}
-
-            docker compose \
-              -f docker-compose.yml \
-              -f docker-compose.staging.yml \
-              -p staging \
+            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
               down --remove-orphans api frontend 2>/dev/null || true
-
-            IMAGE_TAG=${{ github.sha }} \
-            DATABASE_URL="$STAGING_DB_URL" XDEBUG_MODE=off \
+            STAGING_DB_URL=$(echo "${{ secrets.DATABASE_URL }}" | sed 's|3306/kaderblick|3306/kaderblick_staging|')
+            IMAGE_TAG=${{ github.sha }} DATABASE_URL="$STAGING_DB_URL" XDEBUG_MODE=off \
             PMA_PORT=18082 API_PORT=18081 REACT_PORT=18080 \
             HOST_UID=$(id -u kaderblick-ftp-admin) HOST_GID=$(id -g kaderblick-ftp-admin) \
-            docker compose \
-              -f docker-compose.yml \
-              -f docker-compose.staging.yml \
-              -p staging \
+            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
               up -d --no-build --force-recreate api frontend
+            mkdir -p api/var
 
-            mkdir -p "$STAGING_CURRENT/api/var"
-
-      # ------------------------------
-      # Staging: Composer, Migrations, Secrets, JWT
-      # ------------------------------
-      - name: Staging setup
+      - name: Staging setup (secrets / cache / migrations / JWT)
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -704,36 +379,19 @@ jobs:
           script: |
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
-
-            # Secrets zuerst entschlüsseln, damit cache:warmup alle Env-Werte kennt
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T --user www-data api bin/console secrets:decrypt-to-local --force --env=staging
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T --user www-data api bin/console cache:warmup --env=staging
-
-            docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T --user www-data api bin/console doctrine:migrations:migrate --no-interaction --env=staging
-
-            # JWT-Keys: PKCS#1-Format (BEGIN RSA PRIVATE KEY) ist nicht kompatibel mit OpenSSL 3.x
-            # Prüfung im Container – host-seitig liegen die Keys nicht mehr im Release-Verzeichnis
-            if ! docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-                exec -T api sh -c 'grep -q "BEGIN PRIVATE KEY" /var/www/symfony/config/jwt/private.pem 2>/dev/null'; then
-              echo "JWT-Keys fehlen oder im PKCS#1-Format – regeneriere als PKCS#8..."
-              docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-                exec -T --user www-data api php bin/console lexik:jwt:generate-keypair --overwrite --env=staging
-              # Neue PKCS#8-Keys persistent im ROOT_DIR ablegen → wird beim nächsten Deploy kopiert
+            DC="docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging"
+            $DC exec -T --user www-data api bin/console secrets:decrypt-to-local --force --env=staging
+            $DC exec -T --user www-data api bin/console cache:warmup --env=staging
+            $DC exec -T --user www-data api bin/console doctrine:migrations:migrate --no-interaction --env=staging
+            if ! $DC exec -T api sh -c 'grep -q "BEGIN PRIVATE KEY" /var/www/symfony/config/jwt/private.pem 2>/dev/null'; then
+              echo "JWT-Keys fehlen oder veraltet – regeneriere (PKCS#8)..."
+              $DC exec -T --user www-data api php bin/console lexik:jwt:generate-keypair --overwrite --env=staging
               mkdir -p "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt"
-              docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging exec -T api \
-                sh -c 'cat /var/www/symfony/config/jwt/private.pem' > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/private.pem" || true
-              docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging exec -T api \
-                sh -c 'cat /var/www/symfony/config/jwt/public.pem' > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/public.pem" || true
+              $DC exec -T api sh -c 'cat /var/www/symfony/config/jwt/private.pem' > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/private.pem" || true
+              $DC exec -T api sh -c 'cat /var/www/symfony/config/jwt/public.pem'  > "${{ secrets.MAIN_PROJECT_PATH }}/api/config/jwt/public.pem"  || true
             fi
 
-      # ------------------------------
-      # Staging: Load fixtures (auf kaderblick_staging)
-      # ------------------------------
-      - name: Load fixtures on staging
+      - name: Load master fixtures on staging
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -743,15 +401,12 @@ jobs:
           script: |
             set -e
             cd "${{ secrets.MAIN_PROJECT_PATH }}/staging_current"
-
             docker compose -f docker-compose.yml -f docker-compose.staging.yml -p staging \
-              exec -T --user www-data api bin/console doctrine:fixtures:load --env=staging --no-interaction --append --group=master
+              exec -T --user www-data api \
+              bin/console doctrine:fixtures:load --env=staging --no-interaction --append --group=master
 
-      # ------------------------------
-      # Disable staging maintenance mode
-      # Staging ist ab hier wieder erreichbar.
-      # ------------------------------
       - name: Disable staging maintenance
+        if: always()
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -759,14 +414,12 @@ jobs:
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
             rm -f "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_staging.flag"
-            echo "Staging-Maintenance deaktiviert."
 
-      # ------------------------------
-      # Rollback Production
-      # Läuft nur bei Fehler in vorherigen Steps – stellt das letzte bekannte Release wieder her.
-      # HINWEIS: DB-Migrations lassen sich nicht automatisch rollbacken!
-      # ------------------------------
-      - name: Rollback Production
+      # ============================================================
+      # FEHLERBEHANDLUNG & CLEANUP
+      # ============================================================
+
+      - name: Rollback production on failure
         if: failure()
         uses: appleboy/ssh-action@master
         with:
@@ -774,27 +427,22 @@ jobs:
           username: ${{ secrets.ROOT_USER }}
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
-            PROD_CURRENT="${{ secrets.MAIN_PROJECT_PATH }}/production_current"
-            OLD_PROD=$(cat "${{ secrets.MAIN_PROJECT_PATH }}/.rollback_to" 2>/dev/null || echo "")
-
-            if [ -n "$OLD_PROD" ] && [ -d "$OLD_PROD" ]; then
-              echo "Starte Rollback auf $OLD_PROD ..."
+            OLD=$(cat "${{ secrets.MAIN_PROJECT_PATH }}/.rollback_to" 2>/dev/null || echo "")
+            if [ -n "$OLD" ] && [ -d "$OLD" ]; then
+              echo "Rollback auf $OLD ..."
               docker compose -p production down --remove-orphans api frontend 2>/dev/null || true
-              ln -sfn "$OLD_PROD" "$PROD_CURRENT"
-              cd "$OLD_PROD"
-              IMAGE_TAG=latest \
-              DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
+              ln -sfn "$OLD" "${{ secrets.MAIN_PROJECT_PATH }}/production_current"
+              cd "$OLD"
+              IMAGE_TAG=latest DATABASE_URL="${{ secrets.DATABASE_URL }}" XDEBUG_MODE=off \
               docker compose -f docker-compose.yml -p production up -d --no-build --force-recreate api frontend 2>/dev/null || true
-              echo "Rollback abgeschlossen → $OLD_PROD"
+              echo "Rollback auf $OLD abgeschlossen."
             else
-              echo "Kein vorheriges Release zum Rollback vorhanden."
+              echo "Kein Rollback-Ziel vorhanden."
             fi
             rm -f "${{ secrets.MAIN_PROJECT_PATH }}/.rollback_to"
 
-      # ------------------------------
-      # Cleanup: alte Releases (letzte 3 behalten, jeweils getrennt)
-      # ------------------------------
       - name: Cleanup old releases
+        if: always()
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PLESK_HOST }}
@@ -802,74 +450,5 @@ jobs:
           password: ${{ secrets.ROOT_PASSWORD }}
           script: |
             BASE="${{ secrets.MAIN_PROJECT_PATH }}"
-
-            if [ -d "$BASE/production_releases" ]; then
-              cd "$BASE/production_releases" && ls -1dt * | tail -n +4 | xargs -r rm -rf
-            fi
-
-            if [ -d "$BASE/staging_releases" ]; then
-              cd "$BASE/staging_releases" && ls -1dt * | tail -n +4 | xargs -r rm -rf
-            fi
-
-      # ------------------------------
-      # Cleanup: alte GHCR-Images (letzte 5 Versionen behalten)
-      # 'latest' wird nie gelöscht (untagged=false).
-      # Läuft immer – auch bei Fehlern, damit sich keine Altlasten aufbauen.
-      # ------------------------------
-      - name: Cleanup old GHCR images (api)
-        if: always()
-        continue-on-error: true
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: kaderblick/api
-          package-type: container
-          min-versions-to-keep: 5
-          ignore-versions: latest
-
-      - name: Cleanup old GHCR images (frontend-prod)
-        if: always()
-        continue-on-error: true
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: kaderblick/frontend-prod
-          package-type: container
-          min-versions-to-keep: 5
-          ignore-versions: latest
-
-      - name: Cleanup old GHCR images (frontend-staging)
-        if: always()
-        continue-on-error: true
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: kaderblick/frontend-staging
-          package-type: container
-          min-versions-to-keep: 5
-          ignore-versions: latest
-
-      - name: Cleanup old GHCR images (maintenance)
-        if: always()
-        continue-on-error: true
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: kaderblick/maintenance
-          package-type: container
-          min-versions-to-keep: 5
-          ignore-versions: latest
-
-      # ------------------------------
-      # Disable production maintenance mode
-      # Läuft immer – auch bei Fehlern in vorherigen Steps.
-      # Das Staging-Flag wurde bereits nach dem Staging-Deploy entfernt.
-      # ------------------------------
-      - name: Disable production maintenance
-        if: always()
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PLESK_HOST }}
-          username: ${{ secrets.ROOT_USER }}
-          password: ${{ secrets.ROOT_PASSWORD }}
-          script: |
-            rm -f "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_production.flag"
-            # Sicherheitshalber auch Staging-Flag entfernen, falls es durch einen Fehler noch existiert
-            rm -f "${{ secrets.MAIN_PROJECT_PATH }}/maintenance_staging.flag"
-            echo "Production-Maintenance deaktiviert."
+            [ -d "$BASE/production_releases" ] && cd "$BASE/production_releases" && ls -1dt * | tail -n +4 | xargs -r rm -rf
+            [ -d "$BASE/staging_releases" ]    && cd "$BASE/staging_releases"    && ls -1dt * | tail -n +4 | xargs -r rm -rf
