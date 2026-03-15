@@ -605,6 +605,9 @@ class CalendarEventVoterTest extends TestCase
      *
      * @return CalendarEvent&\PHPUnit\Framework\MockObject\MockObject
      */
+    /**
+     * @phpstan-param Collection<int, mixed>|null $permissions
+     */
     private function createEvent(
         int $createdById,
         ?Game $game = null,
